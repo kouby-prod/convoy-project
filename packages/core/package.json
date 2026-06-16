@@ -1,0 +1,22 @@
+{
+  "name": "@carpool/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure TypeScript domain logic. No React, no DB, no HTTP dependencies.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@carpool/config": "workspace:*",
+    "eslint": "10.5.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.9"
+  }
+}

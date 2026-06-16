@@ -1,0 +1,25 @@
+{
+  "name": "@carpool/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Typed Hono RPC client bound to the API's exported AppType. Full inference, zero any.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "4.12.25"
+  },
+  "devDependencies": {
+    "@carpool/api": "workspace:*",
+    "@carpool/config": "workspace:*",
+    "@carpool/schemas": "workspace:*",
+    "eslint": "10.5.0",
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@carpool/schemas",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared Zod schemas — the single source of truth for cross-stack contracts.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@carpool/config": "workspace:*",
+    "eslint": "10.5.0",
+    "typescript": "6.0.3"
+  }
+}

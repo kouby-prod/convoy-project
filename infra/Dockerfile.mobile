@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:1
+# Build context = repo root:  docker build -f infra/Dockerfile.mobile .
+#
+# NOTE: real iOS/Android dev needs Xcode / Android SDK / a device, which do not
+# live in a container. This image runs the Expo dev server (Metro) so you can
+# load the app from Expo Go over the LAN, and serves the Expo *web* export.
+# It is provided for completeness; day-to-day mobile dev runs on the host
+# (`pnpm --filter @carpool/mobile dev`).
+FROM node:22-alpine AS base
+RUN corepack enable
+WORKDIR /app
+
+FROM base AS deps
+COPY pnpm-workspace.yaml package.json .npmrc ./
+COPY pnpm-lock.yaml* ./
+COPY apps/mobile/package.json apps/mobile/package.json
+COPY packages/config/package.json packages/config/package.json
+COPY packages/schemas/package.json packages/schemas/package.json
+COPY packages/core/package.json packages/core/package.json
+COPY packages/api-client/package.json packages/api-client/package.json
+RUN pnpm install --frozen-lockfile
+
+FROM deps AS dev
+COPY . .
+WORKDIR /app/apps/mobile
+ENV EXPO_PUBLIC_API_URL=http://localhost:3001
+# Metro bundler / Expo dev server.
+EXPOSE 8081
+CMD ["pnpm", "dev", "--", "--host", "lan"]

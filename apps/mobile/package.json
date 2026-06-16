@@ -1,0 +1,41 @@
+{
+  "name": "@carpool/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Expo (managed, expo-router) mobile client — renders the /ping proof via TanStack Query.",
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@carpool/api-client": "workspace:*",
+    "@carpool/schemas": "workspace:*",
+    "@expo/metro-runtime": "~56.0.15",
+    "@tanstack/react-query": "5.101.0",
+    "expo": "~56.0.12",
+    "expo-constants": "~56.0.18",
+    "expo-linking": "~56.0.14",
+    "expo-router": "~56.2.11",
+    "expo-status-bar": "~56.0.4",
+    "expo-system-ui": "~56.0.5",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.25.2",
+    "react-native-web": "~0.21.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@babel/core": "7.29.7",
+    "@carpool/config": "workspace:*",
+    "@types/react": "19.2.3",
+    "eslint": "10.5.0",
+    "typescript": "6.0.3"
+  }
+}
