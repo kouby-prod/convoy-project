@@ -14,14 +14,18 @@
     "start": "node dist/server.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "auth:generate": "better-auth generate --config src/auth/auth.ts --output src/db/auth-schema.ts -y",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx src/db/migrate.ts"
+    "db:migrate": "tsx src/db/migrate.ts",
+    "seed:admin": "tsx src/seed-admin.ts"
   },
   "dependencies": {
     "@carpool/schemas": "workspace:*",
     "@hono/node-server": "2.0.5",
     "@hono/swagger-ui": "0.6.1",
     "@hono/zod-openapi": "1.4.0",
+    "better-auth": "1.6.19",
     "dotenv": "17.4.2",
     "drizzle-orm": "0.45.2",
     "hono": "4.12.25",
@@ -29,6 +33,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@better-auth/cli": "1.4.21",
     "@carpool/config": "workspace:*",
     "@types/node": "25.9.3",
     "@types/pg": "8.20.0",
@@ -36,6 +41,7 @@
     "eslint": "10.5.0",
     "tsup": "8.5.1",
     "tsx": "4.22.4",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "4.1.9"
   }
 }

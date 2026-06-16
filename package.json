@@ -17,6 +17,9 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "db:generate": "pnpm --filter @carpool/api db:generate",
     "db:migrate": "pnpm --filter @carpool/api db:migrate",
+    "docker:up": "docker compose --env-file .env up --build",
+    "docker:down": "docker compose --env-file .env down",
+    "docker:infra": "docker compose --env-file .env -f infra/docker-compose.infra.yml up -d",
     "clean": "turbo run clean && rimraf node_modules"
   },
   "devDependencies": {

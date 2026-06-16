@@ -1,0 +1,63 @@
+# Application stack: api + web (+ mobile via profile).
+#
+# Includes the infrastructure stack (Postgres + Redis) from infra/, so a single
+# command from the repo root brings up everything:
+#
+#   pnpm docker:up
+#   (= docker compose --env-file .env up --build)
+#
+# All configuration comes from the single root `.env` (copy from `.env.example`).
+# There are NO hard-coded config values here — every value is a ${VAR} reference.
+name: carpool
+
+include:
+  - infra/docker-compose.infra.yml
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.api
+    restart: unless-stopped
+    environment:
+      PORT: ${API_PORT}
+      # Container-side URL (host = the 'postgres' service). Defined in root .env.
+      DATABASE_URL: ${DOCKER_DATABASE_URL}
+      # Required; compose fails fast with this message if it is unset in .env.
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?missing in root .env — copy .env.example to .env and set a 32+ char secret}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS}
+      EMAIL_FROM: ${EMAIL_FROM}
+      SMS_FROM: ${SMS_FROM}
+    ports:
+      - '${API_PORT}:${API_PORT}'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.web
+      args:
+        # Inlined into the browser bundle at build time (from root .env).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT}:3000'
+    depends_on:
+      - api
+
+  # Provided for completeness — see infra/Dockerfile.mobile for caveats.
+  # Run with:  pnpm docker:up --profile mobile
+  mobile:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.mobile
+    profiles: ['mobile']
+    environment:
+      EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL}
+    ports:
+      - '${EXPO_PORT}:8081'
+    depends_on:
+      - api

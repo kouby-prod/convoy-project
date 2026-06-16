@@ -1,0 +1,50 @@
+# Infrastructure-only stack: Postgres + Redis.
+#
+# All configuration comes from the single root `.env`. No hard-coded values —
+# every value is a ${VAR} reference resolved from that `.env`.
+#
+# Used two ways:
+#   - included by the root docker-compose.yml (so `pnpm docker:up` brings up
+#     infra + apps together), and
+#   - standalone, to run ONLY infra while the apps run on the host:
+#       pnpm docker:infra      (docker compose --env-file .env -f infra/docker-compose.infra.yml up -d)
+name: carpool
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - '${POSTGRES_PORT}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # $$ escapes compose interpolation so the shell expands it inside the
+      # container (from the env set above) — still no hard-coded values here.
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Infra provisioned for the future. NOT wired into the app yet.
+  # TODO: caching / rate limiting / queues will use this. Out of scope for now.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT}:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:

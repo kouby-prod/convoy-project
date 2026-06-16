@@ -7,6 +7,10 @@ const path = require('path');
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(projectRoot, '../..');
 
+// Load env from the single root .env. Metro config runs before bundling, so the
+// EXPO_PUBLIC_* values are present in process.env when Expo inlines them.
+require('dotenv').config({ path: path.resolve(monorepoRoot, '.env') });
+
 const config = getDefaultConfig(projectRoot);
 
 config.watchFolders = [monorepoRoot];
