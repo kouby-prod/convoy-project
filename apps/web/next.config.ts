@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 import { config } from 'dotenv';
 import { resolve } from 'node:path';
+import createNextIntlPlugin from 'next-intl/plugin';
 
 // Load env from the single root .env. next.config runs before the build, so the
 // NEXT_PUBLIC_* values are present in process.env when Next inlines them.
@@ -12,4 +13,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@carpool/api-client', '@carpool/schemas', '@carpool/core'],
 };
 
-export default nextConfig;
+// Points next-intl at the request config so Server Components can resolve messages.
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+
+export default withNextIntl(nextConfig);

@@ -14,10 +14,18 @@
   "dependencies": {
     "@carpool/api-client": "workspace:*",
     "@carpool/schemas": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.1",
     "@tanstack/react-query": "5.101.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.20.0",
     "next": "16.2.9",
+    "next-intl": "^4.13.0",
+    "postcss": "^8.5.15",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.1",
     "zod": "4.4.3"
   },
   "devDependencies": {

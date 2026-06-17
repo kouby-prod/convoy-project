@@ -1,0 +1,98 @@
+{
+  "Navbar": {
+    "brand": "Convoy",
+    "searchPlaceholder": "Search for a ride, a city…",
+    "search": "Search",
+    "post": "Offer a ride",
+    "contact": "Contact",
+    "signIn": "Sign in",
+    "cart": "Cart",
+    "account": "My account",
+    "menu": "Menu"
+  },
+  "LocaleSwitcher": {
+    "label": "Language",
+    "fr": "Français",
+    "en": "English"
+  },
+  "Footer": {
+    "aboutTitle": "About us",
+    "terms": "Terms of use",
+    "responsibility": "Responsibility charter",
+    "privacy": "Privacy",
+    "contact": "Contact us",
+    "infoTitle": "Information",
+    "becomeDriver": "How to become a driver?",
+    "becomePassenger": "How to become a passenger?",
+    "passengerTips": "Tips for passengers",
+    "driverTips": "Tips for drivers",
+    "copyright": "© {year} Kouby Drive carpooling — all rights reserved"
+  },
+  "Hero": {
+    "title": "More than a ride, a meeting!",
+    "illustrationPlaceholder": "Illustration",
+    "departurePlaceholder": "Departure city",
+    "arrivalPlaceholder": "Arrival city",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "search": "Search"
+  },
+  "Testimonials": {
+    "title": "Testimonials",
+    "seeMore": "See more testimonials",
+    "items": [
+      {
+        "quote": "Guaranteed safety",
+        "author": "Kouby Drive member",
+        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+      },
+      {
+        "quote": "Top-notch service",
+        "author": "Kouby Drive member",
+        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+      },
+      {
+        "quote": "The community is a family",
+        "author": "Kouby Drive member",
+        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+      }
+    ]
+  },
+  "Guarantees": {
+    "title": "Our guarantees",
+    "columns": [
+      {
+        "title": "A structured, professional framework",
+        "points": [
+          "Verification of mandatory documents (licence, insurance, registration).",
+          "Secured payments and transactions.",
+          "Trip traceability and booking history.",
+          "Compliance with regulations in force (GDPR, shared transport).",
+          "Handling of reports and disputes between users."
+        ]
+      },
+      {
+        "title": "We're here for you, anytime.",
+        "points": [
+          "Phone support available 7 days a week, all year round without interruption.",
+          "KoubyDrive grows with you. Your suggestions inspire us."
+        ]
+      }
+    ]
+  },
+  "Features": {
+    "title": "What you can do on the site",
+    "howItWorks": "How does it work?",
+    "videoPlaceholder": "Video",
+    "cards": [
+      {
+        "title": "Travel without driving",
+        "description": "Choose your ride, book online and travel with peace of mind."
+      },
+      {
+        "title": "Drive and share",
+        "description": "Got free seats in your car? Turn them into an opportunity."
+      }
+    ]
+  }
+}

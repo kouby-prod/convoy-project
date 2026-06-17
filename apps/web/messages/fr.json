@@ -1,0 +1,98 @@
+{
+  "Navbar": {
+    "brand": "Convoy",
+    "searchPlaceholder": "Rechercher un trajet, une ville…",
+    "search": "Rechercher",
+    "post": "Annoncer",
+    "contact": "Contact",
+    "signIn": "Connexion",
+    "cart": "Panier",
+    "account": "Mon compte",
+    "menu": "Menu"
+  },
+  "LocaleSwitcher": {
+    "label": "Langue",
+    "fr": "Français",
+    "en": "English"
+  },
+  "Footer": {
+    "aboutTitle": "À Propos de nous",
+    "terms": "Conditions d'utilisation",
+    "responsibility": "Charte de responsabilité",
+    "privacy": "Vie privée",
+    "contact": "Contactez-nous",
+    "infoTitle": "Informations",
+    "becomeDriver": "Comment devenir chauffeur ?",
+    "becomePassenger": "Comment devenir passager ?",
+    "passengerTips": "Conseils passagers",
+    "driverTips": "Conseils conducteurs",
+    "copyright": "© {year} covoiturage Kouby Drive tous droits réservés"
+  },
+  "Hero": {
+    "title": "Plus qu'un trajet, une rencontre !",
+    "illustrationPlaceholder": "Illustration",
+    "departurePlaceholder": "Ville de départ",
+    "arrivalPlaceholder": "Ville d'arrivée",
+    "dateLabel": "Date",
+    "timeLabel": "Heure",
+    "search": "Rechercher"
+  },
+  "Testimonials": {
+    "title": "Témoignages",
+    "seeMore": "Voir plus de témoignages",
+    "items": [
+      {
+        "quote": "Une sécurité garantie",
+        "author": "Membre Kouby Drive",
+        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+      },
+      {
+        "quote": "Un service au top",
+        "author": "Membre Kouby Drive",
+        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+      },
+      {
+        "quote": "La communauté = une famille",
+        "author": "Membre Kouby Drive",
+        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+      }
+    ]
+  },
+  "Guarantees": {
+    "title": "Nos garanties",
+    "columns": [
+      {
+        "title": "Un cadre de travail encadré et professionnalisant",
+        "points": [
+          "Contrôle des documents obligatoires (permis, assurance, carte grise).",
+          "Sécurisation des paiements et des transactions.",
+          "Traçabilité des trajets et historique des réservations.",
+          "Respect des réglementations en vigueur (RGPD, transport partagé).",
+          "Gestion des signalements et des litiges entre utilisateurs."
+        ]
+      },
+      {
+        "title": "On est là pour vous, à tout moment.",
+        "points": [
+          "Support téléphonique assuré 7j/7, sans interruption tout au long de l'année.",
+          "KoubyDrive évolue avec vous. Vos suggestions nous inspirent."
+        ]
+      }
+    ]
+  },
+  "Features": {
+    "title": "Les fonctionnalités possibles du site",
+    "howItWorks": "Comment ça marche ?",
+    "videoPlaceholder": "Vidéo",
+    "cards": [
+      {
+        "title": "Voyagez sans conduire",
+        "description": "Choisissez votre trajet, réservez en ligne et partez l'esprit tranquille."
+      },
+      {
+        "title": "Roulez et partagez",
+        "description": "Votre voiture a des places libres ? Faites-en une opportunité."
+      }
+    ]
+  }
+}
