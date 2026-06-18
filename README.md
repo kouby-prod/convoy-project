@@ -235,16 +235,34 @@ réimplémente **aucune** de ces briques de sécurité.
 
 ### Fonctionnalités câblées
 
-- Email + mot de passe, avec **vérification d'email** et **réinitialisation de
-  mot de passe** (l'email part dans la **console** en dev — voir les logs).
+- Email + mot de passe, avec **vérification d'email obligatoire**
+  (`requireEmailVerification: true`) et **réinitialisation de mot de passe**.
+  Un utilisateur **non vérifié ne peut pas se connecter** tant qu'il n'a pas
+  cliqué le lien de vérification.
 - **Téléphone + OTP** (plugin `phoneNumber`) : l'OTP est **affiché dans la
   console** (cherchez `DEV SMS` dans les logs de l'API).
 - **Rôles** `user` (défaut) et `admin` (plugin `admin`). Deux rôles, pas de
   moteur de permissions.
 
-> Les envois email/SMS sont des **stubs console** (`src/auth/email.ts`,
-> `src/auth/sms.ts`). Chacun a un `// TODO` pour brancher un vrai fournisseur
-> (Resend/SES pour l'email, Twilio pour le SMS).
+#### Envoi d'email : SMTP ou console (bascule par env)
+
+L'expéditeur email est **pluggable** (`src/auth/email.ts`) et choisi au
+démarrage selon l'environnement :
+
+- **`SMTP_HOST` non défini** → **stub console** : le lien de vérification /
+  réinitialisation est **imprimé dans les logs** de l'API (dev sans fournisseur).
+- **`SMTP_HOST` défini** → **envoi réel via SMTP** (nodemailer). Marche avec
+  n'importe quel serveur SMTP, y compris **Mailpit/MailHog** en local.
+
+Variables (voir `.env.example`) : `SMTP_HOST`, `SMTP_PORT` (défaut `587`),
+`SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` (`true` pour le port 465), `EMAIL_FROM`.
+Le log au boot indique le mode actif : `[auth] email sender: …`.
+
+> Boîte mail locale pour tester en vrai :
+> `docker run -p 1025:1025 -p 8025:8025 axllent/mailpit`, puis
+> `SMTP_HOST=localhost`, `SMTP_PORT=1025`, et ouvrez `http://localhost:8025`.
+
+> Le SMS reste un **stub console** (`src/auth/sms.ts`, `// TODO` Twilio).
 
 ### Migrations (tables d'auth)
 
@@ -288,11 +306,16 @@ Avec Postgres lancé, les migrations appliquées et l'API démarrée
 ```bash
 BASE=http://localhost:3001
 
-# Inscription (email + mot de passe)
+# Inscription (email + mot de passe) — un email de vérification est envoyé
+# (dans les logs de l'API en mode console : cherchez « DEV EMAIL » et son lien).
 curl -X POST "$BASE/api/auth/sign-up/email" -H "Content-Type: application/json" \
   -d '{"email":"alice@example.com","password":"supersecret123","name":"Alice"}'
 
-# Connexion — récupérez le jeton bearer dans l'en-tête `set-auth-token`
+# Vérifiez l'email en ouvrant le lien des logs (ou via SMTP/Mailpit). La
+# vérification est OBLIGATOIRE : sans elle, la connexion renvoie 403.
+curl "<LIEN_DE_VERIFICATION_DES_LOGS>"
+
+# Connexion (après vérification) — jeton bearer dans l'en-tête `set-auth-token`
 curl -i -X POST "$BASE/api/auth/sign-in/email" -H "Content-Type: application/json" \
   -d '{"email":"alice@example.com","password":"supersecret123"}'
 
@@ -435,11 +458,12 @@ bout. Remettez le schéma comme avant : tout recompile.
   **tsup** pour la production.
 - **Redis** est présent dans `docker-compose` à titre d'infra, mais n'est
   **branché à rien** dans le code (hors périmètre).
-- **Auth** : `requireEmailVerification` est laissé à `false` pour que la preuve
-  de sign-in marche tout de suite (l'email de vérification part quand même dans
-  la console). La **limitation de débit** est en mémoire (dev) ; un `// TODO`
-  indique de la passer sur Redis via `secondaryStorage` en prod. Les fichiers
-  générés (`src/db/auth-schema.ts`, `apps/api/drizzle/*`) sont **commités**.
+- **Auth** : `requireEmailVerification` est à **`true`** — un compte non vérifié
+  ne peut pas se connecter. En dev sans SMTP, le lien de vérification est dans
+  les logs (stub console) ; sinon il est envoyé par SMTP. La **limitation de
+  débit** est en mémoire (dev) ; un `// TODO` indique de la passer sur Redis via
+  `secondaryStorage` en prod. Les fichiers générés (`src/db/auth-schema.ts`,
+  `apps/api/drizzle/*`) sont **commités**.
 - **Environnement** : un **seul** `.env` à la racine sert les apps (dev) et
   Docker. Il n'est pas commité ; copiez `.env.example`. Il n'y a aucun `.env`
   dans `apps/*`.
@@ -453,8 +477,9 @@ Côté **auth, déjà fait** : email + mot de passe, téléphone + OTP, rôles
 [Authentification](#authentification-betterauth)).
 
 **Toujours hors périmètre** : intégration auth côté **web/mobile**, fournisseurs
-**OAuth/sociaux**, **vrais** SMS/email (stubs console seulement), **dépendance
-dure à Redis** (`secondaryStorage` brançhable plus tard), modèles/tables métier,
+**OAuth/sociaux**, **vrai SMS** (stub console seulement ; l'email, lui, a
+désormais un vrai transport **SMTP** activable par env), **dépendance dure à
+Redis** (`secondaryStorage` brançhable plus tard), modèles/tables métier,
 paiements, cartes/géospatial, et tout RBAC au-delà de `user`/`admin`. Là où ces
 briques arriveront, un `// TODO:` ou un dossier vide marque l'emplacement
 (par exemple `apps/api/src/modules/`).
@@ -483,3 +508,10 @@ appels réels à `/health`, `/ping`, `/openapi.json` et `/docs`), le build
   `account`, `verification`) depuis zéro : OK.
 - **Tests automatisés** de `requireAuth` / `requireRole` (401 / 200 / 403, plus
   rôles multiples) : **6/6** via `pnpm --filter @carpool/api test`.
+
+> Email : la bascule d'expéditeur a été vérifiée au boot — `SMTP_HOST` vide →
+> `email sender: console stub`, `SMTP_HOST` défini → `email sender: SMTP (…)` —
+> et le build `tsup` (avec nodemailer) passe. `requireEmailVerification` est
+> maintenant à `true` ; le flux complet « inscription → connexion bloquée →
+> vérification → connexion OK » se teste avec Postgres lancé (voir
+> [Tester l'auth en local](#tester-lauth-en-local)).

@@ -32,9 +32,23 @@ const EnvSchema = z.object({
         .filter(Boolean),
     ),
 
-  // --- Pluggable sender config (placeholders; console stubs are used in dev) ---
-  // TODO: real email provider (Resend/SES/SMTP). Unused by the console stub.
+  // --- Email sender ---
+  // The "From" address used on outgoing email.
   EMAIL_FROM: z.string().default('no-reply@carpool.local'),
+  // SMTP transport. When SMTP_HOST is set, real email is sent via SMTP;
+  // otherwise the console stub is used (dev). SMTP_USER/PASS are optional so
+  // local relays without auth (Mailpit/MailHog) work out of the box.
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  // Use a TLS-on-connect port (465). Accepts "true"/"false"; anything else is false.
+  SMTP_SECURE: z
+    .string()
+    .optional()
+    .transform((value) => value === 'true'),
+
+  // --- SMS sender (console stub in dev) ---
   // TODO: Twilio (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM).
   // Unused by the console SMS stub; kept here so prod config has a home.
   SMS_FROM: z.string().default('Carpool'),

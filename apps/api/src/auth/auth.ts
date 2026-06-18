@@ -29,10 +29,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
-    // NOTE: kept false so the base sign-in proof works immediately. The
-    // verification email is still sent on sign-up (see emailVerification below).
-    // Flip to `true` once a real email provider is wired.
-    requireEmailVerification: false,
+    // Unverified users cannot sign in until they click the verification link.
+    // In dev (console stub) the link is printed to the API logs; with SMTP_HOST
+    // set it is emailed for real.
+    requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
       await sendEmail({
         to: user.email,
