@@ -239,8 +239,9 @@ réimplémente **aucune** de ces briques de sécurité.
   (`requireEmailVerification: true`) et **réinitialisation de mot de passe**.
   Un utilisateur **non vérifié ne peut pas se connecter** tant qu'il n'a pas
   cliqué le lien de vérification.
-- **Téléphone + OTP** (plugin `phoneNumber`) : l'OTP est **affiché dans la
-  console** (cherchez `DEV SMS` dans les logs de l'API).
+- **Téléphone + OTP** (plugin `phoneNumber`) : code à 6 chiffres. L'OTP part
+  via une **passerelle SMS auto-hébergée** si configurée, sinon il est **affiché
+  dans la console** (cherchez `DEV SMS`). Voir [Envoi de SMS](#envoi-de-sms--passerelle-auto-hébergée-ou-console-bascule-par-env).
 - **Rôles** `user` (défaut) et `admin` (plugin `admin`). Deux rôles, pas de
   moteur de permissions.
 
@@ -262,7 +263,35 @@ Le log au boot indique le mode actif : `[auth] email sender: …`.
 > `docker run -p 1025:1025 -p 8025:8025 axllent/mailpit`, puis
 > `SMTP_HOST=localhost`, `SMTP_PORT=1025`, et ouvrez `http://localhost:8025`.
 
-> Le SMS reste un **stub console** (`src/auth/sms.ts`, `// TODO` Twilio).
+#### Envoi de SMS : passerelle auto-hébergée ou console (bascule par env)
+
+L'expéditeur SMS est **pluggable** (`src/auth/sms.ts`), comme l'email :
+
+- **`SMS_GATEWAY_URL` non défini** → **stub console** (l'OTP est imprimé dans les
+  logs ; `DEV SMS`).
+- **`SMS_GATEWAY_URL` défini** → **envoi réel via une passerelle auto-hébergée**
+  — l'app Android **SMSGate** en **mode Local** (le téléphone fait tourner un
+  serveur HTTP, **sans Firebase, sans cloud**). L'API fait un `POST` direct au
+  téléphone sur le LAN.
+
+**Mise en place (gratuit, sans Firebase) :**
+
+1. Installez l'app **SMSGate** ([sms-gate.app](https://sms-gate.app/)) sur un
+   téléphone Android avec une carte SIM (forfait SMS).
+2. Activez **Local Server** ; l'app affiche `http://<ip-tel>:8080` et un
+   **identifiant / mot de passe** (Basic auth).
+3. Renseignez le `.env` racine :
+   ```
+   SMS_GATEWAY_URL=http://192.168.1.50:8080
+   SMS_GATEWAY_USER=…
+   SMS_GATEWAY_PASSWORD=…
+   ```
+4. Le téléphone doit être sur le **même réseau** que l'API. Le log au boot
+   indique le mode : `[auth] sms sender: …`.
+
+> **Sécurité** : Basic auth sur HTTP en clair = OK sur un LAN de confiance ;
+> **n'exposez pas** le port `:8080` du téléphone sur Internet. L'envoi d'OTP est
+> déjà limité en débit par BetterAuth (`/phone-number/send-otp`).
 
 ### Migrations (tables d'auth)
 
@@ -477,11 +506,11 @@ Côté **auth, déjà fait** : email + mot de passe, téléphone + OTP, rôles
 [Authentification](#authentification-betterauth)).
 
 **Toujours hors périmètre** : intégration auth côté **web/mobile**, fournisseurs
-**OAuth/sociaux**, **vrai SMS** (stub console seulement ; l'email, lui, a
-désormais un vrai transport **SMTP** activable par env), **dépendance dure à
-Redis** (`secondaryStorage` brançhable plus tard), modèles/tables métier,
-paiements, cartes/géospatial, et tout RBAC au-delà de `user`/`admin`. Là où ces
-briques arriveront, un `// TODO:` ou un dossier vide marque l'emplacement
+**OAuth/sociaux**, **dépendance dure à Redis** (`secondaryStorage` brançhable
+plus tard), modèles/tables métier, paiements, cartes/géospatial, et tout RBAC
+au-delà de `user`/`admin`. (L'email a un transport **SMTP** et le SMS une
+**passerelle auto-hébergée**, tous deux activables par env.) Là où les briques
+restantes arriveront, un `// TODO:` ou un dossier vide marque l'emplacement
 (par exemple `apps/api/src/modules/`).
 
 ---

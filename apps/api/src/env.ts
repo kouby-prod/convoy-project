@@ -48,10 +48,17 @@ const EnvSchema = z.object({
     .optional()
     .transform((value) => value === 'true'),
 
-  // --- SMS sender (console stub in dev) ---
-  // TODO: Twilio (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM).
-  // Unused by the console SMS stub; kept here so prod config has a home.
+  // --- SMS sender ---
+  // Display "From" label for the console stub.
   SMS_FROM: z.string().default('Carpool'),
+  // Self-hosted SMS gateway (SMSGate "Local mode": the Android app runs an HTTP
+  // server on the phone — no Firebase, no cloud). When SMS_GATEWAY_URL is set,
+  // OTPs are sent via the phone; otherwise the console stub is used. User/pass
+  // are the Basic-auth credentials shown in the SMSGate app. Left as optional
+  // strings (not z.url) so an empty value cleanly means "use the console stub".
+  SMS_GATEWAY_URL: z.string().optional(),
+  SMS_GATEWAY_USER: z.string().optional(),
+  SMS_GATEWAY_PASSWORD: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

@@ -4,12 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Mock BetterAuth's server API so the middleware can be tested in isolation —
 // no database, no real sessions. We only control what `getSession` returns.
 const getSession = vi.fn();
-vi.mock('./auth', () => ({
+vi.mock('../../src/auth/auth', () => ({
   auth: { api: { getSession: (...args: unknown[]) => getSession(...args) } },
 }));
 
-import { getAuth, requireAuth, requireRole } from './middleware';
-import type { AuthEnv } from './context';
+import { getAuth, requireAuth, requireRole } from '../../src/auth/middleware';
+import type { AuthEnv } from '../../src/auth/context';
 
 /** A small app that exercises both middlewares, mirroring the real proof routes. */
 function buildApp() {
