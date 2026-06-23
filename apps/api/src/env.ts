@@ -21,6 +21,11 @@ const EnvSchema = z.object({
     .min(32, 'BETTER_AUTH_SECRET must be at least 32 characters (use `openssl rand -base64 32`)'),
   // The canonical URL BetterAuth runs on (used for links in emails, cookies, etc.).
   BETTER_AUTH_URL: z.url().default('http://localhost:3001'),
+  // Google OAuth (web redirect flow). Optional: when BOTH are set the Google
+  // provider is enabled; otherwise it's simply off. Get them from Google Cloud
+  // Console → OAuth 2.0 Client ID (Web application).
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
   // Comma-separated list of origins allowed to make credentialed auth requests.
   TRUSTED_ORIGINS: z
     .string()

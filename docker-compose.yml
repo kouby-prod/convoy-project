@@ -27,8 +27,24 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?missing in root .env — copy .env.example to .env and set a 32+ char secret}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
       TRUSTED_ORIGINS: ${TRUSTED_ORIGINS}
+      # Google OAuth (web redirect). Optional — empty unless set in root .env.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       EMAIL_FROM: ${EMAIL_FROM}
+      # SMTP transport. Optional — empty SMTP_HOST falls back to the console stub.
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_SECURE: ${SMTP_SECURE}
       SMS_FROM: ${SMS_FROM}
+      # Self-hosted SMS gateway. Optional — empty URL falls back to the console stub.
+      # NOTE: the container reaches the phone over the LAN; a host like
+      # http://192.168.1.x:8080 works, but http://localhost would point at the
+      # container itself, not your machine.
+      SMS_GATEWAY_URL: ${SMS_GATEWAY_URL}
+      SMS_GATEWAY_USER: ${SMS_GATEWAY_USER}
+      SMS_GATEWAY_PASSWORD: ${SMS_GATEWAY_PASSWORD}
     ports:
       - '${API_PORT}:${API_PORT}'
     depends_on:
