@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -47,11 +47,8 @@ export function SignInForm() {
     }
   }
 
-return ( <Card className="mx-auto w-full max-w-md"> <CardHeader className="items-center text-center"> <CardTitle>Connexion</CardTitle> <p className="text-sm text-muted-foreground">
-Connectez-vous à votre compte. </p> </CardHeader>
-
-
-  <CardContent>
+return ( <Card className="mx-auto w-full max-w-md">
+  <CardContent className="p-6">
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
         type="email"
