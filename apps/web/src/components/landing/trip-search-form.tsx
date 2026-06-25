@@ -5,8 +5,9 @@ import { useTranslations } from 'next-intl';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
-import { TimePicker, DEFAULT_TIME, type TimeValue } from '@/components/ui/time-picker';
+import { DropdownDatePicker } from '@/components/ui/dropdown-date-picker';
+import { DropdownTimePicker } from '@/components/ui/dropdown-time-picker';
+import { DEFAULT_TIME, type TimeValue } from '@/components/ui/time-picker';
 
 /* The hero trip-search form: city inputs, a calendar date-picker, and a
    segmented time-picker (defaults to 12:00 AM). */
@@ -20,12 +21,12 @@ export function TripSearchForm() {
       <Input name="departure" placeholder={translateHero('departurePlaceholder')} />
       <Input name="arrival" placeholder={translateHero('arrivalPlaceholder')} />
       <div className="grid grid-cols-2 gap-3">
-        <DatePicker
+        <DropdownDatePicker
           value={departureDate}
           onChange={setDepartureDate}
           placeholder={translateHero('dateLabel')}
         />
-        <TimePicker
+        <DropdownTimePicker
           value={departureTime}
           onChange={setDepartureTime}
           ariaLabel={translateHero('timeLabel')}

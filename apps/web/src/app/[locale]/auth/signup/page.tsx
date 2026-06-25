@@ -6,7 +6,7 @@ return ( <section className="grid items-center gap-10 py-12 lg:grid-cols-2 lg:ga
 {/* Form first on desktop */} <div className="flex flex-col gap-8"> <div className="space-y-3"> <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">
 Rejoignez Carpool </h1>
 
-```
+
       <p className="max-w-md text-muted-foreground">
         Créez votre compte en quelques secondes et commencez à partager vos
         trajets avec la communauté.
@@ -22,7 +22,7 @@ Rejoignez Carpool </h1>
     <span className="text-sm font-medium">Inscription</span>
   </div>
 </section>
-```
+
 
 );
 }
