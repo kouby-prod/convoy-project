@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { useTranslations } from 'next-intl';
-import { Search, ShoppingCart, UserRound, Menu, X } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
+import { Search, ShoppingCart, UserRound, Menu, X, LogOut } from 'lucide-react';
+import { Link, useRouter } from '@/i18n/navigation';
+import { authClient } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -80,6 +81,16 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
   const translateNavbar = useTranslations('Navbar');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const palette = themeAccents[theme ?? 'vibrant'];
+
+  const router = useRouter();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const user = session?.user;
+
+  async function handleSignOut() {
+    await authClient.signOut();
+    router.push('/');
+    router.refresh();
+  }
 
   return (
     <header className={cn(navbarVariants({ theme }), className)}>
@@ -158,16 +169,38 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
             )}
           </button>
 
-          {/* Sign in CTA */}
-          <Link
-            href="/sign-in"
-            className={cn(
-              'hidden h-10 items-center rounded-full px-5 text-sm font-semibold shadow-sm outline-none transition-all duration-200 active:translate-y-px focus-visible:ring-3 sm:inline-flex',
-              palette.cta,
-            )}
-          >
-            {translateNavbar('signIn')}
-          </Link>
+          {/* Auth — sign-in CTA when logged out, name + sign-out when logged in.
+              Nothing renders until the session resolves, to avoid a flash. */}
+          {!isSessionPending && !user && (
+            <Link
+              href="/sign-in"
+              className={cn(
+                'hidden h-10 items-center rounded-full px-5 text-sm font-semibold shadow-sm outline-none transition-all duration-200 active:translate-y-px focus-visible:ring-3 sm:inline-flex',
+                palette.cta,
+              )}
+            >
+              {translateNavbar('signIn')}
+            </Link>
+          )}
+
+          {user && (
+            <>
+              <span className="hidden max-w-48 truncate text-sm font-medium sm:inline">
+                {user.name || user.email}
+              </span>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                aria-label={translateNavbar('signOut')}
+                className={cn(
+                  'flex size-10 items-center justify-center rounded-full outline-none transition-all duration-200 active:translate-y-px focus-visible:ring-3',
+                  palette.icon,
+                )}
+              >
+                <LogOut className="size-5" strokeWidth={2.25} />
+              </button>
+            </>
+          )}
 
           {/* Avatar */}
           <button
@@ -217,15 +250,31 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
               {translateNavbar(translationKey)}
             </Link>
           ))}
-          <Link
-            href="/sign-in"
-            className={cn(
-              'mt-1 inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-semibold shadow-sm outline-none transition-all duration-200 focus-visible:ring-3',
-              palette.cta,
-            )}
-          >
-            {translateNavbar('signIn')}
-          </Link>
+          {!isSessionPending && !user && (
+            <Link
+              href="/sign-in"
+              className={cn(
+                'mt-1 inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-semibold shadow-sm outline-none transition-all duration-200 focus-visible:ring-3',
+                palette.cta,
+              )}
+            >
+              {translateNavbar('signIn')}
+            </Link>
+          )}
+
+          {user && (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className={cn(
+                'mt-1 inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold shadow-sm outline-none transition-all duration-200 focus-visible:ring-3',
+                palette.cta,
+              )}
+            >
+              <LogOut className="size-4" strokeWidth={2.25} />
+              {translateNavbar('signOut')}
+            </button>
+          )}
         </nav>
       </div>
     </header>
