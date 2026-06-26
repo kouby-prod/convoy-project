@@ -20,22 +20,44 @@
   --color-card-foreground: #0a0a0a;
   --color-popover: #ffffff;
   --color-popover-foreground: #0a0a0a;
-  --color-primary: #2563eb;
+  --color-primary: #1d4ed8;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f4f4f5;
-  --color-secondary-foreground: #18181b;
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #71717a;
-  --color-accent: #eff6ff;
-  --color-accent-foreground: #1d4ed8;
+  --color-secondary: #16a34a;
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #f0fdf4;
+  --color-muted-foreground: #166534;
+  --color-accent: #facc15;
+  --color-accent-foreground: #111827;
   --color-destructive: oklch(0.55 0.2 27);
   --color-destructive-foreground: #ffffff;
-  --color-border: #e4e4e7;
-  --color-input: #e4e4e7;
-  --color-ring: #2563eb;
+  --color-border: #d9e5f8;
+  --color-input: #dbeafe;
+  --color-ring: #1d4ed8;
 
   /* Signature easing + durations */
   --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+:root {
+  --color-background: #fafafa;
+  --color-foreground: #0a0a0a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0a0a0a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0a0a0a;
+  --color-primary: #1d4ed8;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #16a34a;
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #f0fdf4;
+  --color-muted-foreground: #166534;
+  --color-accent: #facc15;
+  --color-accent-foreground: #111827;
+  --color-destructive: oklch(0.55 0.2 27);
+  --color-destructive-foreground: #ffffff;
+  --color-border: #d9e5f8;
+  --color-input: #dbeafe;
+  --color-ring: #1d4ed8;
 }
 
 .dark {
@@ -45,19 +67,19 @@
   --color-card-foreground: #fafafa;
   --color-popover: #18181b;
   --color-popover-foreground: #fafafa;
-  --color-primary: #3b82f6;
+  --color-primary: #60a5fa;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #27272a;
-  --color-secondary-foreground: #fafafa;
-  --color-muted: #27272a;
-  --color-muted-foreground: #a1a1aa;
-  --color-accent: #172554;
-  --color-accent-foreground: #bfdbfe;
+  --color-secondary: #22c55e;
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #152f56;
+  --color-muted-foreground: #a7f3d0;
+  --color-accent: #facc15;
+  --color-accent-foreground: #111827;
   --color-destructive: oklch(0.6 0.19 25);
   --color-destructive-foreground: #ffffff;
-  --color-border: #27272a;
-  --color-input: #27272a;
-  --color-ring: #3b82f6;
+  --color-border: #0f172a;
+  --color-input: #0f172a;
+  --color-ring: #60a5fa;
 }
 
 @layer base {
