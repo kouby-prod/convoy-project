@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTimestamp } from './format';
+import { formatTimestamp } from '../src/format';
 
 describe('formatTimestamp', () => {
   it('formats a Date as an ISO-8601 string', () => {
