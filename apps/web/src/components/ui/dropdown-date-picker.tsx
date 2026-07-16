@@ -29,10 +29,15 @@ export function DropdownDatePicker({ value, onChange, placeholder, className }: 
     }
   }, [value]);
 
+  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+
   useEffect(() => {
-    const maxDay = new Date(year, month + 1, 0).getDate();
-    const d = Math.min(day, maxDay);
-    onChange(new Date(year, month, d));
+    const maxDay = getDaysInMonth(year, month);
+    setDay((currentDay) => Math.min(currentDay, maxDay));
+  }, [month, year]);
+
+  useEffect(() => {
+    onChange(new Date(year, month, day));
   }, [day, month, year]);
 
   function parseTextValue(value: string) {
@@ -43,12 +48,18 @@ export function DropdownDatePicker({ value, onChange, placeholder, className }: 
     const partsDash = normalized.split('-');
     let parsed: Date | null = null;
 
+    const validateDate = (date: Date, day: number, month: number, year: number) =>
+      date.getFullYear() === year && date.getMonth() === month && date.getDate() === day;
+
     if (partsSlash.length === 3) {
       const p1 = parseInt(partsSlash[0]!, 10);
       const p2 = parseInt(partsSlash[1]!, 10);
       const p3 = parseInt(partsSlash[2]!, 10);
       if (!Number.isNaN(p1) && !Number.isNaN(p2) && !Number.isNaN(p3)) {
-        parsed = new Date(p3, p2 - 1, p1);
+        const candidate = new Date(p3, p2 - 1, p1);
+        if (validateDate(candidate, p1, p2 - 1, p3)) {
+          parsed = candidate;
+        }
       }
     } else if (partsDash.length === 3) {
       const a = parseInt(partsDash[0]!, 10);
@@ -56,14 +67,20 @@ export function DropdownDatePicker({ value, onChange, placeholder, className }: 
       const c = parseInt(partsDash[2]!, 10);
       if (!Number.isNaN(a) && !Number.isNaN(b) && !Number.isNaN(c)) {
         if (a > 31) {
-          parsed = new Date(a, b - 1, c);
+          const candidate = new Date(a, b - 1, c);
+          if (validateDate(candidate, c, b - 1, a)) {
+            parsed = candidate;
+          }
         } else {
-          parsed = new Date(c, b - 1, a);
+          const candidate = new Date(c, b - 1, a);
+          if (validateDate(candidate, a, b - 1, c)) {
+            parsed = candidate;
+          }
         }
       }
     }
 
-    return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+    return parsed;
   }
 
   function handleInputBlur() {
@@ -87,7 +104,9 @@ export function DropdownDatePicker({ value, onChange, placeholder, className }: 
     setIsOpen(false);
   }
 
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const daysInMonth = getDaysInMonth(year, month);
+  const clampedDay = Math.min(day, daysInMonth);
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const months = Array.from({ length: 12 }, (_, i) => i);
   const currentYear = now.getFullYear();
   const years = Array.from({ length: 30 }, (_, i) => currentYear + i);
@@ -118,7 +137,7 @@ export function DropdownDatePicker({ value, onChange, placeholder, className }: 
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Jour</label>
                 <select
                   aria-label="Jour"
-                  value={day}
+                  value={clampedDay}
                   onChange={(e) => setDay(parseInt(e.target.value, 10))}
                   className="w-full rounded-md border px-2 py-2 text-sm"
                 >
@@ -134,7 +153,12 @@ export function DropdownDatePicker({ value, onChange, placeholder, className }: 
                 <select
                   aria-label="Mois"
                   value={month}
-                  onChange={(e) => setMonth(parseInt(e.target.value, 10))}
+                  onChange={(e) => {
+                    const nextMonth = parseInt(e.target.value, 10);
+                    const maxDay = getDaysInMonth(year, nextMonth);
+                    setDay((currentDay) => Math.min(currentDay, maxDay));
+                    setMonth(nextMonth);
+                  }}
                   className="w-full rounded-md border px-2 py-2 text-sm"
                 >
                   {months.map((m) => (
@@ -149,7 +173,12 @@ export function DropdownDatePicker({ value, onChange, placeholder, className }: 
                 <select
                   aria-label="Année"
                   value={year}
-                  onChange={(e) => setYear(parseInt(e.target.value, 10))}
+                  onChange={(e) => {
+                    const nextYear = parseInt(e.target.value, 10);
+                    const maxDay = getDaysInMonth(nextYear, month);
+                    setDay((currentDay) => Math.min(currentDay, maxDay));
+                    setYear(nextYear);
+                  }}
                   className="w-full rounded-md border px-2 py-2 text-sm"
                 >
                   {years.map((y) => (
