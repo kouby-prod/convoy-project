@@ -21,6 +21,11 @@ const EnvSchema = z.object({
     .min(32, 'BETTER_AUTH_SECRET must be at least 32 characters (use `openssl rand -base64 32`)'),
   // The canonical URL BetterAuth runs on (used for links in emails, cookies, etc.).
   BETTER_AUTH_URL: z.url().default('http://localhost:3001'),
+  // Google OAuth (web redirect flow). Optional: when BOTH are set the Google
+  // provider is enabled; otherwise it's simply off. Get them from Google Cloud
+  // Console → OAuth 2.0 Client ID (Web application).
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
   // Comma-separated list of origins allowed to make credentialed auth requests.
   TRUSTED_ORIGINS: z
     .string()
@@ -32,12 +37,33 @@ const EnvSchema = z.object({
         .filter(Boolean),
     ),
 
-  // --- Pluggable sender config (placeholders; console stubs are used in dev) ---
-  // TODO: real email provider (Resend/SES/SMTP). Unused by the console stub.
+  // --- Email sender ---
+  // The "From" address used on outgoing email.
   EMAIL_FROM: z.string().default('no-reply@carpool.local'),
-  // TODO: Twilio (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM).
-  // Unused by the console SMS stub; kept here so prod config has a home.
+  // SMTP transport. When SMTP_HOST is set, real email is sent via SMTP;
+  // otherwise the console stub is used (dev). SMTP_USER/PASS are optional so
+  // local relays without auth (Mailpit/MailHog) work out of the box.
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  // Use a TLS-on-connect port (465). Accepts "true"/"false"; anything else is false.
+  SMTP_SECURE: z
+    .string()
+    .optional()
+    .transform((value) => value === 'true'),
+
+  // --- SMS sender ---
+  // Display "From" label for the console stub.
   SMS_FROM: z.string().default('Carpool'),
+  // Self-hosted SMS gateway (SMSGate "Local mode": the Android app runs an HTTP
+  // server on the phone — no Firebase, no cloud). When SMS_GATEWAY_URL is set,
+  // OTPs are sent via the phone; otherwise the console stub is used. User/pass
+  // are the Basic-auth credentials shown in the SMSGate app. Left as optional
+  // strings (not z.url) so an empty value cleanly means "use the console stub".
+  SMS_GATEWAY_URL: z.string().optional(),
+  SMS_GATEWAY_USER: z.string().optional(),
+  SMS_GATEWAY_PASSWORD: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
