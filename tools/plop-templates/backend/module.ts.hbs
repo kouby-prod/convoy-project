@@ -1,0 +1,47 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
+import { requireAuth, getAuth, type AuthEnv } from '../../auth';
+import { db } from '../../db/client';
+import { {{camelCase name}} } from '../../db/{{kebabCase name}}';
+import {
+  list{{pascalCase name}}Route,
+  get{{pascalCase name}}Route,
+  create{{pascalCase name}}Route,
+} from './{{kebabCase name}}.routes';
+
+/**
+ * {{pascalCase name}} module — an `OpenAPIHono` sub-app mounted by app.ts (see
+ * apps/api/src/modules/README.md). Register it in the chained `routes` const so
+ * its types flow into `AppType` and its routes appear in Swagger.
+ */
+export const {{camelCase name}}Module = new OpenAPIHono<AuthEnv>();
+
+// Reads are public; creating requires authentication. Adjust to your auth rules
+// (e.g. add `requireRole('admin')` from ../../auth for admin-only mutations).
+{{camelCase name}}Module.use('/{{kebabCase name}}', async (c, next) =>
+  c.req.method === 'POST' ? requireAuth(c, next) : next(),
+);
+
+{{camelCase name}}Module
+  .openapi(list{{pascalCase name}}Route, async (c) => {
+    const rows = await db.select().from({{camelCase name}});
+    return c.json(rows.map(serialize), 200);
+  })
+  .openapi(get{{pascalCase name}}Route, async (c) => {
+    const { id } = c.req.valid('param');
+    const [row] = await db.select().from({{camelCase name}}).where(eq({{camelCase name}}.id, id));
+    if (!row) return c.json({ error: 'Not found' }, 404);
+    return c.json(serialize(row), 200);
+  })
+  .openapi(create{{pascalCase name}}Route, async (c) => {
+    getAuth(c); // throws if requireAuth did not run (programmer error, not 401)
+    const body = c.req.valid('json');
+    const [row] = await db.insert({{camelCase name}}).values(body).returning();
+    if (!row) throw new Error('Insert returned no row'); // narrows away `undefined`
+    return c.json(serialize(row), 201);
+  });
+
+/** Map a DB row (Date columns) to the Zod contract shape (ISO strings). */
+function serialize(row: typeof {{camelCase name}}.$inferSelect) {
+  return { ...row, createdAt: row.createdAt.toISOString() };
+}

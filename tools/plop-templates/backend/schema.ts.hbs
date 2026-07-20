@@ -1,0 +1,28 @@
+import { z } from 'zod';
+
+/**
+ * {{pascalCase name}} contract — the single source of truth for this entity.
+ * Defined once here in @carpool/schemas and consumed by the API routes and the
+ * typed RPC client. Changing a shape below produces type errors everywhere it
+ * is used until each consumer is updated (the contract spine).
+ */
+export const {{pascalCase name}}Schema = z
+  .object({
+    id: z.string().uuid(),
+    // TODO(domain): replace `label` with the real fields for {{name}}.
+    label: z.string().min(1),
+    createdAt: z.string().describe('ISO-8601 timestamp'),
+  })
+  .describe('{{pascalCase name}}');
+export type {{pascalCase name}} = z.infer<typeof {{pascalCase name}}Schema>;
+
+/** Payload accepted when creating a {{name}} (server owns id + createdAt). */
+export const Create{{pascalCase name}}Schema = {{pascalCase name}}Schema.omit({
+  id: true,
+  createdAt: true,
+}).describe('Create{{pascalCase name}}');
+export type Create{{pascalCase name}} = z.infer<typeof Create{{pascalCase name}}Schema>;
+
+export const {{pascalCase name}}ListSchema = z
+  .array({{pascalCase name}}Schema)
+  .describe('{{pascalCase name}}List');

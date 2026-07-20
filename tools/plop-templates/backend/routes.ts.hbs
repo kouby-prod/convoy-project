@@ -1,0 +1,63 @@
+import { createRoute, z } from '@hono/zod-openapi';
+import {
+  {{pascalCase name}}Schema,
+  {{pascalCase name}}ListSchema,
+  Create{{pascalCase name}}Schema,
+} from '@carpool/schemas';
+
+// Bearer scheme for the authed routes (cookie sessions work too). Mirrors
+// apps/api/src/routes/auth-proofs.ts.
+const bearerAuth = [{ Bearer: [] }];
+const errorSchema = z.object({ error: z.string() });
+
+export const list{{pascalCase name}}Route = createRoute({
+  method: 'get',
+  path: '/{{kebabCase name}}',
+  tags: ['{{kebabCase name}}'],
+  summary: 'List {{name}}',
+  responses: {
+    200: {
+      description: 'List of {{name}}',
+      content: { 'application/json': { schema: {{pascalCase name}}ListSchema } },
+    },
+  },
+});
+
+export const get{{pascalCase name}}Route = createRoute({
+  method: 'get',
+  path: '/{{kebabCase name}}/{id}',
+  tags: ['{{kebabCase name}}'],
+  summary: 'Get a single {{name}} by id',
+  request: { params: z.object({ id: z.string().uuid() }) },
+  responses: {
+    200: {
+      description: 'The {{name}}',
+      content: { 'application/json': { schema: {{pascalCase name}}Schema } },
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const create{{pascalCase name}}Route = createRoute({
+  method: 'post',
+  path: '/{{kebabCase name}}',
+  tags: ['{{kebabCase name}}'],
+  summary: 'Create a {{name}}',
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: Create{{pascalCase name}}Schema } } },
+  },
+  responses: {
+    201: {
+      description: 'Created',
+      content: { 'application/json': { schema: {{pascalCase name}}Schema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
