@@ -9,6 +9,10 @@ FROM base AS deps
 COPY pnpm-workspace.yaml package.json .npmrc ./
 COPY pnpm-lock.yaml* ./
 COPY apps/web/package.json apps/web/package.json
+# @carpool/api-client depends on @carpool/api (workspace:*), and the web build
+# typechecks that transitive source once it imports the typed client, so the api
+# manifest must be present for pnpm to provision it.
+COPY apps/api/package.json apps/api/package.json
 COPY packages/config/package.json packages/config/package.json
 COPY packages/schemas/package.json packages/schemas/package.json
 COPY packages/core/package.json packages/core/package.json

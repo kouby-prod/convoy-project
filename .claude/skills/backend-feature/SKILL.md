@@ -71,8 +71,27 @@ pnpm --filter @carpool/api test
 Then confirm end-to-end against the real stack (this project verifies in Docker,
 not just dev servers):
 ```
-pnpm docker:up      # new routes should appear at http://localhost:3001/docs
+pnpm docker:up
 ```
+
+### Try it in Swagger (`/docs`)
+Once the stack is up, exercise the new endpoints by hand:
+1. Open **http://localhost:3001/docs**.
+2. Find the new endpoints grouped under the **`<name>`** tag (the `tags` value
+   from the routes) — if they are missing, the module was not mounted in the
+   `routes` chain in `app.ts` (step 4).
+3. **Public route** (e.g. `GET /<name>`): expand it → **Try it out** →
+   **Execute** → expect **200** with a JSON array.
+4. **Protected route** (e.g. `POST /<name>`):
+   - First get a token: sign in via `POST /api/auth/sign-in/email` (or use an
+     existing session). Copy the token from the **`set-auth-token`** response
+     header.
+   - Click **Authorize** (top-right), paste the token as the **Bearer** value,
+     Authorize, Close.
+   - Expand the route → **Try it out** → fill the request body → **Execute** →
+     expect **201**. Without the token you should get **401**.
+5. Confirm a created row persists: re-run `GET /<name>` and see it listed.
+
 Fix and re-run if anything fails. Do **not** commit or push — leave git to the user.
 
 ## Non-negotiable conventions (enforced by lint/typecheck)
