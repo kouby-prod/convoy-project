@@ -11,18 +11,20 @@ import {
 
 /**
  * {{pascalCase name}} module — an `OpenAPIHono` sub-app mounted by app.ts (see
- * apps/api/src/modules/README.md). Register it in the chained `routes` const so
- * its types flow into `AppType` and its routes appear in Swagger.
+ * apps/api/src/modules/README.md). It is exported as the CHAINED result of
+ * `.openapi(...)` so its route types flow into `AppType` (the RPC client and
+ * Swagger). Exporting the bare `new OpenAPIHono()` would drop the route types
+ * and `api.{{camelCase name}}` would not exist on the typed client.
  */
-export const {{camelCase name}}Module = new OpenAPIHono<AuthEnv>();
+const app = new OpenAPIHono<AuthEnv>();
 
 // Reads are public; creating requires authentication. Adjust to your auth rules
 // (e.g. add `requireRole('admin')` from ../../auth for admin-only mutations).
-{{camelCase name}}Module.use('/{{kebabCase name}}', async (c, next) =>
+app.use('/{{kebabCase name}}', async (c, next) =>
   c.req.method === 'POST' ? requireAuth(c, next) : next(),
 );
 
-{{camelCase name}}Module
+export const {{camelCase name}}Module = app
   .openapi(list{{pascalCase name}}Route, async (c) => {
     const rows = await db.select().from({{camelCase name}});
     return c.json(rows.map(serialize), 200);
