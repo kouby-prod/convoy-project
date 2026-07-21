@@ -1,0 +1,127 @@
+
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
+import { authClient } from '@/lib/auth-client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+
+export function SignUpForm() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setError('');
+    setIsLoading(true);
+
+    const formData = new FormData(event.currentTarget);
+    const firstName = formData.get('firstname')?.toString().trim() ?? '';
+    const lastName = formData.get('lastname')?.toString().trim() ?? '';
+    const email = formData.get('email')?.toString().trim() ?? '';
+    const password = formData.get('password')?.toString() ?? '';
+    const confirmPassword = formData.get('confirmPassword')?.toString() ?? '';
+
+    try {
+      if (!firstName || !lastName || !email || !password || !confirmPassword) {
+        setError('Veuillez remplir tous les champs.');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setError('Les mots de passe ne correspondent pas.');
+        return;
+      }
+
+      const { error: signUpError } = await authClient.signUp.email({
+        name: `${firstName} ${lastName}`,
+        email,
+        password,
+      });
+
+      if (signUpError) {
+        setError(signUpError.message ?? 'Échec de l’inscription. Réessayez.');
+        return;
+      }
+
+      router.push('/');
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      setError('Impossible de créer le compte. Réessayez plus tard.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+return ( <Card className="mx-auto w-full max-w-md">
+  <CardContent className="p-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        type="text"
+        name="firstname"
+        placeholder="Prénom"
+        required
+      />
+
+      <Input
+        type="text"
+        name="lastname"
+        placeholder="Nom"
+        required
+      />
+
+      <Input
+        type="email"
+        name="email"
+        placeholder="Adresse e-mail"
+        required
+      />
+
+      <Input
+        type="password"
+        name="password"
+        placeholder="Mot de passe"
+        required
+      />
+
+      <Input
+        type="password"
+        name="confirmPassword"
+        placeholder="Confirmer le mot de passe"
+        required
+      />
+
+      {error ? (
+        <p className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+
+      <Button
+        type="submit"
+        size="lg"
+        className="w-full"
+        disabled={isLoading}
+      >
+        {isLoading ? 'Création...' : "S'inscrire"}
+      </Button>
+
+      <p className="text-center text-sm text-muted-foreground">
+        Déjà inscrit ?{' '}
+        <Link href="/auth/signin" className="font-semibold text-primary">
+          Se connecter
+        </Link>
+      </p>
+    </form>
+  </CardContent>
+</Card>
+
+
+);
+}
