@@ -9,6 +9,8 @@ interface CalendarProps {
   onSelect: (date: Date) => void;
   /** BCP-47 tag used for month/weekday names (e.g. 'fr', 'en'). */
   locale: string;
+  captionLayout?: 'buttons' | 'dropdown';
+  defaultMonth?: Date;
 }
 
 function startOfMonth(date: Date) {
@@ -25,8 +27,14 @@ function isSameDay(a: Date, b: Date) {
 
 /* Dependency-free month calendar. Monday-first; month and weekday names come
    from Intl so they follow the active locale. */
-export function Calendar({ selected, onSelect, locale }: CalendarProps) {
-  const [viewMonth, setViewMonth] = useState(() => startOfMonth(selected ?? new Date()));
+export function Calendar({
+  selected,
+  onSelect,
+  locale,
+  captionLayout = 'buttons',
+  defaultMonth,
+}: CalendarProps) {
+  const [viewMonth, setViewMonth] = useState(() => startOfMonth(selected ?? defaultMonth ?? new Date()));
   const today = new Date();
 
   const weekdayLabels = useMemo(() => {
@@ -34,6 +42,13 @@ export function Calendar({ selected, onSelect, locale }: CalendarProps) {
     // 2024-01-01 is a Monday — build a Mon→Sun reference week.
     return Array.from({ length: 7 }, (_, dayOffset) =>
       formatter.format(new Date(2024, 0, 1 + dayOffset)),
+    );
+  }, [locale]);
+
+  const monthLabels = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(locale, { month: 'long' });
+    return Array.from({ length: 12 }, (_, monthIndex) =>
+      formatter.format(new Date(2024, monthIndex, 1)),
     );
   }, [locale]);
 
@@ -64,7 +79,36 @@ export function Calendar({ selected, onSelect, locale }: CalendarProps) {
         >
           <ChevronLeft className="size-4" strokeWidth={2.25} />
         </button>
-        <span className="text-sm font-semibold capitalize tracking-tight">{monthLabel}</span>
+        {captionLayout === 'dropdown' ? (
+          <div className="flex items-center gap-2">
+            <select
+              aria-label="Month"
+              value={month}
+              onChange={(event) => setViewMonth(new Date(year, Number(event.target.value), 1))}
+              className="rounded-full border border-border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+            >
+              {monthLabels.map((label, index) => (
+                <option key={label} value={index}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Year"
+              value={year}
+              onChange={(event) => setViewMonth(new Date(Number(event.target.value), month, 1))}
+              className="rounded-full border border-border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+            >
+              {Array.from({ length: 21 }, (_, index) => year - 10 + index).map((yearOption) => (
+                <option key={yearOption} value={yearOption}>
+                  {yearOption}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <span className="text-sm font-semibold capitalize tracking-tight">{monthLabel}</span>
+        )}
         <button
           type="button"
           aria-label="Next month"

@@ -5,5 +5,5 @@
 // hand-edit them — regenerate with `pnpm --filter @carpool/api auth:generate`.
 export * from './auth-schema';
 
-// Domain table exports (rides, bookings, …) are appended below by `pnpm gen backend-feature`.
-// plop:tables
+// TODO: domain tables (rides, bookings, …) go here as the product grows.
+export * from './trajet-schema';
