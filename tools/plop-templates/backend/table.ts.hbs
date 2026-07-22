@@ -1,0 +1,13 @@
+import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core';
+
+/**
+ * `{{snakeCase name}}` table. After editing the columns, regenerate + apply the
+ * migration: `pnpm --filter @carpool/api db:generate` then `db:migrate`.
+ * Do not hand-edit auth-schema.ts (it is BetterAuth CLI-generated).
+ */
+export const {{camelCase name}} = pgTable('{{snakeCase name}}', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  // TODO(domain): replace `label` with the real columns for {{name}}.
+  label: text('label').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});

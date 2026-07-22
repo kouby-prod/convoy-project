@@ -29,10 +29,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
-    // NOTE: kept false so the base sign-in proof works immediately. The
-    // verification email is still sent on sign-up (see emailVerification below).
-    // Flip to `true` once a real email provider is wired.
-    requireEmailVerification: false,
+    // Unverified users cannot sign in until they click the verification link.
+    // In dev (console stub) the link is printed to the API logs; with SMTP_HOST
+    // set it is emailed for real.
+    requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
       await sendEmail({
         to: user.email,
@@ -56,6 +56,33 @@ export const auth = betterAuth({
     },
   },
 
+  // --- Social login: Google (web redirect flow) ---
+  // Enabled only when both env vars are set. The redirect callback that must be
+  // registered in Google Cloud Console is `${BETTER_AUTH_URL}/api/auth/callback/google`.
+  // `accessType: 'offline'` requests a refresh token (stored in the account table).
+  socialProviders: {
+    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
+            prompt: 'select_account',
+            accessType: 'offline',
+          },
+        }
+      : {}),
+  },
+
+  // Link a Google login to an existing user with the same email. Safe to trust
+  // Google here because Google asserts verified emails; do NOT add providers
+  // that don't verify emails (account-takeover risk).
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ['google'],
+    },
+  },
+
   // --- Session expiry + rotation (the "access + refresh" requirement) ---
   // The session is the credential. `updateAge` slides the expiry forward each
   // day the session is used, so active users never get logged out, while idle
@@ -71,9 +98,12 @@ export const auth = betterAuth({
   trustedOrigins: env.TRUSTED_ORIGINS,
   advanced: {
     // CSRF is enforced via origin checking against trustedOrigins (on by
-    // default — we do NOT disable it). Cookies are httpOnly + sameSite=lax and
-    // become Secure automatically in production.
-    useSecureCookies: process.env.NODE_ENV === 'production',
+    // default — we do NOT disable it). Cookies are httpOnly + sameSite=lax.
+    // Secure cookies are keyed to the deployment URL scheme, NOT NODE_ENV: a
+    // production-built image (NODE_ENV=production) is routinely run locally over
+    // http://localhost in Docker, where `Secure` cookies would be dropped by the
+    // browser and break sessions. https:// → Secure on; http:// → Secure off.
+    useSecureCookies: env.BETTER_AUTH_URL.startsWith('https://'),
     defaultCookieAttributes: {
       httpOnly: true,
       sameSite: 'lax',
