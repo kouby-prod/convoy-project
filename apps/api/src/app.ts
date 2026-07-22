@@ -150,6 +150,45 @@ app.doc('/openapi.json', {
 
 app.get('/docs', swaggerUI({ url: '/openapi.json' }));
 
+// ---------------------------------------------------------------------------
+// PROOF helper (dev only): one-click "Continue with Google" page to exercise
+// the web redirect flow without a full client. Registered only when Google is
+// configured AND the deployment is non-HTTPS (i.e. a local/dev URL such as
+// http://localhost, including the production-built Docker image run locally).
+// A real HTTPS deployment never exposes it. After consent the browser is sent
+// to /me, which renders the user from the session cookie. Not domain logic.
+// ---------------------------------------------------------------------------
+const isLocalHttp = !env.BETTER_AUTH_URL.startsWith('https://');
+if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && isLocalHttp) {
+  app.get('/google-demo', (c) => {
+    return c.html(`<!doctype html>
+<html><head><meta charset="utf-8"><title>Google sign-in (dev proof)</title></head>
+<body style="font-family:system-ui;max-width:32rem;margin:3rem auto">
+  <h1>Google sign-in — dev proof</h1>
+  <p>Clicks <code>POST /api/auth/sign-in/social</code> then follows the redirect.
+     After consent you land on <code>/me</code>.</p>
+  <button id="g" style="padding:.6rem 1rem;font-size:1rem;cursor:pointer">Continue with Google</button>
+  <pre id="out" style="color:#b00"></pre>
+  <script>
+    document.getElementById('g').onclick = async () => {
+      const res = await fetch('/api/auth/sign-in/social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'google',
+          callbackURL: location.origin + '/me',
+          errorCallbackURL: location.origin + '/google-demo',
+        }),
+      });
+      const data = await res.json();
+      if (data.url) location.href = data.url;
+      else document.getElementById('out').textContent = JSON.stringify(data, null, 2);
+    };
+  </script>
+</body></html>`);
+  });
+}
+
 export { app };
 
 /**

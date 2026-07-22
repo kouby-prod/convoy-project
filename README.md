@@ -235,16 +235,105 @@ réimplémente **aucune** de ces briques de sécurité.
 
 ### Fonctionnalités câblées
 
-- Email + mot de passe, avec **vérification d'email** et **réinitialisation de
-  mot de passe** (l'email part dans la **console** en dev — voir les logs).
-- **Téléphone + OTP** (plugin `phoneNumber`) : l'OTP est **affiché dans la
-  console** (cherchez `DEV SMS` dans les logs de l'API).
+- Email + mot de passe, avec **vérification d'email obligatoire**
+  (`requireEmailVerification: true`) et **réinitialisation de mot de passe**.
+  Un utilisateur **non vérifié ne peut pas se connecter** tant qu'il n'a pas
+  cliqué le lien de vérification.
+- **Téléphone + OTP** (plugin `phoneNumber`) : code à 6 chiffres. L'OTP part
+  via une **passerelle SMS auto-hébergée** si configurée, sinon il est **affiché
+  dans la console** (cherchez `DEV SMS`). Voir [Envoi de SMS](#envoi-de-sms--passerelle-auto-hébergée-ou-console-bascule-par-env).
+- **Google** (flux web par redirection), activé si `GOOGLE_CLIENT_ID/SECRET`
+  sont définis. Voir [Connexion Google](#connexion-google-flux-web-par-redirection).
 - **Rôles** `user` (défaut) et `admin` (plugin `admin`). Deux rôles, pas de
   moteur de permissions.
 
-> Les envois email/SMS sont des **stubs console** (`src/auth/email.ts`,
-> `src/auth/sms.ts`). Chacun a un `// TODO` pour brancher un vrai fournisseur
-> (Resend/SES pour l'email, Twilio pour le SMS).
+#### Envoi d'email : SMTP ou console (bascule par env)
+
+L'expéditeur email est **pluggable** (`src/auth/email.ts`) et choisi au
+démarrage selon l'environnement :
+
+- **`SMTP_HOST` non défini** → **stub console** : le lien de vérification /
+  réinitialisation est **imprimé dans les logs** de l'API (dev sans fournisseur).
+- **`SMTP_HOST` défini** → **envoi réel via SMTP** (nodemailer). Marche avec
+  n'importe quel serveur SMTP, y compris **Mailpit/MailHog** en local.
+
+Variables (voir `.env.example`) : `SMTP_HOST`, `SMTP_PORT` (défaut `587`),
+`SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` (`true` pour le port 465), `EMAIL_FROM`.
+Le log au boot indique le mode actif : `[auth] email sender: …`.
+
+> Boîte mail locale pour tester en vrai :
+> `docker run -p 1025:1025 -p 8025:8025 axllent/mailpit`, puis
+> `SMTP_HOST=localhost`, `SMTP_PORT=1025`, et ouvrez `http://localhost:8025`.
+
+#### Envoi de SMS : passerelle auto-hébergée ou console (bascule par env)
+
+L'expéditeur SMS est **pluggable** (`src/auth/sms.ts`), comme l'email :
+
+- **`SMS_GATEWAY_URL` non défini** → **stub console** (l'OTP est imprimé dans les
+  logs ; `DEV SMS`).
+- **`SMS_GATEWAY_URL` défini** → **envoi réel via une passerelle auto-hébergée**
+  — l'app Android **SMSGate** en **mode Local** (le téléphone fait tourner un
+  serveur HTTP, **sans Firebase, sans cloud**). L'API fait un `POST` direct au
+  téléphone sur le LAN.
+
+**Mise en place (gratuit, sans Firebase) :**
+
+1. Installez l'app **SMSGate** ([sms-gate.app](https://sms-gate.app/)) sur un
+   téléphone Android avec une carte SIM (forfait SMS).
+2. Activez **Local Server** ; l'app affiche `http://<ip-tel>:8080` et un
+   **identifiant / mot de passe** (Basic auth).
+3. Renseignez le `.env` racine :
+   ```
+   SMS_GATEWAY_URL=http://192.168.1.50:8080
+   SMS_GATEWAY_USER=…
+   SMS_GATEWAY_PASSWORD=…
+   ```
+4. Le téléphone doit être sur le **même réseau** que l'API. Le log au boot
+   indique le mode : `[auth] sms sender: …`.
+
+> **Sécurité** : Basic auth sur HTTP en clair = OK sur un LAN de confiance ;
+> **n'exposez pas** le port `:8080` du téléphone sur Internet. L'envoi d'OTP est
+> déjà limité en débit par BetterAuth (`/phone-number/send-otp`).
+
+#### Connexion Google (flux web par redirection)
+
+Le provider Google est **natif à BetterAuth** (pas de plugin) et activé
+**uniquement** si `GOOGLE_CLIENT_ID` **et** `GOOGLE_CLIENT_SECRET` sont définis.
+Aucune migration : la table `account` (déjà générée) stocke les comptes OAuth.
+
+**Mise en place (Google Cloud Console, ~10 min) :**
+
+1. Créez un projet → écran de consentement OAuth (External ; ajoutez votre email
+   comme utilisateur de test).
+2. **Credentials → OAuth 2.0 Client ID → Web application**.
+3. **Authorized redirect URI** (exactement) :
+   `http://localhost:3001/api/auth/callback/google`
+4. Copiez l'ID et le secret dans le `.env` racine :
+   ```
+   GOOGLE_CLIENT_ID=…
+   GOOGLE_CLIENT_SECRET=…
+   ```
+5. Redémarrez l'API (`pnpm --filter @carpool/api dev`).
+
+**Tester (navigateur, le flux OAuth exige une vraie page de consentement) :**
+
+- Ouvrez **`http://localhost:3001/google-demo`** (page de preuve dev), cliquez
+  « Continue with Google », validez le consentement → vous atterrissez sur
+  `/me` qui affiche l'utilisateur (session par cookie). Un `user` + une ligne
+  `account` (provider `google`) sont créés.
+- Équivalent sans la page : `POST /api/auth/sign-in/social`
+  `{ "provider": "google", "callbackURL": "http://localhost:3001/me" }` renvoie
+  `{ "url": … }` ; ouvrez cette URL dans le navigateur.
+
+> **Liaison de comptes** : une connexion Google se **relie** à un compte
+> email/mot de passe existant ayant le même email (`accountLinking` +
+> `trustedProviders: ['google']`). C'est sûr car Google **certifie** l'email ;
+> n'ajoutez **pas** de provider qui ne vérifie pas l'email (risque de prise de
+> contrôle de compte). Comme Google fournit un email vérifié, ces connexions
+> passent sans friction malgré `requireEmailVerification: true`.
+
+> ⚠️ On ne peut **pas** tester Google entièrement en `curl` : l'écran de
+> consentement nécessite un navigateur.
 
 ### Migrations (tables d'auth)
 
@@ -288,11 +377,16 @@ Avec Postgres lancé, les migrations appliquées et l'API démarrée
 ```bash
 BASE=http://localhost:3001
 
-# Inscription (email + mot de passe)
+# Inscription (email + mot de passe) — un email de vérification est envoyé
+# (dans les logs de l'API en mode console : cherchez « DEV EMAIL » et son lien).
 curl -X POST "$BASE/api/auth/sign-up/email" -H "Content-Type: application/json" \
   -d '{"email":"alice@example.com","password":"supersecret123","name":"Alice"}'
 
-# Connexion — récupérez le jeton bearer dans l'en-tête `set-auth-token`
+# Vérifiez l'email en ouvrant le lien des logs (ou via SMTP/Mailpit). La
+# vérification est OBLIGATOIRE : sans elle, la connexion renvoie 403.
+curl "<LIEN_DE_VERIFICATION_DES_LOGS>"
+
+# Connexion (après vérification) — jeton bearer dans l'en-tête `set-auth-token`
 curl -i -X POST "$BASE/api/auth/sign-in/email" -H "Content-Type: application/json" \
   -d '{"email":"alice@example.com","password":"supersecret123"}'
 
@@ -435,11 +529,12 @@ bout. Remettez le schéma comme avant : tout recompile.
   **tsup** pour la production.
 - **Redis** est présent dans `docker-compose` à titre d'infra, mais n'est
   **branché à rien** dans le code (hors périmètre).
-- **Auth** : `requireEmailVerification` est laissé à `false` pour que la preuve
-  de sign-in marche tout de suite (l'email de vérification part quand même dans
-  la console). La **limitation de débit** est en mémoire (dev) ; un `// TODO`
-  indique de la passer sur Redis via `secondaryStorage` en prod. Les fichiers
-  générés (`src/db/auth-schema.ts`, `apps/api/drizzle/*`) sont **commités**.
+- **Auth** : `requireEmailVerification` est à **`true`** — un compte non vérifié
+  ne peut pas se connecter. En dev sans SMTP, le lien de vérification est dans
+  les logs (stub console) ; sinon il est envoyé par SMTP. La **limitation de
+  débit** est en mémoire (dev) ; un `// TODO` indique de la passer sur Redis via
+  `secondaryStorage` en prod. Les fichiers générés (`src/db/auth-schema.ts`,
+  `apps/api/drizzle/*`) sont **commités**.
 - **Environnement** : un **seul** `.env` à la racine sert les apps (dev) et
   Docker. Il n'est pas commité ; copiez `.env.example`. Il n'y a aucun `.env`
   dans `apps/*`.
@@ -448,16 +543,18 @@ bout. Remettez le schéma comme avant : tout recompile.
 
 ## Hors périmètre (volontairement absent)
 
-Côté **auth, déjà fait** : email + mot de passe, téléphone + OTP, rôles
-`user`/`admin`, sessions cookie + bearer (voir
+Côté **auth, déjà fait** : email + mot de passe, téléphone + OTP, **Google
+(flux web)**, rôles `user`/`admin`, sessions cookie + bearer (voir
 [Authentification](#authentification-betterauth)).
 
-**Toujours hors périmètre** : intégration auth côté **web/mobile**, fournisseurs
-**OAuth/sociaux**, **vrais** SMS/email (stubs console seulement), **dépendance
-dure à Redis** (`secondaryStorage` brançhable plus tard), modèles/tables métier,
-paiements, cartes/géospatial, et tout RBAC au-delà de `user`/`admin`. Là où ces
-briques arriveront, un `// TODO:` ou un dossier vide marque l'emplacement
-(par exemple `apps/api/src/modules/`).
+**Toujours hors périmètre** : intégration auth côté **web/mobile** (l'UI ; le
+back est prêt), **autres providers OAuth** (seul Google est câblé) et le flux
+Google par **jeton d'ID natif** (mobile), **dépendance dure à Redis**
+(`secondaryStorage` brançhable plus tard), modèles/tables métier, paiements,
+cartes/géospatial, et tout RBAC au-delà de `user`/`admin`. (L'email a un
+transport **SMTP** et le SMS une **passerelle auto-hébergée**, tous deux
+activables par env.) Là où les briques restantes arriveront, un `// TODO:` ou un
+dossier vide marque l'emplacement (par exemple `apps/api/src/modules/`).
 
 ---
 
@@ -483,3 +580,10 @@ appels réels à `/health`, `/ping`, `/openapi.json` et `/docs`), le build
   `account`, `verification`) depuis zéro : OK.
 - **Tests automatisés** de `requireAuth` / `requireRole` (401 / 200 / 403, plus
   rôles multiples) : **6/6** via `pnpm --filter @carpool/api test`.
+
+> Email : la bascule d'expéditeur a été vérifiée au boot — `SMTP_HOST` vide →
+> `email sender: console stub`, `SMTP_HOST` défini → `email sender: SMTP (…)` —
+> et le build `tsup` (avec nodemailer) passe. `requireEmailVerification` est
+> maintenant à `true` ; le flux complet « inscription → connexion bloquée →
+> vérification → connexion OK » se teste avec Postgres lancé (voir
+> [Tester l'auth en local](#tester-lauth-en-local)).

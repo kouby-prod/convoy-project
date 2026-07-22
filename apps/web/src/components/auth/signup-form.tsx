@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { Link } from '@/i18n/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { authClient } from '@/lib/auth-client';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -37,31 +38,19 @@ export function SignUpForm() {
         return;
       }
 
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') ?? '';
-      const response = await fetch(
-        `${apiBaseUrl}/api/auth/sign-up/email`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            name: `${firstName} ${lastName}`,
-            email,
-            password,
-          }),
-        },
-      );
+      const { error: signUpError } = await authClient.signUp.email({
+        name: `${firstName} ${lastName}`,
+        email,
+        password,
+      });
 
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        const message = body?.error ?? 'Échec de l’inscription. Réessayez.';
-        setError(message);
+      if (signUpError) {
+        setError(signUpError.message ?? 'Échec de l’inscription. Réessayez.');
         return;
       }
 
-      await router.push('/');
+      router.push('/');
+      router.refresh();
     } catch (err) {
       console.error(err);
       setError('Impossible de créer le compte. Réessayez plus tard.');
@@ -70,11 +59,8 @@ export function SignUpForm() {
     }
   }
 
-return ( <Card className="mx-auto w-full max-w-md"> <CardHeader className="items-center text-center"> <CardTitle>Créer un compte</CardTitle> <p className="text-sm text-muted-foreground">
-Rejoignez la communauté Carpool. </p> </CardHeader>
-
-
-  <CardContent>
+return ( <Card className="mx-auto w-full max-w-md">
+  <CardContent className="p-6">
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
         type="text"

@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { Link } from '@/i18n/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { authClient } from '@/lib/auth-client';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -29,27 +30,15 @@ export function SignInForm() {
         return;
       }
 
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') ?? '';
-      const response = await fetch(
-        `${apiBaseUrl}/api/auth/sign-in/email`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({ email, password }),
-        },
-      );
+      const { error: signInError } = await authClient.signIn.email({ email, password });
 
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        const message = body?.error ?? 'Échec de la connexion. Vérifiez vos identifiants.';
-        setError(message);
+      if (signInError) {
+        setError(signInError.message ?? 'Échec de la connexion. Vérifiez vos identifiants.');
         return;
       }
 
-      await router.push('/');
+      router.push('/');
+      router.refresh();
     } catch (err) {
       console.error(err);
       setError('Impossible de se connecter. Réessayez ultérieurement.');
@@ -58,11 +47,8 @@ export function SignInForm() {
     }
   }
 
-return ( <Card className="mx-auto w-full max-w-md"> <CardHeader className="items-center text-center"> <CardTitle>Connexion</CardTitle> <p className="text-sm text-muted-foreground">
-Connectez-vous à votre compte. </p> </CardHeader>
-
-
-  <CardContent>
+return ( <Card className="mx-auto w-full max-w-md">
+  <CardContent className="p-6">
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
         type="email"

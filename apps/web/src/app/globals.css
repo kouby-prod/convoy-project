@@ -91,4 +91,16 @@
     color: var(--color-foreground);
     font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
+
+  /* Browser autofill paints its own pale-blue fill, which fights the design
+     system. Repaint it with the card token via the inset box-shadow trick and
+     keep the text on-token. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-foreground);
+    -webkit-box-shadow: 0 0 0 1000px var(--color-card) inset;
+    caret-color: var(--color-foreground);
+    transition: background-color 9999s ease-out 0s;
+  }
 }

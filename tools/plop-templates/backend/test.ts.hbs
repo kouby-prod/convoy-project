@@ -1,0 +1,46 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Hermetic: mock the DB client so no real database is needed. `listRows`
+// controls what the list query resolves to.
+const listRows = vi.fn();
+vi.mock('../../src/db/client', () => ({
+  db: {
+    select: () => ({ from: () => listRows() }),
+    insert: () => ({ values: () => ({ returning: () => Promise.resolve([]) }) }),
+  },
+}));
+
+// Mock BetterAuth so protected routes can be exercised without real sessions.
+const getSession = vi.fn();
+vi.mock('../../src/auth/auth', () => ({
+  auth: { api: { getSession: (...a: unknown[]) => getSession(...a) } },
+}));
+
+import { {{camelCase name}}Module } from '../../src/modules/{{kebabCase name}}';
+
+describe('{{kebabCase name}} module', () => {
+  beforeEach(() => {
+    listRows.mockReset();
+    getSession.mockReset();
+  });
+
+  it('GET /{{kebabCase name}} returns a list', async () => {
+    listRows.mockResolvedValue([]);
+    const res = await {{camelCase name}}Module.request('/{{kebabCase name}}');
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual([]);
+  });
+
+  it('POST /{{kebabCase name}} returns 401 without a session', async () => {
+    getSession.mockResolvedValue(null);
+    const res = await {{camelCase name}}Module.request('/{{kebabCase name}}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // TODO(domain): match the Create{{pascalCase name}} shape.
+      body: JSON.stringify({ label: 'x' }),
+    });
+    expect(res.status).toBe(401);
+  });
+
+  // TODO(domain): add a happy-path create test (mock getSession + a returned row).
+});

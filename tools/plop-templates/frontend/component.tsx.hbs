@@ -1,0 +1,41 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
+import { createApiClient } from '@carpool/api-client';
+import { env } from '@/lib/env';
+import { Card, CardContent } from '@/components/ui/card';
+
+// Typed RPC client bound to the validated API URL. Response types come straight
+// from the backend contract — never re-type API shapes by hand.
+const api = createApiClient(env.NEXT_PUBLIC_API_URL);
+
+export function {{pascalCase name}}List() {
+  const t = useTranslations('{{pascalCase name}}');
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['{{kebabCase name}}'],
+    queryFn: async () => {
+      const res = await api['{{kebabCase name}}'].$get();
+      if (!res.ok) throw new Error('Failed to load {{name}}');
+      return res.json();
+    },
+  });
+
+  if (isLoading) return <p className="text-muted-foreground">{t('loading')}</p>;
+  if (isError) return <p className="text-destructive">{t('error')}</p>;
+  if (!data?.length) return <p className="text-muted-foreground">{t('empty')}</p>;
+
+  return (
+    <ul className="grid gap-4">
+      {data.map((item) => (
+        <li key={item.id}>
+          <Card>
+            {/* TODO(domain): render the real fields for {{name}}. */}
+            <CardContent className="p-4">{item.label}</CardContent>
+          </Card>
+        </li>
+      ))}
+    </ul>
+  );
+}
