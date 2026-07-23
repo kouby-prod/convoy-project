@@ -1,12 +1,10 @@
 import { pool } from '../db/client';
-import { db } from '../db/client';
-import { trajet as trajetTable, booking as bookingTable } from '../db/trajet-schema';
 import { randomUUID } from 'crypto';
 
 export type CreateTrajetInput = {
   departureCity: string;
-  arrivalCity: string;
-  departureAt: string; // ISO
+  destinationCity: string;
+  departureDateTime: string; // ISO
   seatsTotal: number;
   pricePerSeat: string | number;
   description?: string | null;
@@ -14,20 +12,27 @@ export type CreateTrajetInput = {
 
 export async function createTrajet(driverId: string, input: CreateTrajetInput) {
   const id = randomUUID();
-  const now = new Date();
-  await db.insert(trajetTable).values({
-    id,
-    driverId,
-    departureCity: input.departureCity,
-    arrivalCity: input.arrivalCity,
-    departureAt: new Date(input.departureAt),
-    seatsTotal: input.seatsTotal,
-    seatsAvailable: input.seatsTotal,
-    pricePerSeat: input.pricePerSeat as any,
-    description: input.description ?? null,
-    createdAt: now,
-    updatedAt: now,
-  });
+  const createdAt = new Date();
+  const updatedAt = createdAt;
+
+  await pool.query(
+    `INSERT INTO trajet (id, driver_id, departure_city, arrival_city, departure_at, seats_total, seats_available, price_per_seat, description, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+    [
+      id,
+      driverId,
+      input.departureCity,
+      input.destinationCity,
+      input.departureDateTime,
+      input.seatsTotal,
+      input.seatsTotal,
+      String(input.pricePerSeat),
+      input.description ?? null,
+      createdAt.toISOString(),
+      updatedAt.toISOString(),
+    ],
+  );
+
   return { id };
 }
 
@@ -38,22 +43,22 @@ export async function getTrajetById(id: string) {
 
 export async function searchTrajets(opts: {
   departureCity?: string;
-  arrivalCity?: string;
+  destinationCity?: string;
   date?: string; // ISO date
   limit?: number;
   offset?: number;
 }) {
   const clauses: string[] = [];
-  const params: any[] = [];
+  const params: unknown[] = [];
   let idx = 1;
   if (opts.departureCity) {
     clauses.push(`departure_city ILIKE $${idx}`);
     params.push(`%${opts.departureCity}%`);
     idx++;
   }
-  if (opts.arrivalCity) {
+  if (opts.destinationCity) {
     clauses.push(`arrival_city ILIKE $${idx}`);
-    params.push(`%${opts.arrivalCity}%`);
+    params.push(`%${opts.destinationCity}%`);
     idx++;
   }
   if (opts.date) {
@@ -64,7 +69,9 @@ export async function searchTrajets(opts: {
     end.setHours(23, 59, 59, 999);
     clauses.push(`departure_at BETWEEN $${idx} AND $${idx + 1}`);
     params.push(start.toISOString(), end.toISOString());
-    idx += 2;
+    if (opts.limit || opts.offset) {
+      idx += 2;
+    }
   }
 
   let sql = 'SELECT * FROM trajet';
@@ -73,12 +80,11 @@ export async function searchTrajets(opts: {
   if (opts.limit) {
     sql += ` LIMIT $${idx}`;
     params.push(opts.limit);
-    idx++;
+    if (opts.offset) idx++;
   }
   if (opts.offset) {
     sql += ` OFFSET $${idx}`;
     params.push(opts.offset);
-    idx++;
   }
 
   const res = await pool.query(sql, params);
@@ -107,10 +113,10 @@ export async function bookSeats(trajetId: string, passengerId: string, seats: nu
     await client.query('UPDATE trajet SET seats_available = seats_available - $1, updated_at = now() WHERE id = $2', [seats, trajetId]);
     await client.query('COMMIT');
     return { id: bookingId };
-  } catch (err) {
+  } catch (err: unknown) {
     try {
       await client.query('ROLLBACK');
-    } catch (e) {
+    } catch {
       // ignore
     }
     throw err;

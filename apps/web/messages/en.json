@@ -3,6 +3,7 @@
     "brand": "Convoy",
     "searchPlaceholder": "Search for a ride, a city…",
     "search": "Search",
+    "trajets": "Rides",
     "post": "Offer a ride",
     "contact": "Contact",
     "signIn": "Sign in",
@@ -81,6 +82,22 @@
       }
     ]
   },
+  "Trajets": {
+    "title": "Find your next ride",
+    "subtitle": "Browse available carpool listings and book your seat in a few clicks.",
+    "loading": "Loading rides...",
+    "empty": "No rides available at the moment.",
+    "error": "Unable to load rides.",
+    "departureAt": "Departure",
+    "seats": "Seats",
+    "price": "Price",
+    "description": "Description",
+    "detailTitle": "Ride details",
+    "detailSubtitle": "Review the published ride information.",
+    "backToList": "Back to rides",
+    "comfort": "Comfort",
+    "baggageAllowance": "Baggage"
+  },
   "Features": {
     "title": "What you can do on the site",
     "howItWorks": "How does it work?",
@@ -94,6 +111,42 @@
         "title": "Drive and share",
         "description": "Got free seats in your car? Turn them into an opportunity."
       }
-    ]
-  }
+    ]  },
+  "Annoncer": {
+    "title": "Announce a ride",
+    "subtitle": "Publish your ride and start traveling with passengers",
+    "loading": "Loading form...",
+    "empty": "No announcements available.",
+    "error": "Error loading the form.",
+    "form": {
+      "departureCity": "Departure city",
+      "departureCityPlaceholder": "e.g. Paris",
+      "destinationCity": "Destination city",
+      "destinationCityPlaceholder": "e.g. Lyon",
+      "departureDateTime": "Departure date and time",
+      "seatsTotal": "Number of seats",
+      "seatsTotalPlaceholder": "e.g. 4",
+      "pricePerSeat": "Price per seat (€)",
+      "pricePerSeatPlaceholder": "e.g. 25",
+      "description": "Description (optional)",
+      "descriptionPlaceholder": "Music, wifi, air conditioning...",
+      "comfort": "Comfort level",
+      "comfortStandard": "Standard",
+      "comfortConfort": "Comfort",
+      "comfortPremium": "Premium",
+      "baggageAllowance": "Baggage allowed",
+      "baggageAllowancePlaceholder": "e.g. 1 suitcase, 1 backpack",
+      "submit": "Publish the ride",
+      "submitting": "Publishing...",
+      "errors": {
+        "required": "This field is required",
+        "invalidCity": "Please enter a valid city",
+        "seatsMin": "At least 1 seat required",
+        "priceMin": "Price must be positive",
+        "sameCities": "Departure and destination cities must be different",
+        "pastDate": "Date must be in the future",
+        "apiError": "Error publishing ride. Please try again."
+      },
+      "success": "Ride published successfully!"
+    }  }
 }
