@@ -7,7 +7,7 @@ export const listTrajetsRoute = createRoute({
   summary: 'Search and list trajets',
   parameters: [
     { name: 'departureCity', in: 'query', required: false, schema: { type: 'string' } },
-    { name: 'arrivalCity', in: 'query', required: false, schema: { type: 'string' } },
+    { name: 'destinationCity', in: 'query', required: false, schema: { type: 'string' } },
     { name: 'date', in: 'query', required: false, schema: { type: 'string', format: 'date' } },
     { name: 'limit', in: 'query', required: false, schema: { type: 'integer' } },
     { name: 'offset', in: 'query', required: false, schema: { type: 'integer' } },

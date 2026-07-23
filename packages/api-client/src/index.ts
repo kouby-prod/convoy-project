@@ -13,7 +13,11 @@ export type ApiClient = ReturnType<typeof hc<AppType>>;
  * Create an RPC client bound to a given API base URL (e.g. http://localhost:3001).
  */
 export function createApiClient(baseUrl: string): ApiClient {
-  return hc<AppType>(baseUrl);
+  return hc<AppType>(baseUrl, {
+    init: {
+      credentials: 'include',
+    },
+  });
 }
 
 /**
