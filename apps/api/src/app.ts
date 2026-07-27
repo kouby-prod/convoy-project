@@ -4,8 +4,6 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { healthRoute, pingRoute } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
-import { bookTrajetRoute } from './trajet/routes';
-import * as trajetService from './trajet/service';
 import { trajetModule } from './modules/trajet';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
@@ -67,19 +65,6 @@ const routes = app
   })
   // --- TRAJET domain routes ---
   .route('/', trajetModule)
-  .openapi(bookTrajetRoute, async (c) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: 'Unauthorized' }, 401);
-    const id = c.req.param('id')!;
-    const body = await c.req.json();
-    try {
-      const result = await trajetService.bookSeats(id, session.user.id, body.seats);
-      return c.json(result, 201);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Booking failed';
-      return c.json({ error: message }, 400);
-    }
-  })
   // --- PROOF routes (not domain logic) ---
   .openapi(meRoute, (c) => {
     const { user } = getAuth(c);

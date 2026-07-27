@@ -40,3 +40,26 @@ export const CreateTrajetSchema = z
 export type CreateTrajet = z.infer<typeof CreateTrajetSchema>;
 
 export const TrajetListSchema = z.array(TrajetSchema).describe('TrajetList');
+
+/**
+ * Booking contract — a passenger reserving seats on a trajet.
+ */
+export const CreateBookingSchema = z
+  .object({
+    seats: z.number().int().min(1),
+  })
+  .describe('CreateBooking');
+export type CreateBooking = z.infer<typeof CreateBookingSchema>;
+
+export const BookingSchema = z
+  .object({
+    id: z.string(),
+    trajetId: z.string(),
+    passengerId: z.string(),
+    seats: z.number().int().min(1),
+    status: z.string(),
+    createdAt: z.string().describe('ISO-8601 timestamp'),
+    updatedAt: z.string().describe('ISO-8601 timestamp'),
+  })
+  .describe('Booking');
+export type Booking = z.infer<typeof BookingSchema>;
