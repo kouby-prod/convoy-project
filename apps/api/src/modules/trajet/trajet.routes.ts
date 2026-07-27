@@ -3,6 +3,8 @@ import {
   TrajetSchema,
   TrajetListSchema,
   CreateTrajetSchema,
+  BookingSchema,
+  CreateBookingSchema,
 } from '@carpool/schemas';
 
 // Bearer scheme for the authed routes (cookie sessions work too). Mirrors
@@ -57,6 +59,36 @@ export const createTrajetRoute = createRoute({
     },
     401: {
       description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const bookTrajetRoute = createRoute({
+  method: 'post',
+  path: '/trajets/{id}/book',
+  tags: ['trajet'],
+  summary: 'Book seats on a trajet',
+  security: bearerAuth,
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+    body: { content: { 'application/json': { schema: CreateBookingSchema } } },
+  },
+  responses: {
+    201: {
+      description: 'Booking created',
+      content: { 'application/json': { schema: BookingSchema } },
+    },
+    400: {
+      description: 'Not enough seats available',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Trajet not found',
       content: { 'application/json': { schema: errorSchema } },
     },
   },

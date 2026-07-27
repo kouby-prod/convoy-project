@@ -19,6 +19,8 @@ export const trajet = pgTable('trajet', {
   seatsAvailable: integer('seats_available').notNull(),
   pricePerSeat: numeric('price_per_seat').notNull(),
   description: text('description'),
+  comfort: text('comfort'),
+  baggageAllowance: text('baggage_allowance'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()).notNull(),
 });
