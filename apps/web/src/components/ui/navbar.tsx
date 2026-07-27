@@ -66,8 +66,8 @@ const themeAccents = {
 
 /** Nav links: a translation key + the route it points to. */
 const NAV_LINKS = [
-  { translationKey: 'search', href: '/search' },
-  { translationKey: 'post', href: '/post' },
+  { translationKey: 'search', href: '/trajet' },
+  { translationKey: 'post', href: '/trajet/nouveau' },
   { translationKey: 'contact', href: '/contact' },
 ] as const;
 
