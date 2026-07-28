@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { TrajetsList } from '@/components/trajets/trajets-list';
@@ -30,7 +31,9 @@ export default async function TrajetsPage({
         </Link>
       </div>
 
-      <TrajetsList />
+      <Suspense fallback={<p className="text-muted-foreground">{t('loading')}</p>}>
+        <TrajetsList />
+      </Suspense>
     </section>
   );
 }

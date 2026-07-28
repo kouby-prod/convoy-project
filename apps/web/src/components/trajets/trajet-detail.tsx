@@ -4,10 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { createApiClient } from '@carpool/api-client';
 import { Link } from '@/i18n/navigation';
+import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TrajetBookings } from '@/components/trajets/trajet-bookings';
+import { TrajetBookingForm } from '@/components/trajets/trajet-booking-form';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -20,6 +23,7 @@ function formatDateTime(value: string) {
 
 export function TrajetDetail({ id }: { id: string }) {
   const t = useTranslations('Trajets');
+  const { data: session } = authClient.useSession();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['trajets', id],
@@ -81,6 +85,12 @@ export function TrajetDetail({ id }: { id: string }) {
           ) : null}
         </CardContent>
       </Card>
+
+      {session?.user?.id === data.driverId ? (
+        <TrajetBookings trajetId={id} />
+      ) : (
+        <TrajetBookingForm trajetId={id} seatsAvailable={data.seatsAvailable} />
+      )}
     </div>
   );
 }

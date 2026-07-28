@@ -96,7 +96,54 @@
     "detailSubtitle": "Review the published ride information.",
     "backToList": "Back to rides",
     "comfort": "Comfort",
-    "baggageAllowance": "Baggage"
+    "baggageAllowance": "Baggage",
+    "filters": {
+      "departureCity": "Departure city",
+      "destinationCity": "Destination city",
+      "date": "Date",
+      "comfortAny": "Any comfort",
+      "comfortStandard": "Standard",
+      "comfortConfort": "Comfort",
+      "comfortPremium": "Premium",
+      "maxPrice": "Max price",
+      "minSeats": "Min seats",
+      "baggageAllowance": "Baggage needed",
+      "apply": "Search",
+      "reset": "Reset"
+    },
+    "booking": {
+      "title": "Book a seat",
+      "seatsLabel": "Number of seats",
+      "submit": "Book",
+      "submitting": "Booking...",
+      "success": "Your booking request has been sent to the driver.",
+      "full": "This ride is full.",
+      "signInPrompt": "Sign in to book a seat on this ride.",
+      "signInLink": "Sign in",
+      "cancel": "Cancel my booking",
+      "cancelling": "Cancelling...",
+      "cancelledNotice": "Your booking has been cancelled.",
+      "errors": {
+        "generic": "Unable to complete the booking. Please try again.",
+        "cancelGeneric": "Unable to cancel this booking. Please try again."
+      }
+    },
+    "bookings": {
+      "title": "Booking requests",
+      "loading": "Loading bookings...",
+      "empty": "No booking requests for this ride.",
+      "error": "Unable to load bookings.",
+      "seats": "Seats requested",
+      "accept": "Accept",
+      "reject": "Reject",
+      "actionError": "Unable to update this booking.",
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled"
+      }
+    }
   },
   "Features": {
     "title": "What you can do on the site",
