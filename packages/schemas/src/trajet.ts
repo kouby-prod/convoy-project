@@ -1,14 +1,89 @@
 import { z } from 'zod';
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   This module holds TWO related but distinct trajet contracts. They are not
+   interchangeable, and the names are deliberately different so a mix-up is a
+   compile error rather than a runtime surprise.
+
+   1. `Trajet`        — the persisted entity. Mirrors the `trajet` Drizzle
+                        table and is what the API actually serves. Consumed by
+                        `apps/api` and the typed RPC client.
+
+   2. `TrajetListing` — the richer search/detail model the web UI renders
+                        (nested driver profile, amenities, arrival leg). Backed
+                        by fixtures in `apps/web/src/lib/trajets.ts` until the
+                        API grows the matching columns.
+
+   When the API catches up, `TrajetListing` should collapse into `Trajet`.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────── 1. Persisted entity ───────────────────── */
+
 /**
- * Trajet (ride) contracts — the shared shape of a carpool ride, its search
- * query, and the two write operations the UI performs (publish a ride, book a
- * seat).
- *
- * Defined here so `apps/web` (and later `apps/api` + `apps/mobile`) all agree
- * on one shape. When the `/trajet` backend module lands it must serve exactly
- * these types; the web fixtures in `apps/web/src/lib/trajets.ts` already do.
+ * Trajet contract — the single source of truth for this entity.
+ * Defined once here in @carpool/schemas and consumed by the API routes and the
+ * typed RPC client. Changing a shape below produces type errors everywhere it
+ * is used until each consumer is updated (the contract spine).
  */
+export const TrajetSchema = z
+  .object({
+    id: z.string().uuid(),
+    driverId: z.string().min(1),
+    departureCity: z.string().min(1),
+    destinationCity: z.string().min(1),
+    departureDateTime: z.string().datetime(),
+    seatsTotal: z.number().int().min(1),
+    seatsAvailable: z.number().int().min(0),
+    pricePerSeat: z.number().nonnegative(),
+    description: z.string().max(1000).optional().nullable(),
+    comfort: z.enum(['standard', 'confort', 'premium']).optional().nullable(),
+    baggageAllowance: z.string().max(500).optional().nullable(),
+    createdAt: z.string().describe('ISO-8601 timestamp'),
+    updatedAt: z.string().describe('ISO-8601 timestamp'),
+  })
+  .describe('Trajet');
+export type Trajet = z.infer<typeof TrajetSchema>;
+
+export const CreateTrajetSchema = z
+  .object({
+    departureCity: z.string().min(1),
+    destinationCity: z.string().min(1),
+    departureDateTime: z.string().datetime(),
+    seatsTotal: z.number().int().min(1),
+    pricePerSeat: z.number().nonnegative(),
+    description: z.string().max(1000).optional().nullable(),
+    comfort: z.enum(['standard', 'confort', 'premium']).optional().nullable(),
+    baggageAllowance: z.string().max(500).optional().nullable(),
+  })
+  .describe('CreateTrajet');
+export type CreateTrajet = z.infer<typeof CreateTrajetSchema>;
+
+export const TrajetListSchema = z.array(TrajetSchema).describe('TrajetList');
+
+/**
+ * Booking contract — a passenger reserving seats on a trajet.
+ */
+export const CreateBookingSchema = z
+  .object({
+    seats: z.number().int().min(1),
+  })
+  .describe('CreateBooking');
+export type CreateBooking = z.infer<typeof CreateBookingSchema>;
+
+export const BookingSchema = z
+  .object({
+    id: z.string(),
+    trajetId: z.string(),
+    passengerId: z.string(),
+    seats: z.number().int().min(1),
+    status: z.string(),
+    createdAt: z.string().describe('ISO-8601 timestamp'),
+    updatedAt: z.string().describe('ISO-8601 timestamp'),
+  })
+  .describe('Booking');
+export type Booking = z.infer<typeof BookingSchema>;
+
+/* ─────────────────────────── 2. UI listing model ───────────────────────── */
 
 /**
  * Options a driver advertises on a ride. Positive and negative variants both
@@ -55,7 +130,13 @@ export const DriverProfileSchema = z
 
 export type DriverProfile = z.infer<typeof DriverProfileSchema>;
 
-export const TrajetSchema = z
+/**
+ * The search-result / detail shape rendered by the `/trajet` pages. Richer than
+ * the persisted `Trajet` above: it carries the arrival leg, the amenity list
+ * and the embedded driver profile that the UI needs but the table does not yet
+ * store.
+ */
+export const TrajetListingSchema = z
   .object({
     id: z.string(),
     departureCity: z.string(),
@@ -75,9 +156,9 @@ export const TrajetSchema = z
     description: z.string(),
     driver: DriverProfileSchema,
   })
-  .describe('Trajet');
+  .describe('TrajetListing');
 
-export type Trajet = z.infer<typeof TrajetSchema>;
+export type TrajetListing = z.infer<typeof TrajetListingSchema>;
 
 /**
  * Search filters. Everything is optional so `/trajet` with no query renders the
