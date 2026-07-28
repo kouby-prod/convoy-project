@@ -3,7 +3,6 @@
     "brand": "Convoy",
     "searchPlaceholder": "Search for a ride, a city…",
     "search": "Search",
-    "trajets": "Rides",
     "post": "Offer a ride",
     "contact": "Contact",
     "signIn": "Sign in",
@@ -47,6 +46,8 @@
     "error": "Could not load the rides. Please try again later.",
     "ratingLabel": "{rating} out of 5 — {count} reviews",
     "seatsAvailable": "{count, plural, =0 {full} one {# seat left} other {# seats left}}",
+    "authRequired": "Sign in to continue.",
+    "authCta": "Sign in",
     "amenities": {
       "smoking": "Smoking allowed",
       "nonSmoking": "Non-smoking",
@@ -72,6 +73,12 @@
       "withStops": "With an intermediate stop",
       "submit": "Search"
     },
+    "comfort": {
+      "legend": "Comfort",
+      "standard": "Standard",
+      "confort": "Comfort",
+      "premium": "Premium"
+    },
     "detail": {
       "departureAt": "Departs at {time}",
       "arrivalAt": "Arrives around {time}",
@@ -82,7 +89,9 @@
       "vehicle": "Make and model",
       "carSeats": "Seats in the car",
       "carSeatsValue": "{count, plural, one {# seat} other {# seats}}",
-      "carPhoto": "Photo"
+      "carPhoto": "Photo",
+      "comfort": "Comfort",
+      "baggage": "Baggage"
     },
     "booking": {
       "title": "Book this ride",
@@ -121,7 +130,9 @@
       "submit": "Publish the ride",
       "submitting": "Publishing…",
       "failed": "Publishing failed. Please try again later.",
-      "invalid": "Please check the form fields."
+      "invalid": "Please check the form fields.",
+      "baggage": "Baggage",
+      "baggagePlaceholder": "E.g. one cabin bag per person"
     }
   },
   "Testimonials": {
@@ -167,22 +178,6 @@
       }
     ]
   },
-  "Trajets": {
-    "title": "Find your next ride",
-    "subtitle": "Browse available carpool listings and book your seat in a few clicks.",
-    "loading": "Loading rides...",
-    "empty": "No rides available at the moment.",
-    "error": "Unable to load rides.",
-    "departureAt": "Departure",
-    "seats": "Seats",
-    "price": "Price",
-    "description": "Description",
-    "detailTitle": "Ride details",
-    "detailSubtitle": "Review the published ride information.",
-    "backToList": "Back to rides",
-    "comfort": "Comfort",
-    "baggageAllowance": "Baggage"
-  },
   "Features": {
     "title": "What you can do on the site",
     "howItWorks": "How does it work?",
@@ -196,42 +191,6 @@
         "title": "Drive and share",
         "description": "Got free seats in your car? Turn them into an opportunity."
       }
-    ]  },
-  "Annoncer": {
-    "title": "Announce a ride",
-    "subtitle": "Publish your ride and start traveling with passengers",
-    "loading": "Loading form...",
-    "empty": "No announcements available.",
-    "error": "Error loading the form.",
-    "form": {
-      "departureCity": "Departure city",
-      "departureCityPlaceholder": "e.g. Paris",
-      "destinationCity": "Destination city",
-      "destinationCityPlaceholder": "e.g. Lyon",
-      "departureDateTime": "Departure date and time",
-      "seatsTotal": "Number of seats",
-      "seatsTotalPlaceholder": "e.g. 4",
-      "pricePerSeat": "Price per seat (€)",
-      "pricePerSeatPlaceholder": "e.g. 25",
-      "description": "Description (optional)",
-      "descriptionPlaceholder": "Music, wifi, air conditioning...",
-      "comfort": "Comfort level",
-      "comfortStandard": "Standard",
-      "comfortConfort": "Comfort",
-      "comfortPremium": "Premium",
-      "baggageAllowance": "Baggage allowed",
-      "baggageAllowancePlaceholder": "e.g. 1 suitcase, 1 backpack",
-      "submit": "Publish the ride",
-      "submitting": "Publishing...",
-      "errors": {
-        "required": "This field is required",
-        "invalidCity": "Please enter a valid city",
-        "seatsMin": "At least 1 seat required",
-        "priceMin": "Price must be positive",
-        "sameCities": "Departure and destination cities must be different",
-        "pastDate": "Date must be in the future",
-        "apiError": "Error publishing ride. Please try again."
-      },
-      "success": "Ride published successfully!"
-    }  }
+    ]
+  }
 }

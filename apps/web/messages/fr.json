@@ -3,7 +3,6 @@
     "brand": "Convoy",
     "searchPlaceholder": "Rechercher un trajet, une ville…",
     "search": "Rechercher",
-    "trajets": "Trajets",
     "post": "Annoncer",
     "contact": "Contact",
     "signIn": "Connexion",
@@ -47,6 +46,8 @@
     "error": "Impossible de charger les trajets. Réessayez plus tard.",
     "ratingLabel": "{rating} sur 5 — {count} avis",
     "seatsAvailable": "{count, plural, =0 {complet} one {# place libre} other {# places libres}}",
+    "authRequired": "Connectez-vous pour continuer.",
+    "authCta": "Se connecter",
     "amenities": {
       "smoking": "Fumeur accepté",
       "nonSmoking": "Non-fumeur",
@@ -72,6 +73,12 @@
       "withStops": "Avec arrêt intermédiaire",
       "submit": "Rechercher"
     },
+    "comfort": {
+      "legend": "Confort",
+      "standard": "Standard",
+      "confort": "Confort",
+      "premium": "Premium"
+    },
     "detail": {
       "departureAt": "Départ à {time}",
       "arrivalAt": "Arrivée vers {time}",
@@ -82,7 +89,9 @@
       "vehicle": "Marque et modèle",
       "carSeats": "Places dans la voiture",
       "carSeatsValue": "{count, plural, one {# place} other {# places}}",
-      "carPhoto": "Photo"
+      "carPhoto": "Photo",
+      "comfort": "Confort",
+      "baggage": "Bagages"
     },
     "booking": {
       "title": "Réserver ce trajet",
@@ -121,7 +130,9 @@
       "submit": "Publier le trajet",
       "submitting": "Publication…",
       "failed": "La publication a échoué. Réessayez plus tard.",
-      "invalid": "Vérifiez les champs du formulaire."
+      "invalid": "Vérifiez les champs du formulaire.",
+      "baggage": "Bagages",
+      "baggagePlaceholder": "Ex. : un bagage cabine par personne"
     }
   },
   "Testimonials": {
@@ -167,22 +178,6 @@
       }
     ]
   },
-  "Trajets": {
-    "title": "Trouvez votre prochain trajet",
-    "subtitle": "Consultez les annonces de covoiturage disponibles et réservez une place en quelques clics.",
-    "loading": "Chargement des trajets...",
-    "empty": "Aucun trajet disponible pour le moment.",
-    "error": "Impossible de charger les trajets.",
-    "departureAt": "Départ",
-    "seats": "Places",
-    "price": "Prix",
-    "description": "Description",
-    "detailTitle": "Détail du trajet",
-    "detailSubtitle": "Retrouvez les informations de l'annonce publiée.",
-    "backToList": "Retour aux trajets",
-    "comfort": "Confort",
-    "baggageAllowance": "Bagages"
-  },
   "Features": {
     "title": "Les fonctionnalités possibles du site",
     "howItWorks": "Comment ça marche ?",
@@ -197,43 +192,5 @@
         "description": "Votre voiture a des places libres ? Faites-en une opportunité."
       }
     ]
-  },
-  "Annoncer": {
-    "title": "Annoncer un trajet",
-    "subtitle": "Publiez votre trajet et commencez à voyager avec des passagers",
-    "loading": "Chargement du formulaire...",
-    "empty": "Aucune annonce disponible.",
-    "error": "Erreur lors du chargement du formulaire.",
-    "form": {
-      "departureCity": "Ville de départ",
-      "departureCityPlaceholder": "ex. Paris",
-      "destinationCity": "Ville d'arrivée",
-      "destinationCityPlaceholder": "ex. Lyon",
-      "departureDateTime": "Date et heure de départ",
-      "seatsTotal": "Nombre de places",
-      "seatsTotalPlaceholder": "ex. 4",
-      "pricePerSeat": "Prix par place (€)",
-      "pricePerSeatPlaceholder": "ex. 25",
-      "description": "Description (optionnel)",
-      "descriptionPlaceholder": "Musique, wifi, climatisation...",
-      "comfort": "Niveau de confort",
-      "comfortStandard": "Standard",
-      "comfortConfort": "Confort",
-      "comfortPremium": "Premium",
-      "baggageAllowance": "Bagages autorisés",
-      "baggageAllowancePlaceholder": "ex. 1 valise, 1 sac à dos",
-      "submit": "Publier le trajet",
-      "submitting": "Publication en cours...",
-      "errors": {
-        "required": "Ce champ est obligatoire",
-        "invalidCity": "Veuillez entrer une ville valide",
-        "seatsMin": "Au moins 1 place requise",
-        "priceMin": "Le prix doit être positif",
-        "sameCities": "Les villes de départ et d'arrivée doivent être différentes",
-        "pastDate": "La date doit être dans le futur",
-        "apiError": "Erreur lors de la publication. Veuillez réessayer."
-      },
-      "success": "Trajet publié avec succès!"
-    }
   }
 }

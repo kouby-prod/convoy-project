@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { CheckCircle2 } from 'lucide-react';
 import { CreateBookingRequestSchema } from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
+import { authClient } from '@/lib/auth-client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,6 +25,9 @@ export function TrajetBookingForm({ trajetId, seatsAvailable }: TrajetBookingFor
   const t = useTranslations('Trajet');
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
+  // POST /trajets/:id/book is authenticated — without a session the request can
+  // only ever 401, so prompt for sign-in instead of showing a form that fails.
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   const mutation = useMutation({
     mutationFn: createBooking,
@@ -54,6 +58,22 @@ export function TrajetBookingForm({ trajetId, seatsAvailable }: TrajetBookingFor
     }
 
     mutation.mutate(parsed.data);
+  }
+
+  if (!isSessionPending && !session?.user) {
+    return (
+      <Card className="mx-auto w-full max-w-md">
+        <CardContent className="flex flex-col items-center gap-3 p-8 pt-8 text-center">
+          <p className="text-sm text-muted-foreground">{t('authRequired')}</p>
+          <Link
+            href="/sign-in"
+            className="text-sm font-semibold text-primary hover:underline"
+          >
+            {t('authCta')}
+          </Link>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (mutation.isSuccess) {

@@ -59,6 +59,10 @@ services:
         # Inlined into the browser bundle at build time (from root .env).
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     restart: unless-stopped
+    environment:
+      # Read at runtime by server components; the browser bundle keeps using the
+      # public URL baked in above.
+      INTERNAL_API_URL: ${DOCKER_INTERNAL_API_URL}
     ports:
       - '${WEB_PORT}:3000'
     depends_on:

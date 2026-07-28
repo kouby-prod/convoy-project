@@ -15,6 +15,13 @@
       "when": 1785165160649,
       "tag": "0001_bumpy_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785246713434,
+      "tag": "0002_white_rhodey",
+      "breakpoints": true
     }
   ]
 }

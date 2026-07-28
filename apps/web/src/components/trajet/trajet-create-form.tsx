@@ -6,11 +6,19 @@ import { useTranslations } from 'next-intl';
 import { Send } from 'lucide-react';
 import { CreateTrajetRequestSchema, type TrajetAmenity } from '@carpool/schemas';
 import { Link, useRouter } from '@/i18n/navigation';
+import { authClient } from '@/lib/auth-client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { LabelledField } from '@/components/ui/labelled-field';
 import { AmenityToggleGroup } from '@/components/trajet/trajet-amenities';
 import { createTrajet } from '@/lib/trajets';
@@ -21,9 +29,15 @@ export function TrajetCreateForm() {
   const t = useTranslations('Trajet');
   const router = useRouter();
   const queryClient = useQueryClient();
+  // POST /trajets is authenticated — without a session the request can only
+  // ever 401, so prompt for sign-in instead of showing a form that fails.
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   const [amenities, setAmenities] = useState<TrajetAmenity[]>([]);
   const [hasIntermediateStop, setHasIntermediateStop] = useState(false);
+  // Radix Select is controlled, so comfort lives in state rather than FormData
+  // — same as the amenity toggles and the stop checkbox above.
+  const [comfort, setComfort] = useState<'standard' | 'confort' | 'premium'>('standard');
   const [error, setError] = useState('');
 
   const mutation = useMutation({
@@ -75,6 +89,8 @@ export function TrajetCreateForm() {
       amenities,
       hasIntermediateStop,
       description: formData.get('description')?.toString() ?? '',
+      comfort,
+      baggageAllowance: formData.get('baggageAllowance')?.toString() ?? '',
     });
 
     if (!parsed.success) {
@@ -83,6 +99,19 @@ export function TrajetCreateForm() {
     }
 
     mutation.mutate(parsed.data);
+  }
+
+  if (!isSessionPending && !session?.user) {
+    return (
+      <Card className="mx-auto w-full max-w-md">
+        <CardContent className="flex flex-col items-center gap-3 p-8 pt-8 text-center">
+          <p className="text-sm text-muted-foreground">{t('authRequired')}</p>
+          <Link href="/sign-in" className="text-sm font-semibold text-primary hover:underline">
+            {t('authCta')}
+          </Link>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -138,6 +167,27 @@ export function TrajetCreateForm() {
                 />
               </LabelledField>
             </div>
+          </Field>
+
+          <Field label={t('comfort.legend')}>
+            <Select value={comfort} onValueChange={(value) => setComfort(value as typeof comfort)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">{t('comfort.standard')}</SelectItem>
+                <SelectItem value="confort">{t('comfort.confort')}</SelectItem>
+                <SelectItem value="premium">{t('comfort.premium')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <LabelledField label={t('create.baggage')} htmlFor="create-baggage">
+              <Input
+                id="create-baggage"
+                name="baggageAllowance"
+                maxLength={500}
+                placeholder={t('create.baggagePlaceholder')}
+              />
+            </LabelledField>
           </Field>
 
           <Field label={t('create.options')}>

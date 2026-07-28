@@ -9,6 +9,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 function createChain(result: unknown) {
   const chain: Record<string, unknown> = {
     from: () => chain,
+    leftJoin: () => chain,
+    orderBy: () => chain,
     where: () => chain,
     for: () => chain,
     values: () => chain,
@@ -69,15 +71,39 @@ function makeTrajetRow(overrides: Partial<Record<string, unknown>> = {}) {
     departureCity: 'Montreal',
     arrivalCity: 'Quebec',
     departureAt: now,
+    departurePlace: null,
+    arrivalPlace: null,
+    arrivalAt: null,
     seatsTotal: 3,
     seatsAvailable: 3,
     pricePerSeat: '20',
     description: 'A sample trajet',
     comfort: null,
     baggageAllowance: null,
+    amenities: [],
+    hasIntermediateStop: false,
     createdAt: now,
     updatedAt: now,
     ...overrides,
+  };
+}
+
+/** The driver account the reads join against. */
+function makeUserRow(overrides: Partial<Record<string, unknown>> = {}) {
+  return { id: 'u_1', name: 'Ada Lovelace', email: 'ada@example.com', ...overrides };
+}
+
+/**
+ * Reads select `{ trajet, driver }` through a leftJoin, so the mock must return
+ * that shape rather than a flat row.
+ */
+function makeJoinedRow(
+  trajetOverrides: Partial<Record<string, unknown>> = {},
+  driverOverrides: Partial<Record<string, unknown>> | null = {},
+) {
+  return {
+    trajet: makeTrajetRow(trajetOverrides),
+    driver: driverOverrides === null ? null : makeUserRow(driverOverrides),
   };
 }
 
@@ -106,12 +132,62 @@ describe('trajet module', () => {
   });
 
   it('GET /trajets/:id returns the trajet', async () => {
-    dbState.selectResult = [makeTrajetRow()];
+    dbState.selectResult = [makeJoinedRow()];
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111');
     expect(res.status).toBe(200);
     const body = (await res.json()) as { destinationCity: string; pricePerSeat: number };
     expect(body.destinationCity).toBe('Quebec');
     expect(body.pricePerSeat).toBe(20);
+  });
+
+  it('GET /trajets embeds the joined driver, splitting the account name', async () => {
+    dbState.selectResult = [makeJoinedRow()];
+    const res = await trajetModule.request('/trajets');
+    expect(res.status).toBe(200);
+    const [first] = (await res.json()) as { driver: Record<string, unknown> }[];
+    expect(first!.driver).toMatchObject({
+      id: 'u_1',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      // No vehicle table and no reviews yet — reported as unknown, never faked.
+      carMake: null,
+      carSeats: null,
+      rating: null,
+      reviewCount: null,
+    });
+  });
+
+  it('GET /trajets falls back to the driver id when the account row is missing', async () => {
+    dbState.selectResult = [makeJoinedRow({}, null)];
+    const res = await trajetModule.request('/trajets');
+    expect(res.status).toBe(200);
+    const [first] = (await res.json()) as { driver: Record<string, unknown> }[];
+    expect(first!.driver).toMatchObject({ id: 'u_1', firstName: '', lastName: '' });
+  });
+
+  it('GET /trajets returns amenities and the stop flag', async () => {
+    dbState.selectResult = [
+      makeJoinedRow({ amenities: ['nonSmoking', 'luggage'], hasIntermediateStop: true }),
+    ];
+    const res = await trajetModule.request('/trajets');
+    const [first] = (await res.json()) as { amenities: string[]; hasIntermediateStop: boolean }[];
+    expect(first!.amenities).toEqual(['nonSmoking', 'luggage']);
+    expect(first!.hasIntermediateStop).toBe(true);
+  });
+
+  it('GET /trajets accepts the full search filter set', async () => {
+    dbState.selectResult = [];
+    const query =
+      '?from=Montreal&to=Quebec&date=2026-08-15&time=09:00&seats=2&maxPrice=50' +
+      '&amenities=nonSmoking,luggage&stopPolicy=direct';
+    const res = await trajetModule.request(`/trajets${query}`);
+    expect(res.status).toBe(200);
+    expect(db.select).toHaveBeenCalled();
+  });
+
+  it('GET /trajets rejects an out-of-range seats filter', async () => {
+    const res = await trajetModule.request('/trajets?seats=99');
+    expect(res.status).toBe(400);
   });
 
   it('POST /trajets returns 401 without a session', async () => {
@@ -133,6 +209,7 @@ describe('trajet module', () => {
   it('POST /trajets creates a trajet when authenticated', async () => {
     getSession.mockResolvedValue(sessionFor('user'));
     dbState.insertResult = [makeTrajetRow()];
+    dbState.selectResult = [makeJoinedRow()]; // the response re-reads via the join
 
     const res = await trajetModule.request('/trajets', {
       method: 'POST',
@@ -179,6 +256,11 @@ describe('trajet module', () => {
         passengerId: 'u_1',
         seats: 2,
         status: 'confirmed',
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        email: 'ada@example.com',
+        phone: '+15145550123',
+        message: 'See you at the station',
         createdAt: now,
         updatedAt: now,
       },
@@ -187,12 +269,27 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 2 }),
+      body: JSON.stringify({
+        seats: 2,
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        email: 'ada@example.com',
+        phone: '+15145550123',
+        message: 'See you at the station',
+      }),
     });
 
     expect(res.status).toBe(201);
     const body = await res.json();
-    expect(body).toMatchObject({ id: 'b_1', seats: 2, status: 'confirmed' });
+    // The contact details the passenger typed are stored, not silently dropped.
+    expect(body).toMatchObject({
+      id: 'b_1',
+      seats: 2,
+      status: 'confirmed',
+      firstName: 'Ada',
+      email: 'ada@example.com',
+      message: 'See you at the station',
+    });
   });
 
   it('POST /trajets/:id/book returns 400 when not enough seats are available', async () => {

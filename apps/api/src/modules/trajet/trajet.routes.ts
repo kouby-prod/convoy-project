@@ -2,6 +2,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 import {
   TrajetSchema,
   TrajetListSchema,
+  TrajetQuerySchema,
   CreateTrajetSchema,
   BookingSchema,
   CreateBookingSchema,
@@ -17,6 +18,10 @@ export const listTrajetsRoute = createRoute({
   path: '/trajets',
   tags: ['trajet'],
   summary: 'List trajets',
+  description:
+    'Search filters are applied server-side. A bare call returns every ride, ' +
+    'ordered by departure.',
+  request: { query: TrajetQuerySchema },
   responses: {
     200: {
       description: 'List of trajets',
