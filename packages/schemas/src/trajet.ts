@@ -42,7 +42,34 @@ export type CreateTrajet = z.infer<typeof CreateTrajetSchema>;
 export const TrajetListSchema = z.array(TrajetSchema).describe('TrajetList');
 
 /**
+ * Search/filter query for `GET /trajets`. Every field is optional and
+ * additive (AND-combined) — an absent field applies no filter.
+ * `departureCity`/`destinationCity`/`baggageAllowance` are case-insensitive
+ * substring matches; `date` matches trajets departing on that calendar day.
+ * There is no `driverRating` filter — no rating/review system exists yet.
+ */
+export const TrajetSearchQuerySchema = z
+  .object({
+    departureCity: z.string().min(1).optional(),
+    destinationCity: z.string().min(1).optional(),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional()
+      .describe('YYYY-MM-DD'),
+    minSeats: z.coerce.number().int().min(1).optional(),
+    maxPrice: z.coerce.number().nonnegative().optional(),
+    comfort: z.enum(['standard', 'confort', 'premium']).optional(),
+    baggageAllowance: z.string().min(1).optional(),
+  })
+  .describe('TrajetSearchQuery');
+export type TrajetSearchQuery = z.infer<typeof TrajetSearchQuerySchema>;
+
+/**
  * Booking contract — a passenger reserving seats on a trajet.
+ * A booking starts `pending` (seats are provisionally held) and the driver
+ * moves it to `confirmed` or `rejected` via UpdateBookingStatusSchema.
+ * `cancelled` is reserved for a future passenger-initiated cancellation.
  */
 export const CreateBookingSchema = z
   .object({
@@ -51,15 +78,30 @@ export const CreateBookingSchema = z
   .describe('CreateBooking');
 export type CreateBooking = z.infer<typeof CreateBookingSchema>;
 
+export const BookingStatusSchema = z.enum(['pending', 'confirmed', 'rejected', 'cancelled']);
+export type BookingStatus = z.infer<typeof BookingStatusSchema>;
+
 export const BookingSchema = z
   .object({
     id: z.string(),
     trajetId: z.string(),
     passengerId: z.string(),
     seats: z.number().int().min(1),
-    status: z.string(),
+    status: BookingStatusSchema,
     createdAt: z.string().describe('ISO-8601 timestamp'),
     updatedAt: z.string().describe('ISO-8601 timestamp'),
   })
   .describe('Booking');
 export type Booking = z.infer<typeof BookingSchema>;
+
+export const BookingListSchema = z.array(BookingSchema).describe('BookingList');
+
+/**
+ * Driver-only action: accept or reject a pending booking request.
+ */
+export const UpdateBookingStatusSchema = z
+  .object({
+    status: z.enum(['confirmed', 'rejected']),
+  })
+  .describe('UpdateBookingStatus');
+export type UpdateBookingStatus = z.infer<typeof UpdateBookingStatusSchema>;

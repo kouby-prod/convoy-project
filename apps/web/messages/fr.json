@@ -96,7 +96,54 @@
     "detailSubtitle": "Retrouvez les informations de l'annonce publiée.",
     "backToList": "Retour aux trajets",
     "comfort": "Confort",
-    "baggageAllowance": "Bagages"
+    "baggageAllowance": "Bagages",
+    "filters": {
+      "departureCity": "Ville de départ",
+      "destinationCity": "Ville d'arrivée",
+      "date": "Date",
+      "comfortAny": "Tous les conforts",
+      "comfortStandard": "Standard",
+      "comfortConfort": "Confort",
+      "comfortPremium": "Premium",
+      "maxPrice": "Prix maximum",
+      "minSeats": "Places minimum",
+      "baggageAllowance": "Bagages recherchés",
+      "apply": "Rechercher",
+      "reset": "Réinitialiser"
+    },
+    "booking": {
+      "title": "Réserver une place",
+      "seatsLabel": "Nombre de places",
+      "submit": "Réserver",
+      "submitting": "Réservation en cours...",
+      "success": "Votre demande de réservation a été envoyée au conducteur.",
+      "full": "Ce trajet est complet.",
+      "signInPrompt": "Connectez-vous pour réserver une place sur ce trajet.",
+      "signInLink": "Se connecter",
+      "cancel": "Annuler ma réservation",
+      "cancelling": "Annulation en cours...",
+      "cancelledNotice": "Votre réservation a été annulée.",
+      "errors": {
+        "generic": "Impossible d'effectuer la réservation. Veuillez réessayer.",
+        "cancelGeneric": "Impossible d'annuler cette réservation. Veuillez réessayer."
+      }
+    },
+    "bookings": {
+      "title": "Demandes de réservation",
+      "loading": "Chargement des réservations...",
+      "empty": "Aucune demande de réservation pour ce trajet.",
+      "error": "Impossible de charger les réservations.",
+      "seats": "Places demandées",
+      "accept": "Accepter",
+      "reject": "Refuser",
+      "actionError": "Impossible de mettre à jour cette réservation.",
+      "status": {
+        "pending": "En attente",
+        "confirmed": "Confirmée",
+        "rejected": "Refusée",
+        "cancelled": "Annulée"
+      }
+    }
   },
   "Features": {
     "title": "Les fonctionnalités possibles du site",

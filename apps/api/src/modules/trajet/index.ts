@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
+import { and, eq, gte, ilike, lt, lte } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { db } from '../../db/client';
@@ -10,6 +10,9 @@ import {
   getTrajetRoute,
   createTrajetRoute,
   bookTrajetRoute,
+  listTrajetBookingsRoute,
+  updateBookingStatusRoute,
+  cancelBookingRoute,
 } from './trajet.routes';
 
 /**
@@ -27,10 +30,32 @@ app.use('/trajets', async (c, next) =>
   c.req.method === 'POST' ? requireAuth(c, next) : next(),
 );
 app.use('/trajets/:id/book', requireAuth);
+app.use('/trajets/:id/bookings', requireAuth);
+app.use('/trajets/:id/bookings/:bookingId', requireAuth);
+app.use('/trajets/:id/bookings/:bookingId/cancel', requireAuth);
 
 export const trajetModule = app
   .openapi(listTrajetsRoute, async (c) => {
-    const rows = await db.select().from(trajet);
+    const query = c.req.valid('query');
+    const conditions = [];
+
+    if (query.departureCity) conditions.push(ilike(trajet.departureCity, `%${query.departureCity}%`));
+    if (query.destinationCity) conditions.push(ilike(trajet.arrivalCity, `%${query.destinationCity}%`));
+    if (query.date) {
+      const dayStart = new Date(`${query.date}T00:00:00.000Z`);
+      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+      conditions.push(gte(trajet.departureAt, dayStart), lt(trajet.departureAt, dayEnd));
+    }
+    if (query.minSeats !== undefined) conditions.push(gte(trajet.seatsAvailable, query.minSeats));
+    if (query.maxPrice !== undefined) conditions.push(lte(trajet.pricePerSeat, query.maxPrice.toString()));
+    if (query.comfort) conditions.push(eq(trajet.comfort, query.comfort));
+    if (query.baggageAllowance) {
+      conditions.push(ilike(trajet.baggageAllowance, `%${query.baggageAllowance}%`));
+    }
+
+    const rows = conditions.length
+      ? await db.select().from(trajet).where(and(...conditions))
+      : await db.select().from(trajet);
     return c.json(rows.map(serialize), 200);
   })
   .openapi(getTrajetRoute, async (c) => {
@@ -80,7 +105,9 @@ export const trajetModule = app
           trajetId: id,
           passengerId: user.id,
           seats,
-          status: 'confirmed',
+          // Seats are held immediately (below) so a booking always starts
+          // `pending` — the driver still has to accept or reject it.
+          status: 'pending',
         })
         .returning();
       if (!created) throw new Error('Insert returned no row');
@@ -95,6 +122,100 @@ export const trajetModule = app
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     return c.json(serializeBooking(result.booking), 201);
+  })
+  .openapi(listTrajetBookingsRoute, async (c) => {
+    const { user } = getAuth(c);
+    const { id } = c.req.valid('param');
+
+    const [trajetRow] = await db.select().from(trajet).where(eq(trajet.id, id));
+    if (!trajetRow) return c.json({ error: 'Trajet not found' }, 404);
+    if (trajetRow.driverId !== user.id) {
+      return c.json({ error: 'Not the driver of this trajet' }, 403);
+    }
+
+    const rows = await db.select().from(booking).where(eq(booking.trajetId, id));
+    return c.json(rows.map(serializeBooking), 200);
+  })
+  .openapi(updateBookingStatusRoute, async (c) => {
+    const { user } = getAuth(c);
+    const { id, bookingId } = c.req.valid('param');
+    const { status } = c.req.valid('json');
+
+    const result = await db.transaction(async (tx) => {
+      const [trajetRow] = await tx.select().from(trajet).where(eq(trajet.id, id)).for('update');
+      if (!trajetRow) return { ok: false as const, status: 404 as const, error: 'Trajet not found' };
+      if (trajetRow.driverId !== user.id) {
+        return { ok: false as const, status: 403 as const, error: 'Not the driver of this trajet' };
+      }
+
+      const [bookingRow] = await tx.select().from(booking).where(eq(booking.id, bookingId));
+      if (!bookingRow || bookingRow.trajetId !== id) {
+        return { ok: false as const, status: 404 as const, error: 'Booking not found' };
+      }
+      if (bookingRow.status !== 'pending') {
+        return { ok: false as const, status: 400 as const, error: 'Booking is not pending' };
+      }
+
+      const [updated] = await tx
+        .update(booking)
+        .set({ status })
+        .where(eq(booking.id, bookingId))
+        .returning();
+      if (!updated) throw new Error('Update returned no row');
+
+      // Rejecting frees the seats held when the booking was created; accepting
+      // keeps them held (they were never released).
+      if (status === 'rejected') {
+        await tx
+          .update(trajet)
+          .set({ seatsAvailable: trajetRow.seatsAvailable + bookingRow.seats })
+          .where(eq(trajet.id, id));
+      }
+
+      return { ok: true as const, booking: updated };
+    });
+
+    if (!result.ok) return c.json({ error: result.error }, result.status);
+    return c.json(serializeBooking(result.booking), 200);
+  })
+  .openapi(cancelBookingRoute, async (c) => {
+    const { user } = getAuth(c);
+    const { id, bookingId } = c.req.valid('param');
+
+    const result = await db.transaction(async (tx) => {
+      const [trajetRow] = await tx.select().from(trajet).where(eq(trajet.id, id)).for('update');
+      if (!trajetRow) return { ok: false as const, status: 404 as const, error: 'Trajet not found' };
+
+      const [bookingRow] = await tx.select().from(booking).where(eq(booking.id, bookingId));
+      if (!bookingRow || bookingRow.trajetId !== id) {
+        return { ok: false as const, status: 404 as const, error: 'Booking not found' };
+      }
+      if (bookingRow.passengerId !== user.id) {
+        return { ok: false as const, status: 403 as const, error: 'Not your booking' };
+      }
+      if (bookingRow.status !== 'pending' && bookingRow.status !== 'confirmed') {
+        return { ok: false as const, status: 400 as const, error: 'Booking cannot be cancelled' };
+      }
+
+      const [updated] = await tx
+        .update(booking)
+        .set({ status: 'cancelled' })
+        .where(eq(booking.id, bookingId))
+        .returning();
+      if (!updated) throw new Error('Update returned no row');
+
+      // Both `pending` and `confirmed` hold seats (see bookTrajetRoute above),
+      // so cancelling either always frees them back to the trajet.
+      await tx
+        .update(trajet)
+        .set({ seatsAvailable: trajetRow.seatsAvailable + bookingRow.seats })
+        .where(eq(trajet.id, id));
+
+      return { ok: true as const, booking: updated };
+    });
+
+    if (!result.ok) return c.json({ error: result.error }, result.status);
+    return c.json(serializeBooking(result.booking), 200);
   });
 
 /** Map a DB row (Date columns, DB column names) to the Zod contract shape. */
@@ -122,7 +243,7 @@ function serializeBooking(row: typeof booking.$inferSelect): Booking {
     trajetId: row.trajetId,
     passengerId: row.passengerId,
     seats: row.seats,
-    status: row.status,
+    status: row.status as Booking['status'],
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

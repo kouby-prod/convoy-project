@@ -22,14 +22,21 @@ function createChain(result: unknown) {
 
 const dbState = vi.hoisted(() => ({
   selectResult: [] as unknown[],
+  // Queue for tests that need successive `select` calls (within one
+  // transaction) to return different rows, e.g. trajet then booking. Falls
+  // back to `selectResult` for every call when left empty.
+  selectQueue: [] as unknown[][],
   insertResult: [] as unknown[],
+  updateResult: [] as unknown[],
 }));
 
 const db = vi.hoisted(() => {
   const instance = {
-    select: vi.fn(() => createChain(dbState.selectResult)),
+    select: vi.fn(() =>
+      createChain(dbState.selectQueue.length ? dbState.selectQueue.shift() : dbState.selectResult),
+    ),
     insert: vi.fn(() => createChain(dbState.insertResult)),
-    update: vi.fn(() => createChain(undefined)),
+    update: vi.fn(() => createChain(dbState.updateResult)),
     transaction: vi.fn((cb: (tx: typeof instance) => unknown) => cb(instance)),
   };
   return instance;
@@ -81,6 +88,21 @@ function makeTrajetRow(overrides: Partial<Record<string, unknown>> = {}) {
   };
 }
 
+const BOOKING_ID = '22222222-2222-4222-8222-222222222222';
+
+function makeBookingRow(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: BOOKING_ID,
+    trajetId: '11111111-1111-4111-8111-111111111111',
+    passengerId: 'u_2',
+    seats: 2,
+    status: 'pending',
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
+}
+
 describe('trajet module', () => {
   beforeEach(() => {
     db.select.mockClear();
@@ -89,7 +111,9 @@ describe('trajet module', () => {
     db.transaction.mockClear();
     getSession.mockReset();
     dbState.selectResult = [];
+    dbState.selectQueue = [];
     dbState.insertResult = [];
+    dbState.updateResult = [];
   });
 
   it('GET /trajets returns a list', async () => {
@@ -97,6 +121,33 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets');
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual([]);
+  });
+
+  describe('GET /trajets search/filter query', () => {
+    it('accepts a full set of valid filters', async () => {
+      dbState.selectResult = [makeTrajetRow()];
+      const res = await trajetModule.request(
+        '/trajets?departureCity=Montreal&destinationCity=Quebec&date=2026-01-01' +
+          '&minSeats=2&maxPrice=25&comfort=standard&baggageAllowance=valise',
+      );
+      expect(res.status).toBe(200);
+      await expect(res.json()).resolves.toHaveLength(1);
+    });
+
+    it('rejects an invalid date format', async () => {
+      const res = await trajetModule.request('/trajets?date=not-a-date');
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects an invalid comfort value', async () => {
+      const res = await trajetModule.request('/trajets?comfort=luxury');
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects a non-numeric maxPrice', async () => {
+      const res = await trajetModule.request('/trajets?maxPrice=free');
+      expect(res.status).toBe(400);
+    });
   });
 
   it('GET /trajets/:id returns 404 when missing', async () => {
@@ -169,20 +220,10 @@ describe('trajet module', () => {
     expect(res.status).toBe(401);
   });
 
-  it('POST /trajets/:id/book books seats when enough are available', async () => {
+  it('POST /trajets/:id/book books seats as pending when enough are available', async () => {
     getSession.mockResolvedValue(sessionFor('user'));
     dbState.selectResult = [makeTrajetRow({ seatsAvailable: 3 })];
-    dbState.insertResult = [
-      {
-        id: 'b_1',
-        trajetId: '11111111-1111-4111-8111-111111111111',
-        passengerId: 'u_1',
-        seats: 2,
-        status: 'confirmed',
-        createdAt: now,
-        updatedAt: now,
-      },
-    ];
+    dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'pending' })];
 
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
@@ -192,7 +233,7 @@ describe('trajet module', () => {
 
     expect(res.status).toBe(201);
     const body = await res.json();
-    expect(body).toMatchObject({ id: 'b_1', seats: 2, status: 'confirmed' });
+    expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'pending' });
   });
 
   it('POST /trajets/:id/book returns 400 when not enough seats are available', async () => {
@@ -219,5 +260,231 @@ describe('trajet module', () => {
     });
 
     expect(res.status).toBe(404);
+  });
+
+  describe('GET /trajets/:id/bookings', () => {
+    const url = '/trajets/11111111-1111-4111-8111-111111111111/bookings';
+
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await trajetModule.request(url);
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 404 when the trajet does not exist', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [];
+
+      const res = await trajetModule.request(url);
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 403 when the caller is not the driver', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else' })];
+
+      const res = await trajetModule.request(url);
+      expect(res.status).toBe(403);
+    });
+
+    it('returns the bookings for the trajet when the caller is the driver', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectQueue = [
+        [makeTrajetRow({ driverId: 'u_1' })],
+        [makeBookingRow({ status: 'pending' }), makeBookingRow({ id: 'b_2', status: 'confirmed' })],
+      ];
+
+      const res = await trajetModule.request(url);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as Array<{ id: string; status: string }>;
+      expect(body).toHaveLength(2);
+      expect(body[0]).toMatchObject({ id: BOOKING_ID, status: 'pending' });
+      expect(body[1]).toMatchObject({ id: 'b_2', status: 'confirmed' });
+    });
+  });
+
+  describe('PATCH /trajets/:id/bookings/:bookingId', () => {
+    const url = `/trajets/11111111-1111-4111-8111-111111111111/bookings/${BOOKING_ID}`;
+
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'confirmed' }),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 404 when the trajet does not exist', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'confirmed' }),
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 403 when the caller is not the driver', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else' })];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'confirmed' }),
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 404 when the booking does not exist', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectQueue = [[makeTrajetRow({ driverId: 'u_1' })], []];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'confirmed' }),
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 400 when the booking is not pending', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectQueue = [
+        [makeTrajetRow({ driverId: 'u_1' })],
+        [makeBookingRow({ status: 'confirmed' })],
+      ];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'rejected' }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('confirms a pending booking without restocking seats', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectQueue = [
+        [makeTrajetRow({ driverId: 'u_1', seatsAvailable: 1 })],
+        [makeBookingRow({ status: 'pending', seats: 2 })],
+      ];
+      dbState.updateResult = [makeBookingRow({ status: 'confirmed', seats: 2 })];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'confirmed' }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toMatchObject({ id: BOOKING_ID, status: 'confirmed' });
+      // Only the booking is updated — seats stay held, no trajet update.
+      expect(db.update).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects a pending booking and restocks the seats', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectQueue = [
+        [makeTrajetRow({ driverId: 'u_1', seatsAvailable: 1 })],
+        [makeBookingRow({ status: 'pending', seats: 2 })],
+      ];
+      dbState.updateResult = [makeBookingRow({ status: 'rejected', seats: 2 })];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'rejected' }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toMatchObject({ id: BOOKING_ID, status: 'rejected' });
+      // Booking update + trajet seatsAvailable restock.
+      expect(db.update).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('POST /trajets/:id/bookings/:bookingId/cancel', () => {
+    const url = `/trajets/11111111-1111-4111-8111-111111111111/bookings/${BOOKING_ID}/cancel`;
+
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await trajetModule.request(url, { method: 'POST' });
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 404 when the trajet does not exist', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [];
+
+      const res = await trajetModule.request(url, { method: 'POST' });
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 404 when the booking does not exist', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectQueue = [[makeTrajetRow()], []];
+
+      const res = await trajetModule.request(url, { method: 'POST' });
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 403 when the caller is not the passenger who booked', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectQueue = [[makeTrajetRow()], [makeBookingRow({ passengerId: 'someone-else' })]];
+
+      const res = await trajetModule.request(url, { method: 'POST' });
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 400 when the booking is already rejected', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectQueue = [
+        [makeTrajetRow()],
+        [makeBookingRow({ passengerId: 'u_1', status: 'rejected' })],
+      ];
+
+      const res = await trajetModule.request(url, { method: 'POST' });
+      expect(res.status).toBe(400);
+    });
+
+    it('cancels a pending booking and restocks the seats', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectQueue = [
+        [makeTrajetRow({ seatsAvailable: 1 })],
+        [makeBookingRow({ passengerId: 'u_1', status: 'pending', seats: 2 })],
+      ];
+      dbState.updateResult = [makeBookingRow({ passengerId: 'u_1', status: 'cancelled', seats: 2 })];
+
+      const res = await trajetModule.request(url, { method: 'POST' });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toMatchObject({ id: BOOKING_ID, status: 'cancelled' });
+      // Booking update + trajet seatsAvailable restock.
+      expect(db.update).toHaveBeenCalledTimes(2);
+    });
+
+    it('cancels a confirmed booking and restocks the seats', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectQueue = [
+        [makeTrajetRow({ seatsAvailable: 0 })],
+        [makeBookingRow({ passengerId: 'u_1', status: 'confirmed', seats: 2 })],
+      ];
+      dbState.updateResult = [makeBookingRow({ passengerId: 'u_1', status: 'cancelled', seats: 2 })];
+
+      const res = await trajetModule.request(url, { method: 'POST' });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toMatchObject({ id: BOOKING_ID, status: 'cancelled' });
+      expect(db.update).toHaveBeenCalledTimes(2);
+    });
   });
 });
