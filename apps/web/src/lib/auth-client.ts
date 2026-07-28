@@ -1,4 +1,5 @@
 import { createAuthClient } from 'better-auth/react';
+import { adminClient } from 'better-auth/client/plugins';
 import { env } from './env';
 
 /**
@@ -9,14 +10,29 @@ import { env } from './env';
  * cross-origin (web :3000 → api :3001) via `credentials: 'include'`; the API's
  * credentialed CORS + trustedOrigins allow it.
  *
- * Only email sign-in/up/session are wired here (BetterAuth core). The server's
- * `admin` and `phoneNumber` plugins have matching client plugins
- * (`adminClient`, `phoneNumberClient`) — add them when the web app actually
- * surfaces role-gated UI or phone OTP.
+ * `adminClient` mirrors the server's `admin` plugin so `session.user.role` is
+ * typed — the navbar needs it to decide whether to offer the backoffice link.
+ * That is presentation only: `/admin` itself is guarded by `requireRole('admin')`
+ * on the API, so hiding the link is convenience, never the security boundary.
+ * The server's `phoneNumber` plugin has a matching `phoneNumberClient` — add it
+ * when the web app actually surfaces phone OTP.
  */
 export const authClient = createAuthClient({
   baseURL: env.NEXT_PUBLIC_API_URL,
+  plugins: [adminClient()],
   fetchOptions: {
     credentials: 'include',
   },
 });
+
+/**
+ * Whether a session's user holds the admin role. Roles are stored
+ * comma-separated, so this splits before comparing — mirrors `hasRole` on the
+ * API side, where the check that actually matters lives.
+ */
+export function isAdminRole(role: string | null | undefined): boolean {
+  return (role ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .includes('admin');
+}

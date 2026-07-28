@@ -9,7 +9,9 @@
     "signOut": "Déconnexion",
     "cart": "Panier",
     "account": "Mon compte",
-    "menu": "Menu"
+    "menu": "Menu",
+    "documents": "Mes documents",
+    "admin": "Back-office"
   },
   "LocaleSwitcher": {
     "label": "Langue",
@@ -192,5 +194,100 @@
         "description": "Votre voiture a des places libres ? Faites-en une opportunité."
       }
     ]
+  },
+  "Documents": {
+    "title": "Mes documents",
+    "subtitle": "Envoyez vos papiers de conducteur. Notre équipe les vérifie avant de valider votre compte.",
+    "loading": "Chargement…",
+    "empty": "Vous n'avez encore envoyé aucun document.",
+    "error": "Impossible de charger vos documents.",
+    "view": "Voir",
+    "authRequired": "Connectez-vous pour envoyer vos documents.",
+    "authCta": "Se connecter",
+    "status": {
+      "missing": "À envoyer",
+      "pending": "En attente",
+      "approved": "Validé",
+      "rejected": "Refusé"
+    },
+    "type": {
+      "permis": "Permis de conduire",
+      "carteIdentite": "Carte d'identité",
+      "carteGrise": "Carte grise",
+      "assurance": "Attestation d'assurance"
+    },
+    "checklist": {
+      "title": "Documents demandés"
+    },
+    "history": {
+      "title": "Mes envois",
+      "reason": "Motif du refus : {reason}"
+    },
+    "upload": {
+      "typeLabel": "Type de document",
+      "fileLabel": "Fichier",
+      "expiryLabel": "Date d'expiration (facultatif)",
+      "hint": "JPG, PNG, WEBP ou PDF. {max} Mo maximum.",
+      "submit": "Envoyer le document",
+      "submitting": "Envoi en cours…",
+      "noFile": "Choisissez d'abord un fichier.",
+      "tooLarge": "Le fichier dépasse {max} Mo.",
+      "unsupported": "Ce format de fichier n'est pas accepté.",
+      "failed": "L'envoi a échoué. Réessayez."
+    }
+  },
+  "Admin": {
+    "title": "Back-office",
+    "subtitle": "Suivez et validez les documents envoyés par les conducteurs.",
+    "loading": "Chargement…",
+    "error": "Impossible de charger les données.",
+    "authRequired": "Connectez-vous pour accéder au back-office.",
+    "authCta": "Se connecter",
+    "forbidden": "Cette page est réservée aux administrateurs.",
+    "backHome": "Retour à l'accueil",
+    "stats": {
+      "pending": "En attente",
+      "approved": "Validés",
+      "rejected": "Refusés",
+      "users": "Comptes"
+    },
+    "tabs": {
+      "label": "Vues du back-office",
+      "queue": "Documents",
+      "users": "Comptes"
+    },
+    "filters": {
+      "status": "Statut",
+      "type": "Type de document",
+      "search": "Rechercher",
+      "searchPlaceholder": "Nom ou e-mail du conducteur",
+      "allStatuses": "Tous les statuts",
+      "allTypes": "Tous les types"
+    },
+    "queue": {
+      "empty": "Aucun document ne correspond à ces filtres.",
+      "view": "Voir",
+      "approve": "Valider",
+      "reject": "Refuser",
+      "confirmReject": "Confirmer le refus",
+      "cancel": "Annuler",
+      "submitting": "Envoi…",
+      "reasonLabel": "Motif du refus",
+      "reasonPlaceholder": "Expliquez ce qui ne va pas : photo floue, document expiré…",
+      "reasonRequired": "Indiquez un motif pour refuser ce document.",
+      "currentReason": "Motif actuel : {reason}",
+      "reviewFailed": "La décision n'a pas pu être enregistrée."
+    },
+    "users": {
+      "empty": "Aucun compte pour le moment.",
+      "name": "Conducteur",
+      "role": "Rôle",
+      "joined": "Inscrit le",
+      "documents": "Documents",
+      "pending": "En attente",
+      "approved": "Validés",
+      "admin": "Admin",
+      "driver": "Conducteur"
+    }
   }
 }
