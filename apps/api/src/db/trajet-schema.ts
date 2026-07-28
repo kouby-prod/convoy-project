@@ -5,6 +5,7 @@ import {
   timestamp,
   integer,
   numeric,
+  boolean,
   index,
 } from 'drizzle-orm/pg-core';
 import { user } from './auth-schema';
@@ -15,12 +16,20 @@ export const trajet = pgTable('trajet', {
   departureCity: text('departure_city').notNull(),
   arrivalCity: text('arrival_city').notNull(),
   departureAt: timestamp('departure_at').notNull(),
+  /** Pickup / drop-off points and the estimated arrival — optional, the short
+      /annoncer form does not collect them. */
+  departurePlace: text('departure_place'),
+  arrivalPlace: text('arrival_place'),
+  arrivalAt: timestamp('arrival_at'),
   seatsTotal: integer('seats_total').notNull(),
   seatsAvailable: integer('seats_available').notNull(),
   pricePerSeat: numeric('price_per_seat').notNull(),
   description: text('description'),
   comfort: text('comfort'),
   baggageAllowance: text('baggage_allowance'),
+  /** Advertised options, stored as the `TrajetAmenity` string values. */
+  amenities: text('amenities').array().notNull().default([]),
+  hasIntermediateStop: boolean('has_intermediate_stop').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()).notNull(),
 });
@@ -33,6 +42,13 @@ export const booking = pgTable(
     passengerId: text('passenger_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
     seats: integer('seats').notNull(),
     status: text('status').notNull(),
+    /** Contact details as typed on the ride detail form. The passenger identity
+        is `passengerId`; these are what the driver is shown. */
+    firstName: text('first_name'),
+    lastName: text('last_name'),
+    email: text('email'),
+    phone: text('phone'),
+    message: text('message'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()).notNull(),
   },

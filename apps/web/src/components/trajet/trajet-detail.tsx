@@ -1,5 +1,5 @@
 import { useFormatter, useTranslations } from 'next-intl';
-import { ArrowRight, BadgeCheck, Car, Image as ImageIcon, Users } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Briefcase, Car, Image as ImageIcon, Sparkles, Users } from 'lucide-react';
 import type { TrajetListing, TrajetAmenity } from '@carpool/schemas';
 import { Card, CardContent } from '@/components/ui/card';
 import { RatingStars } from '@/components/trajet/rating-stars';
@@ -17,7 +17,9 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
 
   const time = { hour: '2-digit', minute: '2-digit' } as const;
   const departure = new Date(trajet.departureAt);
-  const arrival = new Date(trajet.arrivalAt);
+  // Null until the driver supplies an estimate — the arrival line is dropped
+  // rather than shown as an invented time.
+  const arrival = trajet.arrivalAt ? new Date(trajet.arrivalAt) : null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -29,9 +31,11 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
               <p className="font-semibold text-foreground">
                 {t('detail.departureAt', { time: format.dateTime(departure, time) })}
               </p>
-              <p className="text-muted-foreground">
-                {t('detail.arrivalAt', { time: format.dateTime(arrival, time) })}
-              </p>
+              {arrival ? (
+                <p className="text-muted-foreground">
+                  {t('detail.arrivalAt', { time: format.dateTime(arrival, time) })}
+                </p>
+              ) : null}
               <p className="mt-1 text-muted-foreground">
                 {format.dateTime(departure, { weekday: 'long', day: 'numeric', month: 'long' })}
               </p>
@@ -58,18 +62,41 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
               <p className="text-lg font-semibold text-foreground">
                 {format.number(trajet.pricePerSeat, { style: 'currency', currency: 'EUR' })}
               </p>
-              <RatingStars
-                rating={trajet.driver.rating}
-                label={t('ratingLabel', {
-                  rating: trajet.driver.rating,
-                  count: trajet.driver.reviewCount,
-                })}
-              />
+              {trajet.driver.rating !== null ? (
+                <RatingStars
+                  rating={trajet.driver.rating}
+                  label={t('ratingLabel', {
+                    rating: trajet.driver.rating,
+                    count: trajet.driver.reviewCount ?? 0,
+                  })}
+                />
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 {t('seatsAvailable', { count: trajet.seatsAvailable })}
               </p>
             </div>
           </div>
+
+          {trajet.comfort || trajet.baggageAllowance ? (
+            <dl className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm">
+              {trajet.comfort ? (
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="size-4 text-muted-foreground" strokeWidth={2} aria-hidden />
+                  <dt className="text-muted-foreground">{t('detail.comfort')}</dt>
+                  <dd className="font-medium text-foreground">
+                    {t(`comfort.${trajet.comfort}`)}
+                  </dd>
+                </div>
+              ) : null}
+              {trajet.baggageAllowance ? (
+                <div className="flex items-center gap-1.5">
+                  <Briefcase className="size-4 text-muted-foreground" strokeWidth={2} aria-hidden />
+                  <dt className="text-muted-foreground">{t('detail.baggage')}</dt>
+                  <dd className="font-medium text-foreground">{trajet.baggageAllowance}</dd>
+                </div>
+              ) : null}
+            </dl>
+          ) : null}
 
           <TrajetAmenities
             amenities={trajet.amenities}
@@ -94,27 +121,33 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
                   {trajet.driver.firstName} {trajet.driver.lastName}
                 </dd>
               </div>
-              <div>
-                <dt className="text-muted-foreground">{t('detail.licenceYears')}</dt>
-                <dd className="flex items-center gap-1.5 font-medium text-foreground">
-                  <BadgeCheck className="size-4 text-secondary" strokeWidth={2} aria-hidden />
-                  {t('detail.licenceYearsValue', { count: trajet.driver.licenceYears })}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">{t('detail.vehicle')}</dt>
-                <dd className="flex items-center gap-1.5 font-medium text-foreground">
-                  <Car className="size-4 text-muted-foreground" strokeWidth={2} aria-hidden />
-                  {trajet.driver.carMake} {trajet.driver.carModel}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">{t('detail.carSeats')}</dt>
-                <dd className="flex items-center gap-1.5 font-medium text-foreground">
-                  <Users className="size-4 text-muted-foreground" strokeWidth={2} aria-hidden />
-                  {t('detail.carSeatsValue', { count: trajet.driver.carSeats })}
-                </dd>
-              </div>
+              {trajet.driver.licenceYears !== null ? (
+                <div>
+                  <dt className="text-muted-foreground">{t('detail.licenceYears')}</dt>
+                  <dd className="flex items-center gap-1.5 font-medium text-foreground">
+                    <BadgeCheck className="size-4 text-secondary" strokeWidth={2} aria-hidden />
+                    {t('detail.licenceYearsValue', { count: trajet.driver.licenceYears })}
+                  </dd>
+                </div>
+              ) : null}
+              {trajet.driver.carMake || trajet.driver.carModel ? (
+                <div>
+                  <dt className="text-muted-foreground">{t('detail.vehicle')}</dt>
+                  <dd className="flex items-center gap-1.5 font-medium text-foreground">
+                    <Car className="size-4 text-muted-foreground" strokeWidth={2} aria-hidden />
+                    {trajet.driver.carMake} {trajet.driver.carModel}
+                  </dd>
+                </div>
+              ) : null}
+              {trajet.driver.carSeats !== null ? (
+                <div>
+                  <dt className="text-muted-foreground">{t('detail.carSeats')}</dt>
+                  <dd className="flex items-center gap-1.5 font-medium text-foreground">
+                    <Users className="size-4 text-muted-foreground" strokeWidth={2} aria-hidden />
+                    {t('detail.carSeatsValue', { count: trajet.driver.carSeats })}
+                  </dd>
+                </div>
+              ) : null}
             </dl>
 
             {/* Vehicle photos — labelled placeholders until drivers can upload. */}

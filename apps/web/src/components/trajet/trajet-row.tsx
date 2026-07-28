@@ -16,7 +16,9 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
   const format = useFormatter();
 
   const departure = new Date(trajet.departureAt);
-  const arrival = new Date(trajet.arrivalAt);
+  // Null until the driver supplies an estimate — the second line is dropped
+  // rather than shown as an invented time.
+  const arrival = trajet.arrivalAt ? new Date(trajet.arrivalAt) : null;
   const time = { hour: '2-digit', minute: '2-digit' } as const;
 
   return (
@@ -28,7 +30,9 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
         {/* Hours */}
         <div className="text-sm">
           <p className="font-semibold text-foreground">{format.dateTime(departure, time)}</p>
-          <p className="text-muted-foreground">{format.dateTime(arrival, time)}</p>
+          {arrival ? (
+            <p className="text-muted-foreground">{format.dateTime(arrival, time)}</p>
+          ) : null}
         </div>
 
         {/* Departure */}
@@ -55,13 +59,15 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
           <p className="font-semibold text-foreground">
             {format.number(trajet.pricePerSeat, { style: 'currency', currency: 'EUR' })}
           </p>
-          <RatingStars
-            rating={trajet.driver.rating}
-            label={t('ratingLabel', {
-              rating: trajet.driver.rating,
-              count: trajet.driver.reviewCount,
-            })}
-          />
+          {trajet.driver.rating !== null ? (
+            <RatingStars
+              rating={trajet.driver.rating}
+              label={t('ratingLabel', {
+                rating: trajet.driver.rating,
+                count: trajet.driver.reviewCount ?? 0,
+              })}
+            />
+          ) : null}
           <p className="text-xs text-muted-foreground">
             {t('seatsAvailable', { count: trajet.seatsAvailable })}
           </p>

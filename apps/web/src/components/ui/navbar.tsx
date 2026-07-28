@@ -66,12 +66,8 @@ const themeAccents = {
 
 /** Nav links: a translation key + the route it points to. */
 const NAV_LINKS = [
-  // 'search' is the fixture-backed search UI at /trajet; 'trajets' and 'post'
-  // point at the API-backed pages. Both route trees stay reachable until the
-  // two implementations are unified.
   { translationKey: 'search', href: '/trajet' },
-  { translationKey: 'trajets', href: '/trajets' },
-  { translationKey: 'post', href: '/annoncer' },
+  { translationKey: 'post', href: '/trajet/nouveau' },
   { translationKey: 'contact', href: '/contact' },
 ] as const;
 
