@@ -1,7 +1,7 @@
 import {
   type CreateBookingRequest,
   type CreateTrajetRequest,
-  type Trajet,
+  type TrajetListing,
   type TrajetSearchQuery,
 } from '@carpool/schemas';
 
@@ -58,7 +58,7 @@ function includesCity(haystack: string, needle: string | undefined): boolean {
 }
 
 /** GET /trajet — search results for the `/trajet` page. */
-export async function fetchTrajets(query: TrajetSearchQuery): Promise<Trajet[]> {
+export async function fetchTrajets(query: TrajetSearchQuery): Promise<TrajetListing[]> {
   const earliest = parseTimeFilter(query.time);
 
   const results = FIXTURES.filter((trajet) => {
@@ -78,13 +78,13 @@ export async function fetchTrajets(query: TrajetSearchQuery): Promise<Trajet[]> 
 }
 
 /** GET /trajet/:id — the ride detail page. Resolves to null when unknown. */
-export async function fetchTrajet(id: string): Promise<Trajet | null> {
+export async function fetchTrajet(id: string): Promise<TrajetListing | null> {
   return delay(FIXTURES.find((trajet) => trajet.id === id) ?? null);
 }
 
 /** POST /trajet — publish a ride. Returns the created row. */
-export async function createTrajet(input: CreateTrajetRequest): Promise<Trajet> {
-  const created: Trajet = {
+export async function createTrajet(input: CreateTrajetRequest): Promise<TrajetListing> {
+  const created: TrajetListing = {
     id: `trajet-${FIXTURES.length + 1}`,
     ...input,
     seatsAvailable: input.seatsTotal,
@@ -117,7 +117,7 @@ function at(dayOffset: number, hour: number, minute: number): string {
   ).toISOString();
 }
 
-const FIXTURES: Trajet[] = [
+const FIXTURES: TrajetListing[] = [
   {
     id: 'paris-lyon-morning',
     departureCity: 'Paris',

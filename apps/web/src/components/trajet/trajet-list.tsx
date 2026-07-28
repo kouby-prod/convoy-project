@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
-import { TrajetSearchQuerySchema, type Trajet, type TrajetSearchQuery } from '@carpool/schemas';
+import { TrajetSearchQuerySchema, type TrajetListing, type TrajetSearchQuery } from '@carpool/schemas';
 import { Card, CardContent } from '@/components/ui/card';
 import { isAmenity } from '@/components/trajet/trajet-amenities';
 import { TrajetRow } from '@/components/trajet/trajet-row';
@@ -86,8 +86,8 @@ function parseSearchQuery(searchParams: URLSearchParams): TrajetSearchQuery {
 }
 
 /** Group results by calendar day, preserving the (already sorted) order. */
-function groupByDay(trajets: Trajet[]): [string, Trajet[]][] {
-  const byDay = new Map<string, Trajet[]>();
+function groupByDay(trajets: TrajetListing[]): [string, TrajetListing[]][] {
+  const byDay = new Map<string, TrajetListing[]>();
 
   for (const trajet of trajets) {
     const dayKey = toDateKey(new Date(trajet.departureAt));

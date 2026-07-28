@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { healthRoute, pingRoute } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
+import { trajetModule } from './modules/trajet';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
 // TODO: domain modules — mount feature routers from ./modules here.
@@ -62,6 +63,8 @@ const routes = app
       200,
     );
   })
+  // --- TRAJET domain routes ---
+  .route('/', trajetModule)
   // --- PROOF routes (not domain logic) ---
   .openapi(meRoute, (c) => {
     const { user } = getAuth(c);

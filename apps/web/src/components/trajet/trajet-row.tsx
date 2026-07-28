@@ -1,12 +1,12 @@
 import { useFormatter, useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
-import type { Trajet, TrajetAmenity } from '@carpool/schemas';
+import type { TrajetListing, TrajetAmenity } from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
 import { RatingStars } from '@/components/trajet/rating-stars';
 import { TrajetAmenities } from '@/components/trajet/trajet-amenities';
 
 interface TrajetRowProps {
-  trajet: Trajet;
+  trajet: TrajetListing;
 }
 
 /* One search result: time · departure · arrival · price · reviews, with the
