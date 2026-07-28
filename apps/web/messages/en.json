@@ -9,7 +9,9 @@
     "signOut": "Sign out",
     "cart": "Cart",
     "account": "My account",
-    "menu": "Menu"
+    "menu": "Menu",
+    "documents": "My documents",
+    "admin": "Backoffice"
   },
   "LocaleSwitcher": {
     "label": "Language",
@@ -192,5 +194,100 @@
         "description": "Got free seats in your car? Turn them into an opportunity."
       }
     ]
+  },
+  "Documents": {
+    "title": "My documents",
+    "subtitle": "Send your driver paperwork. Our team reviews it before your account is approved.",
+    "loading": "Loading…",
+    "empty": "You have not sent any document yet.",
+    "error": "Could not load your documents.",
+    "view": "View",
+    "authRequired": "Sign in to send your documents.",
+    "authCta": "Sign in",
+    "status": {
+      "missing": "To send",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "type": {
+      "permis": "Driving licence",
+      "carteIdentite": "ID card",
+      "carteGrise": "Vehicle registration",
+      "assurance": "Insurance certificate"
+    },
+    "checklist": {
+      "title": "Required documents"
+    },
+    "history": {
+      "title": "My submissions",
+      "reason": "Reason for rejection: {reason}"
+    },
+    "upload": {
+      "typeLabel": "Document type",
+      "fileLabel": "File",
+      "expiryLabel": "Expiry date (optional)",
+      "hint": "JPG, PNG, WEBP or PDF. {max} MB maximum.",
+      "submit": "Send document",
+      "submitting": "Sending…",
+      "noFile": "Choose a file first.",
+      "tooLarge": "The file is larger than {max} MB.",
+      "unsupported": "This file format is not accepted.",
+      "failed": "The upload failed. Please try again."
+    }
+  },
+  "Admin": {
+    "title": "Backoffice",
+    "subtitle": "Monitor and review the documents drivers send in.",
+    "loading": "Loading…",
+    "error": "Could not load the data.",
+    "authRequired": "Sign in to open the backoffice.",
+    "authCta": "Sign in",
+    "forbidden": "This page is for administrators only.",
+    "backHome": "Back to home",
+    "stats": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "users": "Accounts"
+    },
+    "tabs": {
+      "label": "Backoffice views",
+      "queue": "Documents",
+      "users": "Accounts"
+    },
+    "filters": {
+      "status": "Status",
+      "type": "Document type",
+      "search": "Search",
+      "searchPlaceholder": "Driver name or email",
+      "allStatuses": "All statuses",
+      "allTypes": "All types"
+    },
+    "queue": {
+      "empty": "No document matches these filters.",
+      "view": "View",
+      "approve": "Approve",
+      "reject": "Reject",
+      "confirmReject": "Confirm rejection",
+      "cancel": "Cancel",
+      "submitting": "Saving…",
+      "reasonLabel": "Reason for rejection",
+      "reasonPlaceholder": "Explain what is wrong: blurry photo, expired document…",
+      "reasonRequired": "Give a reason to reject this document.",
+      "currentReason": "Current reason: {reason}",
+      "reviewFailed": "The decision could not be saved."
+    },
+    "users": {
+      "empty": "No account yet.",
+      "name": "Driver",
+      "role": "Role",
+      "joined": "Joined",
+      "documents": "Documents",
+      "pending": "Pending",
+      "approved": "Approved",
+      "admin": "Admin",
+      "driver": "Driver"
+    }
   }
 }

@@ -24,9 +24,24 @@ export const requireAuth = createMiddleware<AuthEnv>(async (c, next) => {
 });
 
 /**
+ * Whether a user holds a role. The admin plugin stores roles as a
+ * comma-separated string, so the check splits before comparing.
+ *
+ * Exported because role questions also come up *inside* handlers — a document's
+ * file is readable by its owner OR by any admin, which is a 403 decision the
+ * route makes for itself rather than a middleware gate.
+ */
+export function hasRole(user: Pick<AuthUser, 'role'>, role: 'admin' | 'user'): boolean {
+  return (user.role ?? '')
+    .split(',')
+    .map((r) => r.trim())
+    .filter(Boolean)
+    .includes(role);
+}
+
+/**
  * `requireRole(role)` — must run after `requireAuth`. Returns 403 if the
- * authenticated user does not have the given role. The admin plugin stores
- * roles as a comma-separated string, so we split before checking.
+ * authenticated user does not have the given role.
  */
 export function requireRole(role: 'admin' | 'user') {
   return createMiddleware<AuthEnv>(async (c, next) => {
@@ -37,12 +52,7 @@ export function requireRole(role: 'admin' | 'user') {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const roles = (user.role ?? '')
-      .split(',')
-      .map((r) => r.trim())
-      .filter(Boolean);
-
-    if (!roles.includes(role)) {
+    if (!hasRole(user, role)) {
       return c.json({ error: 'Forbidden' }, 403);
     }
 

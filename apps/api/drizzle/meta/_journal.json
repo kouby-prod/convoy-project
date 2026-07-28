@@ -22,6 +22,13 @@
       "when": 1785246713434,
       "tag": "0002_white_rhodey",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785278513344,
+      "tag": "0003_free_malcolm_colcord",
+      "breakpoints": true
     }
   ]
 }

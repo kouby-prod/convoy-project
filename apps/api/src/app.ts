@@ -5,6 +5,8 @@ import { logger } from 'hono/logger';
 import { healthRoute, pingRoute } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
 import { trajetModule } from './modules/trajet';
+import { documentModule } from './modules/document';
+import { adminModule } from './modules/admin';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
 // TODO: domain modules — mount feature routers from ./modules here.
@@ -65,6 +67,10 @@ const routes = app
   })
   // --- TRAJET domain routes ---
   .route('/', trajetModule)
+  // --- DOCUMENT domain routes (a driver's own submissions) ---
+  .route('/', documentModule)
+  // --- ADMIN backoffice routes (review queue, stats, accounts) ---
+  .route('/', adminModule)
   // --- PROOF routes (not domain logic) ---
   .openapi(meRoute, (c) => {
     const { user } = getAuth(c);
