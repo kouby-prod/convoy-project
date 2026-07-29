@@ -13,6 +13,7 @@ function createChain(result: unknown) {
     for: () => chain,
     values: () => chain,
     set: () => chain,
+    innerJoin: () => chain,
     returning: () => Promise.resolve(result),
     then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
       Promise.resolve(result).then(resolve, reject),
@@ -485,6 +486,62 @@ describe('trajet module', () => {
       const body = await res.json();
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'cancelled' });
       expect(db.update).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('GET /me/trajets', () => {
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await trajetModule.request('/me/trajets');
+      expect(res.status).toBe(401);
+    });
+
+    it("returns the current user's trajets", async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'u_1' })];
+
+      const res = await trajetModule.request('/me/trajets');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as Array<{ driverId: string }>;
+      expect(body).toHaveLength(1);
+      expect(body[0]).toMatchObject({ driverId: 'u_1' });
+    });
+  });
+
+  describe('GET /me/bookings', () => {
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await trajetModule.request('/me/bookings');
+      expect(res.status).toBe(401);
+    });
+
+    it("returns the current user's bookings with a trajet summary", async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [
+        {
+          id: BOOKING_ID,
+          trajetId: '11111111-1111-4111-8111-111111111111',
+          passengerId: 'u_1',
+          seats: 2,
+          status: 'pending',
+          createdAt: now,
+          updatedAt: now,
+          departureCity: 'Montreal',
+          arrivalCity: 'Quebec',
+          departureAt: now,
+          pricePerSeat: '20',
+        },
+      ];
+
+      const res = await trajetModule.request('/me/bookings');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as Array<{
+        id: string;
+        trajet: { destinationCity: string; pricePerSeat: number };
+      }>;
+      expect(body).toHaveLength(1);
+      expect(body[0]).toMatchObject({ id: BOOKING_ID });
+      expect(body[0]?.trajet).toMatchObject({ destinationCity: 'Quebec', pricePerSeat: 20 });
     });
   });
 });

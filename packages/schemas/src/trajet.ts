@@ -97,6 +97,28 @@ export type Booking = z.infer<typeof BookingSchema>;
 export const BookingListSchema = z.array(BookingSchema).describe('BookingList');
 
 /**
+ * Trip summary embedded in `BookingWithTrajetSchema` — just enough for a
+ * passenger's "my bookings" list to be useful without a second fetch per row.
+ */
+export const BookingTrajetSummarySchema = z
+  .object({
+    departureCity: z.string(),
+    destinationCity: z.string(),
+    departureDateTime: z.string(),
+    pricePerSeat: z.number(),
+  })
+  .describe('BookingTrajetSummary');
+
+export const BookingWithTrajetSchema = BookingSchema.extend({
+  trajet: BookingTrajetSummarySchema,
+}).describe('BookingWithTrajet');
+export type BookingWithTrajet = z.infer<typeof BookingWithTrajetSchema>;
+
+export const BookingWithTrajetListSchema = z
+  .array(BookingWithTrajetSchema)
+  .describe('BookingWithTrajetList');
+
+/**
  * Driver-only action: accept or reject a pending booking request.
  */
 export const UpdateBookingStatusSchema = z

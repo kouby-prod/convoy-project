@@ -5,6 +5,8 @@
     "search": "Search",
     "trajets": "Rides",
     "post": "Offer a ride",
+    "myTrajets": "My rides",
+    "myBookings": "My bookings",
     "contact": "Contact",
     "signIn": "Sign in",
     "signOut": "Sign out",
@@ -195,5 +197,28 @@
         "apiError": "Error publishing ride. Please try again."
       },
       "success": "Ride published successfully!"
-    }  }
+    }  },
+  "MesTrajets": {
+    "title": "My rides",
+    "subtitle": "Find the rides you've published and manage booking requests.",
+    "loading": "Loading your rides...",
+    "empty": "You haven't published any ride yet.",
+    "error": "Unable to load your rides.",
+    "departureAt": "Departure",
+    "seats": "Seats",
+    "price": "Price"
+  },
+  "MesReservations": {
+    "title": "My bookings",
+    "subtitle": "Find your booking requests and their status.",
+    "loading": "Loading your bookings...",
+    "empty": "You don't have any booking yet.",
+    "error": "Unable to load your bookings.",
+    "departureAt": "Departure",
+    "seats": "Seats booked",
+    "status": "Status",
+    "cancel": "Cancel my booking",
+    "cancelling": "Cancelling...",
+    "cancelError": "Unable to cancel this booking. Please try again."
+  }
 }

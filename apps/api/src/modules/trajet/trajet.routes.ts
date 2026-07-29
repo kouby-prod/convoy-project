@@ -6,6 +6,7 @@ import {
   CreateTrajetSchema,
   BookingSchema,
   BookingListSchema,
+  BookingWithTrajetListSchema,
   CreateBookingSchema,
   UpdateBookingStatusSchema,
 } from '@carpool/schemas';
@@ -187,6 +188,42 @@ export const cancelBookingRoute = createRoute({
     },
     404: {
       description: 'Trajet or booking not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const myTrajetsRoute = createRoute({
+  method: 'get',
+  path: '/me/trajets',
+  tags: ['trajet'],
+  summary: "List the current user's published trajets (driver history)",
+  security: bearerAuth,
+  responses: {
+    200: {
+      description: 'List of trajets',
+      content: { 'application/json': { schema: TrajetListSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const myBookingsRoute = createRoute({
+  method: 'get',
+  path: '/me/bookings',
+  tags: ['trajet'],
+  summary: "List the current user's bookings, each with a trajet summary",
+  security: bearerAuth,
+  responses: {
+    200: {
+      description: 'List of bookings',
+      content: { 'application/json': { schema: BookingWithTrajetListSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
       content: { 'application/json': { schema: errorSchema } },
     },
   },
