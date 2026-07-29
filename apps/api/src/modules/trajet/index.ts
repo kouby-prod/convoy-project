@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { db } from '../../db/client';
 import { trajet, booking } from '../../db/trajet-schema';
-import type { Trajet, Booking } from '@carpool/schemas';
+import type { Trajet, Booking, BookingWithTrajet } from '@carpool/schemas';
 import {
   listTrajetsRoute,
   getTrajetRoute,
@@ -13,6 +13,8 @@ import {
   listTrajetBookingsRoute,
   updateBookingStatusRoute,
   cancelBookingRoute,
+  myTrajetsRoute,
+  myBookingsRoute,
 } from './trajet.routes';
 
 /**
@@ -33,6 +35,8 @@ app.use('/trajets/:id/book', requireAuth);
 app.use('/trajets/:id/bookings', requireAuth);
 app.use('/trajets/:id/bookings/:bookingId', requireAuth);
 app.use('/trajets/:id/bookings/:bookingId/cancel', requireAuth);
+app.use('/me/trajets', requireAuth);
+app.use('/me/bookings', requireAuth);
 
 export const trajetModule = app
   .openapi(listTrajetsRoute, async (c) => {
@@ -216,6 +220,33 @@ export const trajetModule = app
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     return c.json(serializeBooking(result.booking), 200);
+  })
+  .openapi(myTrajetsRoute, async (c) => {
+    const { user } = getAuth(c);
+    const rows = await db.select().from(trajet).where(eq(trajet.driverId, user.id));
+    return c.json(rows.map(serialize), 200);
+  })
+  .openapi(myBookingsRoute, async (c) => {
+    const { user } = getAuth(c);
+    const rows = await db
+      .select({
+        id: booking.id,
+        trajetId: booking.trajetId,
+        passengerId: booking.passengerId,
+        seats: booking.seats,
+        status: booking.status,
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
+        departureCity: trajet.departureCity,
+        arrivalCity: trajet.arrivalCity,
+        departureAt: trajet.departureAt,
+        pricePerSeat: trajet.pricePerSeat,
+      })
+      .from(booking)
+      .innerJoin(trajet, eq(booking.trajetId, trajet.id))
+      .where(eq(booking.passengerId, user.id));
+
+    return c.json(rows.map(serializeBookingWithTrajet), 200);
   });
 
 /** Map a DB row (Date columns, DB column names) to the Zod contract shape. */
@@ -246,5 +277,36 @@ function serializeBooking(row: typeof booking.$inferSelect): Booking {
     status: row.status as Booking['status'],
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+/** Map a `booking` INNER JOIN `trajet` row to the Zod contract shape. */
+function serializeBookingWithTrajet(row: {
+  id: string;
+  trajetId: string;
+  passengerId: string;
+  seats: number;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  departureCity: string;
+  arrivalCity: string;
+  departureAt: Date;
+  pricePerSeat: string;
+}): BookingWithTrajet {
+  return {
+    id: row.id,
+    trajetId: row.trajetId,
+    passengerId: row.passengerId,
+    seats: row.seats,
+    status: row.status as BookingWithTrajet['status'],
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    trajet: {
+      departureCity: row.departureCity,
+      destinationCity: row.arrivalCity,
+      departureDateTime: row.departureAt.toISOString(),
+      pricePerSeat: Number(row.pricePerSeat),
+    },
   };
 }

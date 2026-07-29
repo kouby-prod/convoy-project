@@ -144,6 +144,28 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
               {translateNavbar(translationKey)}
             </Link>
           ))}
+          {user && (
+            <>
+              <Link
+                href="/mes-trajets"
+                className={cn(
+                  'rounded-full px-4 py-2 text-sm font-medium outline-none transition-all duration-200 focus-visible:ring-3',
+                  palette.link,
+                )}
+              >
+                {translateNavbar('myTrajets')}
+              </Link>
+              <Link
+                href="/mes-reservations"
+                className={cn(
+                  'rounded-full px-4 py-2 text-sm font-medium outline-none transition-all duration-200 focus-visible:ring-3',
+                  palette.link,
+                )}
+              >
+                {translateNavbar('myBookings')}
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Actions */}
@@ -251,6 +273,28 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
               {translateNavbar(translationKey)}
             </Link>
           ))}
+          {user && (
+            <>
+              <Link
+                href="/mes-trajets"
+                className={cn(
+                  'rounded-2xl px-4 py-2.5 text-sm font-medium outline-none transition-all duration-200 focus-visible:ring-3',
+                  palette.link,
+                )}
+              >
+                {translateNavbar('myTrajets')}
+              </Link>
+              <Link
+                href="/mes-reservations"
+                className={cn(
+                  'rounded-2xl px-4 py-2.5 text-sm font-medium outline-none transition-all duration-200 focus-visible:ring-3',
+                  palette.link,
+                )}
+              >
+                {translateNavbar('myBookings')}
+              </Link>
+            </>
+          )}
           {!isSessionPending && !user && (
             <Link
               href="/sign-in"

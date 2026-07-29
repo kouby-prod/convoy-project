@@ -5,6 +5,8 @@
     "search": "Rechercher",
     "trajets": "Trajets",
     "post": "Annoncer",
+    "myTrajets": "Mes trajets",
+    "myBookings": "Mes réservations",
     "contact": "Contact",
     "signIn": "Connexion",
     "signOut": "Déconnexion",
@@ -197,5 +199,28 @@
       },
       "success": "Trajet publié avec succès!"
     }
+  },
+  "MesTrajets": {
+    "title": "Mes trajets",
+    "subtitle": "Retrouvez les trajets que vous avez publiés et gérez les demandes de réservation.",
+    "loading": "Chargement de vos trajets...",
+    "empty": "Vous n'avez publié aucun trajet pour le moment.",
+    "error": "Impossible de charger vos trajets.",
+    "departureAt": "Départ",
+    "seats": "Places",
+    "price": "Prix"
+  },
+  "MesReservations": {
+    "title": "Mes réservations",
+    "subtitle": "Retrouvez vos demandes de réservation et leur statut.",
+    "loading": "Chargement de vos réservations...",
+    "empty": "Vous n'avez aucune réservation pour le moment.",
+    "error": "Impossible de charger vos réservations.",
+    "departureAt": "Départ",
+    "seats": "Places réservées",
+    "status": "Statut",
+    "cancel": "Annuler ma réservation",
+    "cancelling": "Annulation en cours...",
+    "cancelError": "Impossible d'annuler cette réservation. Veuillez réessayer."
   }
 }
