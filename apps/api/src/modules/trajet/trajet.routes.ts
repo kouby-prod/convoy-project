@@ -2,11 +2,13 @@ import { createRoute, z } from '@hono/zod-openapi';
 import {
   TrajetSchema,
   TrajetListSchema,
+  TrajetPageSchema,
   TrajetSearchQuerySchema,
+  PaginationQuerySchema,
   CreateTrajetSchema,
   BookingSchema,
-  BookingListSchema,
-  BookingWithTrajetListSchema,
+  BookingPageSchema,
+  BookingWithTrajetPageSchema,
   CreateBookingSchema,
   UpdateBookingStatusSchema,
 } from '@carpool/schemas';
@@ -24,8 +26,8 @@ export const listTrajetsRoute = createRoute({
   request: { query: TrajetSearchQuerySchema },
   responses: {
     200: {
-      description: 'List of trajets',
-      content: { 'application/json': { schema: TrajetListSchema } },
+      description: 'A page of trajets',
+      content: { 'application/json': { schema: TrajetPageSchema } },
     },
   },
 });
@@ -109,11 +111,14 @@ export const listTrajetBookingsRoute = createRoute({
   tags: ['trajet'],
   summary: 'List bookings for a trajet (driver only)',
   security: bearerAuth,
-  request: { params: z.object({ id: z.string().uuid() }) },
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+    query: PaginationQuerySchema,
+  },
   responses: {
     200: {
-      description: 'List of bookings',
-      content: { 'application/json': { schema: BookingListSchema } },
+      description: 'A page of bookings',
+      content: { 'application/json': { schema: BookingPageSchema } },
     },
     401: {
       description: 'Not authenticated',
@@ -221,10 +226,11 @@ export const myBookingsRoute = createRoute({
   tags: ['trajet'],
   summary: "List the current user's bookings, each with a trajet summary",
   security: bearerAuth,
+  request: { query: PaginationQuerySchema },
   responses: {
     200: {
-      description: 'List of bookings',
-      content: { 'application/json': { schema: BookingWithTrajetListSchema } },
+      description: 'A page of bookings',
+      content: { 'application/json': { schema: BookingWithTrajetPageSchema } },
     },
     401: {
       description: 'Not authenticated',

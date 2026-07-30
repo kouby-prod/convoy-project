@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
@@ -79,13 +79,17 @@ export function TrajetsList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState<Filters>(() => filtersFromSearchParams(searchParams));
+  const [page, setPage] = useState(1);
 
   const query = useMemo(() => toQuery(filters), [filters]);
 
+  // A filter change makes the previous page number meaningless.
+  useEffect(() => setPage(1), [query]);
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['trajets', query],
+    queryKey: ['trajets', query, page],
     queryFn: async () => {
-      const res = await api.trajets.$get({ query });
+      const res = await api.trajets.$get({ query: { ...query, page: String(page) } });
       if (!res.ok) throw new Error('Failed to load trajets');
       return res.json();
     },
@@ -167,45 +171,67 @@ export function TrajetsList() {
 
       {isLoading ? <p className="text-muted-foreground">{t('loading')}</p> : null}
       {isError ? <p className="text-destructive">{t('error')}</p> : null}
-      {!isLoading && !isError && !data?.length ? (
+      {!isLoading && !isError && !data?.items.length ? (
         <p className="text-muted-foreground">{t('empty')}</p>
       ) : null}
 
-      {data?.length ? (
-        <ul className="grid gap-4">
-          {data.map((item) => (
-            <li key={item.id}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    <Link href={`/trajets/${item.id}`} className="hover:underline">
-                      {item.departureCity} - {item.destinationCity}
-                    </Link>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-3 px-6 pb-6 pt-0 text-sm text-muted-foreground">
-                  <div>
-                    <strong className="text-foreground">{t('departureAt')}:</strong>{' '}
-                    {formatDateTime(item.departureDateTime)}
-                  </div>
-                  <div>
-                    <strong className="text-foreground">{t('seats')}:</strong>{' '}
-                    {item.seatsAvailable}/{item.seatsTotal}
-                  </div>
-                  <div>
-                    <strong className="text-foreground">{t('price')}:</strong>{' '}
-                    {new Intl.NumberFormat(undefined, {
-                      style: 'currency',
-                      currency: 'CAD',
-                      maximumFractionDigits: 2,
-                    }).format(item.pricePerSeat)}
-                  </div>
-                  {item.description ? <div>{item.description}</div> : null}
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ul>
+      {data?.items.length ? (
+        <>
+          <ul className="grid gap-4">
+            {data.items.map((item) => (
+              <li key={item.id}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      <Link href={`/trajets/${item.id}`} className="hover:underline">
+                        {item.departureCity} - {item.destinationCity}
+                      </Link>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 px-6 pb-6 pt-0 text-sm text-muted-foreground">
+                    <div>
+                      <strong className="text-foreground">{t('departureAt')}:</strong>{' '}
+                      {formatDateTime(item.departureDateTime)}
+                    </div>
+                    <div>
+                      <strong className="text-foreground">{t('seats')}:</strong>{' '}
+                      {item.seatsAvailable}/{item.seatsTotal}
+                    </div>
+                    <div>
+                      <strong className="text-foreground">{t('price')}:</strong>{' '}
+                      {new Intl.NumberFormat(undefined, {
+                        style: 'currency',
+                        currency: 'CAD',
+                        maximumFractionDigits: 2,
+                      }).format(item.pricePerSeat)}
+                    </div>
+                    {item.description ? <div>{item.description}</div> : null}
+                  </CardContent>
+                </Card>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-center justify-between gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              {t('pagination.previous')}
+            </Button>
+            <span className="text-sm text-muted-foreground">{t('pagination.page', { page })}</span>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!data.hasMore}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              {t('pagination.next')}
+            </Button>
+          </div>
+        </>
       ) : null}
     </div>
   );

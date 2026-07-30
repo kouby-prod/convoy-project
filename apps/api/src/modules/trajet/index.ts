@@ -60,6 +60,16 @@ async function expireStalePendingBookings(
   return updatedSeatsAvailable;
 }
 
+/**
+ * Every paginated list here fetches `limit + 1` rows (via `.limit(limit + 1)`
+ * on the caller's query) so `hasMore` can be derived from whether that extra
+ * row came back — no separate COUNT(*) query needed.
+ */
+function paginate<Row>(rows: Row[], limit: number): { items: Row[]; hasMore: boolean } {
+  const hasMore = rows.length > limit;
+  return { items: hasMore ? rows.slice(0, limit) : rows, hasMore };
+}
+
 // Reads are public; creating requires authentication. Adjust to your auth rules
 // (e.g. add `requireRole('admin')` from ../../auth for admin-only mutations).
 app.use('/trajets', async (c, next) =>
@@ -91,10 +101,13 @@ export const trajetModule = app
       conditions.push(ilike(trajet.baggageAllowance, `%${query.baggageAllowance}%`));
     }
 
+    const offset = (query.page - 1) * query.limit;
     const rows = conditions.length
-      ? await db.select().from(trajet).where(and(...conditions))
-      : await db.select().from(trajet);
-    return c.json(rows.map(serialize), 200);
+      ? await db.select().from(trajet).where(and(...conditions)).limit(query.limit + 1).offset(offset)
+      : await db.select().from(trajet).limit(query.limit + 1).offset(offset);
+
+    const { items, hasMore } = paginate(rows, query.limit);
+    return c.json({ items: items.map(serialize), page: query.page, limit: query.limit, hasMore }, 200);
   })
   .openapi(getTrajetRoute, async (c) => {
     const { id } = c.req.valid('param');
@@ -169,6 +182,7 @@ export const trajetModule = app
   .openapi(listTrajetBookingsRoute, async (c) => {
     const { user } = getAuth(c);
     const { id } = c.req.valid('param');
+    const { page, limit } = c.req.valid('query');
 
     const [trajetRow] = await db.select().from(trajet).where(eq(trajet.id, id));
     if (!trajetRow) return c.json({ error: 'Trajet not found' }, 404);
@@ -176,8 +190,15 @@ export const trajetModule = app
       return c.json({ error: 'Not the driver of this trajet' }, 403);
     }
 
-    const rows = await db.select().from(booking).where(eq(booking.trajetId, id));
-    return c.json(rows.map(serializeBooking), 200);
+    const rows = await db
+      .select()
+      .from(booking)
+      .where(eq(booking.trajetId, id))
+      .limit(limit + 1)
+      .offset((page - 1) * limit);
+
+    const { items, hasMore } = paginate(rows, limit);
+    return c.json({ items: items.map(serializeBooking), page, limit, hasMore }, 200);
   })
   .openapi(updateBookingStatusRoute, async (c) => {
     const { user } = getAuth(c);
@@ -279,6 +300,7 @@ export const trajetModule = app
   })
   .openapi(myBookingsRoute, async (c) => {
     const { user } = getAuth(c);
+    const { page, limit } = c.req.valid('query');
     const rows = await db
       .select({
         id: booking.id,
@@ -295,9 +317,12 @@ export const trajetModule = app
       })
       .from(booking)
       .innerJoin(trajet, eq(booking.trajetId, trajet.id))
-      .where(eq(booking.passengerId, user.id));
+      .where(eq(booking.passengerId, user.id))
+      .limit(limit + 1)
+      .offset((page - 1) * limit);
 
-    return c.json(rows.map(serializeBookingWithTrajet), 200);
+    const { items, hasMore } = paginate(rows, limit);
+    return c.json({ items: items.map(serializeBookingWithTrajet), page, limit, hasMore }, 200);
   });
 
 /** Map a DB row (Date columns, DB column names) to the Zod contract shape. */
