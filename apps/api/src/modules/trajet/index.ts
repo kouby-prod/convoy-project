@@ -98,6 +98,9 @@ export const trajetModule = app
     const result = await db.transaction(async (tx) => {
       const [row] = await tx.select().from(trajet).where(eq(trajet.id, id)).for('update');
       if (!row) return { ok: false as const, status: 404 as const, error: 'Not found' };
+      if (row.driverId === user.id) {
+        return { ok: false as const, status: 403 as const, error: 'Cannot book your own trajet' };
+      }
       if (row.seatsAvailable < seats) {
         return { ok: false as const, status: 400 as const, error: 'Not enough seats available' };
       }
