@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   pgTable,
   text,
@@ -6,6 +6,7 @@ import {
   integer,
   numeric,
   index,
+  check,
 } from 'drizzle-orm/pg-core';
 import { user } from './auth-schema';
 
@@ -36,7 +37,14 @@ export const booking = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()).notNull(),
   },
-  (t) => [index('booking_trajet_idx').on(t.trajetId), index('booking_passenger_idx').on(t.passengerId)],
+  (t) => [
+    index('booking_trajet_idx').on(t.trajetId),
+    index('booking_passenger_idx').on(t.passengerId),
+    check(
+      'booking_status_check',
+      sql`${t.status} in ('pending', 'confirmed', 'rejected', 'cancelled')`,
+    ),
+  ],
 );
 
 export const trajetRelations = relations(trajet, ({ many, one }) => ({

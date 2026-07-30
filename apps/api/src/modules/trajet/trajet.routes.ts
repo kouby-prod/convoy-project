@@ -92,6 +92,10 @@ export const bookTrajetRoute = createRoute({
       description: 'Not authenticated',
       content: { 'application/json': { schema: errorSchema } },
     },
+    403: {
+      description: 'Cannot book your own trajet',
+      content: { 'application/json': { schema: errorSchema } },
+    },
     404: {
       description: 'Trajet not found',
       content: { 'application/json': { schema: errorSchema } },
