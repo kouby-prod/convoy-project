@@ -71,9 +71,11 @@ export type TrajetSearchQuery = z.infer<typeof TrajetSearchQuerySchema>;
 
 /**
  * Booking contract — a passenger reserving seats on a trajet.
- * A booking starts `pending` (seats are provisionally held) and the driver
- * moves it to `confirmed` or `rejected` via UpdateBookingStatusSchema.
- * `cancelled` is reserved for a future passenger-initiated cancellation.
+ * A booking starts `pending` (seats are provisionally held) and either:
+ * - the driver moves it to `confirmed` or `rejected` via UpdateBookingStatusSchema,
+ * - the passenger moves it to `cancelled` (POST .../cancel), or
+ * - the system moves it to `expired` once it has sat `pending` past the TTL
+ *   (see PENDING_BOOKING_TTL_MS in the trajet module) without a driver response.
  */
 export const CreateBookingSchema = z
   .object({
@@ -82,7 +84,7 @@ export const CreateBookingSchema = z
   .describe('CreateBooking');
 export type CreateBooking = z.infer<typeof CreateBookingSchema>;
 
-export const BookingStatusSchema = z.enum(['pending', 'confirmed', 'rejected', 'cancelled']);
+export const BookingStatusSchema = z.enum(['pending', 'confirmed', 'rejected', 'cancelled', 'expired']);
 export type BookingStatus = z.infer<typeof BookingStatusSchema>;
 
 export const BookingSchema = z

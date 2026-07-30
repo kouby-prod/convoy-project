@@ -143,7 +143,8 @@
         "pending": "En attente",
         "confirmed": "Confirmée",
         "rejected": "Refusée",
-        "cancelled": "Annulée"
+        "cancelled": "Annulée",
+        "expired": "Expirée"
       }
     }
   },
