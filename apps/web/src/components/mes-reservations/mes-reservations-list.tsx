@@ -8,6 +8,7 @@ import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
@@ -17,6 +18,74 @@ function formatDateTime(value: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+/**
+ * Inline rating form for one booking, shown once its trip has departed (see
+ * `canReview` below). `POST /reviews` enforces the actual rules (confirmed,
+ * departed, not already reviewed) — this is just the happy-path UI for it.
+ */
+function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSubmitted: () => void }) {
+  const t = useTranslations('MesReservations');
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.reviews.$post({
+        json: { bookingId, rating, comment: comment.trim() || undefined },
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? t('review.error'));
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setError(null);
+      onSubmitted();
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : t('review.error'));
+    },
+  });
+
+  return (
+    <div className="grid gap-3 rounded-md border p-3">
+      <div className="flex items-center gap-2">
+        <label htmlFor={`rating-${bookingId}`} className="text-sm font-medium text-foreground">
+          {t('review.ratingLabel')}
+        </label>
+        <select
+          id={`rating-${bookingId}`}
+          value={rating}
+          onChange={(e) => setRating(Number(e.target.value))}
+          className="rounded-md border bg-background px-2 py-1 text-sm"
+        >
+          {[5, 4, 3, 2, 1].map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
+        </select>
+      </div>
+      <Textarea
+        placeholder={t('review.commentLabel')}
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+      />
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <Button
+        size="sm"
+        className="w-fit"
+        disabled={mutation.isPending}
+        onClick={() => mutation.mutate()}
+      >
+        {mutation.isPending ? t('review.submitting') : t('review.submit')}
+      </Button>
+    </div>
+  );
 }
 
 /**
@@ -31,6 +100,8 @@ export function MesReservationsList() {
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [page, setPage] = useState(1);
+  const [openReviewId, setOpenReviewId] = useState<string | null>(null);
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!isSessionPending && !session?.user) router.push('/sign-in');
@@ -99,6 +170,28 @@ export function MesReservationsList() {
                   >
                     {cancelMutation.isPending ? t('cancelling') : t('cancel')}
                   </Button>
+                ) : null}
+                {item.status === 'confirmed' && new Date(item.trajet.departureDateTime) < new Date() ? (
+                  reviewedIds.has(item.id) ? (
+                    <p className="text-sm text-muted-foreground">{t('review.success')}</p>
+                  ) : openReviewId === item.id ? (
+                    <ReviewForm
+                      bookingId={item.id}
+                      onSubmitted={() => {
+                        setReviewedIds((prev) => new Set(prev).add(item.id));
+                        setOpenReviewId(null);
+                      }}
+                    />
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-fit"
+                      onClick={() => setOpenReviewId(item.id)}
+                    >
+                      {t('review.cta')}
+                    </Button>
+                  )
                 ) : null}
               </CardContent>
             </Card>

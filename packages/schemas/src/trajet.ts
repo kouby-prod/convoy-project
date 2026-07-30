@@ -87,9 +87,10 @@ export type PaginationQuery = z.infer<typeof PaginationQuerySchema>;
 /**
  * Envelope for a paginated list response. `hasMore` (rather than a total
  * count) is enough to drive prev/next paging without an extra COUNT(*)
- * query per request.
+ * query per request. Exported so other schema files (e.g. review.ts) can
+ * build their own page schemas without duplicating this shape.
  */
-function paginatedSchema<Item extends z.ZodTypeAny>(itemSchema: Item) {
+export function paginatedSchema<Item extends z.ZodTypeAny>(itemSchema: Item) {
   return z.object({
     items: z.array(itemSchema),
     page: z.number().int().min(1),
