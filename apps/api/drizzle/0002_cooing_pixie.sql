@@ -1,0 +1,1 @@
+ALTER TABLE "booking" ADD CONSTRAINT "booking_status_check" CHECK ("booking"."status" in ('pending', 'confirmed', 'rejected', 'cancelled'));
