@@ -14,6 +14,8 @@ function createChain(result: unknown) {
     values: () => chain,
     set: () => chain,
     innerJoin: () => chain,
+    limit: () => chain,
+    offset: () => chain,
     returning: () => Promise.resolve(result),
     then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
       Promise.resolve(result).then(resolve, reject),
@@ -126,11 +128,11 @@ describe('trajet module', () => {
     dbState.updateQueue = [];
   });
 
-  it('GET /trajets returns a list', async () => {
+  it('GET /trajets returns a paginated, empty page by default', async () => {
     dbState.selectResult = [];
     const res = await trajetModule.request('/trajets');
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual([]);
+    await expect(res.json()).resolves.toEqual({ items: [], page: 1, limit: 20, hasMore: false });
   });
 
   describe('GET /trajets search/filter query', () => {
@@ -141,7 +143,8 @@ describe('trajet module', () => {
           '&minSeats=2&maxPrice=25&comfort=standard&baggageAllowance=valise',
       );
       expect(res.status).toBe(200);
-      await expect(res.json()).resolves.toHaveLength(1);
+      const body = (await res.json()) as { items: unknown[] };
+      expect(body.items).toHaveLength(1);
     });
 
     it('rejects an invalid date format', async () => {
@@ -156,6 +159,43 @@ describe('trajet module', () => {
 
     it('rejects a non-numeric maxPrice', async () => {
       const res = await trajetModule.request('/trajets?maxPrice=free');
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('GET /trajets pagination', () => {
+    it('caps a page at `limit` items and reports hasMore when an extra row exists', async () => {
+      // 3 rows come back for a `limit=2` request — the "limit + 1" fetch
+      // trick that signals there's a next page without a COUNT(*) query.
+      dbState.selectResult = [makeTrajetRow(), makeTrajetRow(), makeTrajetRow()];
+      const res = await trajetModule.request('/trajets?limit=2');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        items: unknown[];
+        page: number;
+        limit: number;
+        hasMore: boolean;
+      };
+      expect(body.items).toHaveLength(2);
+      expect(body).toMatchObject({ page: 1, limit: 2, hasMore: true });
+    });
+
+    it('reports hasMore false and echoes the requested page when the page is not full', async () => {
+      dbState.selectResult = [makeTrajetRow()];
+      const res = await trajetModule.request('/trajets?limit=2&page=3');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { items: unknown[]; page: number; hasMore: boolean };
+      expect(body.items).toHaveLength(1);
+      expect(body).toMatchObject({ page: 3, hasMore: false });
+    });
+
+    it('rejects a limit above 100', async () => {
+      const res = await trajetModule.request('/trajets?limit=101');
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects a page below 1', async () => {
+      const res = await trajetModule.request('/trajets?page=0');
       expect(res.status).toBe(400);
     });
   });
@@ -349,7 +389,7 @@ describe('trajet module', () => {
       expect(res.status).toBe(403);
     });
 
-    it('returns the bookings for the trajet when the caller is the driver', async () => {
+    it('returns a page of bookings for the trajet when the caller is the driver', async () => {
       getSession.mockResolvedValue(sessionFor('user'));
       dbState.selectQueue = [
         [makeTrajetRow({ driverId: 'u_1' })],
@@ -358,10 +398,22 @@ describe('trajet module', () => {
 
       const res = await trajetModule.request(url);
       expect(res.status).toBe(200);
-      const body = (await res.json()) as Array<{ id: string; status: string }>;
-      expect(body).toHaveLength(2);
-      expect(body[0]).toMatchObject({ id: BOOKING_ID, status: 'pending' });
-      expect(body[1]).toMatchObject({ id: 'b_2', status: 'confirmed' });
+      const body = (await res.json()) as {
+        items: Array<{ id: string; status: string }>;
+        page: number;
+        limit: number;
+        hasMore: boolean;
+      };
+      expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
+      expect(body.items).toHaveLength(2);
+      expect(body.items[0]).toMatchObject({ id: BOOKING_ID, status: 'pending' });
+      expect(body.items[1]).toMatchObject({ id: 'b_2', status: 'confirmed' });
+    });
+
+    it('rejects an out-of-range limit', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      const res = await trajetModule.request(`${url}?limit=0`);
+      expect(res.status).toBe(400);
     });
   });
 
@@ -621,7 +673,7 @@ describe('trajet module', () => {
       expect(res.status).toBe(401);
     });
 
-    it("returns the current user's bookings with a trajet summary", async () => {
+    it("returns a page of the current user's bookings with a trajet summary", async () => {
       getSession.mockResolvedValue(sessionFor('user'));
       dbState.selectResult = [
         {
@@ -641,13 +693,22 @@ describe('trajet module', () => {
 
       const res = await trajetModule.request('/me/bookings');
       expect(res.status).toBe(200);
-      const body = (await res.json()) as Array<{
-        id: string;
-        trajet: { destinationCity: string; pricePerSeat: number };
-      }>;
-      expect(body).toHaveLength(1);
-      expect(body[0]).toMatchObject({ id: BOOKING_ID });
-      expect(body[0]?.trajet).toMatchObject({ destinationCity: 'Quebec', pricePerSeat: 20 });
+      const body = (await res.json()) as {
+        items: Array<{ id: string; trajet: { destinationCity: string; pricePerSeat: number } }>;
+        page: number;
+        limit: number;
+        hasMore: boolean;
+      };
+      expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0]).toMatchObject({ id: BOOKING_ID });
+      expect(body.items[0]?.trajet).toMatchObject({ destinationCity: 'Quebec', pricePerSeat: 20 });
+    });
+
+    it('rejects a page below 1', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      const res = await trajetModule.request('/me/bookings?page=0');
+      expect(res.status).toBe(400);
     });
   });
 });
