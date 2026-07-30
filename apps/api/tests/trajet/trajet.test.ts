@@ -29,6 +29,12 @@ const dbState = vi.hoisted(() => ({
   selectQueue: [] as unknown[][],
   insertResult: [] as unknown[],
   updateResult: [] as unknown[],
+  // Same idea as `selectQueue`, for successive `update` calls — every
+  // book/confirm-reject/cancel transaction now opens with a stale-pending
+  // "expire" update before its own real update, so tests exercising a real
+  // update result must queue an empty `[]` frame first (nothing expired) to
+  // keep that first call from swallowing the result meant for the second.
+  updateQueue: [] as unknown[][],
 }));
 
 const db = vi.hoisted(() => {
@@ -37,7 +43,9 @@ const db = vi.hoisted(() => {
       createChain(dbState.selectQueue.length ? dbState.selectQueue.shift() : dbState.selectResult),
     ),
     insert: vi.fn(() => createChain(dbState.insertResult)),
-    update: vi.fn(() => createChain(dbState.updateResult)),
+    update: vi.fn(() =>
+      createChain(dbState.updateQueue.length ? dbState.updateQueue.shift() : dbState.updateResult),
+    ),
     transaction: vi.fn((cb: (tx: typeof instance) => unknown) => cb(instance)),
   };
   return instance;
@@ -115,6 +123,7 @@ describe('trajet module', () => {
     dbState.selectQueue = [];
     dbState.insertResult = [];
     dbState.updateResult = [];
+    dbState.updateQueue = [];
   });
 
   it('GET /trajets returns a list', async () => {
@@ -281,6 +290,27 @@ describe('trajet module', () => {
     expect(res.status).toBe(400);
   });
 
+  it('POST /trajets/:id/book expires a stale pending booking and books with the freed seats', async () => {
+    getSession.mockResolvedValue(sessionFor('user'));
+    // Fully booked at rest, but one pending request (2 seats) is past the TTL.
+    dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', seatsAvailable: 0 })];
+    dbState.updateQueue = [[{ seats: 2 }]];
+    dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'pending' })];
+
+    const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seats: 2 }),
+    });
+
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'pending' });
+    // Sweep's expire update + the trajet restock it triggers + this booking's
+    // own seatsAvailable decrement.
+    expect(db.update).toHaveBeenCalledTimes(3);
+  });
+
   it('POST /trajets/:id/book returns 404 when the trajet does not exist', async () => {
     getSession.mockResolvedValue(sessionFor('user'));
     dbState.selectResult = [];
@@ -405,6 +435,8 @@ describe('trajet module', () => {
         [makeTrajetRow({ driverId: 'u_1', seatsAvailable: 1 })],
         [makeBookingRow({ status: 'pending', seats: 2 })],
       ];
+      // First frame: the stale-pending sweep finds nothing to expire.
+      dbState.updateQueue = [[]];
       dbState.updateResult = [makeBookingRow({ status: 'confirmed', seats: 2 })];
 
       const res = await trajetModule.request(url, {
@@ -416,8 +448,8 @@ describe('trajet module', () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'confirmed' });
-      // Only the booking is updated — seats stay held, no trajet update.
-      expect(db.update).toHaveBeenCalledTimes(1);
+      // Sweep (no-op) + the booking update — seats stay held, no trajet update.
+      expect(db.update).toHaveBeenCalledTimes(2);
     });
 
     it('rejects a pending booking and restocks the seats', async () => {
@@ -426,6 +458,8 @@ describe('trajet module', () => {
         [makeTrajetRow({ driverId: 'u_1', seatsAvailable: 1 })],
         [makeBookingRow({ status: 'pending', seats: 2 })],
       ];
+      // First frame: the stale-pending sweep finds nothing to expire.
+      dbState.updateQueue = [[]];
       dbState.updateResult = [makeBookingRow({ status: 'rejected', seats: 2 })];
 
       const res = await trajetModule.request(url, {
@@ -437,7 +471,27 @@ describe('trajet module', () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'rejected' });
-      // Booking update + trajet seatsAvailable restock.
+      // Sweep (no-op) + booking update + trajet seatsAvailable restock.
+      expect(db.update).toHaveBeenCalledTimes(3);
+    });
+
+    it('returns 400 when the booking has since expired (TTL passed)', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      const staleBooking = makeBookingRow({ status: 'expired', seats: 2 });
+      dbState.selectQueue = [[makeTrajetRow({ driverId: 'u_1', seatsAvailable: 1 })], [staleBooking]];
+      // The sweep expires one stale booking (2 seats) before the booking
+      // itself is fetched — it's already `expired` by the time the handler
+      // reads it, so the existing "not pending" check catches it.
+      dbState.updateQueue = [[{ seats: 2 }]];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'confirmed' }),
+      });
+
+      expect(res.status).toBe(400);
+      // Sweep's expire update + the trajet seatsAvailable restock it triggers.
       expect(db.update).toHaveBeenCalledTimes(2);
     });
   });
@@ -492,6 +546,8 @@ describe('trajet module', () => {
         [makeTrajetRow({ seatsAvailable: 1 })],
         [makeBookingRow({ passengerId: 'u_1', status: 'pending', seats: 2 })],
       ];
+      // First frame: the stale-pending sweep finds nothing to expire.
+      dbState.updateQueue = [[]];
       dbState.updateResult = [makeBookingRow({ passengerId: 'u_1', status: 'cancelled', seats: 2 })];
 
       const res = await trajetModule.request(url, { method: 'POST' });
@@ -499,8 +555,8 @@ describe('trajet module', () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'cancelled' });
-      // Booking update + trajet seatsAvailable restock.
-      expect(db.update).toHaveBeenCalledTimes(2);
+      // Sweep (no-op) + booking update + trajet seatsAvailable restock.
+      expect(db.update).toHaveBeenCalledTimes(3);
     });
 
     it('cancels a confirmed booking and restocks the seats', async () => {
@@ -509,6 +565,8 @@ describe('trajet module', () => {
         [makeTrajetRow({ seatsAvailable: 0 })],
         [makeBookingRow({ passengerId: 'u_1', status: 'confirmed', seats: 2 })],
       ];
+      // First frame: the stale-pending sweep finds nothing to expire.
+      dbState.updateQueue = [[]];
       dbState.updateResult = [makeBookingRow({ passengerId: 'u_1', status: 'cancelled', seats: 2 })];
 
       const res = await trajetModule.request(url, { method: 'POST' });
@@ -516,6 +574,23 @@ describe('trajet module', () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'cancelled' });
+      // Sweep (no-op) + booking update + trajet seatsAvailable restock.
+      expect(db.update).toHaveBeenCalledTimes(3);
+    });
+
+    it('expires a stale pending booking instead of cancelling it, freeing its seats', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      const staleBooking = makeBookingRow({ passengerId: 'u_1', status: 'expired', seats: 2 });
+      dbState.selectQueue = [[makeTrajetRow({ seatsAvailable: 1 })], [staleBooking]];
+      // The sweep expires this booking (2 seats) before it's fetched — it's
+      // already `expired` by the time the handler reads it, so the existing
+      // "cannot be cancelled" check catches it instead of a redundant cancel.
+      dbState.updateQueue = [[{ seats: 2 }]];
+
+      const res = await trajetModule.request(url, { method: 'POST' });
+
+      expect(res.status).toBe(400);
+      // Sweep's expire update + the trajet seatsAvailable restock it triggers.
       expect(db.update).toHaveBeenCalledTimes(2);
     });
   });

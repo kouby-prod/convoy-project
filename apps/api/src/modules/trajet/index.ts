@@ -26,6 +26,40 @@ import {
  */
 const app = new OpenAPIHono<AuthEnv>();
 
+/**
+ * How long a booking may sit `pending` before the driver's silence expires
+ * it and its seats are given back. Product decision: 12 hours.
+ */
+const PENDING_BOOKING_TTL_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * Without this, a driver who never responds holds a passenger's seats
+ * forever. Called at the top of every trajet/booking-mutating transaction
+ * (book, accept/reject, cancel) so a stale `pending` request is expired —
+ * and its seats restocked — before the transaction's own logic runs.
+ * Returns the trajet's up-to-date `seatsAvailable` (unchanged if nothing
+ * was stale), which callers must use instead of their pre-sweep snapshot.
+ */
+async function expireStalePendingBookings(
+  tx: Pick<typeof db, 'update'>,
+  trajetId: string,
+  seatsAvailable: number,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - PENDING_BOOKING_TTL_MS);
+  const expired = await tx
+    .update(booking)
+    .set({ status: 'expired' })
+    .where(and(eq(booking.trajetId, trajetId), eq(booking.status, 'pending'), lt(booking.createdAt, cutoff)))
+    .returning({ seats: booking.seats });
+
+  if (expired.length === 0) return seatsAvailable;
+
+  const freedSeats = expired.reduce((sum, row) => sum + row.seats, 0);
+  const updatedSeatsAvailable = seatsAvailable + freedSeats;
+  await tx.update(trajet).set({ seatsAvailable: updatedSeatsAvailable }).where(eq(trajet.id, trajetId));
+  return updatedSeatsAvailable;
+}
+
 // Reads are public; creating requires authentication. Adjust to your auth rules
 // (e.g. add `requireRole('admin')` from ../../auth for admin-only mutations).
 app.use('/trajets', async (c, next) =>
@@ -101,7 +135,9 @@ export const trajetModule = app
       if (row.driverId === user.id) {
         return { ok: false as const, status: 403 as const, error: 'Cannot book your own trajet' };
       }
-      if (row.seatsAvailable < seats) {
+
+      const seatsAvailable = await expireStalePendingBookings(tx, id, row.seatsAvailable);
+      if (seatsAvailable < seats) {
         return { ok: false as const, status: 400 as const, error: 'Not enough seats available' };
       }
 
@@ -121,7 +157,7 @@ export const trajetModule = app
 
       await tx
         .update(trajet)
-        .set({ seatsAvailable: row.seatsAvailable - seats })
+        .set({ seatsAvailable: seatsAvailable - seats })
         .where(eq(trajet.id, id));
 
       return { ok: true as const, booking: created };
@@ -155,6 +191,13 @@ export const trajetModule = app
         return { ok: false as const, status: 403 as const, error: 'Not the driver of this trajet' };
       }
 
+      // Expire this trajet's stale requests first, so a booking the driver
+      // is too late to act on is already `expired` by the time it's fetched
+      // below (caught by the `!== 'pending'` check just like any other
+      // non-pending status), and its seats are freed regardless of whether
+      // the driver ever calls this endpoint again.
+      const seatsAvailable = await expireStalePendingBookings(tx, id, trajetRow.seatsAvailable);
+
       const [bookingRow] = await tx.select().from(booking).where(eq(booking.id, bookingId));
       if (!bookingRow || bookingRow.trajetId !== id) {
         return { ok: false as const, status: 404 as const, error: 'Booking not found' };
@@ -175,7 +218,7 @@ export const trajetModule = app
       if (status === 'rejected') {
         await tx
           .update(trajet)
-          .set({ seatsAvailable: trajetRow.seatsAvailable + bookingRow.seats })
+          .set({ seatsAvailable: seatsAvailable + bookingRow.seats })
           .where(eq(trajet.id, id));
       }
 
@@ -192,6 +235,11 @@ export const trajetModule = app
     const result = await db.transaction(async (tx) => {
       const [trajetRow] = await tx.select().from(trajet).where(eq(trajet.id, id)).for('update');
       if (!trajetRow) return { ok: false as const, status: 404 as const, error: 'Trajet not found' };
+
+      // See updateBookingStatusRoute above: expiring stale requests here too
+      // means a passenger cancelling one no longer double-frees seats the
+      // sweep already gave back.
+      const seatsAvailable = await expireStalePendingBookings(tx, id, trajetRow.seatsAvailable);
 
       const [bookingRow] = await tx.select().from(booking).where(eq(booking.id, bookingId));
       if (!bookingRow || bookingRow.trajetId !== id) {
@@ -215,7 +263,7 @@ export const trajetModule = app
       // so cancelling either always frees them back to the trajet.
       await tx
         .update(trajet)
-        .set({ seatsAvailable: trajetRow.seatsAvailable + bookingRow.seats })
+        .set({ seatsAvailable: seatsAvailable + bookingRow.seats })
         .where(eq(trajet.id, id));
 
       return { ok: true as const, booking: updated };
