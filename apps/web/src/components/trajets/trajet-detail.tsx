@@ -22,6 +22,26 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+/** The driver's average rating, fetched separately so the review module stays decoupled from trajet. */
+function DriverRating({ driverId }: { driverId: string }) {
+  const t = useTranslations('Trajets');
+
+  const { data } = useQuery({
+    queryKey: ['drivers', driverId, 'rating'],
+    queryFn: async () => {
+      const res = await api.drivers[':driverId'].rating.$get({ param: { driverId } });
+      if (!res.ok) throw new Error('Failed to load driver rating');
+      return res.json();
+    },
+  });
+
+  if (!data || data.reviewCount === 0 || data.averageRating === null) {
+    return <span>{t('driverRating.none')}</span>;
+  }
+
+  return <span>{t('driverRating.summary', { rating: data.averageRating.toFixed(1), count: data.reviewCount })}</span>;
+}
+
 export function TrajetDetail({ id }: { id: string }) {
   const t = useTranslations('Trajets');
   const { data: session } = authClient.useSession();
@@ -60,6 +80,10 @@ export function TrajetDetail({ id }: { id: string }) {
           <div>
             <strong className="text-foreground">{t('departureAt')}:</strong>{' '}
             {formatDateTime(data.departureDateTime)}
+          </div>
+          <div>
+            <strong className="text-foreground">{t('driverRating.label')}:</strong>{' '}
+            <DriverRating driverId={data.driverId} />
           </div>
           <div>
             <strong className="text-foreground">{t('seats')}:</strong>{' '}
