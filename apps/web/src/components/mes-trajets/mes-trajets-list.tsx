@@ -50,10 +50,15 @@ export function MesTrajetsList() {
         <li key={item.id}>
           <Card>
             <CardHeader>
-              <CardTitle>
+              <CardTitle className="flex items-center gap-2">
                 <Link href={`/trajets/${item.id}`} className="hover:underline">
                   {item.departureCity} - {item.destinationCity}
                 </Link>
+                {item.cancelledAt ? (
+                  <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+                    {t('cancelledBadge')}
+                  </span>
+                ) : null}
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-2 px-6 pb-6 pt-0 text-sm text-muted-foreground">

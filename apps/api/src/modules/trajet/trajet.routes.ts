@@ -6,6 +6,7 @@ import {
   TrajetSearchQuerySchema,
   PaginationQuerySchema,
   CreateTrajetSchema,
+  UpdateTrajetSchema,
   BookingSchema,
   BookingPageSchema,
   BookingWithTrajetPageSchema,
@@ -66,6 +67,73 @@ export const createTrajetRoute = createRoute({
     },
     401: {
       description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const updateTrajetRoute = createRoute({
+  method: 'patch',
+  path: '/trajets/{id}',
+  tags: ['trajet'],
+  summary: 'Update a published trajet (driver only)',
+  security: bearerAuth,
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+    body: { content: { 'application/json': { schema: UpdateTrajetSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Updated',
+      content: { 'application/json': { schema: TrajetSchema } },
+    },
+    400: {
+      description: 'seatsTotal is below the number of seats already booked, or the trajet is cancelled',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Not the driver of this trajet',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Trajet not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const cancelTrajetRoute = createRoute({
+  method: 'delete',
+  path: '/trajets/{id}',
+  tags: ['trajet'],
+  summary: 'Cancel a published trajet (driver only) — soft delete, cascades to active bookings',
+  security: bearerAuth,
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+  },
+  responses: {
+    200: {
+      description: 'Cancelled',
+      content: { 'application/json': { schema: TrajetSchema } },
+    },
+    400: {
+      description: 'Trajet is already cancelled',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Not the driver of this trajet',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Trajet not found',
       content: { 'application/json': { schema: errorSchema } },
     },
   },
