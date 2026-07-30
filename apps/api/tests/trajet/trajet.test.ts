@@ -67,6 +67,20 @@ vi.mock('../../src/auth/auth', () => ({
   auth: { api: { getSession: (...a: unknown[]) => getSession(...a) } },
 }));
 
+// Mock notifications entirely: real `notifyUser` looks up an email via `db`
+// (the same mocked chain everything else shares) and calls the real
+// `sendEmail`, which — if SMTP_HOST happens to be set in the environment —
+// would attempt a real SMTP connection during tests. Stubbing it out here
+// also lets tests assert exactly who got notified and with what subject.
+const notifyUser = vi.fn();
+vi.mock('../../src/modules/trajet/notifications', () => ({
+  notifyUser: (...a: unknown[]) => notifyUser(...a),
+  trajetUrl: (id: string) => `https://example.test/trajets/${id}`,
+  trajetSearchUrl: () => 'https://example.test/trajets',
+  describeTrip: (trip: { departureCity: string; arrivalCity: string; departureAt: Date }) =>
+    `${trip.departureCity} to ${trip.arrivalCity} (departing ${trip.departureAt.toUTCString()})`,
+}));
+
 import { trajetModule } from '../../src/modules/trajet';
 
 function sessionFor(role: string | null) {
@@ -128,6 +142,7 @@ describe('trajet module', () => {
     db.update.mockClear();
     db.transaction.mockClear();
     getSession.mockReset();
+    notifyUser.mockClear();
     dbState.selectResult = [];
     dbState.selectQueue = [];
     dbState.insertResult = [];
@@ -432,7 +447,10 @@ describe('trajet module', () => {
     it('cancels the trajet and cascades to active bookings', async () => {
       getSession.mockResolvedValue(sessionFor('user'));
       dbState.selectResult = [makeTrajetRow({ driverId: 'u_1' })];
-      dbState.updateResult = [makeTrajetRow({ driverId: 'u_1', cancelledAt: now })];
+      dbState.updateQueue = [
+        [makeTrajetRow({ driverId: 'u_1', cancelledAt: now })],
+        [{ passengerId: 'u_2' }, { passengerId: 'u_3' }],
+      ];
 
       const res = await trajetModule.request(url, { method: 'DELETE' });
 
@@ -442,6 +460,16 @@ describe('trajet module', () => {
       // Trajet cancellation update + the booking cascade update.
       expect(db.update).toHaveBeenCalledTimes(2);
       expect(dbState.setCalls).toContainEqual({ status: 'cancelled' });
+      expect(notifyUser).toHaveBeenCalledWith(
+        'u_2',
+        expect.stringContaining('cancelled'),
+        expect.any(String),
+      );
+      expect(notifyUser).toHaveBeenCalledWith(
+        'u_3',
+        expect.stringContaining('cancelled'),
+        expect.any(String),
+      );
     });
   });
 
@@ -482,6 +510,11 @@ describe('trajet module', () => {
     expect(res.status).toBe(201);
     const body = await res.json();
     expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'pending' });
+    expect(notifyUser).toHaveBeenCalledWith(
+      'someone-else',
+      expect.stringContaining('New booking request'),
+      expect.any(String),
+    );
   });
 
   it('POST /trajets/:id/book returns 403 when the caller is the trajet driver', async () => {
@@ -514,7 +547,7 @@ describe('trajet module', () => {
     getSession.mockResolvedValue(sessionFor('user'));
     // Fully booked at rest, but one pending request (2 seats) is past the TTL.
     dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', seatsAvailable: 0 })];
-    dbState.updateQueue = [[{ seats: 2 }]];
+    dbState.updateQueue = [[{ passengerId: 'u_3', seats: 2 }]];
     dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'pending' })];
 
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
@@ -529,6 +562,17 @@ describe('trajet module', () => {
     // Sweep's expire update + the trajet restock it triggers + this booking's
     // own seatsAvailable decrement.
     expect(db.update).toHaveBeenCalledTimes(3);
+    // The passenger whose stale request just expired, and the driver of the new one.
+    expect(notifyUser).toHaveBeenCalledWith(
+      'u_3',
+      expect.stringContaining('expired'),
+      expect.any(String),
+    );
+    expect(notifyUser).toHaveBeenCalledWith(
+      'someone-else',
+      expect.stringContaining('New booking request'),
+      expect.any(String),
+    );
   });
 
   it('POST /trajets/:id/book returns 404 when the trajet does not exist', async () => {
@@ -682,6 +726,11 @@ describe('trajet module', () => {
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'confirmed' });
       // Sweep (no-op) + the booking update — seats stay held, no trajet update.
       expect(db.update).toHaveBeenCalledTimes(2);
+      expect(notifyUser).toHaveBeenCalledWith(
+        'u_2',
+        expect.stringContaining('confirmed'),
+        expect.any(String),
+      );
     });
 
     it('rejects a pending booking and restocks the seats', async () => {
@@ -705,6 +754,11 @@ describe('trajet module', () => {
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'rejected' });
       // Sweep (no-op) + booking update + trajet seatsAvailable restock.
       expect(db.update).toHaveBeenCalledTimes(3);
+      expect(notifyUser).toHaveBeenCalledWith(
+        'u_2',
+        expect.stringContaining('rejected'),
+        expect.any(String),
+      );
     });
 
     it('returns 400 when the booking has since expired (TTL passed)', async () => {
@@ -714,7 +768,7 @@ describe('trajet module', () => {
       // The sweep expires one stale booking (2 seats) before the booking
       // itself is fetched — it's already `expired` by the time the handler
       // reads it, so the existing "not pending" check catches it.
-      dbState.updateQueue = [[{ seats: 2 }]];
+      dbState.updateQueue = [[{ passengerId: 'u_3', seats: 2 }]];
 
       const res = await trajetModule.request(url, {
         method: 'PATCH',
@@ -725,6 +779,11 @@ describe('trajet module', () => {
       expect(res.status).toBe(400);
       // Sweep's expire update + the trajet seatsAvailable restock it triggers.
       expect(db.update).toHaveBeenCalledTimes(2);
+      expect(notifyUser).toHaveBeenCalledWith(
+        'u_3',
+        expect.stringContaining('expired'),
+        expect.any(String),
+      );
     });
   });
 
@@ -789,6 +848,11 @@ describe('trajet module', () => {
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'cancelled' });
       // Sweep (no-op) + booking update + trajet seatsAvailable restock.
       expect(db.update).toHaveBeenCalledTimes(3);
+      expect(notifyUser).toHaveBeenCalledWith(
+        'u_1',
+        expect.stringContaining('cancelled'),
+        expect.any(String),
+      );
     });
 
     it('cancels a confirmed booking and restocks the seats', async () => {
@@ -808,6 +872,11 @@ describe('trajet module', () => {
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'cancelled' });
       // Sweep (no-op) + booking update + trajet seatsAvailable restock.
       expect(db.update).toHaveBeenCalledTimes(3);
+      expect(notifyUser).toHaveBeenCalledWith(
+        'u_1',
+        expect.stringContaining('cancelled'),
+        expect.any(String),
+      );
     });
 
     it('expires a stale pending booking instead of cancelling it, freeing its seats', async () => {
@@ -817,13 +886,18 @@ describe('trajet module', () => {
       // The sweep expires this booking (2 seats) before it's fetched — it's
       // already `expired` by the time the handler reads it, so the existing
       // "cannot be cancelled" check catches it instead of a redundant cancel.
-      dbState.updateQueue = [[{ seats: 2 }]];
+      dbState.updateQueue = [[{ passengerId: 'u_3', seats: 2 }]];
 
       const res = await trajetModule.request(url, { method: 'POST' });
 
       expect(res.status).toBe(400);
       // Sweep's expire update + the trajet seatsAvailable restock it triggers.
       expect(db.update).toHaveBeenCalledTimes(2);
+      expect(notifyUser).toHaveBeenCalledWith(
+        'u_3',
+        expect.stringContaining('expired'),
+        expect.any(String),
+      );
     });
   });
 
