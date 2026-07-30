@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { createApiClient } from '@carpool/api-client';
@@ -17,11 +18,15 @@ const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 export function TrajetBookings({ trajetId }: { trajetId: string }) {
   const t = useTranslations('Trajets');
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['trajets', trajetId, 'bookings'],
+    queryKey: ['trajets', trajetId, 'bookings', page],
     queryFn: async () => {
-      const res = await api.trajets[':id'].bookings.$get({ param: { id: trajetId } });
+      const res = await api.trajets[':id'].bookings.$get({
+        param: { id: trajetId },
+        query: { page: String(page) },
+      });
       if (!res.ok) throw new Error('Failed to load bookings');
       return res.json();
     },
@@ -57,10 +62,10 @@ export function TrajetBookings({ trajetId }: { trajetId: string }) {
         <CardTitle>{t('bookings.title')}</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-3">
-        {!data?.length ? (
+        {!data?.items.length ? (
           <p className="text-sm text-muted-foreground">{t('bookings.empty')}</p>
         ) : (
-          data.map((booking) => (
+          data.items.map((booking) => (
             <div
               key={booking.id}
               className="flex items-center justify-between gap-4 rounded-md border p-3 text-sm"
@@ -99,6 +104,27 @@ export function TrajetBookings({ trajetId }: { trajetId: string }) {
         )}
         {mutation.isError ? (
           <p className="text-sm text-destructive">{t('bookings.actionError')}</p>
+        ) : null}
+        {data?.items.length ? (
+          <div className="flex items-center justify-between gap-4">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              {t('pagination.previous')}
+            </Button>
+            <span className="text-xs text-muted-foreground">{t('pagination.page', { page })}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!data.hasMore}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              {t('pagination.next')}
+            </Button>
+          </div>
         ) : null}
       </CardContent>
     </Card>
