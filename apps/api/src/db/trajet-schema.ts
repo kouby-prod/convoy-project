@@ -22,6 +22,7 @@ export const trajet = pgTable('trajet', {
   description: text('description'),
   comfort: text('comfort'),
   baggageAllowance: text('baggage_allowance'),
+  cancelledAt: timestamp('cancelled_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()).notNull(),
 });

@@ -11,6 +11,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrajetBookings } from '@/components/trajets/trajet-bookings';
 import { TrajetBookingForm } from '@/components/trajets/trajet-booking-form';
+import { TrajetOwnerActions } from '@/components/trajets/trajet-owner-actions';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -42,6 +43,12 @@ export function TrajetDetail({ id }: { id: string }) {
       <Link href="/trajets" className={cn(buttonVariants({ variant: 'outline' }), 'w-fit')}>
         {t('backToList')}
       </Link>
+
+      {data.cancelledAt ? (
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          {t('cancelledBanner')}
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -87,9 +94,12 @@ export function TrajetDetail({ id }: { id: string }) {
       </Card>
 
       {session?.user?.id === data.driverId ? (
-        <TrajetBookings trajetId={id} />
+        <>
+          <TrajetOwnerActions trajet={data} />
+          <TrajetBookings trajetId={id} />
+        </>
       ) : (
-        <TrajetBookingForm trajetId={id} seatsAvailable={data.seatsAvailable} />
+        <TrajetBookingForm trajetId={id} seatsAvailable={data.seatsAvailable} cancelled={!!data.cancelledAt} />
       )}
     </div>
   );

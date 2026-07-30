@@ -12,7 +12,10 @@ function createChain(result: unknown) {
     where: () => chain,
     for: () => chain,
     values: () => chain,
-    set: () => chain,
+    set: (values: unknown) => {
+      dbState.setCalls.push(values);
+      return chain;
+    },
     innerJoin: () => chain,
     limit: () => chain,
     offset: () => chain,
@@ -37,6 +40,9 @@ const dbState = vi.hoisted(() => ({
   // update result must queue an empty `[]` frame first (nothing expired) to
   // keep that first call from swallowing the result meant for the second.
   updateQueue: [] as unknown[][],
+  // Every `.update(...).set(values)` call, in order — lets a test assert
+  // exactly what was written (e.g. a recalculated `seatsAvailable`).
+  setCalls: [] as unknown[],
 }));
 
 const db = vi.hoisted(() => {
@@ -93,6 +99,7 @@ function makeTrajetRow(overrides: Partial<Record<string, unknown>> = {}) {
     description: 'A sample trajet',
     comfort: null,
     baggageAllowance: null,
+    cancelledAt: null,
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -126,6 +133,7 @@ describe('trajet module', () => {
     dbState.insertResult = [];
     dbState.updateResult = [];
     dbState.updateQueue = [];
+    dbState.setCalls = [];
   });
 
   it('GET /trajets returns a paginated, empty page by default', async () => {
@@ -273,6 +281,178 @@ describe('trajet module', () => {
         seatsTotal: 3,
         pricePerSeat: 20,
       }),
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  describe('PATCH /trajets/:id', () => {
+    const url = '/trajets/11111111-1111-4111-8111-111111111111';
+
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pricePerSeat: 25 }),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 404 when the trajet does not exist', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pricePerSeat: 25 }),
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 403 when the caller is not the driver', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else' })];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pricePerSeat: 25 }),
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 400 when the trajet is cancelled', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'u_1', cancelledAt: now })];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pricePerSeat: 25 }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects a departureDateTime in the past', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'u_1' })];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ departureDateTime: new Date(Date.now() - 60_000).toISOString() }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when seatsTotal is reduced below the seats already booked', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      // seatsTotal 3, seatsAvailable 1 → 2 seats already booked.
+      dbState.selectResult = [makeTrajetRow({ driverId: 'u_1', seatsTotal: 3, seatsAvailable: 1 })];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seatsTotal: 1 }),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('updates the given fields and returns the updated trajet', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'u_1' })];
+      dbState.updateResult = [makeTrajetRow({ driverId: 'u_1', pricePerSeat: '25' })];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pricePerSeat: 25 }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { pricePerSeat: number };
+      expect(body.pricePerSeat).toBe(25);
+    });
+
+    it('recalculates seatsAvailable when seatsTotal changes, preserving already-booked seats', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      // seatsTotal 3, seatsAvailable 1 → 2 seats already booked.
+      dbState.selectResult = [makeTrajetRow({ driverId: 'u_1', seatsTotal: 3, seatsAvailable: 1 })];
+      dbState.updateResult = [makeTrajetRow({ driverId: 'u_1', seatsTotal: 5, seatsAvailable: 3 })];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seatsTotal: 5 }),
+      });
+
+      expect(res.status).toBe(200);
+      // 5 new total - 2 already booked = 3 available.
+      expect(dbState.setCalls).toContainEqual(
+        expect.objectContaining({ seatsTotal: 5, seatsAvailable: 3 }),
+      );
+    });
+  });
+
+  describe('DELETE /trajets/:id', () => {
+    const url = '/trajets/11111111-1111-4111-8111-111111111111';
+
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await trajetModule.request(url, { method: 'DELETE' });
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 404 when the trajet does not exist', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [];
+
+      const res = await trajetModule.request(url, { method: 'DELETE' });
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 403 when the caller is not the driver', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else' })];
+
+      const res = await trajetModule.request(url, { method: 'DELETE' });
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 400 when the trajet is already cancelled', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'u_1', cancelledAt: now })];
+
+      const res = await trajetModule.request(url, { method: 'DELETE' });
+      expect(res.status).toBe(400);
+    });
+
+    it('cancels the trajet and cascades to active bookings', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'u_1' })];
+      dbState.updateResult = [makeTrajetRow({ driverId: 'u_1', cancelledAt: now })];
+
+      const res = await trajetModule.request(url, { method: 'DELETE' });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { cancelledAt: string | null };
+      expect(body.cancelledAt).not.toBeNull();
+      // Trajet cancellation update + the booking cascade update.
+      expect(db.update).toHaveBeenCalledTimes(2);
+      expect(dbState.setCalls).toContainEqual({ status: 'cancelled' });
+    });
+  });
+
+  it('POST /trajets/:id/book returns 400 when the trajet has been cancelled', async () => {
+    getSession.mockResolvedValue(sessionFor('user'));
+    dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', cancelledAt: now })];
+
+    const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seats: 1 }),
     });
 
     expect(res.status).toBe(400);
