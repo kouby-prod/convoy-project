@@ -81,6 +81,15 @@ vi.mock('../../src/modules/trajet/notifications', () => ({
     `${trip.departureCity} to ${trip.arrivalCity} (departing ${trip.departureAt.toUTCString()})`,
 }));
 
+// Mock the rate limiter entirely: its buckets persist for the lifetime of
+// the `trajetModule` singleton, i.e. across every test in this file, so a
+// real limiter would make these tests fail depending on how many other
+// tests ran before them (see apps/api/tests/middleware/rate-limit.test.ts
+// for real coverage of the limiting behaviour itself).
+vi.mock('../../src/middleware/rate-limit', () => ({
+  rateLimit: () => (_c: unknown, next: () => Promise<void>) => next(),
+}));
+
 import { trajetModule } from '../../src/modules/trajet';
 
 function sessionFor(role: string | null) {
