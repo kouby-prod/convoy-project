@@ -105,6 +105,11 @@
     "comfort": "Comfort",
     "baggageAllowance": "Baggage",
     "cancelledBanner": "This ride has been cancelled by the driver.",
+    "driverRating": {
+      "label": "Driver rating",
+      "none": "No reviews yet",
+      "summary": "★ {rating} ({count} reviews)"
+    },
     "owner": {
       "edit": "Edit",
       "closeEdit": "Close",
@@ -242,6 +247,15 @@
     "cancel": "Cancel my booking",
     "cancelling": "Cancelling...",
     "cancelError": "Unable to cancel this booking. Please try again.",
+    "review": {
+      "cta": "Rate this ride",
+      "ratingLabel": "Rating",
+      "commentLabel": "Comment (optional)",
+      "submit": "Submit",
+      "submitting": "Submitting...",
+      "success": "Thanks for your review!",
+      "error": "Unable to submit your review. Please try again."
+    },
     "pagination": {
       "previous": "Previous",
       "next": "Next",

@@ -105,6 +105,11 @@
     "comfort": "Confort",
     "baggageAllowance": "Bagages",
     "cancelledBanner": "Ce trajet a été annulé par le conducteur.",
+    "driverRating": {
+      "label": "Note du conducteur",
+      "none": "Pas encore d'avis",
+      "summary": "★ {rating} ({count} avis)"
+    },
     "owner": {
       "edit": "Modifier",
       "closeEdit": "Fermer",
@@ -244,6 +249,15 @@
     "cancel": "Annuler ma réservation",
     "cancelling": "Annulation en cours...",
     "cancelError": "Impossible d'annuler cette réservation. Veuillez réessayer.",
+    "review": {
+      "cta": "Noter ce trajet",
+      "ratingLabel": "Note",
+      "commentLabel": "Commentaire (optionnel)",
+      "submit": "Envoyer",
+      "submitting": "Envoi en cours...",
+      "success": "Merci pour votre avis !",
+      "error": "Impossible d'envoyer votre avis. Veuillez réessayer."
+    },
     "pagination": {
       "previous": "Précédent",
       "next": "Suivant",
