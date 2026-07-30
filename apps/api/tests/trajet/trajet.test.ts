@@ -192,7 +192,7 @@ describe('trajet module', () => {
       body: JSON.stringify({
         departureCity: 'Montreal',
         destinationCity: 'Quebec',
-        departureDateTime: now.toISOString(),
+        departureDateTime: new Date(Date.now() + 60_000).toISOString(),
         seatsTotal: 3,
         pricePerSeat: 20,
         description: 'A sample trajet',
@@ -211,6 +211,24 @@ describe('trajet module', () => {
     });
   });
 
+  it('POST /trajets rejects a departureDateTime in the past', async () => {
+    getSession.mockResolvedValue(sessionFor('user'));
+
+    const res = await trajetModule.request('/trajets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        departureCity: 'Montreal',
+        destinationCity: 'Quebec',
+        departureDateTime: new Date(Date.now() - 60_000).toISOString(),
+        seatsTotal: 3,
+        pricePerSeat: 20,
+      }),
+    });
+
+    expect(res.status).toBe(400);
+  });
+
   it('POST /trajets/:id/book returns 401 without a session', async () => {
     getSession.mockResolvedValue(null);
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
@@ -223,7 +241,7 @@ describe('trajet module', () => {
 
   it('POST /trajets/:id/book books seats as pending when enough are available', async () => {
     getSession.mockResolvedValue(sessionFor('user'));
-    dbState.selectResult = [makeTrajetRow({ seatsAvailable: 3 })];
+    dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', seatsAvailable: 3 })];
     dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'pending' })];
 
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
@@ -237,9 +255,22 @@ describe('trajet module', () => {
     expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'pending' });
   });
 
+  it('POST /trajets/:id/book returns 403 when the caller is the trajet driver', async () => {
+    getSession.mockResolvedValue(sessionFor('user'));
+    dbState.selectResult = [makeTrajetRow({ driverId: 'u_1', seatsAvailable: 3 })];
+
+    const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seats: 1 }),
+    });
+
+    expect(res.status).toBe(403);
+  });
+
   it('POST /trajets/:id/book returns 400 when not enough seats are available', async () => {
     getSession.mockResolvedValue(sessionFor('user'));
-    dbState.selectResult = [makeTrajetRow({ seatsAvailable: 1 })];
+    dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', seatsAvailable: 1 })];
 
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
