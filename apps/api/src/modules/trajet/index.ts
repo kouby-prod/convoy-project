@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq, gte, ilike, inArray, isNull, lt, lte } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
+import { rateLimit } from '../../middleware/rate-limit';
 import { db } from '../../db/client';
 import { trajet, booking } from '../../db/trajet-schema';
 import type { Trajet, Booking, BookingWithTrajet } from '@carpool/schemas';
@@ -104,6 +105,19 @@ app.use('/trajets/:id', async (c, next) =>
   c.req.method === 'PATCH' || c.req.method === 'DELETE' ? requireAuth(c, next) : next(),
 );
 app.use('/trajets/:id/book', requireAuth);
+
+// Abuse-prone endpoints: unauthenticated search is scraping-prone (rate-limit
+// by IP); booking is a real state change worth capping per caller even though
+// it's authenticated (rate-limit by user id, so it must run after requireAuth
+// above has populated the session).
+const searchRateLimit = rateLimit<AuthEnv>({ windowSeconds: 60, max: 30 });
+const bookRateLimit = rateLimit<AuthEnv>({
+  windowSeconds: 60,
+  max: 10,
+  keyGenerator: (c) => getAuth(c).user.id,
+});
+app.use('/trajets', async (c, next) => (c.req.method === 'GET' ? searchRateLimit(c, next) : next()));
+app.use('/trajets/:id/book', bookRateLimit);
 app.use('/trajets/:id/bookings', requireAuth);
 app.use('/trajets/:id/bookings/:bookingId', requireAuth);
 app.use('/trajets/:id/bookings/:bookingId/cancel', requireAuth);

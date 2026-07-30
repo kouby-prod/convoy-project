@@ -19,6 +19,13 @@ import {
 const bearerAuth = [{ Bearer: [] }];
 const errorSchema = z.object({ error: z.string() });
 
+// Enforced by the rate-limit middleware in apps/api/src/modules/trajet/index.ts
+// (not the route handler), but documented here like any other response.
+const rateLimitedResponse = {
+  description: 'Too many requests — see the Retry-After header',
+  content: { 'application/json': { schema: errorSchema } },
+};
+
 export const listTrajetsRoute = createRoute({
   method: 'get',
   path: '/trajets',
@@ -30,6 +37,7 @@ export const listTrajetsRoute = createRoute({
       description: 'A page of trajets',
       content: { 'application/json': { schema: TrajetPageSchema } },
     },
+    429: rateLimitedResponse,
   },
 });
 
@@ -170,6 +178,7 @@ export const bookTrajetRoute = createRoute({
       description: 'Trajet not found',
       content: { 'application/json': { schema: errorSchema } },
     },
+    429: rateLimitedResponse,
   },
 });
 
