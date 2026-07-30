@@ -27,6 +27,9 @@ const EnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   // Comma-separated list of origins allowed to make credentialed auth requests.
+  // The first entry doubles as the web app's own origin for building links in
+  // notification emails (see apps/api/src/modules/trajet/notifications.ts) —
+  // put the real web app URL first if you ever need more than one origin.
   TRUSTED_ORIGINS: z
     .string()
     .default('http://localhost:3000,http://localhost:3001')
