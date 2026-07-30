@@ -104,6 +104,21 @@
     "backToList": "Retour aux trajets",
     "comfort": "Confort",
     "baggageAllowance": "Bagages",
+    "cancelledBanner": "Ce trajet a été annulé par le conducteur.",
+    "owner": {
+      "edit": "Modifier",
+      "closeEdit": "Fermer",
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
+      "updateSuccess": "Trajet mis à jour.",
+      "updateError": "Impossible de mettre à jour ce trajet. Veuillez réessayer.",
+      "cancelTrajet": "Annuler ce trajet",
+      "cancelling": "Annulation en cours...",
+      "confirmPrompt": "Confirmer l'annulation de ce trajet ?",
+      "confirmYes": "Oui, annuler",
+      "confirmNo": "Non",
+      "cancelError": "Impossible d'annuler ce trajet. Veuillez réessayer."
+    },
     "filters": {
       "departureCity": "Ville de départ",
       "destinationCity": "Ville d'arrivée",
@@ -214,7 +229,8 @@
     "error": "Impossible de charger vos trajets.",
     "departureAt": "Départ",
     "seats": "Places",
-    "price": "Prix"
+    "price": "Prix",
+    "cancelledBadge": "Annulé"
   },
   "MesReservations": {
     "title": "Mes réservations",
