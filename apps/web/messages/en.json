@@ -90,6 +90,11 @@
     "loading": "Loading rides...",
     "empty": "No rides available at the moment.",
     "error": "Unable to load rides.",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}"
+    },
     "departureAt": "Departure",
     "seats": "Seats",
     "price": "Price",
@@ -220,6 +225,11 @@
     "status": "Status",
     "cancel": "Cancel my booking",
     "cancelling": "Cancelling...",
-    "cancelError": "Unable to cancel this booking. Please try again."
+    "cancelError": "Unable to cancel this booking. Please try again.",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}"
+    }
   }
 }

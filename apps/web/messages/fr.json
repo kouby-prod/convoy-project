@@ -90,6 +90,11 @@
     "loading": "Chargement des trajets...",
     "empty": "Aucun trajet disponible pour le moment.",
     "error": "Impossible de charger les trajets.",
+    "pagination": {
+      "previous": "Précédent",
+      "next": "Suivant",
+      "page": "Page {page}"
+    },
     "departureAt": "Départ",
     "seats": "Places",
     "price": "Prix",
@@ -222,6 +227,11 @@
     "status": "Statut",
     "cancel": "Annuler ma réservation",
     "cancelling": "Annulation en cours...",
-    "cancelError": "Impossible d'annuler cette réservation. Veuillez réessayer."
+    "cancelError": "Impossible d'annuler cette réservation. Veuillez réessayer.",
+    "pagination": {
+      "previous": "Précédent",
+      "next": "Suivant",
+      "page": "Page {page}"
+    }
   }
 }

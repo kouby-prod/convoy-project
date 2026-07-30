@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { createApiClient } from '@carpool/api-client';
@@ -30,16 +30,17 @@ export function MesReservationsList() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (!isSessionPending && !session?.user) router.push('/sign-in');
   }, [isSessionPending, router, session?.user]);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['me', 'bookings'],
+    queryKey: ['me', 'bookings', page],
     enabled: !!session?.user,
     queryFn: async () => {
-      const res = await api.me.bookings.$get();
+      const res = await api.me.bookings.$get({ query: { page: String(page) } });
       if (!res.ok) throw new Error('Failed to load bookings');
       return res.json();
     },
@@ -61,12 +62,12 @@ export function MesReservationsList() {
   if (isSessionPending || !session?.user) return <p className="text-muted-foreground">{t('loading')}</p>;
   if (isLoading) return <p className="text-muted-foreground">{t('loading')}</p>;
   if (isError) return <p className="text-destructive">{t('error')}</p>;
-  if (!data?.length) return <p className="text-muted-foreground">{t('empty')}</p>;
+  if (!data?.items.length) return <p className="text-muted-foreground">{t('empty')}</p>;
 
   return (
     <div className="grid gap-4">
       <ul className="grid gap-4">
-        {data.map((item) => (
+        {data.items.map((item) => (
           <li key={item.id}>
             <Card>
               <CardHeader>
@@ -105,6 +106,25 @@ export function MesReservationsList() {
         ))}
       </ul>
       {cancelMutation.isError ? <p className="text-sm text-destructive">{t('cancelError')}</p> : null}
+      <div className="flex items-center justify-between gap-4">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={page <= 1}
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+        >
+          {t('pagination.previous')}
+        </Button>
+        <span className="text-xs text-muted-foreground">{t('pagination.page', { page })}</span>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!data.hasMore}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          {t('pagination.next')}
+        </Button>
+      </div>
     </div>
   );
 }
