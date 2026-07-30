@@ -7,3 +7,4 @@ export * from './auth-schema';
 
 // TODO: domain tables (rides, bookings, …) go here as the product grows.
 export * from './trajet-schema';
+export * from './review';
