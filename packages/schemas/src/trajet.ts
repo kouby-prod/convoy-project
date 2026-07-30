@@ -36,6 +36,10 @@ export const CreateTrajetSchema = z
     comfort: z.enum(['standard', 'confort', 'premium']).optional().nullable(),
     baggageAllowance: z.string().max(500).optional().nullable(),
   })
+  .refine((data) => new Date(data.departureDateTime).getTime() > Date.now(), {
+    message: 'departureDateTime must be in the future',
+    path: ['departureDateTime'],
+  })
   .describe('CreateTrajet');
 export type CreateTrajet = z.infer<typeof CreateTrajetSchema>;
 
