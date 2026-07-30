@@ -46,7 +46,34 @@ export type CreateTrajet = z.infer<typeof CreateTrajetSchema>;
 export const TrajetListSchema = z.array(TrajetSchema).describe('TrajetList');
 
 /**
- * Search/filter query for `GET /trajets`. Every field is optional and
+ * Shared page/limit query params for every paginated list endpoint.
+ * `limit` is capped at 100 to keep a single page bounded regardless of what
+ * a caller requests.
+ */
+export const PaginationQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).optional().default(1),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+});
+export type PaginationQuery = z.infer<typeof PaginationQuerySchema>;
+
+/**
+ * Envelope for a paginated list response. `hasMore` (rather than a total
+ * count) is enough to drive prev/next paging without an extra COUNT(*)
+ * query per request.
+ */
+function paginatedSchema<Item extends z.ZodTypeAny>(itemSchema: Item) {
+  return z.object({
+    items: z.array(itemSchema),
+    page: z.number().int().min(1),
+    limit: z.number().int().min(1),
+    hasMore: z.boolean(),
+  });
+}
+
+export const TrajetPageSchema = paginatedSchema(TrajetSchema).describe('TrajetPage');
+
+/**
+ * Search/filter query for `GET /trajets`. Every filter field is optional and
  * additive (AND-combined) — an absent field applies no filter.
  * `departureCity`/`destinationCity`/`baggageAllowance` are case-insensitive
  * substring matches; `date` matches trajets departing on that calendar day.
@@ -66,6 +93,7 @@ export const TrajetSearchQuerySchema = z
     comfort: z.enum(['standard', 'confort', 'premium']).optional(),
     baggageAllowance: z.string().min(1).optional(),
   })
+  .extend(PaginationQuerySchema.shape)
   .describe('TrajetSearchQuery');
 export type TrajetSearchQuery = z.infer<typeof TrajetSearchQuerySchema>;
 
@@ -100,7 +128,7 @@ export const BookingSchema = z
   .describe('Booking');
 export type Booking = z.infer<typeof BookingSchema>;
 
-export const BookingListSchema = z.array(BookingSchema).describe('BookingList');
+export const BookingPageSchema = paginatedSchema(BookingSchema).describe('BookingPage');
 
 /**
  * Trip summary embedded in `BookingWithTrajetSchema` — just enough for a
@@ -120,9 +148,9 @@ export const BookingWithTrajetSchema = BookingSchema.extend({
 }).describe('BookingWithTrajet');
 export type BookingWithTrajet = z.infer<typeof BookingWithTrajetSchema>;
 
-export const BookingWithTrajetListSchema = z
-  .array(BookingWithTrajetSchema)
-  .describe('BookingWithTrajetList');
+export const BookingWithTrajetPageSchema = paginatedSchema(BookingWithTrajetSchema).describe(
+  'BookingWithTrajetPage',
+);
 
 /**
  * Driver-only action: accept or reject a pending booking request.
