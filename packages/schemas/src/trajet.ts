@@ -19,6 +19,7 @@ export const TrajetSchema = z
     description: z.string().max(1000).optional().nullable(),
     comfort: z.enum(['standard', 'confort', 'premium']).optional().nullable(),
     baggageAllowance: z.string().max(500).optional().nullable(),
+    cancelledAt: z.string().nullable().describe('ISO-8601 timestamp, null while the trajet is active'),
     createdAt: z.string().describe('ISO-8601 timestamp'),
     updatedAt: z.string().describe('ISO-8601 timestamp'),
   })
@@ -42,6 +43,33 @@ export const CreateTrajetSchema = z
   })
   .describe('CreateTrajet');
 export type CreateTrajet = z.infer<typeof CreateTrajetSchema>;
+
+/**
+ * Driver-only partial update of a published trajet (PATCH /trajets/:id).
+ * Every field is optional — an absent field is left unchanged. `seatsTotal`
+ * is still validated against already-booked seats, but only the API can
+ * check that (it needs the current `seatsAvailable`), not this schema.
+ */
+export const UpdateTrajetSchema = z
+  .object({
+    departureCity: z.string().min(1).optional(),
+    destinationCity: z.string().min(1).optional(),
+    departureDateTime: z.string().datetime().optional(),
+    seatsTotal: z.number().int().min(1).optional(),
+    pricePerSeat: z.number().nonnegative().optional(),
+    description: z.string().max(1000).optional().nullable(),
+    comfort: z.enum(['standard', 'confort', 'premium']).optional().nullable(),
+    baggageAllowance: z.string().max(500).optional().nullable(),
+  })
+  .refine(
+    (data) => data.departureDateTime === undefined || new Date(data.departureDateTime).getTime() > Date.now(),
+    {
+      message: 'departureDateTime must be in the future',
+      path: ['departureDateTime'],
+    },
+  )
+  .describe('UpdateTrajet');
+export type UpdateTrajet = z.infer<typeof UpdateTrajetSchema>;
 
 export const TrajetListSchema = z.array(TrajetSchema).describe('TrajetList');
 

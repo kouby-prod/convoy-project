@@ -1,0 +1,1 @@
+ALTER TABLE "trajet" ADD COLUMN "cancelled_at" timestamp;

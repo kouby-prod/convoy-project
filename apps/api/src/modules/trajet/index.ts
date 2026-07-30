@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, eq, gte, ilike, lt, lte } from 'drizzle-orm';
+import { and, eq, gte, ilike, inArray, isNull, lt, lte } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { db } from '../../db/client';
@@ -9,6 +9,8 @@ import {
   listTrajetsRoute,
   getTrajetRoute,
   createTrajetRoute,
+  updateTrajetRoute,
+  cancelTrajetRoute,
   bookTrajetRoute,
   listTrajetBookingsRoute,
   updateBookingStatusRoute,
@@ -75,6 +77,9 @@ function paginate<Row>(rows: Row[], limit: number): { items: Row[]; hasMore: boo
 app.use('/trajets', async (c, next) =>
   c.req.method === 'POST' ? requireAuth(c, next) : next(),
 );
+app.use('/trajets/:id', async (c, next) =>
+  c.req.method === 'PATCH' || c.req.method === 'DELETE' ? requireAuth(c, next) : next(),
+);
 app.use('/trajets/:id/book', requireAuth);
 app.use('/trajets/:id/bookings', requireAuth);
 app.use('/trajets/:id/bookings/:bookingId', requireAuth);
@@ -85,7 +90,9 @@ app.use('/me/bookings', requireAuth);
 export const trajetModule = app
   .openapi(listTrajetsRoute, async (c) => {
     const query = c.req.valid('query');
-    const conditions = [];
+    // A cancelled trajet never shows up in search, but stays reachable by
+    // direct link (getTrajetRoute) and in the driver's own history.
+    const conditions = [isNull(trajet.cancelledAt)];
 
     if (query.departureCity) conditions.push(ilike(trajet.departureCity, `%${query.departureCity}%`));
     if (query.destinationCity) conditions.push(ilike(trajet.arrivalCity, `%${query.destinationCity}%`));
@@ -102,9 +109,12 @@ export const trajetModule = app
     }
 
     const offset = (query.page - 1) * query.limit;
-    const rows = conditions.length
-      ? await db.select().from(trajet).where(and(...conditions)).limit(query.limit + 1).offset(offset)
-      : await db.select().from(trajet).limit(query.limit + 1).offset(offset);
+    const rows = await db
+      .select()
+      .from(trajet)
+      .where(and(...conditions))
+      .limit(query.limit + 1)
+      .offset(offset);
 
     const { items, hasMore } = paginate(rows, query.limit);
     return c.json({ items: items.map(serialize), page: query.page, limit: query.limit, hasMore }, 200);
@@ -137,6 +147,92 @@ export const trajetModule = app
     if (!row) throw new Error('Insert returned no row'); // narrows away `undefined`
     return c.json(serialize(row), 201);
   })
+  .openapi(updateTrajetRoute, async (c) => {
+    const { user } = getAuth(c);
+    const { id } = c.req.valid('param');
+    const body = c.req.valid('json');
+
+    const result = await db.transaction(async (tx) => {
+      const [row] = await tx.select().from(trajet).where(eq(trajet.id, id)).for('update');
+      if (!row) return { ok: false as const, status: 404 as const, error: 'Not found' };
+      if (row.driverId !== user.id) {
+        return { ok: false as const, status: 403 as const, error: 'Not the driver of this trajet' };
+      }
+      if (row.cancelledAt) {
+        return { ok: false as const, status: 400 as const, error: 'Trajet is cancelled' };
+      }
+
+      const bookedSeats = row.seatsTotal - row.seatsAvailable;
+      const newSeatsTotal = body.seatsTotal ?? row.seatsTotal;
+      if (newSeatsTotal < bookedSeats) {
+        return {
+          ok: false as const,
+          status: 400 as const,
+          error: 'seatsTotal cannot be less than seats already booked',
+        };
+      }
+
+      const [updated] = await tx
+        .update(trajet)
+        .set({
+          ...(body.departureCity !== undefined && { departureCity: body.departureCity }),
+          ...(body.destinationCity !== undefined && { arrivalCity: body.destinationCity }),
+          ...(body.departureDateTime !== undefined && {
+            departureAt: new Date(body.departureDateTime),
+          }),
+          ...(body.seatsTotal !== undefined && {
+            seatsTotal: body.seatsTotal,
+            seatsAvailable: newSeatsTotal - bookedSeats,
+          }),
+          ...(body.pricePerSeat !== undefined && { pricePerSeat: body.pricePerSeat.toString() }),
+          ...(body.description !== undefined && { description: body.description }),
+          ...(body.comfort !== undefined && { comfort: body.comfort }),
+          ...(body.baggageAllowance !== undefined && { baggageAllowance: body.baggageAllowance }),
+        })
+        .where(eq(trajet.id, id))
+        .returning();
+      if (!updated) throw new Error('Update returned no row');
+
+      return { ok: true as const, trajet: updated };
+    });
+
+    if (!result.ok) return c.json({ error: result.error }, result.status);
+    return c.json(serialize(result.trajet), 200);
+  })
+  .openapi(cancelTrajetRoute, async (c) => {
+    const { user } = getAuth(c);
+    const { id } = c.req.valid('param');
+
+    const result = await db.transaction(async (tx) => {
+      const [row] = await tx.select().from(trajet).where(eq(trajet.id, id)).for('update');
+      if (!row) return { ok: false as const, status: 404 as const, error: 'Not found' };
+      if (row.driverId !== user.id) {
+        return { ok: false as const, status: 403 as const, error: 'Not the driver of this trajet' };
+      }
+      if (row.cancelledAt) {
+        return { ok: false as const, status: 400 as const, error: 'Trajet is already cancelled' };
+      }
+
+      const [updated] = await tx
+        .update(trajet)
+        .set({ cancelledAt: new Date() })
+        .where(eq(trajet.id, id))
+        .returning();
+      if (!updated) throw new Error('Update returned no row');
+
+      // Only active holds need cancelling — `rejected`/`cancelled`/`expired`
+      // bookings are already terminal and shouldn't be touched.
+      await tx
+        .update(booking)
+        .set({ status: 'cancelled' })
+        .where(and(eq(booking.trajetId, id), inArray(booking.status, ['pending', 'confirmed'])));
+
+      return { ok: true as const, trajet: updated };
+    });
+
+    if (!result.ok) return c.json({ error: result.error }, result.status);
+    return c.json(serialize(result.trajet), 200);
+  })
   .openapi(bookTrajetRoute, async (c) => {
     const { user } = getAuth(c);
     const { id } = c.req.valid('param');
@@ -145,6 +241,9 @@ export const trajetModule = app
     const result = await db.transaction(async (tx) => {
       const [row] = await tx.select().from(trajet).where(eq(trajet.id, id)).for('update');
       if (!row) return { ok: false as const, status: 404 as const, error: 'Not found' };
+      if (row.cancelledAt) {
+        return { ok: false as const, status: 400 as const, error: 'This trajet has been cancelled' };
+      }
       if (row.driverId === user.id) {
         return { ok: false as const, status: 403 as const, error: 'Cannot book your own trajet' };
       }
@@ -339,6 +438,7 @@ function serialize(row: typeof trajet.$inferSelect): Trajet {
     description: row.description,
     comfort: row.comfort as Trajet['comfort'],
     baggageAllowance: row.baggageAllowance,
+    cancelledAt: row.cancelledAt ? row.cancelledAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
