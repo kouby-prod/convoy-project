@@ -104,6 +104,21 @@
     "backToList": "Back to rides",
     "comfort": "Comfort",
     "baggageAllowance": "Baggage",
+    "cancelledBanner": "This ride has been cancelled by the driver.",
+    "owner": {
+      "edit": "Edit",
+      "closeEdit": "Close",
+      "save": "Save",
+      "saving": "Saving...",
+      "updateSuccess": "Ride updated.",
+      "updateError": "Unable to update this ride. Please try again.",
+      "cancelTrajet": "Cancel this ride",
+      "cancelling": "Cancelling...",
+      "confirmPrompt": "Confirm cancelling this ride?",
+      "confirmYes": "Yes, cancel it",
+      "confirmNo": "No",
+      "cancelError": "Unable to cancel this ride. Please try again."
+    },
     "filters": {
       "departureCity": "Departure city",
       "destinationCity": "Destination city",
@@ -212,7 +227,8 @@
     "error": "Unable to load your rides.",
     "departureAt": "Departure",
     "seats": "Seats",
-    "price": "Price"
+    "price": "Price",
+    "cancelledBadge": "Cancelled"
   },
   "MesReservations": {
     "title": "My bookings",

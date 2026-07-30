@@ -27,9 +27,11 @@ const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 export function TrajetBookingForm({
   trajetId,
   seatsAvailable,
+  cancelled,
 }: {
   trajetId: string;
   seatsAvailable: number;
+  cancelled: boolean;
 }) {
   const t = useTranslations('Trajets');
   const queryClient = useQueryClient();
@@ -84,6 +86,11 @@ export function TrajetBookingForm({
       </Card>
     );
   }
+
+  // A cancelled trajet's own banner is shown by `TrajetDetail` — nothing
+  // more to say here unless the passenger still has a booking to see the
+  // (now `cancelled`) status of.
+  if (!myBooking && cancelled) return null;
 
   // Checked after `myBooking`: booking your own last seat drives
   // `seatsAvailable` to 0 via the query invalidation below, and your own
