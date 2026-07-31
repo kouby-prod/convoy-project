@@ -3,7 +3,10 @@
     "brand": "Convoy",
     "searchPlaceholder": "Search for a ride, a city…",
     "search": "Search",
+    "trajets": "Rides",
     "post": "Offer a ride",
+    "myTrajets": "My rides",
+    "myBookings": "My bookings",
     "contact": "Contact",
     "signIn": "Sign in",
     "signOut": "Sign out",
@@ -81,6 +84,95 @@
       }
     ]
   },
+  "Trajets": {
+    "title": "Find your next ride",
+    "subtitle": "Browse available carpool listings and book your seat in a few clicks.",
+    "loading": "Loading rides...",
+    "empty": "No rides available at the moment.",
+    "error": "Unable to load rides.",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}"
+    },
+    "departureAt": "Departure",
+    "seats": "Seats",
+    "price": "Price",
+    "description": "Description",
+    "detailTitle": "Ride details",
+    "detailSubtitle": "Review the published ride information.",
+    "backToList": "Back to rides",
+    "comfort": "Comfort",
+    "baggageAllowance": "Baggage",
+    "cancelledBanner": "This ride has been cancelled by the driver.",
+    "driverRating": {
+      "label": "Driver rating",
+      "none": "No reviews yet",
+      "summary": "★ {rating} ({count} reviews)"
+    },
+    "owner": {
+      "edit": "Edit",
+      "closeEdit": "Close",
+      "save": "Save",
+      "saving": "Saving...",
+      "updateSuccess": "Ride updated.",
+      "updateError": "Unable to update this ride. Please try again.",
+      "cancelTrajet": "Cancel this ride",
+      "cancelling": "Cancelling...",
+      "confirmPrompt": "Confirm cancelling this ride?",
+      "confirmYes": "Yes, cancel it",
+      "confirmNo": "No",
+      "cancelError": "Unable to cancel this ride. Please try again."
+    },
+    "filters": {
+      "departureCity": "Departure city",
+      "destinationCity": "Destination city",
+      "date": "Date",
+      "comfortAny": "Any comfort",
+      "comfortStandard": "Standard",
+      "comfortConfort": "Comfort",
+      "comfortPremium": "Premium",
+      "maxPrice": "Max price",
+      "minSeats": "Min seats",
+      "baggageAllowance": "Baggage needed",
+      "apply": "Search",
+      "reset": "Reset"
+    },
+    "booking": {
+      "title": "Book a seat",
+      "seatsLabel": "Number of seats",
+      "submit": "Book",
+      "submitting": "Booking...",
+      "success": "Your booking request has been sent to the driver.",
+      "full": "This ride is full.",
+      "signInPrompt": "Sign in to book a seat on this ride.",
+      "signInLink": "Sign in",
+      "cancel": "Cancel my booking",
+      "cancelling": "Cancelling...",
+      "cancelledNotice": "Your booking has been cancelled.",
+      "errors": {
+        "generic": "Unable to complete the booking. Please try again.",
+        "cancelGeneric": "Unable to cancel this booking. Please try again."
+      }
+    },
+    "bookings": {
+      "title": "Booking requests",
+      "loading": "Loading bookings...",
+      "empty": "No booking requests for this ride.",
+      "error": "Unable to load bookings.",
+      "seats": "Seats requested",
+      "accept": "Accept",
+      "reject": "Reject",
+      "actionError": "Unable to update this booking.",
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled",
+        "expired": "Expired"
+      }
+    }
+  },
   "Features": {
     "title": "What you can do on the site",
     "howItWorks": "How does it work?",
@@ -94,6 +186,80 @@
         "title": "Drive and share",
         "description": "Got free seats in your car? Turn them into an opportunity."
       }
-    ]
+    ]  },
+  "Annoncer": {
+    "title": "Announce a ride",
+    "subtitle": "Publish your ride and start traveling with passengers",
+    "loading": "Loading form...",
+    "empty": "No announcements available.",
+    "error": "Error loading the form.",
+    "form": {
+      "departureCity": "Departure city",
+      "departureCityPlaceholder": "e.g. Paris",
+      "destinationCity": "Destination city",
+      "destinationCityPlaceholder": "e.g. Lyon",
+      "departureDateTime": "Departure date and time",
+      "seatsTotal": "Number of seats",
+      "seatsTotalPlaceholder": "e.g. 4",
+      "pricePerSeat": "Price per seat (€)",
+      "pricePerSeatPlaceholder": "e.g. 25",
+      "description": "Description (optional)",
+      "descriptionPlaceholder": "Music, wifi, air conditioning...",
+      "comfort": "Comfort level",
+      "comfortStandard": "Standard",
+      "comfortConfort": "Comfort",
+      "comfortPremium": "Premium",
+      "baggageAllowance": "Baggage allowed",
+      "baggageAllowancePlaceholder": "e.g. 1 suitcase, 1 backpack",
+      "submit": "Publish the ride",
+      "submitting": "Publishing...",
+      "errors": {
+        "required": "This field is required",
+        "invalidCity": "Please enter a valid city",
+        "seatsMin": "At least 1 seat required",
+        "priceMin": "Price must be positive",
+        "sameCities": "Departure and destination cities must be different",
+        "pastDate": "Date must be in the future",
+        "apiError": "Error publishing ride. Please try again."
+      },
+      "success": "Ride published successfully!"
+    }  },
+  "MesTrajets": {
+    "title": "My rides",
+    "subtitle": "Find the rides you've published and manage booking requests.",
+    "loading": "Loading your rides...",
+    "empty": "You haven't published any ride yet.",
+    "error": "Unable to load your rides.",
+    "departureAt": "Departure",
+    "seats": "Seats",
+    "price": "Price",
+    "cancelledBadge": "Cancelled"
+  },
+  "MesReservations": {
+    "title": "My bookings",
+    "subtitle": "Find your booking requests and their status.",
+    "loading": "Loading your bookings...",
+    "empty": "You don't have any booking yet.",
+    "error": "Unable to load your bookings.",
+    "departureAt": "Departure",
+    "seats": "Seats booked",
+    "status": "Status",
+    "cancel": "Cancel my booking",
+    "cancelling": "Cancelling...",
+    "cancelError": "Unable to cancel this booking. Please try again.",
+    "review": {
+      "cta": "Rate this ride",
+      "ratingLabel": "Rating",
+      "commentLabel": "Comment (optional)",
+      "submit": "Submit",
+      "submitting": "Submitting...",
+      "success": "Thanks for your review!",
+      "error": "Unable to submit your review. Please try again."
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}"
+    }
   }
 }

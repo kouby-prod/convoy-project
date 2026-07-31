@@ -3,7 +3,10 @@
     "brand": "Convoy",
     "searchPlaceholder": "Rechercher un trajet, une ville…",
     "search": "Rechercher",
+    "trajets": "Trajets",
     "post": "Annoncer",
+    "myTrajets": "Mes trajets",
+    "myBookings": "Mes réservations",
     "contact": "Contact",
     "signIn": "Connexion",
     "signOut": "Déconnexion",
@@ -81,6 +84,95 @@
       }
     ]
   },
+  "Trajets": {
+    "title": "Trouvez votre prochain trajet",
+    "subtitle": "Consultez les annonces de covoiturage disponibles et réservez une place en quelques clics.",
+    "loading": "Chargement des trajets...",
+    "empty": "Aucun trajet disponible pour le moment.",
+    "error": "Impossible de charger les trajets.",
+    "pagination": {
+      "previous": "Précédent",
+      "next": "Suivant",
+      "page": "Page {page}"
+    },
+    "departureAt": "Départ",
+    "seats": "Places",
+    "price": "Prix",
+    "description": "Description",
+    "detailTitle": "Détail du trajet",
+    "detailSubtitle": "Retrouvez les informations de l'annonce publiée.",
+    "backToList": "Retour aux trajets",
+    "comfort": "Confort",
+    "baggageAllowance": "Bagages",
+    "cancelledBanner": "Ce trajet a été annulé par le conducteur.",
+    "driverRating": {
+      "label": "Note du conducteur",
+      "none": "Pas encore d'avis",
+      "summary": "★ {rating} ({count} avis)"
+    },
+    "owner": {
+      "edit": "Modifier",
+      "closeEdit": "Fermer",
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
+      "updateSuccess": "Trajet mis à jour.",
+      "updateError": "Impossible de mettre à jour ce trajet. Veuillez réessayer.",
+      "cancelTrajet": "Annuler ce trajet",
+      "cancelling": "Annulation en cours...",
+      "confirmPrompt": "Confirmer l'annulation de ce trajet ?",
+      "confirmYes": "Oui, annuler",
+      "confirmNo": "Non",
+      "cancelError": "Impossible d'annuler ce trajet. Veuillez réessayer."
+    },
+    "filters": {
+      "departureCity": "Ville de départ",
+      "destinationCity": "Ville d'arrivée",
+      "date": "Date",
+      "comfortAny": "Tous les conforts",
+      "comfortStandard": "Standard",
+      "comfortConfort": "Confort",
+      "comfortPremium": "Premium",
+      "maxPrice": "Prix maximum",
+      "minSeats": "Places minimum",
+      "baggageAllowance": "Bagages recherchés",
+      "apply": "Rechercher",
+      "reset": "Réinitialiser"
+    },
+    "booking": {
+      "title": "Réserver une place",
+      "seatsLabel": "Nombre de places",
+      "submit": "Réserver",
+      "submitting": "Réservation en cours...",
+      "success": "Votre demande de réservation a été envoyée au conducteur.",
+      "full": "Ce trajet est complet.",
+      "signInPrompt": "Connectez-vous pour réserver une place sur ce trajet.",
+      "signInLink": "Se connecter",
+      "cancel": "Annuler ma réservation",
+      "cancelling": "Annulation en cours...",
+      "cancelledNotice": "Votre réservation a été annulée.",
+      "errors": {
+        "generic": "Impossible d'effectuer la réservation. Veuillez réessayer.",
+        "cancelGeneric": "Impossible d'annuler cette réservation. Veuillez réessayer."
+      }
+    },
+    "bookings": {
+      "title": "Demandes de réservation",
+      "loading": "Chargement des réservations...",
+      "empty": "Aucune demande de réservation pour ce trajet.",
+      "error": "Impossible de charger les réservations.",
+      "seats": "Places demandées",
+      "accept": "Accepter",
+      "reject": "Refuser",
+      "actionError": "Impossible de mettre à jour cette réservation.",
+      "status": {
+        "pending": "En attente",
+        "confirmed": "Confirmée",
+        "rejected": "Refusée",
+        "cancelled": "Annulée",
+        "expired": "Expirée"
+      }
+    }
+  },
   "Features": {
     "title": "Les fonctionnalités possibles du site",
     "howItWorks": "Comment ça marche ?",
@@ -95,5 +187,81 @@
         "description": "Votre voiture a des places libres ? Faites-en une opportunité."
       }
     ]
+  },
+  "Annoncer": {
+    "title": "Annoncer un trajet",
+    "subtitle": "Publiez votre trajet et commencez à voyager avec des passagers",
+    "loading": "Chargement du formulaire...",
+    "empty": "Aucune annonce disponible.",
+    "error": "Erreur lors du chargement du formulaire.",
+    "form": {
+      "departureCity": "Ville de départ",
+      "departureCityPlaceholder": "ex. Paris",
+      "destinationCity": "Ville d'arrivée",
+      "destinationCityPlaceholder": "ex. Lyon",
+      "departureDateTime": "Date et heure de départ",
+      "seatsTotal": "Nombre de places",
+      "seatsTotalPlaceholder": "ex. 4",
+      "pricePerSeat": "Prix par place (€)",
+      "pricePerSeatPlaceholder": "ex. 25",
+      "description": "Description (optionnel)",
+      "descriptionPlaceholder": "Musique, wifi, climatisation...",
+      "comfort": "Niveau de confort",
+      "comfortStandard": "Standard",
+      "comfortConfort": "Confort",
+      "comfortPremium": "Premium",
+      "baggageAllowance": "Bagages autorisés",
+      "baggageAllowancePlaceholder": "ex. 1 valise, 1 sac à dos",
+      "submit": "Publier le trajet",
+      "submitting": "Publication en cours...",
+      "errors": {
+        "required": "Ce champ est obligatoire",
+        "invalidCity": "Veuillez entrer une ville valide",
+        "seatsMin": "Au moins 1 place requise",
+        "priceMin": "Le prix doit être positif",
+        "sameCities": "Les villes de départ et d'arrivée doivent être différentes",
+        "pastDate": "La date doit être dans le futur",
+        "apiError": "Erreur lors de la publication. Veuillez réessayer."
+      },
+      "success": "Trajet publié avec succès!"
+    }
+  },
+  "MesTrajets": {
+    "title": "Mes trajets",
+    "subtitle": "Retrouvez les trajets que vous avez publiés et gérez les demandes de réservation.",
+    "loading": "Chargement de vos trajets...",
+    "empty": "Vous n'avez publié aucun trajet pour le moment.",
+    "error": "Impossible de charger vos trajets.",
+    "departureAt": "Départ",
+    "seats": "Places",
+    "price": "Prix",
+    "cancelledBadge": "Annulé"
+  },
+  "MesReservations": {
+    "title": "Mes réservations",
+    "subtitle": "Retrouvez vos demandes de réservation et leur statut.",
+    "loading": "Chargement de vos réservations...",
+    "empty": "Vous n'avez aucune réservation pour le moment.",
+    "error": "Impossible de charger vos réservations.",
+    "departureAt": "Départ",
+    "seats": "Places réservées",
+    "status": "Statut",
+    "cancel": "Annuler ma réservation",
+    "cancelling": "Annulation en cours...",
+    "cancelError": "Impossible d'annuler cette réservation. Veuillez réessayer.",
+    "review": {
+      "cta": "Noter ce trajet",
+      "ratingLabel": "Note",
+      "commentLabel": "Commentaire (optionnel)",
+      "submit": "Envoyer",
+      "submitting": "Envoi en cours...",
+      "success": "Merci pour votre avis !",
+      "error": "Impossible d'envoyer votre avis. Veuillez réessayer."
+    },
+    "pagination": {
+      "previous": "Précédent",
+      "next": "Suivant",
+      "page": "Page {page}"
+    }
   }
 }
