@@ -4,8 +4,8 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { healthRoute, pingRoute } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
-import { listTrajetsRoute, createTrajetRoute, getTrajetRoute, bookTrajetRoute } from './trajet/routes';
-import * as trajetService from './trajet/service';
+import { trajetModule } from './modules/trajet';
+import { reviewModule } from './modules/review';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
 // TODO: domain modules — mount feature routers from ./modules here.
@@ -65,49 +65,9 @@ const routes = app
     );
   })
   // --- TRAJET domain routes ---
-  .openapi(listTrajetsRoute, async (c) => {
-    const q = c.req.query();
-    const limit = q.limit ? Number(q.limit) : 20;
-    const offset = q.offset ? Number(q.offset) : 0;
-    const rows = await trajetService.searchTrajets({
-      departureCity: q.departureCity,
-      arrivalCity: q.arrivalCity,
-      date: q.date,
-      limit,
-      offset,
-    });
-    return c.json(rows, 200);
-  })
-  .openapi(createTrajetRoute, async (c) => {
-    // auth required
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: 'Unauthorized' }, 401);
-    const body = await c.req.json();
-    try {
-      const { id } = await trajetService.createTrajet(session.user.id, body);
-      return c.json({ id }, 201);
-    } catch (err: any) {
-      return c.json({ error: err.message ?? 'Failed' }, 400);
-    }
-  })
-  .openapi(getTrajetRoute, async (c) => {
-    const id = c.req.param('id')!;
-    const row = await trajetService.getTrajetById(id);
-    if (!row) return c.json({ error: 'Not found' }, 404);
-    return c.json(row, 200);
-  })
-  .openapi(bookTrajetRoute, async (c) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: 'Unauthorized' }, 401);
-    const id = c.req.param('id')!;
-    const body = await c.req.json();
-    try {
-      const result = await trajetService.bookSeats(id, session.user.id, body.seats);
-      return c.json(result, 201);
-    } catch (err: any) {
-      return c.json({ error: err.message ?? 'Booking failed' }, 400);
-    }
-  })
+  .route('/', trajetModule)
+  // --- REVIEW domain routes ---
+  .route('/', reviewModule)
   // --- PROOF routes (not domain logic) ---
   .openapi(meRoute, (c) => {
     const { user } = getAuth(c);
