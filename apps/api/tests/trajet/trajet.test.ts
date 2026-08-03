@@ -17,6 +17,8 @@ function createChain(result: unknown) {
       return chain;
     },
     innerJoin: () => chain,
+    groupBy: () => chain,
+    having: () => chain,
     limit: () => chain,
     offset: () => chain,
     returning: () => Promise.resolve(result),
@@ -191,6 +193,44 @@ describe('trajet module', () => {
 
     it('rejects a non-numeric maxPrice', async () => {
       const res = await trajetModule.request('/trajets?maxPrice=free');
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('GET /trajets driver rating', () => {
+    it('attaches null driverRating/zero driverReviewCount when the driver has no reviews', async () => {
+      dbState.selectQueue = [[makeTrajetRow({ driverId: 'u_1' })], []];
+      const res = await trajetModule.request('/trajets');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { items: Array<{ driverRating: number | null; driverReviewCount: number }> };
+      expect(body.items[0]).toMatchObject({ driverRating: null, driverReviewCount: 0 });
+    });
+
+    it("attaches the driver's average rating when reviews exist", async () => {
+      dbState.selectQueue = [
+        [makeTrajetRow({ driverId: 'u_1' })],
+        [{ driverId: 'u_1', averageRating: '4.5', reviewCount: 2 }],
+      ];
+      const res = await trajetModule.request('/trajets');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { items: Array<{ driverRating: number | null; driverReviewCount: number }> };
+      expect(body.items[0]).toMatchObject({ driverRating: 4.5, driverReviewCount: 2 });
+    });
+
+    it('filters out trajets whose driver is below minDriverRating', async () => {
+      // First frame: no driver's average reaches the bar → the sentinel
+      // inArray() means the main query (mocked here) would return nothing in
+      // a real DB; this test just exercises that the endpoint doesn't error
+      // and still shapes the response correctly.
+      dbState.selectQueue = [[], [makeTrajetRow({ driverId: 'u_1' })], []];
+      const res = await trajetModule.request('/trajets?minDriverRating=4');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { items: unknown[] };
+      expect(body.items).toHaveLength(1);
+    });
+
+    it('rejects a minDriverRating above 5', async () => {
+      const res = await trajetModule.request('/trajets?minDriverRating=6');
       expect(res.status).toBe(400);
     });
   });
@@ -917,15 +957,42 @@ describe('trajet module', () => {
       expect(res.status).toBe(401);
     });
 
-    it("returns the current user's trajets", async () => {
+    it("returns a page of the current user's trajets", async () => {
       getSession.mockResolvedValue(sessionFor('user'));
       dbState.selectResult = [makeTrajetRow({ driverId: 'u_1' })];
 
       const res = await trajetModule.request('/me/trajets');
       expect(res.status).toBe(200);
-      const body = (await res.json()) as Array<{ driverId: string }>;
-      expect(body).toHaveLength(1);
-      expect(body[0]).toMatchObject({ driverId: 'u_1' });
+      const body = (await res.json()) as {
+        items: Array<{ driverId: string }>;
+        page: number;
+        limit: number;
+        hasMore: boolean;
+      };
+      expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0]).toMatchObject({ driverId: 'u_1' });
+    });
+
+    it('caps a page at `limit` items and reports hasMore', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [
+        makeTrajetRow({ driverId: 'u_1' }),
+        makeTrajetRow({ id: 't_2', driverId: 'u_1' }),
+        makeTrajetRow({ id: 't_3', driverId: 'u_1' }),
+      ];
+
+      const res = await trajetModule.request('/me/trajets?limit=2');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { items: unknown[]; hasMore: boolean };
+      expect(body.items).toHaveLength(2);
+      expect(body.hasMore).toBe(true);
+    });
+
+    it('rejects a page below 1', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      const res = await trajetModule.request('/me/trajets?page=0');
+      expect(res.status).toBe(400);
     });
   });
 

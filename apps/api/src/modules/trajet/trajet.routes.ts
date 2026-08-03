@@ -1,8 +1,8 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import {
   TrajetSchema,
-  TrajetListSchema,
   TrajetPageSchema,
+  TrajetSearchPageSchema,
   TrajetSearchQuerySchema,
   PaginationQuerySchema,
   CreateTrajetSchema,
@@ -30,12 +30,14 @@ export const listTrajetsRoute = createRoute({
   method: 'get',
   path: '/trajets',
   tags: ['trajet'],
-  summary: 'List trajets, optionally filtered by city, date, seats, price, comfort or baggage',
+  summary:
+    'List trajets, optionally filtered by city, date, seats, price, comfort, baggage or minimum driver ' +
+    'rating. Each result includes the driver\'s rating summary.',
   request: { query: TrajetSearchQuerySchema },
   responses: {
     200: {
-      description: 'A page of trajets',
-      content: { 'application/json': { schema: TrajetPageSchema } },
+      description: 'A page of trajets, each with the driver rating attached',
+      content: { 'application/json': { schema: TrajetSearchPageSchema } },
     },
     429: rateLimitedResponse,
   },
@@ -283,12 +285,13 @@ export const myTrajetsRoute = createRoute({
   method: 'get',
   path: '/me/trajets',
   tags: ['trajet'],
-  summary: "List the current user's published trajets (driver history)",
+  summary: "List the current user's published trajets (driver history), paginated",
   security: bearerAuth,
+  request: { query: PaginationQuerySchema },
   responses: {
     200: {
-      description: 'List of trajets',
-      content: { 'application/json': { schema: TrajetListSchema } },
+      description: 'A page of trajets',
+      content: { 'application/json': { schema: TrajetPageSchema } },
     },
     401: {
       description: 'Not authenticated',
