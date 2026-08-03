@@ -88,6 +88,22 @@
     "title": "Search for a ride",
     "subtitle": "Enter your cities and date to find an available carpool."
   },
+  "Contact": {
+    "title": "Contact us",
+    "subtitle": "A question, an issue with a ride? Our team gets back to you quickly.",
+    "form": {
+      "name": "Name",
+      "email": "Email address",
+      "subject": "Subject",
+      "message": "Message",
+      "submit": "Send",
+      "submitting": "Sending..."
+    },
+    "success": "Your message has been sent. We'll get back to you soon.",
+    "errors": {
+      "generic": "Unable to send your message. Please try again."
+    }
+  },
   "Parametres": {
     "title": "Account settings",
     "subtitle": "Manage your personal information and your password.",
