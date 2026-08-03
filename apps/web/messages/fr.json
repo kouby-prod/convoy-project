@@ -32,6 +32,120 @@
     "driverTips": "Conseils conducteurs",
     "copyright": "© {year} covoiturage Kouby Drive tous droits réservés"
   },
+  "Terms": {
+    "title": "Conditions Générales d'Utilisation",
+    "lastUpdated": "Version de travail — non publiée",
+    "disclaimer": "Ceci est un gabarit générique à but de démonstration. Il ne constitue pas un avis juridique et ne remplace pas la relecture d'un professionnel du droit (raison sociale, adresse, province d'exploitation à compléter) avant toute mise en production.",
+    "sections": [
+      {
+        "heading": "1. Objet",
+        "body": "Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation de la plateforme CAN-VOITURAGE (ci-après « la Plateforme »), un service de mise en relation entre conducteurs et passagers pour des trajets de covoiturage interurbains et urbains au Canada. En créant un compte ou en utilisant la Plateforme, vous acceptez sans réserve les présentes CGU."
+      },
+      {
+        "heading": "2. Définitions",
+        "body": "« Utilisateur » : toute personne inscrite sur la Plateforme, qu'elle agisse en tant que conducteur ou passager.\n\n« Conducteur » : Utilisateur proposant un trajet.\n\n« Passager » : Utilisateur réservant une place sur un trajet.\n\n« Trajet » : annonce de covoiturage publiée par un conducteur."
+      },
+      {
+        "heading": "3. Rôle de la Plateforme",
+        "body": "La Plateforme agit uniquement comme intermédiaire technique de mise en relation entre conducteurs et passagers. Elle n'est ni transporteur, ni employeur, ni partie au contrat de transport conclu entre les Utilisateurs. Les Utilisateurs demeurent seuls responsables du respect de la réglementation applicable (permis de conduire valide, assurance automobile couvrant le transport de passagers, etc.)."
+      },
+      {
+        "heading": "4. Inscription et compte utilisateur",
+        "body": "L'inscription nécessite une adresse e-mail ou un numéro de téléphone valide. L'Utilisateur s'engage à fournir des informations exactes et à les maintenir à jour. Chaque Utilisateur est responsable de la confidentialité de ses identifiants et de toute activité effectuée depuis son compte."
+      },
+      {
+        "heading": "5. Publication et réservation de trajets",
+        "body": "Le conducteur s'engage à publier des informations exactes (ville de départ/arrivée, date, heure, nombre de places, prix). Le prix demandé doit correspondre à un partage des frais de trajet et ne doit pas constituer une activité lucrative de transport de personnes, sous peine de requalification en transport rémunéré soumis à une réglementation distincte.\n\nLe passager s'engage à se présenter au lieu et à l'heure convenus."
+      },
+      {
+        "heading": "6. Annulation",
+        "body": "Le conducteur peut annuler un trajet publié ; les passagers ayant réservé en sont informés automatiquement par e-mail. Le passager peut annuler sa réservation tant qu'elle n'a pas été honorée. Des annulations répétées ou tardives peuvent affecter la note et la visibilité du compte."
+      },
+      {
+        "heading": "7. Avis et notation",
+        "body": "Les Utilisateurs peuvent, après un trajet effectué, laisser un avis et une note concernant l'autre partie. Ces avis doivent être sincères, rédigés de bonne foi et ne pas contenir de propos diffamatoires, injurieux ou discriminatoires."
+      },
+      {
+        "heading": "8. Responsabilité",
+        "body": "La Plateforme ne saurait être tenue responsable des dommages, retards, accidents ou litiges survenant à l'occasion d'un trajet, ceux-ci relevant de la seule responsabilité des Utilisateurs et, le cas échéant, de leurs assurances respectives.\n\nLa Plateforme s'engage à mettre en œuvre des moyens raisonnables pour assurer la sécurité et la fiabilité du service (vérification de documents, système de notation), sans garantir l'absence totale d'incidents."
+      },
+      {
+        "heading": "9. Propriété intellectuelle",
+        "body": "L'ensemble des éléments de la Plateforme (marque, logo, interface, code) est protégé par le droit de la propriété intellectuelle et ne peut être reproduit sans autorisation préalable."
+      },
+      {
+        "heading": "10. Suspension et résiliation",
+        "body": "La Plateforme se réserve le droit de suspendre ou de résilier, sans préavis, le compte d'un Utilisateur en cas de manquement aux présentes CGU, de comportement frauduleux ou de signalement fondé par d'autres Utilisateurs."
+      },
+      {
+        "heading": "11. Droit applicable et juridiction",
+        "body": "Les présentes CGU sont régies par le droit applicable dans la province où la Plateforme est exploitée, au Canada. Tout litige relève de la compétence exclusive des tribunaux de cette province, sous réserve des droits impératifs des consommateurs."
+      },
+      {
+        "heading": "12. Modification des CGU",
+        "body": "La Plateforme peut modifier les présentes CGU à tout moment. Les Utilisateurs seront informés des modifications substantielles ; la poursuite de l'utilisation de la Plateforme après notification vaut acceptation des nouvelles CGU."
+      },
+      {
+        "heading": "13. Contact",
+        "body": "Pour toute question relative aux présentes CGU, les Utilisateurs peuvent nous contacter via la page Contact."
+      }
+    ]
+  },
+  "Privacy": {
+    "title": "Politique de confidentialité",
+    "lastUpdated": "Version de travail — non publiée",
+    "disclaimer": "Ceci est un gabarit générique à but de démonstration. Il ne constitue pas un avis juridique et ne remplace pas la relecture d'un professionnel du droit avant toute mise en production.",
+    "sections": [
+      {
+        "heading": "1. Engagement",
+        "body": "CAN-VOITURAGE s'engage à protéger les renseignements personnels de ses Utilisateurs conformément à la Loi sur la protection des renseignements personnels et les documents électroniques (LPRPDE / PIPEDA) et aux lois provinciales applicables en matière de protection de la vie privée."
+      },
+      {
+        "heading": "2. Renseignements collectés",
+        "body": "Nous collectons : les informations d'inscription (nom, adresse e-mail, numéro de téléphone) ; les informations de trajet (villes de départ/arrivée, dates, réservations) ; les pièces d'identité et documents (permis de conduire) lorsque requis pour la vérification des conducteurs ; les données de géolocalisation lorsque l'Utilisateur active la recherche par proximité ; les données techniques (adresse IP, type d'appareil) à des fins de sécurité."
+      },
+      {
+        "heading": "3. Finalités de la collecte",
+        "body": "Ces renseignements sont utilisés pour : créer et gérer votre compte ; permettre la mise en relation entre conducteurs et passagers ; assurer la sécurité de la Plateforme (vérification d'identité, prévention de la fraude) ; vous envoyer des notifications relatives à vos réservations et trajets ; améliorer nos services."
+      },
+      {
+        "heading": "4. Consentement",
+        "body": "En créant un compte, vous consentez à la collecte et au traitement de vos renseignements personnels aux fins décrites dans la présente politique. Vous pouvez retirer votre consentement à tout moment, sous réserve des obligations légales de conservation et des conséquences pratiques sur l'accès au service."
+      },
+      {
+        "heading": "5. Partage des renseignements",
+        "body": "Vos renseignements ne sont jamais vendus à des tiers. Ils peuvent être partagés avec : les autres Utilisateurs, dans la mesure nécessaire à la réalisation d'un trajet (ex. : nom, note, informations de contact) ; nos fournisseurs techniques (hébergement, envoi d'e-mails/SMS) agissant en notre nom et liés par des obligations de confidentialité ; les autorités compétentes lorsque la loi l'exige."
+      },
+      {
+        "heading": "6. Conservation des données",
+        "body": "Vos renseignements sont conservés pendant la durée nécessaire aux finalités décrites ci-dessus, puis supprimés ou anonymisés, sous réserve des délais de conservation imposés par la loi (ex. : obligations fiscales ou comptables)."
+      },
+      {
+        "heading": "7. Sécurité",
+        "body": "Nous mettons en œuvre des mesures techniques et organisationnelles raisonnables pour protéger vos renseignements (chiffrement des communications via HTTPS/SSL, contrôle d'accès). Aucun système n'étant infaillible, nous vous invitons à utiliser un mot de passe robuste et à ne jamais le partager."
+      },
+      {
+        "heading": "8. Vos droits",
+        "body": "Conformément à la LPRPDE, vous disposez d'un droit d'accès, de rectification et de suppression de vos renseignements personnels, ainsi que du droit de retirer votre consentement. Vous pouvez exercer ces droits en nous contactant via la page Contact."
+      },
+      {
+        "heading": "9. Témoins de connexion (cookies)",
+        "body": "La Plateforme utilise des témoins de connexion strictement nécessaires à son fonctionnement (authentification, préférences de langue). Aucun témoin publicitaire tiers n'est utilisé à ce jour."
+      },
+      {
+        "heading": "10. Mineurs",
+        "body": "La Plateforme n'est pas destinée aux personnes de moins de 18 ans. Nous ne collectons pas sciemment de renseignements personnels concernant des mineurs."
+      },
+      {
+        "heading": "11. Modifications de la présente politique",
+        "body": "Cette politique peut être mise à jour pour refléter des changements légaux ou opérationnels. La date de dernière mise à jour figure en haut de cette page."
+      },
+      {
+        "heading": "12. Plainte",
+        "body": "Si vous estimez que vos renseignements personnels n'ont pas été traités conformément à la présente politique, vous pouvez nous contacter via la page Contact, ou déposer une plainte auprès du Commissariat à la protection de la vie privée du Canada (priv.gc.ca)."
+      }
+    ]
+  },
   "Hero": {
     "title": "Plus qu'un trajet, une rencontre !",
     "illustrationPlaceholder": "Illustration",
