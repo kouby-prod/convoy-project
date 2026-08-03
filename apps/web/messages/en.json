@@ -166,6 +166,10 @@
       "none": "No reviews yet",
       "summary": "★ {rating} ({count} reviews)"
     },
+    "distance": {
+      "label": "Distance",
+      "value": "{km} km"
+    },
     "owner": {
       "edit": "Edit",
       "closeEdit": "Close",
@@ -193,6 +197,14 @@
       "baggageAllowance": "Baggage needed",
       "minDriverRatingAny": "Any rating",
       "minDriverRatingValue": "★ {value} and up",
+      "useMyLocation": "Use my location",
+      "locating": "Locating...",
+      "locationSet": "Location in use",
+      "clearLocation": "Clear",
+      "geoUnsupported": "Geolocation isn't available on this device.",
+      "geoDenied": "Couldn't access your location. Check your browser's permissions.",
+      "radiusAny": "Any distance",
+      "radiusValue": "Within {value} km",
       "apply": "Search",
       "reset": "Reset"
     },
