@@ -88,6 +88,31 @@
     "title": "Search for a ride",
     "subtitle": "Enter your cities and date to find an available carpool."
   },
+  "Parametres": {
+    "title": "Account settings",
+    "subtitle": "Manage your personal information and your password.",
+    "loading": "Loading...",
+    "profile": {
+      "title": "Profile",
+      "email": "Email address",
+      "phone": "Phone number",
+      "unverified": "unverified",
+      "name": "Name",
+      "save": "Save",
+      "saving": "Saving...",
+      "success": "Profile updated.",
+      "error": "Unable to update the profile. Please try again."
+    },
+    "password": {
+      "title": "Password",
+      "current": "Current password",
+      "new": "New password",
+      "save": "Update",
+      "saving": "Updating...",
+      "success": "Password updated.",
+      "error": "Unable to update the password. Check your current password."
+    }
+  },
   "Messages": {
     "show": "Messages",
     "hide": "Hide messages",
