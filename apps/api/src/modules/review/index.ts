@@ -1,12 +1,18 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { avg, count, eq } from 'drizzle-orm';
+import { and, avg, count, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { db } from '../../db/client';
 import { review } from '../../db/review';
 import { trajet, booking } from '../../db/trajet-schema';
-import type { Review, RatingSummary } from '@carpool/schemas';
-import { createReviewRoute, listDriverReviewsRoute, getDriverRatingRoute } from './review.routes';
+import type { Review, ReviewDirection, RatingSummary } from '@carpool/schemas';
+import {
+  createReviewRoute,
+  listDriverReviewsRoute,
+  getDriverRatingRoute,
+  listPassengerReviewsRoute,
+  getPassengerRatingRoute,
+} from './review.routes';
 
 /**
  * Review module — an `OpenAPIHono` sub-app mounted by app.ts (see
@@ -17,8 +23,8 @@ import { createReviewRoute, listDriverReviewsRoute, getDriverRatingRoute } from 
  */
 const app = new OpenAPIHono<AuthEnv>();
 
-// Rating a booking is the only mutation here; reading a driver's reviews and
-// rating summary is public.
+// Rating a booking is the only mutation here; reading either party's reviews
+// and rating summary is public.
 app.use('/reviews', requireAuth);
 
 export const reviewModule = app
@@ -28,9 +34,6 @@ export const reviewModule = app
 
     const [bookingRow] = await db.select().from(booking).where(eq(booking.id, body.bookingId));
     if (!bookingRow) return c.json({ error: 'Booking not found' }, 404);
-    if (bookingRow.passengerId !== user.id) {
-      return c.json({ error: 'Not your booking' }, 403);
-    }
     if (bookingRow.status !== 'confirmed') {
       return c.json({ error: 'Booking is not confirmed' }, 400);
     }
@@ -41,7 +44,21 @@ export const reviewModule = app
       return c.json({ error: "Cannot review a trip that hasn't happened yet" }, 400);
     }
 
-    const [existing] = await db.select().from(review).where(eq(review.bookingId, body.bookingId));
+    // The caller must be one of the booking's two parties — which one decides
+    // the review's direction (who is rating whom).
+    let direction: ReviewDirection;
+    if (user.id === bookingRow.passengerId) {
+      direction = 'passenger_to_driver';
+    } else if (user.id === trajetRow.driverId) {
+      direction = 'driver_to_passenger';
+    } else {
+      return c.json({ error: 'Neither the passenger nor the driver of this booking' }, 403);
+    }
+
+    const [existing] = await db
+      .select()
+      .from(review)
+      .where(and(eq(review.bookingId, body.bookingId), eq(review.direction, direction)));
     if (existing) {
       return c.json({ error: 'This booking has already been reviewed' }, 400);
     }
@@ -53,7 +70,8 @@ export const reviewModule = app
         trajetId: trajetRow.id,
         bookingId: body.bookingId,
         driverId: trajetRow.driverId,
-        passengerId: user.id,
+        passengerId: bookingRow.passengerId,
+        direction,
         rating: body.rating,
         comment: body.comment ?? null,
       })
@@ -68,7 +86,7 @@ export const reviewModule = app
     const rows = await db
       .select()
       .from(review)
-      .where(eq(review.driverId, driverId))
+      .where(and(eq(review.driverId, driverId), eq(review.direction, 'passenger_to_driver')))
       .limit(limit + 1)
       .offset((page - 1) * limit);
 
@@ -78,18 +96,44 @@ export const reviewModule = app
   })
   .openapi(getDriverRatingRoute, async (c) => {
     const { driverId } = c.req.valid('param');
+    const result = await ratingSummary(eq(review.driverId, driverId), 'passenger_to_driver');
+    return c.json(result, 200);
+  })
+  .openapi(listPassengerReviewsRoute, async (c) => {
+    const { passengerId } = c.req.valid('param');
+    const { page, limit } = c.req.valid('query');
 
-    const [summary] = await db
-      .select({ averageRating: avg(review.rating), reviewCount: count(review.rating) })
+    const rows = await db
+      .select()
       .from(review)
-      .where(eq(review.driverId, driverId));
+      .where(and(eq(review.passengerId, passengerId), eq(review.direction, 'driver_to_passenger')))
+      .limit(limit + 1)
+      .offset((page - 1) * limit);
 
-    const result: RatingSummary = {
-      averageRating: summary?.averageRating ? Number(summary.averageRating) : null,
-      reviewCount: summary?.reviewCount ?? 0,
-    };
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    return c.json({ items: items.map(serialize), page, limit, hasMore }, 200);
+  })
+  .openapi(getPassengerRatingRoute, async (c) => {
+    const { passengerId } = c.req.valid('param');
+    const result = await ratingSummary(eq(review.passengerId, passengerId), 'driver_to_passenger');
     return c.json(result, 200);
   });
+
+async function ratingSummary(
+  subjectCondition: ReturnType<typeof eq>,
+  direction: ReviewDirection,
+): Promise<RatingSummary> {
+  const [summary] = await db
+    .select({ averageRating: avg(review.rating), reviewCount: count(review.rating) })
+    .from(review)
+    .where(and(subjectCondition, eq(review.direction, direction)));
+
+  return {
+    averageRating: summary?.averageRating ? Number(summary.averageRating) : null,
+    reviewCount: summary?.reviewCount ?? 0,
+  };
+}
 
 /** Map a DB row (Date columns) to the Zod contract shape (ISO strings). */
 function serialize(row: typeof review.$inferSelect): Review {
@@ -99,6 +143,7 @@ function serialize(row: typeof review.$inferSelect): Review {
     bookingId: row.bookingId,
     driverId: row.driverId,
     passengerId: row.passengerId,
+    direction: row.direction as Review['direction'],
     rating: row.rating,
     comment: row.comment,
     createdAt: row.createdAt.toISOString(),

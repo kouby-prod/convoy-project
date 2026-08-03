@@ -71,8 +71,6 @@ export const UpdateTrajetSchema = z
   .describe('UpdateTrajet');
 export type UpdateTrajet = z.infer<typeof UpdateTrajetSchema>;
 
-export const TrajetListSchema = z.array(TrajetSchema).describe('TrajetList');
-
 /**
  * Shared page/limit query params for every paginated list endpoint.
  * `limit` is capped at 100 to keep a single page bounded regardless of what
@@ -102,11 +100,27 @@ export function paginatedSchema<Item extends z.ZodTypeAny>(itemSchema: Item) {
 export const TrajetPageSchema = paginatedSchema(TrajetSchema).describe('TrajetPage');
 
 /**
+ * A trajet as returned by search, with the driver's rating summary attached
+ * so the results list doesn't need a second fetch per row. `driverRating` is
+ * null when the driver has no reviews yet (same convention as
+ * RatingSummarySchema in review.ts).
+ */
+export const TrajetSearchResultSchema = TrajetSchema.extend({
+  driverRating: z.number().min(1).max(5).nullable(),
+  driverReviewCount: z.number().int().min(0),
+}).describe('TrajetSearchResult');
+export type TrajetSearchResult = z.infer<typeof TrajetSearchResultSchema>;
+
+export const TrajetSearchPageSchema = paginatedSchema(TrajetSearchResultSchema).describe('TrajetSearchPage');
+
+/**
  * Search/filter query for `GET /trajets`. Every filter field is optional and
  * additive (AND-combined) — an absent field applies no filter.
  * `departureCity`/`destinationCity`/`baggageAllowance` are case-insensitive
- * substring matches; `date` matches trajets departing on that calendar day.
- * There is no `driverRating` filter — no rating/review system exists yet.
+ * substring matches; `date` matches trajets departing on that calendar day;
+ * `minDriverRating` keeps only trajets whose driver's average rating (across
+ * their `passenger_to_driver` reviews) is at least that value — drivers with
+ * no reviews yet never match a `minDriverRating` filter.
  */
 export const TrajetSearchQuerySchema = z
   .object({
@@ -121,6 +135,7 @@ export const TrajetSearchQuerySchema = z
     maxPrice: z.coerce.number().nonnegative().optional(),
     comfort: z.enum(['standard', 'confort', 'premium']).optional(),
     baggageAllowance: z.string().min(1).optional(),
+    minDriverRating: z.coerce.number().min(1).max(5).optional(),
   })
   .extend(PaginationQuerySchema.shape)
   .describe('TrajetSearchQuery');

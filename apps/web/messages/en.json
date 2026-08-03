@@ -84,6 +84,10 @@
       }
     ]
   },
+  "Search": {
+    "title": "Search for a ride",
+    "subtitle": "Enter your cities and date to find an available carpool."
+  },
   "Trajets": {
     "title": "Find your next ride",
     "subtitle": "Browse available carpool listings and book your seat in a few clicks.",
@@ -135,6 +139,8 @@
       "maxPrice": "Max price",
       "minSeats": "Min seats",
       "baggageAllowance": "Baggage needed",
+      "minDriverRatingAny": "Any rating",
+      "minDriverRatingValue": "★ {value} and up",
       "apply": "Search",
       "reset": "Reset"
     },
@@ -170,6 +176,15 @@
         "rejected": "Rejected",
         "cancelled": "Cancelled",
         "expired": "Expired"
+      },
+      "review": {
+        "cta": "Rate this passenger",
+        "ratingLabel": "Rating",
+        "commentLabel": "Comment (optional)",
+        "submit": "Submit",
+        "submitting": "Submitting...",
+        "success": "Thanks for your review!",
+        "error": "Unable to submit your review. Please try again."
       }
     }
   },
@@ -233,7 +248,12 @@
     "departureAt": "Departure",
     "seats": "Seats",
     "price": "Price",
-    "cancelledBadge": "Cancelled"
+    "cancelledBadge": "Cancelled",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}"
+    }
   },
   "MesReservations": {
     "title": "My bookings",

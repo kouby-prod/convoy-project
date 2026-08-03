@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 /* ───────────────────────────────────────────────────────────────────────────
    Footer — bookends the Navbar with the same three color combinations.
 
-   - vibrant  : electric blue
+   - vibrant  : green/yellow brand (CAN-VOITURAGE charte graphique)
    - breezing : sky → cyan → teal
    - smooth   : indigo → slate
 
@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 const footerVariants = cva('w-full ring-1 transition-all duration-500 ease-smooth', {
   variants: {
     theme: {
-      vibrant: 'bg-gradient-to-b from-blue-600 to-blue-700 text-white ring-white/10',
+      vibrant: 'bg-gradient-to-b from-green-600 to-green-700 text-white ring-white/10',
       breezing: 'bg-gradient-to-b from-cyan-400 to-teal-500 text-white ring-white/20',
       smooth: 'bg-gradient-to-b from-indigo-500 to-slate-700 text-white ring-white/10',
     },

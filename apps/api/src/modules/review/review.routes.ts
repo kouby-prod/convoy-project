@@ -16,7 +16,9 @@ export const createReviewRoute = createRoute({
   method: 'post',
   path: '/reviews',
   tags: ['review'],
-  summary: "Rate the driver of a completed, confirmed booking (passenger only, one review per booking)",
+  summary:
+    'Rate the other party of a completed, confirmed booking — the passenger rates the driver, or the ' +
+    'driver rates the passenger, depending on who calls it. One review per booking per direction.',
   security: bearerAuth,
   request: {
     body: { content: { 'application/json': { schema: CreateReviewSchema } } },
@@ -35,7 +37,7 @@ export const createReviewRoute = createRoute({
       content: { 'application/json': { schema: errorSchema } },
     },
     403: {
-      description: 'Not your booking',
+      description: 'Neither the passenger nor the driver of this booking',
       content: { 'application/json': { schema: errorSchema } },
     },
     404: {
@@ -66,9 +68,42 @@ export const getDriverRatingRoute = createRoute({
   method: 'get',
   path: '/drivers/{driverId}/rating',
   tags: ['review'],
-  summary: "A driver's average rating and review count",
+  summary: "A driver's average rating and review count (from passenger_to_driver reviews only)",
   request: {
     params: z.object({ driverId: z.string().min(1) }),
+  },
+  responses: {
+    200: {
+      description: 'Rating summary',
+      content: { 'application/json': { schema: RatingSummarySchema } },
+    },
+  },
+});
+
+export const listPassengerReviewsRoute = createRoute({
+  method: 'get',
+  path: '/passengers/{passengerId}/reviews',
+  tags: ['review'],
+  summary: "List the reviews drivers left for a passenger",
+  request: {
+    params: z.object({ passengerId: z.string().min(1) }),
+    query: PaginationQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'A page of reviews',
+      content: { 'application/json': { schema: ReviewPageSchema } },
+    },
+  },
+});
+
+export const getPassengerRatingRoute = createRoute({
+  method: 'get',
+  path: '/passengers/{passengerId}/rating',
+  tags: ['review'],
+  summary: "A passenger's average rating and review count (from driver_to_passenger reviews only)",
+  request: {
+    params: z.object({ passengerId: z.string().min(1) }),
   },
   responses: {
     200: {
