@@ -22,6 +22,8 @@ const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
 const COMFORT_ANY = 'all';
 
+const DRIVER_RATING_ANY = 'all';
+
 interface Filters {
   departureCity: string;
   destinationCity: string;
@@ -30,6 +32,7 @@ interface Filters {
   maxPrice: string;
   minSeats: string;
   baggageAllowance: string;
+  minDriverRating: string;
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -40,6 +43,7 @@ const EMPTY_FILTERS: Filters = {
   maxPrice: '',
   minSeats: '',
   baggageAllowance: '',
+  minDriverRating: DRIVER_RATING_ANY,
 };
 
 function filtersFromSearchParams(searchParams: URLSearchParams): Filters {
@@ -51,6 +55,7 @@ function filtersFromSearchParams(searchParams: URLSearchParams): Filters {
     maxPrice: searchParams.get('maxPrice') ?? '',
     minSeats: searchParams.get('minSeats') ?? '',
     baggageAllowance: searchParams.get('baggageAllowance') ?? '',
+    minDriverRating: searchParams.get('minDriverRating') ?? DRIVER_RATING_ANY,
   };
 }
 
@@ -64,6 +69,7 @@ function toQuery(filters: Filters): Record<string, string> {
   if (filters.maxPrice) query.maxPrice = filters.maxPrice;
   if (filters.minSeats) query.minSeats = filters.minSeats;
   if (filters.baggageAllowance) query.baggageAllowance = filters.baggageAllowance;
+  if (filters.minDriverRating !== DRIVER_RATING_ANY) query.minDriverRating = filters.minDriverRating;
   return query;
 }
 
@@ -159,6 +165,22 @@ export function TrajetsList() {
           value={filters.baggageAllowance}
           onChange={(e) => updateFilter('baggageAllowance', e.target.value)}
         />
+        <Select
+          value={filters.minDriverRating}
+          onValueChange={(value) => updateFilter('minDriverRating', value)}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={DRIVER_RATING_ANY}>{t('filters.minDriverRatingAny')}</SelectItem>
+            {[4, 3, 2, 1].map((value) => (
+              <SelectItem key={value} value={String(value)}>
+                {t('filters.minDriverRatingValue', { value })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="flex gap-2">
           <Button type="submit" className="flex-1">
             {t('filters.apply')}
@@ -192,6 +214,15 @@ export function TrajetsList() {
                     <div>
                       <strong className="text-foreground">{t('departureAt')}:</strong>{' '}
                       {formatDateTime(item.departureDateTime)}
+                    </div>
+                    <div>
+                      <strong className="text-foreground">{t('driverRating.label')}:</strong>{' '}
+                      {item.driverRating !== null
+                        ? t('driverRating.summary', {
+                            rating: item.driverRating.toFixed(1),
+                            count: item.driverReviewCount,
+                          })
+                        : t('driverRating.none')}
                     </div>
                     <div>
                       <strong className="text-foreground">{t('seats')}:</strong>{' '}

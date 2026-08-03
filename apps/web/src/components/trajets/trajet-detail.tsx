@@ -120,7 +120,7 @@ export function TrajetDetail({ id }: { id: string }) {
       {session?.user?.id === data.driverId ? (
         <>
           <TrajetOwnerActions trajet={data} />
-          <TrajetBookings trajetId={id} />
+          <TrajetBookings trajetId={id} departureDateTime={data.departureDateTime} />
         </>
       ) : (
         <TrajetBookingForm trajetId={id} seatsAvailable={data.seatsAvailable} cancelled={!!data.cancelledAt} />
