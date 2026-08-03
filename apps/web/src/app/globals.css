@@ -2,7 +2,7 @@
 
 @theme {
   /* Brand ramp — rebrand the whole system by changing --brand-500 */
-  --color-brand-500: #2563eb;
+  --color-brand-500: #16a34a;
 
   /* Radius scale (base 0.625rem) */
   --radius-sm: 6px;
@@ -13,16 +13,18 @@
   --radius-3xl: 22px;
   --radius-4xl: 26px;
 
-  /* Semantic tokens (light) */
+  /* Semantic tokens (light) — green/yellow brand per the CAN-VOITURAGE
+     charte graphique: green is primary, a deeper green is secondary, yellow
+     is the accent. */
   --color-background: #fafafa;
   --color-foreground: #0a0a0a;
   --color-card: #ffffff;
   --color-card-foreground: #0a0a0a;
   --color-popover: #ffffff;
   --color-popover-foreground: #0a0a0a;
-  --color-primary: #1d4ed8;
+  --color-primary: #16a34a;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #16a34a;
+  --color-secondary: #15803d;
   --color-secondary-foreground: #ffffff;
   --color-muted: #f0fdf4;
   --color-muted-foreground: #166534;
@@ -30,9 +32,9 @@
   --color-accent-foreground: #111827;
   --color-destructive: oklch(0.55 0.2 27);
   --color-destructive-foreground: #ffffff;
-  --color-border: #d9e5f8;
-  --color-input: #dbeafe;
-  --color-ring: #1d4ed8;
+  --color-border: #bbf7d0;
+  --color-input: #dcfce7;
+  --color-ring: #16a34a;
 
   /* Signature easing + durations */
   --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
@@ -45,9 +47,9 @@
   --color-card-foreground: #0a0a0a;
   --color-popover: #ffffff;
   --color-popover-foreground: #0a0a0a;
-  --color-primary: #1d4ed8;
+  --color-primary: #16a34a;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #16a34a;
+  --color-secondary: #15803d;
   --color-secondary-foreground: #ffffff;
   --color-muted: #f0fdf4;
   --color-muted-foreground: #166534;
@@ -55,9 +57,9 @@
   --color-accent-foreground: #111827;
   --color-destructive: oklch(0.55 0.2 27);
   --color-destructive-foreground: #ffffff;
-  --color-border: #d9e5f8;
-  --color-input: #dbeafe;
-  --color-ring: #1d4ed8;
+  --color-border: #bbf7d0;
+  --color-input: #dcfce7;
+  --color-ring: #16a34a;
 }
 
 .dark {
@@ -67,19 +69,19 @@
   --color-card-foreground: #fafafa;
   --color-popover: #18181b;
   --color-popover-foreground: #fafafa;
-  --color-primary: #60a5fa;
-  --color-primary-foreground: #ffffff;
+  --color-primary: #4ade80;
+  --color-primary-foreground: #052e16;
   --color-secondary: #22c55e;
-  --color-secondary-foreground: #ffffff;
-  --color-muted: #152f56;
-  --color-muted-foreground: #a7f3d0;
+  --color-secondary-foreground: #052e16;
+  --color-muted: #14532d;
+  --color-muted-foreground: #bbf7d0;
   --color-accent: #facc15;
   --color-accent-foreground: #111827;
   --color-destructive: oklch(0.6 0.19 25);
   --color-destructive-foreground: #ffffff;
-  --color-border: #0f172a;
-  --color-input: #0f172a;
-  --color-ring: #60a5fa;
+  --color-border: #14532d;
+  --color-input: #14532d;
+  --color-ring: #4ade80;
 }
 
 @layer base {
