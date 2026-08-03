@@ -166,6 +166,10 @@
       "none": "Pas encore d'avis",
       "summary": "★ {rating} ({count} avis)"
     },
+    "distance": {
+      "label": "Distance",
+      "value": "{km} km"
+    },
     "owner": {
       "edit": "Modifier",
       "closeEdit": "Fermer",
@@ -193,6 +197,14 @@
       "baggageAllowance": "Bagages recherchés",
       "minDriverRatingAny": "Toutes les notes",
       "minDriverRatingValue": "★ {value} et plus",
+      "useMyLocation": "Utiliser ma position",
+      "locating": "Localisation en cours...",
+      "locationSet": "Position utilisée",
+      "clearLocation": "Retirer",
+      "geoUnsupported": "La géolocalisation n'est pas disponible sur cet appareil.",
+      "geoDenied": "Impossible d'accéder à votre position. Vérifiez les autorisations de votre navigateur.",
+      "radiusAny": "Toutes distances",
+      "radiusValue": "Dans un rayon de {value} km",
       "apply": "Rechercher",
       "reset": "Réinitialiser"
     },
