@@ -4,6 +4,19 @@
   /* Brand ramp — rebrand the whole system by changing --brand-500 */
   --color-brand-500: #2563eb;
 
+  /* ── A note on `muted` ───────────────────────────────────────────────────
+     `muted` / `muted-foreground` are the NEUTRAL pair: card wells, secondary
+     text, disabled states, the "nothing here yet" badge. They must stay
+     colourless.
+
+     They used to be green-50 / green-800, which quietly broke the status
+     vocabulary: every hint, every e-mail address and every "to send" badge
+     rendered green, so green stopped meaning anything and an "a document is
+     missing" banner read as success. Status colour has to carry meaning rather
+     than decoration, which only works if the neutral base is actually neutral.
+     Green now belongs to `secondary` (approved) alone.
+     ─────────────────────────────────────────────────────────────────────── */
+
   /* Radius scale (base 0.625rem) */
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -24,8 +37,8 @@
   --color-primary-foreground: #ffffff;
   --color-secondary: #16a34a;
   --color-secondary-foreground: #ffffff;
-  --color-muted: #f0fdf4;
-  --color-muted-foreground: #166534;
+  --color-muted: #f4f4f5;
+  --color-muted-foreground: #52525b;
   --color-accent: #facc15;
   --color-accent-foreground: #111827;
   --color-destructive: oklch(0.55 0.2 27);
@@ -49,8 +62,8 @@
   --color-primary-foreground: #ffffff;
   --color-secondary: #16a34a;
   --color-secondary-foreground: #ffffff;
-  --color-muted: #f0fdf4;
-  --color-muted-foreground: #166534;
+  --color-muted: #f4f4f5;
+  --color-muted-foreground: #52525b;
   --color-accent: #facc15;
   --color-accent-foreground: #111827;
   --color-destructive: oklch(0.55 0.2 27);
@@ -71,8 +84,8 @@
   --color-primary-foreground: #ffffff;
   --color-secondary: #22c55e;
   --color-secondary-foreground: #ffffff;
-  --color-muted: #152f56;
-  --color-muted-foreground: #a7f3d0;
+  --color-muted: #27272a;
+  --color-muted-foreground: #a1a1aa;
   --color-accent: #facc15;
   --color-accent-foreground: #111827;
   --color-destructive: oklch(0.6 0.19 25);

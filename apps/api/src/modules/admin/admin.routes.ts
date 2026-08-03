@@ -87,6 +87,10 @@ export const reviewDocumentRoute = createRoute({
       description: 'The reviewed submission',
       content: { 'application/json': { schema: AdminDocumentSchema } },
     },
+    400: {
+      description: 'Approving a licence without confirming the date of birth on it',
+      content: { 'application/json': { schema: errorSchema } },
+    },
     401: {
       description: 'Not authenticated',
       content: { 'application/json': { schema: errorSchema } },

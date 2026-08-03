@@ -196,6 +196,69 @@ describe('admin module', () => {
     expect(rows[0]).not.toHaveProperty('storageKey');
   });
 
+  it("GET /admin/documents reports the submitter's progress across BOTH required documents", async () => {
+    getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
+    // Two selects: the queue join, then the per-owner verification read. The
+    // second deliberately looks past the current filter — this driver's ID card
+    // was refused, and approving their licence must not read as "done".
+    // Documents and eligibility declarations are read in parallel; the mock
+    // shifts one queue entry per `db.select()`, in call order.
+    dbState.selectQueue = [
+      [makeJoinedRow()],
+      [
+        { ownerId: 'u_1', type: 'permis', status: 'pending', submittedAt: now },
+        { ownerId: 'u_1', type: 'assurance', status: 'rejected', submittedAt: now },
+      ],
+      [{ userId: 'u_1', dateOfBirth: '1994-03-12' }],
+    ];
+
+    const res = await adminModule.request('/admin/documents?status=pending');
+
+    expect(res.status).toBe(200);
+    const rows = (await res.json()) as { owner: { verification: Record<string, unknown> } }[];
+    expect(rows[0]?.owner.verification).toMatchObject({
+      status: 'rejected',
+      approvedCount: 0,
+      requiredCount: 3,
+      slots: [
+        { type: 'permis', status: 'pending' },
+        { type: 'assurance', status: 'rejected' },
+        { type: 'immatriculation', status: 'missing' },
+      ],
+    });
+  });
+
+  it('GET /admin/documents carries the declared birth date so a reviewer can check it', async () => {
+    getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
+    dbState.selectQueue = [
+      [makeJoinedRow()],
+      [],
+      [{ userId: 'u_1', dateOfBirth: '1994-03-12' }],
+    ];
+
+    const res = await adminModule.request('/admin/documents');
+
+    const rows = (await res.json()) as {
+      owner: { verification: { age: Record<string, unknown> } };
+    }[];
+    expect(rows[0]?.owner.verification.age).toMatchObject({
+      dateOfBirth: '1994-03-12',
+      isAdult: true,
+      // Nothing is approved, so nobody has confirmed it yet.
+      confirmedByReviewer: false,
+    });
+  });
+
+  it('GET /admin/documents reports a submitter with nothing else on file as incomplete', async () => {
+    getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
+    dbState.selectQueue = [[makeJoinedRow()], []];
+
+    const res = await adminModule.request('/admin/documents');
+
+    const rows = (await res.json()) as { owner: { verification: { status: string } } }[];
+    expect(rows[0]?.owner.verification.status).toBe('incomplete');
+  });
+
   it('GET /admin/documents accepts the status and type filters', async () => {
     getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
     dbState.selectQueue = [[]];
@@ -218,6 +281,82 @@ describe('admin module', () => {
     const res = await patchJson(`/admin/documents/${DOC_ID}`, { status: 'approved' });
     expect(res.status).toBe(403);
     expect(db.update).not.toHaveBeenCalled();
+  });
+
+  /* ── The minimum-age rule rides on the licence approval ────────────────── */
+
+  it('PATCH /admin/documents/:id refuses to approve a LICENCE without confirming the birth date', async () => {
+    getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
+    dbState.selectQueue = [[makeDocumentRow({ type: 'permis' })]];
+
+    const res = await patchJson(`/admin/documents/${DOC_ID}`, { status: 'approved' });
+
+    // Otherwise "at least 18 years old" would be a claim nobody ever checked:
+    // the licence is the only document that shows a birth date.
+    expect(res.status).toBe(400);
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it('PATCH /admin/documents/:id approves a licence once the birth date is confirmed', async () => {
+    getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
+    const approved = makeDocumentRow({ type: 'permis', status: 'approved', ageConfirmed: true });
+    dbState.updateResult = [approved];
+    dbState.selectQueue = [
+      [makeDocumentRow({ type: 'permis' })],
+      [{ document: approved, owner: makeUserRow() }],
+      [],
+      [],
+    ];
+
+    const res = await patchJson(`/admin/documents/${DOC_ID}`, {
+      status: 'approved',
+      ageConfirmed: true,
+    });
+
+    expect(res.status).toBe(200);
+    expect(dbState.setCalls.at(-1)).toMatchObject({ status: 'approved', ageConfirmed: true });
+  });
+
+  it('PATCH /admin/documents/:id never stores an age confirmation on a non-licence', async () => {
+    getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
+    const approved = makeDocumentRow({ type: 'assurance', status: 'approved' });
+    dbState.updateResult = [approved];
+    dbState.selectQueue = [
+      [makeDocumentRow({ type: 'assurance' })],
+      [{ document: approved, owner: makeUserRow() }],
+      [],
+      [],
+    ];
+
+    // An insurance certificate shows no birth date, so a confirmation sent
+    // against one is meaningless and must not be recorded as a check.
+    const res = await patchJson(`/admin/documents/${DOC_ID}`, {
+      status: 'approved',
+      ageConfirmed: true,
+    });
+
+    expect(res.status).toBe(200);
+    expect(dbState.setCalls.at(-1)).toMatchObject({ ageConfirmed: false });
+  });
+
+  it('PATCH /admin/documents/:id clears the age confirmation when a licence is refused', async () => {
+    getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
+    const rejected = makeDocumentRow({ type: 'permis', status: 'rejected' });
+    dbState.updateResult = [rejected];
+    dbState.selectQueue = [
+      [makeDocumentRow({ type: 'permis', ageConfirmed: true })],
+      [{ document: rejected, owner: makeUserRow() }],
+      [],
+      [],
+    ];
+
+    const res = await patchJson(`/admin/documents/${DOC_ID}`, {
+      status: 'rejected',
+      note: 'Document expiré',
+    });
+
+    expect(res.status).toBe(200);
+    expect(dbState.setCalls.at(-1)).toMatchObject({ ageConfirmed: false });
   });
 
   it('PATCH /admin/documents/:id refuses a rejection with no reason', async () => {
@@ -246,7 +385,13 @@ describe('admin module', () => {
       reviewedAt: now,
     });
     dbState.updateResult = [rejected];
-    dbState.selectQueue = [[{ document: rejected, owner: makeUserRow() }]];
+    // Three selects now: the read-before-write that decides whether the age
+    // confirmation is required, the joined re-read, then the verification rollup.
+    dbState.selectQueue = [
+      [makeDocumentRow()],
+      [{ document: rejected, owner: makeUserRow() }],
+      [],
+    ];
 
     const res = await patchJson(`/admin/documents/${DOC_ID}`, {
       status: 'rejected',
@@ -270,7 +415,13 @@ describe('admin module', () => {
       reviewedAt: now,
     });
     dbState.updateResult = [approved];
-    dbState.selectQueue = [[{ document: approved, owner: makeUserRow() }]];
+    dbState.selectQueue = [
+      // An `assurance`, so this approval needs no age confirmation — that rule
+      // has its own tests below.
+      [makeDocumentRow({ type: 'assurance' })],
+      [{ document: approved, owner: makeUserRow() }],
+      [],
+    ];
 
     const res = await patchJson(`/admin/documents/${DOC_ID}`, {
       status: 'approved',

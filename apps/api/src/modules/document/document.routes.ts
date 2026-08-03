@@ -6,6 +6,8 @@ import {
   DocumentUploadUrlSchema,
   DriverDocumentListSchema,
   DriverDocumentSchema,
+  DriverEligibilitySchema,
+  EligibilityDeclarationSchema,
 } from '@carpool/schemas';
 
 // Bearer scheme for the authed routes (cookie sessions work too). Mirrors
@@ -115,6 +117,63 @@ export const getDocumentFileRoute = createRoute({
     },
     404: {
       description: 'Not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+/* ─────────────────── The age condition (no file involved) ──────────────── */
+
+/**
+ * The driver's own declaration. Served separately from the documents because it
+ * is one field rather than a submission, and it has no review history.
+ */
+export const getMyEligibilityRoute = createRoute({
+  method: 'get',
+  path: '/eligibility',
+  tags: ['document'],
+  summary: "Get the signed-in driver's eligibility declaration",
+  security: bearerAuth,
+  responses: {
+    200: {
+      description: 'The declared date of birth, with the age derived from it',
+      content: { 'application/json': { schema: DriverEligibilitySchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+/**
+ * Upsert the declaration.
+ *
+ * The minimum age is enforced HERE and not only in the browser: the client check
+ * is a courtesy that saves a round trip, this one is the rule. A refusal is a
+ * 400 rather than a silent clamp, so the driver is told they are not eligible
+ * instead of quietly appearing to succeed.
+ */
+export const putMyEligibilityRoute = createRoute({
+  method: 'put',
+  path: '/eligibility',
+  tags: ['document'],
+  summary: 'Declare the date of birth behind the minimum-age rule',
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: EligibilityDeclarationSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Declaration saved',
+      content: { 'application/json': { schema: DriverEligibilitySchema } },
+    },
+    400: {
+      description: 'Below the minimum driving age, or not a real past date',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
       content: { 'application/json': { schema: errorSchema } },
     },
   },

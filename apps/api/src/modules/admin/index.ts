@@ -1,10 +1,17 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
 import { requireAuth, requireRole, getAuth, type AuthEnv } from '../../auth';
 import { db } from '../../db/client';
 import { user } from '../../db/auth-schema';
 import { driverDocument } from '../../db/document';
-import type { AdminDocument, DocumentSubmitter } from '@carpool/schemas';
+import { driverEligibility } from '../../db/eligibility';
+import {
+  deriveDriverVerification,
+  REQUIRED_DRIVER_DOCUMENT_TYPES,
+  type AdminDocument,
+  type DocumentSubmitter,
+  type DriverVerification,
+} from '@carpool/schemas';
 import { serializeDocument } from '../document/serialize';
 import {
   getAdminStatsRoute,
@@ -111,12 +118,30 @@ export const adminModule = app
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(desc(driverDocument.submittedAt));
 
-    return c.json(rows.map(serializeAdminDocument), 200);
+    const verifications = await loadVerifications(rows.map((row) => row.owner.id));
+
+    return c.json(
+      rows.map((row) => serializeAdminDocument(row, verifications)),
+      200,
+    );
   })
   .openapi(reviewDocumentRoute, async (c) => {
     const { user: adminUser } = getAuth(c);
     const { id } = c.req.valid('param');
-    const { status, note } = c.req.valid('json');
+    const { status, note, ageConfirmed } = c.req.valid('json');
+
+    // Read before write: approving a LICENCE also settles the minimum-age rule,
+    // and that has to be an explicit confirmation rather than a by-product of
+    // clicking approve. Only the licence shows a birth date, so only it can.
+    const [existing] = await db.select().from(driverDocument).where(eq(driverDocument.id, id));
+    if (!existing) return c.json({ error: 'Not found' }, 404);
+
+    if (status === 'approved' && existing.type === 'permis' && ageConfirmed !== true) {
+      return c.json(
+        { error: 'Confirm the date of birth on the licence before approving it' },
+        400,
+      );
+    }
 
     const [updated] = await db
       .update(driverDocument)
@@ -125,6 +150,9 @@ export const adminModule = app
         // An approval clears any earlier rejection reason — leaving it would
         // show the driver a complaint about a document that is now accepted.
         reviewNote: status === 'rejected' ? (note ?? null) : null,
+        // Only ever true on an approved licence; a refusal or a re-review of
+        // another type must not leave a stale confirmation behind.
+        ageConfirmed: status === 'approved' && existing.type === 'permis' && ageConfirmed === true,
         reviewedBy: adminUser.id,
         reviewedAt: new Date(),
       })
@@ -137,7 +165,12 @@ export const adminModule = app
     const [joined] = await selectDocumentWithOwner().where(eq(driverDocument.id, updated.id));
     if (!joined) return c.json({ error: 'Not found' }, 404);
 
-    return c.json(serializeAdminDocument(joined), 200);
+    // Recomputed after the write, so the response already reflects the decision
+    // that was just made — the queue re-renders the new progress without a
+    // second round trip.
+    const verifications = await loadVerifications([joined.owner.id]);
+
+    return c.json(serializeAdminDocument(joined, verifications), 200);
   })
   .openapi(listAdminUsersRoute, async (c) => {
     // `leftJoin` so accounts with no documents still appear — those are exactly
@@ -160,6 +193,11 @@ export const adminModule = app
       .groupBy(user.id)
       .orderBy(desc(user.createdAt));
 
+    // The tallies above count every submission; verification counts only the two
+    // required types. A driver can hold three approved documents and still not
+    // be verified, so the verdict is computed rather than inferred from a total.
+    const verifications = await loadVerifications(rows.map((row) => row.id));
+
     return c.json(
       rows.map((row) => ({
         id: row.id,
@@ -172,19 +210,94 @@ export const adminModule = app
         documentCount: row.documentCount,
         pendingCount: row.pendingCount,
         approvedCount: row.approvedCount,
+        verification: verifications.get(row.id) ?? deriveDriverVerification([]),
       })),
       200,
     );
   });
 
+/**
+ * Every submitter's verification state, in one query for the whole page.
+ *
+ * Done as a second round trip rather than a window function over the queue join
+ * because the rollup must consider a driver's required documents even when the
+ * current filter hides them — reviewing a `pending` licence still has to report
+ * that the ID card was refused last week.
+ *
+ * Only the required types are read; `carteGrise` and `assurance` submissions do
+ * not count towards verification and would only be discarded.
+ */
+async function loadVerifications(ownerIds: string[]): Promise<Map<string, DriverVerification>> {
+  const unique = [...new Set(ownerIds)];
+  const byOwner = new Map<
+    string,
+    { type: string; status: string; submittedAt: Date; ageConfirmed: boolean }[]
+  >();
+  const birthDates = new Map<string, string>();
+
+  // Guard the empty case: `inArray(col, [])` is a false constant in Drizzle, so
+  // this is about skipping a pointless round trip, not about correctness.
+  if (unique.length > 0) {
+    // Documents and declarations in parallel — neither depends on the other, and
+    // the verdict needs both: three approved files with no confirmed birth date
+    // is not a verified driver.
+    const [rows, declarations] = await Promise.all([
+      db
+        .select({
+          ownerId: driverDocument.ownerId,
+          type: driverDocument.type,
+          status: driverDocument.status,
+          submittedAt: driverDocument.submittedAt,
+          ageConfirmed: driverDocument.ageConfirmed,
+        })
+        .from(driverDocument)
+        .where(
+          and(
+            inArray(driverDocument.ownerId, unique),
+            inArray(driverDocument.type, [...REQUIRED_DRIVER_DOCUMENT_TYPES]),
+          ),
+        ),
+      db
+        .select({
+          userId: driverEligibility.userId,
+          dateOfBirth: driverEligibility.dateOfBirth,
+        })
+        .from(driverEligibility)
+        .where(inArray(driverEligibility.userId, unique)),
+    ]);
+
+    for (const row of rows) {
+      const bucket = byOwner.get(row.ownerId);
+      if (bucket) bucket.push(row);
+      else byOwner.set(row.ownerId, [row]);
+    }
+    for (const row of declarations) birthDates.set(row.userId, row.dateOfBirth);
+  }
+
+  // Every requested owner gets an entry, so a driver with nothing on file reads
+  // as `incomplete` rather than being absent from the map.
+  return new Map(
+    unique.map((id) => [
+      id,
+      deriveDriverVerification(byOwner.get(id) ?? [], {
+        dateOfBirth: birthDates.get(id) ?? null,
+      }),
+    ]),
+  );
+}
+
 /** The submitter as a reviewer sees them — identity only, nothing sensitive. */
-function toSubmitter(row: typeof user.$inferSelect): DocumentSubmitter {
+function toSubmitter(
+  row: typeof user.$inferSelect,
+  verification: DriverVerification,
+): DocumentSubmitter {
   return {
     id: row.id,
     name: row.name,
     email: row.email,
     emailVerified: row.emailVerified,
     phoneNumber: row.phoneNumber,
+    verification,
   };
 }
 
@@ -193,6 +306,10 @@ function toSubmitter(row: typeof user.$inferSelect): DocumentSubmitter {
  * `serializeDocument` is what keeps the reviewer and the driver looking at the
  * same fields for the same row.
  */
-function serializeAdminDocument({ document, owner }: AdminDocumentRow): AdminDocument {
-  return { ...serializeDocument(document), owner: toSubmitter(owner) };
+function serializeAdminDocument(
+  { document, owner }: AdminDocumentRow,
+  verifications: Map<string, DriverVerification>,
+): AdminDocument {
+  const verification = verifications.get(owner.id) ?? deriveDriverVerification([]);
+  return { ...serializeDocument(document), owner: toSubmitter(owner, verification) };
 }

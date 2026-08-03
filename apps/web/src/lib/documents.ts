@@ -4,6 +4,7 @@ import {
   type DocumentMimeType,
   type DriverDocument,
   type DriverDocumentType,
+  type DriverEligibility,
 } from '@carpool/schemas';
 import { createApiClient } from '@carpool/api-client';
 import { env } from './env';
@@ -23,6 +24,25 @@ const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 export async function fetchMyDocuments(): Promise<DriverDocument[]> {
   const res = await api.documents.me.$get();
   if (!res.ok) throw new ApiError(res.status, 'Failed to load documents');
+  return res.json();
+}
+
+/** GET /eligibility — the driver's declared date of birth, with the age derived. */
+export async function fetchMyEligibility(): Promise<DriverEligibility> {
+  const res = await api.eligibility.$get();
+  if (!res.ok) throw new ApiError(res.status, 'Failed to load your eligibility details');
+  return res.json();
+}
+
+/**
+ * PUT /eligibility — declare the date of birth behind the minimum-age rule.
+ *
+ * The API refuses anything under `MIN_DRIVER_AGE` with a 400; the form checks
+ * first so the driver is told before a round trip, but the server is the rule.
+ */
+export async function saveMyEligibility(dateOfBirth: string): Promise<DriverEligibility> {
+  const res = await api.eligibility.$put({ json: { dateOfBirth } });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to save your date of birth');
   return res.json();
 }
 

@@ -46,13 +46,20 @@ export interface ReviewInput {
   status: Extract<DocumentStatus, 'approved' | 'rejected'>;
   /** Required by the contract when rejecting — the driver needs to know why. */
   note?: string | null;
+  /** Required by the API when approving a LICENCE: the birth date on it was checked. */
+  ageConfirmed?: boolean;
 }
 
 /** PATCH /admin/documents/:id — approve or reject one submission. */
-export async function reviewDocument({ id, status, note }: ReviewInput): Promise<AdminDocument> {
+export async function reviewDocument({
+  id,
+  status,
+  note,
+  ageConfirmed,
+}: ReviewInput): Promise<AdminDocument> {
   const res = await api.admin.documents[':id'].$patch({
     param: { id },
-    json: { status, note: note ? note : null },
+    json: { status, note: note ? note : null, ageConfirmed },
   });
   if (!res.ok) throw new ApiError(res.status, 'Failed to record the decision');
   return res.json();

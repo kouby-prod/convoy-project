@@ -3,6 +3,7 @@ import {
   DocumentStatusSchema,
   DriverDocumentSchema,
   DriverDocumentTypeSchema,
+  DriverVerificationSchema,
 } from './document';
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -28,6 +29,13 @@ export const DocumentSubmitterSchema = z
     email: z.string(),
     emailVerified: z.boolean(),
     phoneNumber: z.string().nullable(),
+    /**
+     * Where this driver stands across BOTH required documents, not just the one
+     * on the row. A reviewer approving a licence needs to know whether that
+     * completes the driver or still leaves an ID card outstanding — otherwise
+     * the decision is made without the half of the picture that matters.
+     */
+    verification: DriverVerificationSchema,
   })
   .describe('DocumentSubmitter');
 export type DocumentSubmitter = z.infer<typeof DocumentSubmitterSchema>;
@@ -69,6 +77,15 @@ export const ReviewDocumentSchema = z
   .object({
     status: z.enum(['approved', 'rejected']),
     note: z.string().trim().max(500).optional().nullable(),
+    /**
+     * Set when approving a LICENCE: the reviewer confirms the declared birth
+     * date matches the one printed on it. Ignored for other document types —
+     * only the licence shows a birth date, so only it can settle the age rule.
+     *
+     * The route refuses to approve a licence without it, which is what stops
+     * "at least 18" from being an unchecked claim.
+     */
+    ageConfirmed: z.boolean().optional(),
   })
   .refine((value) => value.status !== 'rejected' || Boolean(value.note && value.note.length > 0), {
     message: 'A rejection must explain what is wrong with the document',
@@ -116,6 +133,11 @@ export const AdminUserSchema = z
     documentCount: z.number().int().nonnegative(),
     pendingCount: z.number().int().nonnegative(),
     approvedCount: z.number().int().nonnegative(),
+    /**
+     * The verdict, which the counts above cannot give: they tally every
+     * submission, while verification looks only at the two required types.
+     */
+    verification: DriverVerificationSchema,
   })
   .describe('AdminUser');
 export type AdminUser = z.infer<typeof AdminUserSchema>;
