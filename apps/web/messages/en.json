@@ -88,6 +88,17 @@
     "title": "Search for a ride",
     "subtitle": "Enter your cities and date to find an available carpool."
   },
+  "Messages": {
+    "show": "Messages",
+    "hide": "Hide messages",
+    "loading": "Loading messages...",
+    "empty": "No messages yet.",
+    "error": "Unable to load messages.",
+    "placeholder": "Write a message...",
+    "send": "Send",
+    "sending": "Sending...",
+    "sendError": "Unable to send the message. Please try again."
+  },
   "Trajets": {
     "title": "Find your next ride",
     "subtitle": "Browse available carpool listings and book your seat in a few clicks.",
