@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { VerificationChip } from '@/components/documents/verification-chip';
 import { fetchAdminUsers } from '@/lib/admin';
 
 /**
@@ -43,6 +44,9 @@ export function AdminUserTable() {
               <th scope="col" className="px-4 py-3">
                 {t('users.joined')}
               </th>
+              <th scope="col" className="px-4 py-3">
+                {t('users.verification')}
+              </th>
               <th scope="col" className="px-4 py-3 text-right">
                 {t('users.documents')}
               </th>
@@ -72,6 +76,12 @@ export function AdminUserTable() {
                     month: 'short',
                     year: 'numeric',
                   })}
+                </td>
+                {/* The verdict, which the three tallies to its right cannot
+                    give: they count every submission, verification counts only
+                    the two required documents. */}
+                <td className="px-4 py-3.5">
+                  <VerificationChip verification={account.verification} />
                 </td>
                 <td className="px-4 py-3.5 text-right tabular-nums text-foreground">
                   {account.documentCount}

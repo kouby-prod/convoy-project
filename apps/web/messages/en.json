@@ -197,7 +197,7 @@
   },
   "Documents": {
     "title": "My documents",
-    "subtitle": "Send your driver paperwork. Our team reviews it before your account is approved.",
+    "subtitle": "Send your three documents. Our team reviews them before your account is approved.",
     "loading": "Loading…",
     "empty": "You have not sent any document yet.",
     "error": "Could not load your documents.",
@@ -211,21 +211,17 @@
       "rejected": "Rejected"
     },
     "type": {
-      "permis": "Driving licence",
+      "permis": "Driver's licence",
       "carteIdentite": "ID card",
-      "carteGrise": "Vehicle registration",
-      "assurance": "Insurance certificate"
-    },
-    "checklist": {
-      "title": "Required documents"
+      "carteGrise": "Vehicle registration (legacy)",
+      "assurance": "Auto insurance",
+      "immatriculation": "Vehicle registration"
     },
     "history": {
       "title": "My submissions",
       "reason": "Reason for rejection: {reason}"
     },
     "upload": {
-      "typeLabel": "Document type",
-      "fileLabel": "File",
       "expiryLabel": "Expiry date (optional)",
       "hint": "JPG, PNG, WEBP or PDF. {max} MB maximum.",
       "submit": "Send document",
@@ -233,12 +229,74 @@
       "noFile": "Choose a file first.",
       "tooLarge": "The file is larger than {max} MB.",
       "unsupported": "This file format is not accepted.",
-      "failed": "The upload failed. Please try again."
+      "failed": "The upload failed. Please try again.",
+      "dropzone": "Drag a file here, or click to choose one",
+      "replace": "Replace document",
+      "cancel": "Cancel",
+      "remove": "Remove this file",
+      "ready": "Ready to send"
+    },
+    "viewFailed": "Link unavailable",
+    "slot": {
+      "permis": {
+        "hint": "Valid Canadian licence, front and back.",
+        "why": "We check that you are allowed to drive in Canada."
+      },
+      "assurance": {
+        "hint": "Proof of insurance, still in force.",
+        "why": "We check that your vehicle is properly insured."
+      },
+      "immatriculation": {
+        "hint": "Vehicle registration certificate.",
+        "why": "We check that the vehicle is compliant and roadworthy."
+      }
+    },
+    "verification": {
+      "progress": "{approved}/{total} approved",
+      "incomplete": {
+        "chip": "Incomplete",
+        "title": "Something is still missing",
+        "body": "Complete the requirements below to get your account approved."
+      },
+      "pending": {
+        "chip": "Pending",
+        "title": "Review in progress",
+        "body": "We received your documents. Our team is reviewing them."
+      },
+      "rejected": {
+        "chip": "Rejected",
+        "title": "A document was rejected",
+        "body": "Fix the rejected document, then send it again."
+      },
+      "approved": {
+        "chip": "Verified",
+        "title": "Your account is verified",
+        "body": "You meet every requirement. You can publish your rides."
+      },
+      "label": "Verification progress"
+    },
+    "eligibility": {
+      "title": "Eligibility requirements",
+      "subtitle": "You must meet these four requirements to offer a ride.",
+      "condition": {
+        "permis": "Hold a valid Canadian driver's licence",
+        "assurance": "Have valid auto insurance",
+        "immatriculation": "Operate a compliant and roadworthy vehicle",
+        "age": "Be at least {min} years old"
+      },
+      "bornOn": "Born {date} · {age} years old",
+      "dateOfBirthLabel": "Your date of birth",
+      "save": "Save",
+      "saving": "Saving…",
+      "change": "Change my date of birth",
+      "required": "Enter your date of birth.",
+      "tooYoung": "You must be {min} or older to drive.",
+      "saveFailed": "Saving failed. Please try again."
     }
   },
   "Admin": {
     "title": "Backoffice",
-    "subtitle": "Monitor and review the documents drivers send in.",
+    "subtitle": "Track and approve the documents sent by drivers.",
     "loading": "Loading…",
     "error": "Could not load the data.",
     "authRequired": "Sign in to open the backoffice.",
@@ -276,7 +334,14 @@
       "reasonPlaceholder": "Explain what is wrong: blurry photo, expired document…",
       "reasonRequired": "Give a reason to reject this document.",
       "currentReason": "Current reason: {reason}",
-      "reviewFailed": "The decision could not be saved."
+      "reviewFailed": "The decision could not be saved.",
+      "showPreview": "Preview",
+      "hidePreview": "Hide preview",
+      "previewFailed": "The preview could not be loaded.",
+      "previewUnsupported": "This format cannot be displayed here.",
+      "declaredBirthDate": "Declared date of birth: {date} · {age} years old",
+      "noBirthDate": "This driver has not declared a date of birth yet.",
+      "confirmAge": "I confirm the date of birth matches the licence and the driver is {min} or older."
     },
     "users": {
       "empty": "No account yet.",
@@ -287,7 +352,8 @@
       "pending": "Pending",
       "approved": "Approved",
       "admin": "Admin",
-      "driver": "Driver"
+      "driver": "Driver",
+      "verification": "Verification"
     }
   }
 }
