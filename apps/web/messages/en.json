@@ -32,6 +32,120 @@
     "driverTips": "Tips for drivers",
     "copyright": "© {year} Kouby Drive carpooling — all rights reserved"
   },
+  "Terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Working draft — not published",
+    "disclaimer": "This is a generic template for demonstration purposes. It does not constitute legal advice and does not replace review by a legal professional (legal name, registered address, operating province to be completed) before going into production.",
+    "sections": [
+      {
+        "heading": "1. Purpose",
+        "body": "These Terms of Service (\"Terms\") govern access to and use of the CAN-VOITURAGE platform (the \"Platform\"), a service that connects drivers and passengers for interurban and urban carpooling trips across Canada. By creating an account or using the Platform, you accept these Terms in full."
+      },
+      {
+        "heading": "2. Definitions",
+        "body": "\"User\": any person registered on the Platform, whether acting as a driver or a passenger.\n\n\"Driver\": a User offering a trip.\n\n\"Passenger\": a User booking a seat on a trip.\n\n\"Trip\": a carpooling listing published by a driver."
+      },
+      {
+        "heading": "3. Role of the Platform",
+        "body": "The Platform acts solely as a technical intermediary connecting drivers and passengers. It is not a carrier, employer, or party to the transportation agreement between Users. Users remain solely responsible for complying with applicable regulations (a valid driver's licence, auto insurance covering passenger transport, etc.)."
+      },
+      {
+        "heading": "4. Registration and user account",
+        "body": "Registration requires a valid email address or phone number. Users agree to provide accurate information and keep it up to date. Each User is responsible for keeping their credentials confidential and for any activity carried out from their account."
+      },
+      {
+        "heading": "5. Publishing and booking trips",
+        "body": "Drivers agree to publish accurate information (departure/arrival city, date, time, number of seats, price). The price charged must correspond to a shared cost of the trip and must not amount to a for-profit passenger transport activity, or it may be reclassified as paid transport subject to separate regulation.\n\nPassengers agree to be present at the agreed place and time."
+      },
+      {
+        "heading": "6. Cancellation",
+        "body": "Drivers may cancel a published trip; passengers who booked it are notified automatically by email. Passengers may cancel their booking as long as it hasn't been completed. Repeated or late cancellations may affect an account's rating and visibility."
+      },
+      {
+        "heading": "7. Reviews and ratings",
+        "body": "After a completed trip, Users may leave a review and rating about the other party. Reviews must be honest, written in good faith, and must not contain defamatory, abusive, or discriminatory statements."
+      },
+      {
+        "heading": "8. Liability",
+        "body": "The Platform cannot be held liable for damages, delays, accidents, or disputes arising in connection with a trip, which are the sole responsibility of the Users and, where applicable, their respective insurers.\n\nThe Platform undertakes to use reasonable means to ensure the safety and reliability of the service (document verification, rating system), without guaranteeing the complete absence of incidents."
+      },
+      {
+        "heading": "9. Intellectual property",
+        "body": "All elements of the Platform (brand, logo, interface, code) are protected by intellectual property law and may not be reproduced without prior authorization."
+      },
+      {
+        "heading": "10. Suspension and termination",
+        "body": "The Platform reserves the right to suspend or terminate, without notice, the account of a User who breaches these Terms, engages in fraudulent behaviour, or is the subject of a substantiated report from other Users."
+      },
+      {
+        "heading": "11. Governing law and jurisdiction",
+        "body": "These Terms are governed by the law applicable in the province where the Platform operates, in Canada. Any dispute falls under the exclusive jurisdiction of the courts of that province, subject to mandatory consumer rights."
+      },
+      {
+        "heading": "12. Changes to these Terms",
+        "body": "The Platform may modify these Terms at any time. Users will be informed of material changes; continued use of the Platform after notification constitutes acceptance of the new Terms."
+      },
+      {
+        "heading": "13. Contact",
+        "body": "For any question regarding these Terms, Users may contact us via the Contact page."
+      }
+    ]
+  },
+  "Privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Working draft — not published",
+    "disclaimer": "This is a generic template for demonstration purposes. It does not constitute legal advice and does not replace review by a legal professional before going into production.",
+    "sections": [
+      {
+        "heading": "1. Commitment",
+        "body": "CAN-VOITURAGE is committed to protecting its Users' personal information in accordance with the Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable provincial privacy laws."
+      },
+      {
+        "heading": "2. Information we collect",
+        "body": "We collect: registration information (name, email address, phone number); trip information (departure/arrival cities, dates, bookings); identity documents (driver's licence) where required for driver verification; location data when a User enables proximity search; technical data (IP address, device type) for security purposes."
+      },
+      {
+        "heading": "3. Purposes of collection",
+        "body": "This information is used to: create and manage your account; connect drivers and passengers; keep the Platform secure (identity verification, fraud prevention); send you notifications about your bookings and trips; improve our services."
+      },
+      {
+        "heading": "4. Consent",
+        "body": "By creating an account, you consent to the collection and processing of your personal information for the purposes described in this policy. You may withdraw your consent at any time, subject to legal retention obligations and the practical consequences on your access to the service."
+      },
+      {
+        "heading": "5. Sharing your information",
+        "body": "Your information is never sold to third parties. It may be shared with: other Users, to the extent necessary to complete a trip (e.g. name, rating, contact information); our technical service providers (hosting, email/SMS delivery) acting on our behalf and bound by confidentiality obligations; competent authorities where required by law."
+      },
+      {
+        "heading": "6. Data retention",
+        "body": "Your information is kept for as long as necessary for the purposes described above, then deleted or anonymized, subject to retention periods required by law (e.g. tax or accounting obligations)."
+      },
+      {
+        "heading": "7. Security",
+        "body": "We implement reasonable technical and organizational measures to protect your information (encrypted communications via HTTPS/SSL, access controls). No system being infallible, we encourage you to use a strong password and never share it."
+      },
+      {
+        "heading": "8. Your rights",
+        "body": "Under PIPEDA, you have the right to access, correct, and delete your personal information, as well as the right to withdraw your consent. You can exercise these rights by contacting us via the Contact page."
+      },
+      {
+        "heading": "9. Cookies",
+        "body": "The Platform uses cookies strictly necessary for its operation (authentication, language preferences). No third-party advertising cookies are used at this time."
+      },
+      {
+        "heading": "10. Minors",
+        "body": "The Platform is not intended for people under 18. We do not knowingly collect personal information about minors."
+      },
+      {
+        "heading": "11. Changes to this policy",
+        "body": "This policy may be updated to reflect legal or operational changes. The last-updated date appears at the top of this page."
+      },
+      {
+        "heading": "12. Complaints",
+        "body": "If you believe your personal information has not been handled in accordance with this policy, you may contact us via the Contact page, or file a complaint with the Office of the Privacy Commissioner of Canada (priv.gc.ca)."
+      }
+    ]
+  },
   "Hero": {
     "title": "More than a ride, a meeting!",
     "illustrationPlaceholder": "Illustration",
