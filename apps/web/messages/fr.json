@@ -88,6 +88,31 @@
     "title": "Rechercher un trajet",
     "subtitle": "Indiquez vos villes et votre date pour trouver un covoiturage disponible."
   },
+  "Parametres": {
+    "title": "Paramètres du compte",
+    "subtitle": "Gérez vos informations personnelles et votre mot de passe.",
+    "loading": "Chargement...",
+    "profile": {
+      "title": "Profil",
+      "email": "Adresse e-mail",
+      "phone": "Numéro de téléphone",
+      "unverified": "non vérifié",
+      "name": "Nom",
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
+      "success": "Profil mis à jour.",
+      "error": "Impossible de mettre à jour le profil. Veuillez réessayer."
+    },
+    "password": {
+      "title": "Mot de passe",
+      "current": "Mot de passe actuel",
+      "new": "Nouveau mot de passe",
+      "save": "Mettre à jour",
+      "saving": "Mise à jour...",
+      "success": "Mot de passe mis à jour.",
+      "error": "Impossible de mettre à jour le mot de passe. Vérifiez votre mot de passe actuel."
+    }
+  },
   "Messages": {
     "show": "Messages",
     "hide": "Masquer les messages",
