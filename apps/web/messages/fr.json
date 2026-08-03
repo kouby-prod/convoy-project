@@ -88,6 +88,17 @@
     "title": "Rechercher un trajet",
     "subtitle": "Indiquez vos villes et votre date pour trouver un covoiturage disponible."
   },
+  "Messages": {
+    "show": "Messages",
+    "hide": "Masquer les messages",
+    "loading": "Chargement des messages...",
+    "empty": "Aucun message pour le moment.",
+    "error": "Impossible de charger les messages.",
+    "placeholder": "Écrire un message...",
+    "send": "Envoyer",
+    "sending": "Envoi en cours...",
+    "sendError": "Impossible d'envoyer le message. Veuillez réessayer."
+  },
   "Trajets": {
     "title": "Trouvez votre prochain trajet",
     "subtitle": "Consultez les annonces de covoiturage disponibles et réservez une place en quelques clics.",
