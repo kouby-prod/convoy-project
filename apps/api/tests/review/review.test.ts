@@ -107,6 +107,7 @@ function makeReviewRow(overrides: Partial<Record<string, unknown>> = {}) {
     bookingId: BOOKING_ID,
     driverId: 'driver_1',
     passengerId: 'u_1',
+    direction: 'passenger_to_driver',
     rating: 5,
     comment: 'Great trip!',
     createdAt: now,
@@ -148,9 +149,9 @@ describe('review module', () => {
       expect(res.status).toBe(404);
     });
 
-    it('returns 403 when the caller is not the passenger on the booking', async () => {
-      getSession.mockResolvedValue(sessionFor('u_1'));
-      dbState.selectResult = [makeBookingRow({ passengerId: 'someone-else' })];
+    it('returns 403 when the caller is neither the passenger nor the driver of the booking', async () => {
+      getSession.mockResolvedValue(sessionFor('a-stranger'));
+      dbState.selectQueue = [[makeBookingRow()], [makeTrajetRow()]];
 
       const res = await reviewModule.request('/reviews', {
         method: 'POST',
@@ -215,6 +216,7 @@ describe('review module', () => {
         bookingId: BOOKING_ID,
         driverId: 'driver_1',
         passengerId: 'u_1',
+        direction: 'passenger_to_driver',
         rating: 4,
         comment: 'Nice ride',
       });
@@ -228,6 +230,44 @@ describe('review module', () => {
         body: JSON.stringify({ bookingId: BOOKING_ID, rating: 6 }),
       });
       expect(res.status).toBe(400);
+    });
+
+    it("lets the driver rate the passenger (direction: driver_to_passenger)", async () => {
+      getSession.mockResolvedValue(sessionFor('driver_1'));
+      dbState.selectQueue = [[makeBookingRow()], [makeTrajetRow()], []];
+      dbState.insertResult = [
+        makeReviewRow({ direction: 'driver_to_passenger', rating: 3, comment: 'Quiet passenger' }),
+      ];
+
+      const res = await reviewModule.request('/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: BOOKING_ID, rating: 3, comment: 'Quiet passenger' }),
+      });
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body).toMatchObject({
+        driverId: 'driver_1',
+        passengerId: 'u_1',
+        direction: 'driver_to_passenger',
+        rating: 3,
+      });
+    });
+
+    it('lets the driver rate the passenger even if the passenger already rated the driver (independent per direction)', async () => {
+      getSession.mockResolvedValue(sessionFor('driver_1'));
+      // The "already reviewed" lookup is scoped to this direction, so an
+      // existing passenger_to_driver review must not block this one.
+      dbState.selectQueue = [[makeBookingRow()], [makeTrajetRow()], []];
+      dbState.insertResult = [makeReviewRow({ direction: 'driver_to_passenger', rating: 5 })];
+
+      const res = await reviewModule.request('/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: BOOKING_ID, rating: 5 }),
+      });
+      expect(res.status).toBe(201);
     });
   });
 
@@ -262,6 +302,44 @@ describe('review module', () => {
       const res = await reviewModule.request('/drivers/driver_1/rating');
       expect(res.status).toBe(200);
       await expect(res.json()).resolves.toEqual({ averageRating: 4.5, reviewCount: 2 });
+    });
+  });
+
+  describe('GET /passengers/:passengerId/reviews', () => {
+    it('returns an empty page by default', async () => {
+      dbState.selectResult = [];
+      const res = await reviewModule.request('/passengers/u_1/reviews');
+      expect(res.status).toBe(200);
+      await expect(res.json()).resolves.toEqual({ items: [], page: 1, limit: 20, hasMore: false });
+    });
+
+    it('caps a page at `limit` items and reports hasMore', async () => {
+      dbState.selectResult = [
+        makeReviewRow({ direction: 'driver_to_passenger' }),
+        makeReviewRow({ id: 'r_2', direction: 'driver_to_passenger' }),
+        makeReviewRow({ id: 'r_3', direction: 'driver_to_passenger' }),
+      ];
+      const res = await reviewModule.request('/passengers/u_1/reviews?limit=2');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { items: unknown[]; hasMore: boolean };
+      expect(body.items).toHaveLength(2);
+      expect(body.hasMore).toBe(true);
+    });
+  });
+
+  describe('GET /passengers/:passengerId/rating', () => {
+    it('returns a null average and zero count when the passenger has no reviews', async () => {
+      dbState.selectResult = [{ averageRating: null, reviewCount: 0 }];
+      const res = await reviewModule.request('/passengers/u_1/rating');
+      expect(res.status).toBe(200);
+      await expect(res.json()).resolves.toEqual({ averageRating: null, reviewCount: 0 });
+    });
+
+    it('returns the computed average and count when the passenger has reviews', async () => {
+      dbState.selectResult = [{ averageRating: '3.5', reviewCount: 4 }];
+      const res = await reviewModule.request('/passengers/u_1/rating');
+      expect(res.status).toBe(200);
+      await expect(res.json()).resolves.toEqual({ averageRating: 3.5, reviewCount: 4 });
     });
   });
 });

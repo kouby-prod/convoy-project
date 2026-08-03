@@ -1,11 +1,12 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, eq, gte, ilike, inArray, isNull, lt, lte } from 'drizzle-orm';
+import { and, avg, count, eq, gte, ilike, inArray, isNull, lt, lte } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { rateLimit } from '../../middleware/rate-limit';
 import { db } from '../../db/client';
 import { trajet, booking } from '../../db/trajet-schema';
-import type { Trajet, Booking, BookingWithTrajet } from '@carpool/schemas';
+import { review } from '../../db/review';
+import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet } from '@carpool/schemas';
 import {
   listTrajetsRoute,
   getTrajetRoute,
@@ -144,6 +145,22 @@ export const trajetModule = app
     if (query.baggageAllowance) {
       conditions.push(ilike(trajet.baggageAllowance, `%${query.baggageAllowance}%`));
     }
+    if (query.minDriverRating !== undefined) {
+      // Drivers with no reviews yet have no row here at all, so they never
+      // qualify for a minDriverRating filter — that's the desired behavior.
+      // Resolved eagerly (rather than as a lazy subquery) to keep this simple
+      // and match the same two-query style as attachDriverRatings below.
+      const qualifyingDriverRows = await db
+        .select({ driverId: review.driverId })
+        .from(review)
+        .where(eq(review.direction, 'passenger_to_driver'))
+        .groupBy(review.driverId)
+        .having(gte(avg(review.rating), query.minDriverRating));
+      const qualifyingDriverIds = qualifyingDriverRows.map((r) => r.driverId);
+      // A non-matching sentinel keeps `inArray` well-formed when no driver
+      // qualifies, instead of special-casing an empty array.
+      conditions.push(inArray(trajet.driverId, qualifyingDriverIds.length ? qualifyingDriverIds : ['__none__']));
+    }
 
     const offset = (query.page - 1) * query.limit;
     const rows = await db
@@ -154,7 +171,8 @@ export const trajetModule = app
       .offset(offset);
 
     const { items, hasMore } = paginate(rows, query.limit);
-    return c.json({ items: items.map(serialize), page: query.page, limit: query.limit, hasMore }, 200);
+    const withRating = await attachDriverRatings(items);
+    return c.json({ items: withRating, page: query.page, limit: query.limit, hasMore }, 200);
   })
   .openapi(getTrajetRoute, async (c) => {
     const { id } = c.req.valid('param');
@@ -504,8 +522,16 @@ export const trajetModule = app
   })
   .openapi(myTrajetsRoute, async (c) => {
     const { user } = getAuth(c);
-    const rows = await db.select().from(trajet).where(eq(trajet.driverId, user.id));
-    return c.json(rows.map(serialize), 200);
+    const { page, limit } = c.req.valid('query');
+    const rows = await db
+      .select()
+      .from(trajet)
+      .where(eq(trajet.driverId, user.id))
+      .limit(limit + 1)
+      .offset((page - 1) * limit);
+
+    const { items, hasMore } = paginate(rows, limit);
+    return c.json({ items: items.map(serialize), page, limit, hasMore }, 200);
   })
   .openapi(myBookingsRoute, async (c) => {
     const { user } = getAuth(c);
@@ -533,6 +559,41 @@ export const trajetModule = app
     const { items, hasMore } = paginate(rows, limit);
     return c.json({ items: items.map(serializeBookingWithTrajet), page, limit, hasMore }, 200);
   });
+
+/**
+ * Attaches each row's driver rating summary (from `passenger_to_driver`
+ * reviews) via a single grouped query keyed on the page's distinct driver
+ * ids, rather than one rating query per row.
+ */
+async function attachDriverRatings(rows: (typeof trajet.$inferSelect)[]): Promise<TrajetSearchResult[]> {
+  const driverIds = [...new Set(rows.map((row) => row.driverId))];
+  const ratingRows = driverIds.length
+    ? await db
+        .select({
+          driverId: review.driverId,
+          averageRating: avg(review.rating),
+          reviewCount: count(review.rating),
+        })
+        .from(review)
+        .where(and(inArray(review.driverId, driverIds), eq(review.direction, 'passenger_to_driver')))
+        .groupBy(review.driverId)
+    : [];
+  const ratingByDriver = new Map(
+    ratingRows.map((r) => [
+      r.driverId,
+      { averageRating: r.averageRating ? Number(r.averageRating) : null, reviewCount: r.reviewCount },
+    ]),
+  );
+
+  return rows.map((row) => {
+    const rating = ratingByDriver.get(row.driverId);
+    return {
+      ...serialize(row),
+      driverRating: rating?.averageRating ?? null,
+      driverReviewCount: rating?.reviewCount ?? 0,
+    };
+  });
+}
 
 /** Map a DB row (Date columns, DB column names) to the Zod contract shape. */
 function serialize(row: typeof trajet.$inferSelect): Trajet {

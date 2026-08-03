@@ -43,6 +43,13 @@
       "when": 1785425553217,
       "tag": "0005_spicy_archangel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785756724493,
+      "tag": "0006_pale_purifiers",
+      "breakpoints": true
     }
   ]
 }

@@ -84,6 +84,10 @@
       }
     ]
   },
+  "Search": {
+    "title": "Rechercher un trajet",
+    "subtitle": "Indiquez vos villes et votre date pour trouver un covoiturage disponible."
+  },
   "Trajets": {
     "title": "Trouvez votre prochain trajet",
     "subtitle": "Consultez les annonces de covoiturage disponibles et réservez une place en quelques clics.",
@@ -135,6 +139,8 @@
       "maxPrice": "Prix maximum",
       "minSeats": "Places minimum",
       "baggageAllowance": "Bagages recherchés",
+      "minDriverRatingAny": "Toutes les notes",
+      "minDriverRatingValue": "★ {value} et plus",
       "apply": "Rechercher",
       "reset": "Réinitialiser"
     },
@@ -170,6 +176,15 @@
         "rejected": "Refusée",
         "cancelled": "Annulée",
         "expired": "Expirée"
+      },
+      "review": {
+        "cta": "Noter ce passager",
+        "ratingLabel": "Note",
+        "commentLabel": "Commentaire (optionnel)",
+        "submit": "Envoyer",
+        "submitting": "Envoi en cours...",
+        "success": "Merci pour votre avis !",
+        "error": "Impossible d'envoyer votre avis. Veuillez réessayer."
       }
     }
   },
@@ -235,7 +250,12 @@
     "departureAt": "Départ",
     "seats": "Places",
     "price": "Prix",
-    "cancelledBadge": "Annulé"
+    "cancelledBadge": "Annulé",
+    "pagination": {
+      "previous": "Précédent",
+      "next": "Suivant",
+      "page": "Page {page}"
+    }
   },
   "MesReservations": {
     "title": "Mes réservations",
