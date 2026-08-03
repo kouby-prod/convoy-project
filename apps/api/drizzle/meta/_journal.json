@@ -50,6 +50,13 @@
       "when": 1785756724493,
       "tag": "0006_pale_purifiers",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785769375927,
+      "tag": "0007_mute_inhumans",
+      "breakpoints": true
     }
   ]
 }

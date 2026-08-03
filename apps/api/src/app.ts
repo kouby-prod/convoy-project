@@ -6,6 +6,7 @@ import { healthRoute, pingRoute } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
 import { trajetModule } from './modules/trajet';
 import { reviewModule } from './modules/review';
+import { messageModule } from './modules/message';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
 // TODO: domain modules — mount feature routers from ./modules here.
@@ -68,6 +69,8 @@ const routes = app
   .route('/', trajetModule)
   // --- REVIEW domain routes ---
   .route('/', reviewModule)
+  // --- MESSAGE domain routes ---
+  .route('/', messageModule)
   // --- PROOF routes (not domain logic) ---
   .openapi(meRoute, (c) => {
     const { user } = getAuth(c);

@@ -10,6 +10,7 @@ import { env } from '@/lib/env';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BookingMessages } from '@/components/trajets/booking-messages';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -129,6 +130,7 @@ export function TrajetBookingForm({
             {cancelMutation.isError ? (
               <p className="text-sm text-destructive">{t('booking.errors.cancelGeneric')}</p>
             ) : null}
+            <BookingMessages bookingId={myBooking.id} />
           </>
         ) : (
           <>
