@@ -15,6 +15,14 @@ export const trajet = pgTable('trajet', {
   driverId: text('driver_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
   departureCity: text('departure_city').notNull(),
   arrivalCity: text('arrival_city').notNull(),
+  // Geocoded server-side from the city names on create/update (see
+  // apps/api/src/modules/trajet/geocoding.ts) — nullable because geocoding is
+  // best-effort against a third-party service and must never block publishing
+  // a trajet. Powers the `nearLat`/`nearLng`/`radiusKm` proximity search.
+  departureLat: numeric('departure_lat'),
+  departureLng: numeric('departure_lng'),
+  arrivalLat: numeric('arrival_lat'),
+  arrivalLng: numeric('arrival_lng'),
   departureAt: timestamp('departure_at').notNull(),
   seatsTotal: integer('seats_total').notNull(),
   seatsAvailable: integer('seats_available').notNull(),
