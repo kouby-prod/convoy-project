@@ -68,6 +68,8 @@ export function Footer({ theme = 'vibrant', className }: FooterProps) {
 
   const aboutLinks = [
     { label: translateFooter('terms'), href: '/terms' },
+    { label: translateFooter('cgv'), href: '/cgv' },
+    { label: translateFooter('contratConducteur'), href: '/contrat-conducteur' },
     { label: translateFooter('responsibility'), href: '/responsibility' },
     { label: translateFooter('privacy'), href: '/privacy' },
     { label: translateFooter('contact'), href: '/contact' },

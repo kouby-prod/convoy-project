@@ -22,6 +22,8 @@
   "Footer": {
     "aboutTitle": "About us",
     "terms": "Terms of use",
+    "cgv": "Terms of sale",
+    "contratConducteur": "Driver agreement",
     "responsibility": "Responsibility charter",
     "privacy": "Privacy",
     "contact": "Contact us",
@@ -34,115 +36,317 @@
   },
   "Terms": {
     "title": "Terms of Service",
-    "lastUpdated": "Working draft — not published",
-    "disclaimer": "This is a generic template for demonstration purposes. It does not constitute legal advice and does not replace review by a legal professional (legal name, registered address, operating province to be completed) before going into production.",
+    "lastUpdated": "Last updated: [to be completed]",
+    "disclaimer": "Only the last-updated date still needs to be filled in before publishing (see \"[to be completed]\" above).",
     "sections": [
       {
         "heading": "1. Purpose",
-        "body": "These Terms of Service (\"Terms\") govern access to and use of the CAN-VOITURAGE platform (the \"Platform\"), a service that connects drivers and passengers for interurban and urban carpooling trips across Canada. By creating an account or using the Platform, you accept these Terms in full."
+        "body": "These Terms of Service (\"Terms\") govern access to and use of the Kouby carpooling platform (the \"Platform\") operated in Canada.\n\nThe Platform connects:\n• drivers offering trips,\n• passengers looking to book a seat.\n\nKouby acts exclusively as a technical intermediary."
       },
       {
-        "heading": "2. Definitions",
-        "body": "\"User\": any person registered on the Platform, whether acting as a driver or a passenger.\n\n\"Driver\": a User offering a trip.\n\n\"Passenger\": a User booking a seat on a trip.\n\n\"Trip\": a carpooling listing published by a driver."
+        "heading": "2. Acceptance of these Terms",
+        "body": "Using the Platform means fully and unconditionally accepting these Terms.\n\nUsers agree to comply with:\n• these Terms,\n• Canadian federal law,\n• applicable provincial law (notably Quebec, Ontario, etc.),\n• regulations in force regarding transportation, road safety, and insurance."
       },
       {
-        "heading": "3. Role of the Platform",
-        "body": "The Platform acts solely as a technical intermediary connecting drivers and passengers. It is not a carrier, employer, or party to the transportation agreement between Users. Users remain solely responsible for complying with applicable regulations (a valid driver's licence, auto insurance covering passenger transport, etc.)."
+        "heading": "3. Access to the platform",
+        "body": "Registering on the Platform is:\n• free,\n• with no membership fee."
       },
       {
-        "heading": "4. Registration and user account",
-        "body": "Registration requires a valid email address or phone number. Users agree to provide accurate information and keep it up to date. Each User is responsible for keeping their credentials confidential and for any activity carried out from their account."
+        "heading": "4. Role of the platform",
+        "body": "Kouby:\n• connects drivers and passengers,\n• facilitates trip bookings,\n• collects a booking commission.\n\nKouby is not a carrier and does not operate any transport service."
       },
       {
-        "heading": "5. Publishing and booking trips",
-        "body": "Drivers agree to publish accurate information (departure/arrival city, date, time, number of seats, price). The price charged must correspond to a shared cost of the trip and must not amount to a for-profit passenger transport activity, or it may be reclassified as paid transport subject to separate regulation.\n\nPassengers agree to be present at the agreed place and time."
+        "heading": "5. Conditions applicable to drivers",
+        "body": "Drivers are subject to the following conditions."
       },
       {
-        "heading": "6. Cancellation",
-        "body": "Drivers may cancel a published trip; passengers who booked it are notified automatically by email. Passengers may cancel their booking as long as it hasn't been completed. Repeated or late cancellations may affect an account's rating and visibility."
+        "heading": "5.1 Responsibility and compliance",
+        "body": "Drivers are solely responsible for:\n• their legal capacity to drive in Canada,\n• the validity of their driver's licence,\n• their auto insurance,\n• their vehicle's compliance.\n\nKouby disclaims all liability in the event of non-compliance."
       },
       {
-        "heading": "7. Reviews and ratings",
-        "body": "After a completed trip, Users may leave a review and rating about the other party. Reviews must be honest, written in good faith, and must not contain defamatory, abusive, or discriminatory statements."
+        "heading": "5.2 Mandatory information",
+        "body": "Drivers must provide accurate and complete information, including:\n• identity,\n• driver's licence,\n• vehicle information (registration, model, insurance),\n• trip details.\n\nAny false statement is strictly prohibited."
       },
       {
-        "heading": "8. Liability",
-        "body": "The Platform cannot be held liable for damages, delays, accidents, or disputes arising in connection with a trip, which are the sole responsibility of the Users and, where applicable, their respective insurers.\n\nThe Platform undertakes to use reasonable means to ensure the safety and reliability of the service (document verification, rating system), without guaranteeing the complete absence of incidents."
+        "heading": "5.3 Driver commitments",
+        "body": "Drivers agree to:\n• comply with these Terms and with local and national regulations,\n• strictly comply with the conditions of their listing,\n• not cancel or replace a passenger without valid reason,\n• carry out the trip in accordance with the booking."
       },
       {
-        "heading": "9. Intellectual property",
-        "body": "All elements of the Platform (brand, logo, interface, code) are protected by intellectual property law and may not be reproduced without prior authorization."
+        "heading": "5.4 Trip cancellation",
+        "body": "If a driver cancels:\n• they must offer passengers an alternative solution,\n• failing that, they must refund the booking commission."
       },
       {
-        "heading": "10. Suspension and termination",
-        "body": "The Platform reserves the right to suspend or terminate, without notice, the account of a User who breaches these Terms, engages in fraudulent behaviour, or is the subject of a substantiated report from other Users."
+        "heading": "5.5 Penalties for fraud",
+        "body": "Any false listing or fraudulent behaviour results in:\n• full refund of the commission,\n• possible damages payable to passengers,\n• suspension or deletion of the account."
       },
       {
-        "heading": "11. Governing law and jurisdiction",
-        "body": "These Terms are governed by the law applicable in the province where the Platform operates, in Canada. Any dispute falls under the exclusive jurisdiction of the courts of that province, subject to mandatory consumer rights."
+        "heading": "6. Conditions applicable to passengers",
+        "body": "Passengers agree to:\n• comply with these Terms,\n• comply with applicable law,\n• comply with the specific conditions of the driver's listing."
+      },
+      {
+        "heading": "6.1 Booking commission",
+        "body": "Passengers pay a fixed commission of 5 CAD per booking."
+      },
+      {
+        "heading": "6.2 Refund policy",
+        "body": "• The booking commission is non-refundable once the booking is confirmed.\n• No refund will be issued except as expressly provided for in these Terms."
+      },
+      {
+        "heading": "7.1 Kouby's liability",
+        "body": "Kouby cannot be held liable for:\n• incidents occurring during the trip,\n• the behaviour of users,\n• a driver's failure to comply with regulations,\n• bodily injury or property damage."
+      },
+      {
+        "heading": "7.2 Users' liability",
+        "body": "Each user is solely responsible for their own actions.\n\nThe driver bears full responsibility for the transportation itself."
+      },
+      {
+        "heading": "8. Compliance with Canadian regulations",
+        "body": "Users must comply with:\n• the highway safety code applicable in their province,\n• auto insurance obligations,\n• laws governing carpooling (non-profit or cost-sharing)."
+      },
+      {
+        "heading": "9. Personal data",
+        "body": "Data collected is used solely in connection with operating the Platform.\n\nKouby is committed to complying with Canadian data protection law, notably the Personal Information Protection and Electronic Documents Act (PIPEDA). See our Privacy Policy for further details."
+      },
+      {
+        "heading": "10. Suspension or termination",
+        "body": "Kouby reserves the right to:\n• suspend or delete an account,\n• deny access to the Platform, in the event of non-compliance with these Terms."
+      },
+      {
+        "heading": "11. Governing law",
+        "body": "These Terms are governed by:\n• the laws of Canada,\n• and the laws of the user's province of residence (e.g. Quebec).\n\nAny dispute falls under the jurisdiction of the competent courts of that province."
       },
       {
         "heading": "12. Changes to these Terms",
-        "body": "The Platform may modify these Terms at any time. Users will be informed of material changes; continued use of the Platform after notification constitutes acceptance of the new Terms."
+        "body": "Kouby reserves the right to modify these Terms at any time. Users will be informed of any updates."
       },
       {
-        "heading": "13. Contact",
-        "body": "For any question regarding these Terms, Users may contact us via the Contact page."
+        "heading": "13. Final clause",
+        "body": "Kouby acts exclusively as a platform connecting users. The transport service is provided solely under the driver's responsibility, whether acting as an individual or an independent professional."
+      }
+    ]
+  },
+  "Cgv": {
+    "title": "Terms of Sale",
+    "lastUpdated": "Last updated: [to be completed]",
+    "disclaimer": "Only the last-updated date still needs to be filled in before publishing (see \"[to be completed]\" above). This page describes a commission model that isn't yet built into the app (no payment is currently processed).",
+    "sections": [
+      {
+        "heading": "1. Purpose",
+        "body": "These Terms of Sale govern the payment, booking, and billing terms for the services offered on the Kouby platform.\n\nKouby provides an intermediation service connecting drivers and passengers for carpooling trips."
+      },
+      {
+        "heading": "2. Nature of the service",
+        "body": "Kouby acts exclusively as:\n• a platform connecting users,\n• a booking service provider.\n\nKouby is neither a carrier nor a transport operator."
+      },
+      {
+        "heading": "3.1 Booking commission",
+        "body": "• Each booking made by a passenger is subject to a fixed commission of 5 CAD.\n• This commission corresponds to the platform usage fee."
+      },
+      {
+        "heading": "3.2 Free for drivers",
+        "body": "• Drivers pay no fee to publish a listing or offer a trip.\n• No subscription or membership fee is required."
+      },
+      {
+        "heading": "4. Booking process",
+        "body": "1. The passenger selects a trip offered by a driver.\n2. They confirm their booking through the platform.\n3. They pay the 5 CAD commission.\n4. The booking is considered firm and final once payment is confirmed."
+      },
+      {
+        "heading": "5.1 Payment methods",
+        "body": "Payments can be made via:\n• credit/debit card,\n• any other secure payment method offered on the platform."
+      },
+      {
+        "heading": "5.2 Security",
+        "body": "Kouby implements secure payment solutions that comply with current standards."
+      },
+      {
+        "heading": "6.1 General principle",
+        "body": "• The booking commission is non-refundable once the booking is confirmed."
+      },
+      {
+        "heading": "6.2 Exception — Cancellation by the driver",
+        "body": "If the driver cancels the trip:\n• the passenger may receive a refund of the 5 CAD commission,\n• or an alternative solution offered by the driver."
+      },
+      {
+        "heading": "7. Driver obligations affecting the sale",
+        "body": "Drivers agree to:\n• comply with the conditions of their listing,\n• carry out the trip in accordance with the booking,\n• not cancel without valid reason.\n\nIn the event of a breach:\n• the commission is refunded,\n• the platform may apply penalties."
+      },
+      {
+        "heading": "8. Passenger obligations",
+        "body": "Passengers agree to:\n• pay the booking commission,\n• comply with the conditions of the trip,\n• be present at the agreed time and place."
+      },
+      {
+        "heading": "9. No right of withdrawal",
+        "body": "Given the nature of the service (a booking tied to a specific date), passengers do not have a right of withdrawal once the booking is confirmed."
+      },
+      {
+        "heading": "10.1 Kouby's liability",
+        "body": "Kouby is responsible only for:\n• connecting users,\n• the proper functioning of the booking platform.\n\nKouby cannot be held liable for:\n• the transportation itself,\n• incidents occurring during the trip,\n• the behaviour of users."
+      },
+      {
+        "heading": "10.2 Driver's liability",
+        "body": "Drivers are solely responsible for:\n• carrying out the trip,\n• passenger safety,\n• compliance with applicable laws and regulations."
+      },
+      {
+        "heading": "11. Disputes",
+        "body": "In the event of a dispute:\n• an amicable resolution will be attempted first,\n• failing that, the competent courts of Canada and the relevant province will have jurisdiction."
+      },
+      {
+        "heading": "12. Regulatory compliance",
+        "body": "The services offered comply with applicable Canadian law, notably:\n• rules relating to carpooling,\n• consumer protection obligations,\n• provincial regulations."
+      },
+      {
+        "heading": "13. Changes to these Terms of Sale",
+        "body": "Kouby reserves the right to modify these Terms of Sale at any time. Users will be informed of any updates."
+      },
+      {
+        "heading": "14. Final clause",
+        "body": "The commission charged by Kouby corresponds solely to a digital intermediation service. The transport service is provided independently by the driver, under their sole responsibility."
+      }
+    ]
+  },
+  "ContratConducteur": {
+    "title": "Driver Agreement",
+    "lastUpdated": "Last updated: [to be completed]",
+    "disclaimer": "Only the last-updated date still needs to be filled in before publishing. This document is designed to be signed electronically by each driver — the app doesn't yet have a dedicated driver-onboarding flow that captures that acceptance, so this page remains informational for now.",
+    "sections": [
+      {
+        "heading": "1. Purpose",
+        "body": "This Agreement governs the conditions under which a driver uses the Kouby platform to offer ridesharing services."
+      },
+      {
+        "heading": "2. Driver Status",
+        "body": "The driver acts as an independent individual. No employment or subordination relationship exists between Kouby and the driver."
+      },
+      {
+        "heading": "3. Eligibility Requirements",
+        "body": "The driver must:\n• hold a valid Canadian driver's license,\n• have valid auto insurance,\n• operate a compliant and roadworthy vehicle,\n• be at least 18 years old."
+      },
+      {
+        "heading": "4. Driver Responsibility",
+        "body": "The driver is solely responsible for:\n• legal compliance,\n• passenger safety,\n• compliance with applicable laws.\n\nKouby disclaims all liability for non-compliance."
+      },
+      {
+        "heading": "5. Required Information",
+        "body": "The driver must provide accurate information:\n• identity,\n• license,\n• vehicle details,\n• insurance,\n• trip details.\n\nFalse information is strictly prohibited."
+      },
+      {
+        "heading": "6. Trip Listings",
+        "body": "The driver agrees to:\n• publish accurate listings,\n• respect trip conditions,\n• transport passengers as agreed."
+      },
+      {
+        "heading": "7. Cancellation",
+        "body": "The driver may not cancel without valid reason.\n\nIn case of cancellation:\n• must offer an alternative,\n• or reimburse the reservation fee."
+      },
+      {
+        "heading": "8. Prohibited Conduct",
+        "body": "It is prohibited to:\n• publish false listings,\n• replace passengers without consent,\n• fail to meet commitments.\n\nSanctions may include suspension, termination, and damages."
+      },
+      {
+        "heading": "9. Payments and Fees",
+        "body": "The driver pays no fees to Kouby."
+      },
+      {
+        "heading": "10. Insurance",
+        "body": "The driver must maintain insurance covering:\n• passengers,\n• property and bodily damage."
+      },
+      {
+        "heading": "11. Limitation of Liability",
+        "body": "Kouby is not liable for:\n• accidents,\n• disputes between users,\n• losses or damages."
+      },
+      {
+        "heading": "12. Personal Data",
+        "body": "Data is processed in accordance with the Privacy Policy."
+      },
+      {
+        "heading": "13. Suspension",
+        "body": "Kouby may suspend or terminate accounts for violations."
+      },
+      {
+        "heading": "14. Governing Law",
+        "body": "This Agreement is governed by the laws of Canada and the applicable province."
+      },
+      {
+        "heading": "15. Acceptance",
+        "body": "The driver acknowledges having read and accepted this Agreement."
+      },
+      {
+        "heading": "16. Final clause",
+        "body": "The driver acts as an independent user. Kouby does not provide transportation services."
       }
     ]
   },
   "Privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Working draft — not published",
-    "disclaimer": "This is a generic template for demonstration purposes. It does not constitute legal advice and does not replace review by a legal professional before going into production.",
+    "lastUpdated": "Last updated: [to be completed]",
+    "disclaimer": "Some details still need to be filled in before publishing (last-updated date, data protection officer contact information) — see the \"[to be completed]\" notes below.",
     "sections": [
       {
-        "heading": "1. Commitment",
-        "body": "CAN-VOITURAGE is committed to protecting its Users' personal information in accordance with the Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable provincial privacy laws."
+        "heading": "1. Introduction",
+        "body": "Kouby (\"Kouby,\" \"we\") places the utmost importance on protecting its users' personal information.\n\nThis privacy policy describes the types of data we collect, how we use and retain it, and users' rights, in accordance with Canadian law — notably the Personal Information Protection and Electronic Documents Act (PIPEDA)."
       },
       {
-        "heading": "2. Information we collect",
-        "body": "We collect: registration information (name, email address, phone number); trip information (departure/arrival cities, dates, bookings); identity documents (driver's licence) where required for driver verification; location data when a User enables proximity search; technical data (IP address, device type) for security purposes."
+        "heading": "2. Definition of personal information",
+        "body": "\"Personal information\" refers to any information that can directly or indirectly identify an individual, including:\n• First and last name\n• Address\n• Phone number\n• Email address\n• Location data\n• Vehicle information (for drivers)\n• Payment information"
       },
       {
-        "heading": "3. Purposes of collection",
-        "body": "This information is used to: create and manage your account; connect drivers and passengers; keep the Platform secure (identity verification, fraud prevention); send you notifications about your bookings and trips; improve our services."
+        "heading": "3.1 Information provided by the user",
+        "body": "When registering or using the platform, we collect:\n• Identity (first and last name)\n• Contact details (email, phone number)\n• Profile information\n• Driver-related documents (licence, vehicle, insurance)\n• Trip-related information (departure, destination, schedule)"
       },
       {
-        "heading": "4. Consent",
-        "body": "By creating an account, you consent to the collection and processing of your personal information for the purposes described in this policy. You may withdraw your consent at any time, subject to legal retention obligations and the practical consequences on your access to the service."
+        "heading": "3.2 Automatically collected data",
+        "body": "We also collect:\n• IP address\n• Device and browser type\n• Browsing data\n• Platform usage history"
       },
       {
-        "heading": "5. Sharing your information",
-        "body": "Your information is never sold to third parties. It may be shared with: other Users, to the extent necessary to complete a trip (e.g. name, rating, contact information); our technical service providers (hosting, email/SMS delivery) acting on our behalf and bound by confidentiality obligations; competent authorities where required by law."
+        "heading": "3.3 Payment data",
+        "body": "Payments are processed through secure third-party providers. Kouby does not store full banking details."
       },
       {
-        "heading": "6. Data retention",
-        "body": "Your information is kept for as long as necessary for the purposes described above, then deleted or anonymized, subject to retention periods required by law (e.g. tax or accounting obligations)."
+        "heading": "4. Purpose of collection",
+        "body": "Data is collected to:\n• Create and manage user accounts\n• Facilitate connections between drivers and passengers\n• Manage bookings and payments\n• Improve our services and the user experience\n• Keep the platform secure\n• Comply with legal and regulatory obligations"
       },
       {
-        "heading": "7. Security",
-        "body": "We implement reasonable technical and organizational measures to protect your information (encrypted communications via HTTPS/SSL, access controls). No system being infallible, we encourage you to use a strong password and never share it."
+        "heading": "5. Consent",
+        "body": "By using the platform, users consent to the collection, use, and disclosure of their data in accordance with this policy.\n\nConsent may be withdrawn at any time, subject to legal obligations."
       },
       {
-        "heading": "8. Your rights",
-        "body": "Under PIPEDA, you have the right to access, correct, and delete your personal information, as well as the right to withdraw your consent. You can exercise these rights by contacting us via the Contact page."
+        "heading": "6. Data sharing",
+        "body": "Data may be shared:\n• Between users (e.g. driver and passenger)\n• With technical service providers (hosting, payments)\n• With competent authorities where legally required\n\nKouby never sells personal data."
       },
       {
-        "heading": "9. Cookies",
-        "body": "The Platform uses cookies strictly necessary for its operation (authentication, language preferences). No third-party advertising cookies are used at this time."
+        "heading": "7. Data retention",
+        "body": "Data is retained:\n• for as long as necessary to provide the service,\n• and in accordance with Canadian legal obligations."
       },
       {
-        "heading": "10. Minors",
-        "body": "The Platform is not intended for people under 18. We do not knowingly collect personal information about minors."
+        "heading": "8. Data security",
+        "body": "Kouby implements appropriate security measures:\n• Data encryption\n• Restricted access\n• Intrusion protection systems"
       },
       {
-        "heading": "11. Changes to this policy",
-        "body": "This policy may be updated to reflect legal or operational changes. The last-updated date appears at the top of this page."
+        "heading": "9. User rights",
+        "body": "Under PIPEDA, users have the following rights:\n• Access to their data\n• Correction of inaccurate data\n• Deletion (within legal limits)\n• Withdrawal of consent\n\nRequests can be sent via our Contact page, or to: [email to be completed]."
       },
       {
-        "heading": "12. Complaints",
-        "body": "If you believe your personal information has not been handled in accordance with this policy, you may contact us via the Contact page, or file a complaint with the Office of the Privacy Commissioner of Canada (priv.gc.ca)."
+        "heading": "10. International data transfers",
+        "body": "Data may be hosted or processed outside Canada. In such cases, Kouby ensures an adequate level of protection, consistent with PIPEDA's requirements."
+      },
+      {
+        "heading": "11. Cookies and similar technologies",
+        "body": "The platform uses cookies to:\n• Improve the user experience\n• Analyze site usage\n\nUsers can manage their cookie preferences directly through their browser."
+      },
+      {
+        "heading": "12. Protection of minors",
+        "body": "The platform is not intended for individuals under 18. We do not knowingly collect data from minors."
+      },
+      {
+        "heading": "13. Data protection officer",
+        "body": "For any question or request regarding this policy, our data protection officer can be reached at:\n📧 [email to be completed]\n📍 [address to be completed]"
+      },
+      {
+        "heading": "14. Changes to this policy",
+        "body": "Kouby reserves the right to modify this policy at any time. Users will be notified of any material update."
+      },
+      {
+        "heading": "15. Final clause",
+        "body": "Kouby is committed to complying with PIPEDA's ten fair information principles, as well as the requirements of Quebec's Law 25 on the protection of personal information:\n• Accountability\n• Identifying purposes\n• Consent\n• Limiting collection\n• Limiting use, disclosure, and retention\n• Accuracy\n• Safeguards\n• Openness\n• Individual access\n• Challenging compliance"
       }
     ]
   },
