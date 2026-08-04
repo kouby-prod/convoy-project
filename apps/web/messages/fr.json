@@ -22,6 +22,8 @@
   "Footer": {
     "aboutTitle": "À Propos de nous",
     "terms": "Conditions d'utilisation",
+    "cgv": "Conditions de vente",
+    "contratConducteur": "Contrat conducteur",
     "responsibility": "Charte de responsabilité",
     "privacy": "Vie privée",
     "contact": "Contactez-nous",
@@ -34,115 +36,317 @@
   },
   "Terms": {
     "title": "Conditions Générales d'Utilisation",
-    "lastUpdated": "Version de travail — non publiée",
-    "disclaimer": "Ceci est un gabarit générique à but de démonstration. Il ne constitue pas un avis juridique et ne remplace pas la relecture d'un professionnel du droit (raison sociale, adresse, province d'exploitation à compléter) avant toute mise en production.",
+    "lastUpdated": "Dernière mise à jour : [à compléter]",
+    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication (voir « [à compléter] » ci-dessus).",
     "sections": [
       {
         "heading": "1. Objet",
-        "body": "Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation de la plateforme CAN-VOITURAGE (ci-après « la Plateforme »), un service de mise en relation entre conducteurs et passagers pour des trajets de covoiturage interurbains et urbains au Canada. En créant un compte ou en utilisant la Plateforme, vous acceptez sans réserve les présentes CGU."
+        "body": "Les présentes Conditions Générales d'Utilisation (ci-après « CGU ») régissent l'accès et l'utilisation de la plateforme de covoiturage Kouby (ci-après « la Plateforme ») exploitée au Canada.\n\nLa Plateforme permet la mise en relation entre :\n• des conducteurs proposant des trajets,\n• des passagers souhaitant réserver une place.\n\nKouby agit exclusivement en tant qu'intermédiaire technique."
       },
       {
-        "heading": "2. Définitions",
-        "body": "« Utilisateur » : toute personne inscrite sur la Plateforme, qu'elle agisse en tant que conducteur ou passager.\n\n« Conducteur » : Utilisateur proposant un trajet.\n\n« Passager » : Utilisateur réservant une place sur un trajet.\n\n« Trajet » : annonce de covoiturage publiée par un conducteur."
+        "heading": "2. Acceptation des conditions",
+        "body": "L'utilisation de la Plateforme implique l'acceptation pleine et entière des présentes CGU par tout utilisateur.\n\nLes utilisateurs s'engagent à respecter :\n• les présentes CGU,\n• les lois fédérales canadiennes,\n• les lois provinciales applicables (notamment Québec, Ontario, etc.),\n• la réglementation en vigueur en matière de transport, de sécurité routière et d'assurance."
       },
       {
-        "heading": "3. Rôle de la Plateforme",
-        "body": "La Plateforme agit uniquement comme intermédiaire technique de mise en relation entre conducteurs et passagers. Elle n'est ni transporteur, ni employeur, ni partie au contrat de transport conclu entre les Utilisateurs. Les Utilisateurs demeurent seuls responsables du respect de la réglementation applicable (permis de conduire valide, assurance automobile couvrant le transport de passagers, etc.)."
+        "heading": "3. Accès à la plateforme",
+        "body": "L'inscription sur la Plateforme est :\n• gratuite,\n• sans frais d'adhésion."
       },
       {
-        "heading": "4. Inscription et compte utilisateur",
-        "body": "L'inscription nécessite une adresse e-mail ou un numéro de téléphone valide. L'Utilisateur s'engage à fournir des informations exactes et à les maintenir à jour. Chaque Utilisateur est responsable de la confidentialité de ses identifiants et de toute activité effectuée depuis son compte."
+        "heading": "4. Rôle de la plateforme",
+        "body": "Kouby :\n• met en relation conducteurs et passagers,\n• facilite la réservation des trajets,\n• perçoit une commission de réservation.\n\nKouby n'est pas un transporteur et n'exploite aucun service de transport."
       },
       {
-        "heading": "5. Publication et réservation de trajets",
-        "body": "Le conducteur s'engage à publier des informations exactes (ville de départ/arrivée, date, heure, nombre de places, prix). Le prix demandé doit correspondre à un partage des frais de trajet et ne doit pas constituer une activité lucrative de transport de personnes, sous peine de requalification en transport rémunéré soumis à une réglementation distincte.\n\nLe passager s'engage à se présenter au lieu et à l'heure convenus."
+        "heading": "5. Conditions applicables aux conducteurs",
+        "body": "Le conducteur est soumis aux conditions suivantes."
       },
       {
-        "heading": "6. Annulation",
-        "body": "Le conducteur peut annuler un trajet publié ; les passagers ayant réservé en sont informés automatiquement par e-mail. Le passager peut annuler sa réservation tant qu'elle n'a pas été honorée. Des annulations répétées ou tardives peuvent affecter la note et la visibilité du compte."
+        "heading": "5.1 Responsabilité et conformité",
+        "body": "Le conducteur est seul responsable :\n• de sa capacité légale à conduire au Canada,\n• de la validité de son permis de conduire,\n• de son assurance automobile,\n• de la conformité de son véhicule.\n\nEn cas de non-conformité, Kouby décline toute responsabilité."
       },
       {
-        "heading": "7. Avis et notation",
-        "body": "Les Utilisateurs peuvent, après un trajet effectué, laisser un avis et une note concernant l'autre partie. Ces avis doivent être sincères, rédigés de bonne foi et ne pas contenir de propos diffamatoires, injurieux ou discriminatoires."
+        "heading": "5.2 Informations obligatoires",
+        "body": "Le conducteur doit fournir des informations exactes et complètes, notamment :\n• identité,\n• permis de conduire,\n• informations du véhicule (immatriculation, modèle, assurance),\n• détails du trajet.\n\nToute fausse déclaration est strictement interdite."
       },
       {
-        "heading": "8. Responsabilité",
-        "body": "La Plateforme ne saurait être tenue responsable des dommages, retards, accidents ou litiges survenant à l'occasion d'un trajet, ceux-ci relevant de la seule responsabilité des Utilisateurs et, le cas échéant, de leurs assurances respectives.\n\nLa Plateforme s'engage à mettre en œuvre des moyens raisonnables pour assurer la sécurité et la fiabilité du service (vérification de documents, système de notation), sans garantir l'absence totale d'incidents."
+        "heading": "5.3 Engagements du conducteur",
+        "body": "Le conducteur s'engage à :\n• respecter les CGU et la réglementation locale et nationale,\n• respecter strictement les conditions de son annonce,\n• ne pas annuler ou remplacer un passager sans motif valable,\n• assurer le transport des passagers conformément à la réservation."
       },
       {
-        "heading": "9. Propriété intellectuelle",
-        "body": "L'ensemble des éléments de la Plateforme (marque, logo, interface, code) est protégé par le droit de la propriété intellectuelle et ne peut être reproduit sans autorisation préalable."
+        "heading": "5.4 Annulation de trajet",
+        "body": "En cas d'annulation par le conducteur :\n• il doit proposer une solution de remplacement aux passagers,\n• à défaut, il est tenu de rembourser le montant de la commission de réservation."
       },
       {
-        "heading": "10. Suspension et résiliation",
-        "body": "La Plateforme se réserve le droit de suspendre ou de résilier, sans préavis, le compte d'un Utilisateur en cas de manquement aux présentes CGU, de comportement frauduleux ou de signalement fondé par d'autres Utilisateurs."
+        "heading": "5.5 Sanctions en cas de fraude",
+        "body": "Toute fausse annonce ou comportement frauduleux entraîne :\n• remboursement intégral de la commission,\n• possibilité de dommages et intérêts au profit des passagers,\n• suspension ou suppression du compte."
       },
       {
-        "heading": "11. Droit applicable et juridiction",
-        "body": "Les présentes CGU sont régies par le droit applicable dans la province où la Plateforme est exploitée, au Canada. Tout litige relève de la compétence exclusive des tribunaux de cette province, sous réserve des droits impératifs des consommateurs."
+        "heading": "6. Conditions applicables aux passagers",
+        "body": "Le passager s'engage à :\n• respecter les CGU,\n• respecter les lois en vigueur,\n• respecter les conditions spécifiques de l'annonce du conducteur."
+      },
+      {
+        "heading": "6.1 Commission de réservation",
+        "body": "Le passager paie une commission fixe de 5 CAD par réservation."
+      },
+      {
+        "heading": "6.2 Politique de remboursement",
+        "body": "• La commission de réservation est non remboursable après confirmation.\n• Aucun remboursement ne sera effectué, sauf cas expressément prévu par les présentes CGU."
+      },
+      {
+        "heading": "7.1 Responsabilité de Kouby",
+        "body": "Kouby ne peut être tenu responsable :\n• des incidents survenant durant le trajet,\n• des comportements des utilisateurs,\n• du non-respect de la réglementation par les conducteurs,\n• des dommages corporels ou matériels."
+      },
+      {
+        "heading": "7.2 Responsabilité des utilisateurs",
+        "body": "Chaque utilisateur est seul responsable de ses actes.\n\nLe conducteur assume l'entière responsabilité du transport."
+      },
+      {
+        "heading": "8. Respect de la réglementation canadienne",
+        "body": "Les utilisateurs doivent respecter :\n• le Code de la sécurité routière applicable dans leur province,\n• les obligations d'assurance automobile,\n• les lois relatives au covoiturage (non lucratif ou partage de frais)."
+      },
+      {
+        "heading": "9. Données personnelles",
+        "body": "Les données collectées sont utilisées uniquement dans le cadre du fonctionnement de la Plateforme.\n\nKouby s'engage à respecter les lois canadiennes en matière de protection des données, notamment la Loi sur la protection des renseignements personnels et les documents électroniques (LPRPDE / PIPEDA). Voir notre Politique de confidentialité pour plus de détails."
+      },
+      {
+        "heading": "10. Suspension ou résiliation",
+        "body": "Kouby se réserve le droit de :\n• suspendre ou supprimer un compte,\n• refuser l'accès à la Plateforme, en cas de non-respect des CGU."
+      },
+      {
+        "heading": "11. Droit applicable",
+        "body": "Les présentes CGU sont régies par :\n• les lois du Canada,\n• et les lois de la province de résidence de l'utilisateur (ex. : Québec).\n\nTout litige relève des juridictions compétentes de cette province."
       },
       {
         "heading": "12. Modification des CGU",
-        "body": "La Plateforme peut modifier les présentes CGU à tout moment. Les Utilisateurs seront informés des modifications substantielles ; la poursuite de l'utilisation de la Plateforme après notification vaut acceptation des nouvelles CGU."
+        "body": "Kouby se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés des mises à jour."
       },
       {
-        "heading": "13. Contact",
-        "body": "Pour toute question relative aux présentes CGU, les Utilisateurs peuvent nous contacter via la page Contact."
+        "heading": "13. Clause finale",
+        "body": "Kouby agit exclusivement comme plateforme de mise en relation. Le service de transport est assuré sous la seule responsabilité du conducteur, qui agit en tant que particulier ou professionnel indépendant."
+      }
+    ]
+  },
+  "Cgv": {
+    "title": "Conditions Générales de Vente (CGV)",
+    "lastUpdated": "Dernière mise à jour : [à compléter]",
+    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication (voir « [à compléter] » ci-dessus). Cette page décrit un modèle de commission qui n'est pas encore intégré dans l'application (aucun paiement n'y est actuellement traité).",
+    "sections": [
+      {
+        "heading": "1. Objet",
+        "body": "Les présentes Conditions Générales de Vente (ci-après « CGV ») régissent les modalités de paiement, de réservation et de facturation des services proposés sur la plateforme Kouby.\n\nKouby propose un service d'intermédiation permettant la mise en relation entre conducteurs et passagers dans le cadre de trajets en covoiturage."
+      },
+      {
+        "heading": "2. Nature du service",
+        "body": "Kouby agit exclusivement comme :\n• une plateforme de mise en relation,\n• un prestataire de service de réservation.\n\nKouby n'est ni transporteur, ni opérateur de transport."
+      },
+      {
+        "heading": "3.1 Commission de réservation",
+        "body": "• Chaque réservation effectuée par un passager donne lieu au paiement d'une commission fixe de 5 CAD.\n• Cette commission correspond aux frais d'utilisation de la plateforme."
+      },
+      {
+        "heading": "3.2 Gratuité pour les conducteurs",
+        "body": "• Les conducteurs ne paient aucun frais pour publier une annonce ou proposer un trajet.\n• Aucun abonnement ou frais d'adhésion n'est exigé."
+      },
+      {
+        "heading": "4. Processus de réservation",
+        "body": "1. Le passager sélectionne un trajet proposé par un conducteur.\n2. Il confirme sa réservation via la plateforme.\n3. Il procède au paiement de la commission de 5 CAD.\n4. La réservation est considérée comme ferme et définitive après confirmation du paiement."
+      },
+      {
+        "heading": "5.1 Moyens de paiement",
+        "body": "Les paiements peuvent être effectués via :\n• carte bancaire,\n• tout autre moyen de paiement sécurisé proposé sur la plateforme."
+      },
+      {
+        "heading": "5.2 Sécurisation",
+        "body": "Kouby met en place des solutions de paiement sécurisées conformes aux standards en vigueur."
+      },
+      {
+        "heading": "6.1 Principe général",
+        "body": "• La commission de réservation est non remboursable après confirmation de la réservation."
+      },
+      {
+        "heading": "6.2 Exception – Annulation par le conducteur",
+        "body": "En cas d'annulation du trajet par le conducteur :\n• le passager peut bénéficier du remboursement de la commission de 5 CAD,\n• ou d'une solution alternative proposée par le conducteur."
+      },
+      {
+        "heading": "7. Obligations du conducteur impactant la vente",
+        "body": "Le conducteur s'engage à :\n• respecter les conditions de son annonce,\n• effectuer le trajet conformément à la réservation,\n• ne pas annuler sans motif valable.\n\nEn cas de manquement :\n• remboursement de la commission,\n• éventuelles sanctions sur la plateforme."
+      },
+      {
+        "heading": "8. Obligations du passager",
+        "body": "Le passager s'engage à :\n• payer la commission de réservation,\n• respecter les conditions du trajet,\n• se présenter à l'heure et au lieu convenu."
+      },
+      {
+        "heading": "9. Absence de droit de rétractation",
+        "body": "Compte tenu de la nature du service (réservation liée à une date précise), le passager ne bénéficie pas d'un droit de rétractation après confirmation."
+      },
+      {
+        "heading": "10.1 Responsabilité de Kouby",
+        "body": "Kouby est responsable uniquement de :\n• la mise en relation,\n• le bon fonctionnement de la plateforme de réservation.\n\nKouby ne peut être tenu responsable :\n• du transport lui-même,\n• des incidents survenus durant le trajet,\n• du comportement des utilisateurs."
+      },
+      {
+        "heading": "10.2 Responsabilité du conducteur",
+        "body": "Le conducteur est seul responsable :\n• de la réalisation du trajet,\n• de la sécurité des passagers,\n• du respect des lois et réglementations."
+      },
+      {
+        "heading": "11. Litiges",
+        "body": "En cas de litige :\n• une tentative de résolution amiable est privilégiée,\n• à défaut, les tribunaux compétents du Canada et de la province concernée seront saisis."
+      },
+      {
+        "heading": "12. Conformité réglementaire",
+        "body": "Les services proposés respectent les lois applicables au Canada, notamment :\n• les règles relatives au covoiturage,\n• les obligations en matière de consommation,\n• les réglementations provinciales."
+      },
+      {
+        "heading": "13. Modification des CGV",
+        "body": "Kouby se réserve le droit de modifier les présentes CGV à tout moment. Les utilisateurs seront informés en cas de mise à jour."
+      },
+      {
+        "heading": "14. Clause finale",
+        "body": "La commission facturée par Kouby correspond uniquement à un service d'intermédiation numérique. Le service de transport est fourni indépendamment par le conducteur, sous sa seule responsabilité."
+      }
+    ]
+  },
+  "ContratConducteur": {
+    "title": "Contrat Conducteur",
+    "lastUpdated": "Dernière mise à jour : [à compléter]",
+    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication. Ce document est conçu pour être signé électroniquement par chaque conducteur : l'application n'a pas encore de parcours d'inscription conducteur dédié qui capture cette acceptation, cette page reste donc informative pour le moment.",
+    "sections": [
+      {
+        "heading": "1. Objet",
+        "body": "Le présent contrat définit les conditions dans lesquelles un conducteur utilise la plateforme Kouby pour proposer des trajets de covoiturage."
+      },
+      {
+        "heading": "2. Statut du conducteur",
+        "body": "Le conducteur agit en tant que personne indépendante. Il n'existe aucun lien de subordination entre Kouby et le conducteur."
+      },
+      {
+        "heading": "3. Conditions d'éligibilité",
+        "body": "Le conducteur doit :\n• détenir un permis de conduire valide au Canada,\n• disposer d'une assurance automobile conforme,\n• utiliser un véhicule en bon état et conforme à la réglementation,\n• être majeur."
+      },
+      {
+        "heading": "4. Responsabilité du conducteur",
+        "body": "Le conducteur est seul responsable :\n• de la conformité légale de son activité,\n• de la sécurité des passagers,\n• du respect des lois locales et nationales.\n\nKouby décline toute responsabilité en cas de non-conformité."
+      },
+      {
+        "heading": "5. Informations obligatoires",
+        "body": "Le conducteur doit fournir des informations exactes :\n• identité,\n• permis,\n• véhicule (immatriculation, modèle),\n• assurance,\n• détails du trajet.\n\nToute fausse information est interdite."
+      },
+      {
+        "heading": "6. Publication des trajets",
+        "body": "Le conducteur s'engage à :\n• publier des annonces réelles,\n• respecter les conditions annoncées,\n• transporter les passagers comme prévu."
+      },
+      {
+        "heading": "7. Annulation",
+        "body": "Le conducteur ne peut annuler un trajet sans motif valable.\n\nEn cas d'annulation :\n• il doit proposer une alternative,\n• ou rembourser la commission de réservation."
+      },
+      {
+        "heading": "8. Interdictions",
+        "body": "Il est interdit de :\n• publier de fausses annonces,\n• remplacer un passager sans autorisation,\n• ne pas respecter les engagements pris.\n\nSanctions possibles : suspension, suppression du compte, dommages et intérêts."
+      },
+      {
+        "heading": "9. Paiement et commissions",
+        "body": "Le conducteur ne paie aucun frais à Kouby."
+      },
+      {
+        "heading": "10. Assurance",
+        "body": "Le conducteur doit disposer d'une assurance couvrant :\n• les passagers,\n• les dommages matériels et corporels."
+      },
+      {
+        "heading": "11. Responsabilité limitée de Kouby",
+        "body": "Kouby n'est pas responsable :\n• des accidents,\n• des litiges entre utilisateurs,\n• des pertes ou dommages."
+      },
+      {
+        "heading": "12. Données personnelles",
+        "body": "Les données sont traitées conformément à la politique de confidentialité."
+      },
+      {
+        "heading": "13. Suspension",
+        "body": "Kouby peut suspendre ou supprimer un compte en cas de non-respect."
+      },
+      {
+        "heading": "14. Droit applicable",
+        "body": "Le contrat est régi par les lois du Canada et de la province applicable."
+      },
+      {
+        "heading": "15. Acceptation",
+        "body": "Le conducteur reconnaît avoir lu et accepté le présent contrat."
+      },
+      {
+        "heading": "16. Clause finale",
+        "body": "Le conducteur agit en tant qu'utilisateur indépendant. Kouby ne fournit aucun service de transport."
       }
     ]
   },
   "Privacy": {
     "title": "Politique de confidentialité",
-    "lastUpdated": "Version de travail — non publiée",
-    "disclaimer": "Ceci est un gabarit générique à but de démonstration. Il ne constitue pas un avis juridique et ne remplace pas la relecture d'un professionnel du droit avant toute mise en production.",
+    "lastUpdated": "Dernière mise à jour : [à compléter]",
+    "disclaimer": "Certaines mentions restent à compléter avant publication (date de mise à jour, coordonnées du responsable de la protection des données) — voir les indications « [à compléter] » ci-dessous.",
     "sections": [
       {
-        "heading": "1. Engagement",
-        "body": "CAN-VOITURAGE s'engage à protéger les renseignements personnels de ses Utilisateurs conformément à la Loi sur la protection des renseignements personnels et les documents électroniques (LPRPDE / PIPEDA) et aux lois provinciales applicables en matière de protection de la vie privée."
+        "heading": "1. Introduction",
+        "body": "La société Kouby (ci-après « Kouby », « nous ») accorde une importance primordiale à la protection des renseignements personnels de ses utilisateurs.\n\nLa présente politique de confidentialité décrit les types de données collectées, leur utilisation, leur conservation, ainsi que les droits des utilisateurs, conformément à la législation canadienne, notamment la Loi sur la protection des renseignements personnels et les documents électroniques (LPRPDE / PIPEDA)."
       },
       {
-        "heading": "2. Renseignements collectés",
-        "body": "Nous collectons : les informations d'inscription (nom, adresse e-mail, numéro de téléphone) ; les informations de trajet (villes de départ/arrivée, dates, réservations) ; les pièces d'identité et documents (permis de conduire) lorsque requis pour la vérification des conducteurs ; les données de géolocalisation lorsque l'Utilisateur active la recherche par proximité ; les données techniques (adresse IP, type d'appareil) à des fins de sécurité."
+        "heading": "2. Définition des renseignements personnels",
+        "body": "Les « renseignements personnels » désignent toute information permettant d'identifier directement ou indirectement une personne, notamment :\n• Nom, prénom\n• Adresse\n• Numéro de téléphone\n• Adresse email\n• Données de localisation\n• Informations relatives au véhicule (pour les conducteurs)\n• Informations de paiement"
       },
       {
-        "heading": "3. Finalités de la collecte",
-        "body": "Ces renseignements sont utilisés pour : créer et gérer votre compte ; permettre la mise en relation entre conducteurs et passagers ; assurer la sécurité de la Plateforme (vérification d'identité, prévention de la fraude) ; vous envoyer des notifications relatives à vos réservations et trajets ; améliorer nos services."
+        "heading": "3.1 Données fournies par l'utilisateur",
+        "body": "Lors de l'inscription ou de l'utilisation de la plateforme, nous collectons :\n• Identité (nom, prénom)\n• Coordonnées (email, téléphone)\n• Informations de profil\n• Documents relatifs au conducteur (permis, véhicule, assurance)\n• Informations liées aux trajets (départ, destination, horaires)"
       },
       {
-        "heading": "4. Consentement",
-        "body": "En créant un compte, vous consentez à la collecte et au traitement de vos renseignements personnels aux fins décrites dans la présente politique. Vous pouvez retirer votre consentement à tout moment, sous réserve des obligations légales de conservation et des conséquences pratiques sur l'accès au service."
+        "heading": "3.2 Données collectées automatiquement",
+        "body": "Nous collectons également :\n• Adresse IP\n• Type d'appareil et navigateur\n• Données de navigation\n• Historique d'utilisation de la plateforme"
       },
       {
-        "heading": "5. Partage des renseignements",
-        "body": "Vos renseignements ne sont jamais vendus à des tiers. Ils peuvent être partagés avec : les autres Utilisateurs, dans la mesure nécessaire à la réalisation d'un trajet (ex. : nom, note, informations de contact) ; nos fournisseurs techniques (hébergement, envoi d'e-mails/SMS) agissant en notre nom et liés par des obligations de confidentialité ; les autorités compétentes lorsque la loi l'exige."
+        "heading": "3.3 Données de paiement",
+        "body": "Les paiements sont traités via des prestataires sécurisés. Kouby ne conserve pas les données bancaires complètes."
       },
       {
-        "heading": "6. Conservation des données",
-        "body": "Vos renseignements sont conservés pendant la durée nécessaire aux finalités décrites ci-dessus, puis supprimés ou anonymisés, sous réserve des délais de conservation imposés par la loi (ex. : obligations fiscales ou comptables)."
+        "heading": "4. Finalités de la collecte",
+        "body": "Les données sont collectées pour :\n• Créer et gérer les comptes utilisateurs\n• Faciliter la mise en relation conducteurs/passagers\n• Gérer les réservations et paiements\n• Améliorer les services et l'expérience utilisateur\n• Assurer la sécurité de la plateforme\n• Respecter les obligations légales et réglementaires"
       },
       {
-        "heading": "7. Sécurité",
-        "body": "Nous mettons en œuvre des mesures techniques et organisationnelles raisonnables pour protéger vos renseignements (chiffrement des communications via HTTPS/SSL, contrôle d'accès). Aucun système n'étant infaillible, nous vous invitons à utiliser un mot de passe robuste et à ne jamais le partager."
+        "heading": "5. Consentement",
+        "body": "En utilisant la plateforme, l'utilisateur consent à la collecte, à l'utilisation et à la communication de ses données conformément à cette politique.\n\nLe consentement peut être retiré à tout moment, sous réserve des obligations légales."
       },
       {
-        "heading": "8. Vos droits",
-        "body": "Conformément à la LPRPDE, vous disposez d'un droit d'accès, de rectification et de suppression de vos renseignements personnels, ainsi que du droit de retirer votre consentement. Vous pouvez exercer ces droits en nous contactant via la page Contact."
+        "heading": "6. Partage des données",
+        "body": "Les données peuvent être partagées :\n• Entre utilisateurs (ex. : conducteur et passager)\n• Avec des prestataires techniques (hébergement, paiement)\n• Avec les autorités compétentes en cas d'obligation légale\n\nKouby ne vend jamais les données personnelles."
       },
       {
-        "heading": "9. Témoins de connexion (cookies)",
-        "body": "La Plateforme utilise des témoins de connexion strictement nécessaires à son fonctionnement (authentification, préférences de langue). Aucun témoin publicitaire tiers n'est utilisé à ce jour."
+        "heading": "7. Conservation des données",
+        "body": "Les données sont conservées :\n• pendant la durée nécessaire à la fourniture des services,\n• et conformément aux obligations légales canadiennes."
       },
       {
-        "heading": "10. Mineurs",
-        "body": "La Plateforme n'est pas destinée aux personnes de moins de 18 ans. Nous ne collectons pas sciemment de renseignements personnels concernant des mineurs."
+        "heading": "8. Sécurité des données",
+        "body": "Kouby met en œuvre des mesures de sécurité adaptées :\n• Chiffrement des données\n• Accès restreint\n• Systèmes de protection contre les intrusions"
       },
       {
-        "heading": "11. Modifications de la présente politique",
-        "body": "Cette politique peut être mise à jour pour refléter des changements légaux ou opérationnels. La date de dernière mise à jour figure en haut de cette page."
+        "heading": "9. Droits des utilisateurs",
+        "body": "Conformément à la LPRPDE, les utilisateurs disposent des droits suivants :\n• Accès à leurs données\n• Rectification des données inexactes\n• Suppression (dans les limites légales)\n• Retrait du consentement\n\nToute demande peut être adressée via notre page Contact, ou à l'adresse suivante : [e-mail à compléter]."
       },
       {
-        "heading": "12. Plainte",
-        "body": "Si vous estimez que vos renseignements personnels n'ont pas été traités conformément à la présente politique, vous pouvez nous contacter via la page Contact, ou déposer une plainte auprès du Commissariat à la protection de la vie privée du Canada (priv.gc.ca)."
+        "heading": "10. Transfert international des données",
+        "body": "Les données peuvent être hébergées ou traitées en dehors du Canada. Dans un tel cas, Kouby veille à garantir un niveau de protection adéquat, conforme aux exigences de la LPRPDE."
+      },
+      {
+        "heading": "11. Cookies et technologies similaires",
+        "body": "La plateforme utilise des cookies pour :\n• Améliorer l'expérience utilisateur\n• Analyser l'utilisation du site\n\nL'utilisateur peut configurer ses préférences en matière de cookies directement via son navigateur."
+      },
+      {
+        "heading": "12. Protection des mineurs",
+        "body": "La plateforme n'est pas destinée aux personnes de moins de 18 ans. Aucune collecte volontaire de données concernant des mineurs n'est effectuée."
+      },
+      {
+        "heading": "13. Responsable de la protection des données",
+        "body": "Pour toute question ou demande relative à la présente politique, le responsable de la protection des données peut être contacté :\n📧 [e-mail à compléter]\n📍 [adresse à compléter]"
+      },
+      {
+        "heading": "14. Modification de la politique",
+        "body": "Kouby se réserve le droit de modifier la présente politique à tout moment. Les utilisateurs seront informés en cas de mise à jour substantielle."
+      },
+      {
+        "heading": "15. Clause finale",
+        "body": "Kouby s'engage à respecter les dix principes de la LPRPDE (PIPEDA), ainsi que les exigences de la Loi 25 du Québec relative à la protection des renseignements personnels :\n• Responsabilité\n• Détermination des fins de la collecte\n• Consentement\n• Limitation de la collecte\n• Limitation de l'utilisation, de la communication et de la conservation\n• Exactitude\n• Mesures de sécurité\n• Transparence\n• Accès individuel\n• Possibilité de porter plainte"
       }
     ]
   },
