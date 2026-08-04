@@ -19,6 +19,7 @@ function createChain(result: unknown) {
     innerJoin: () => chain,
     groupBy: () => chain,
     having: () => chain,
+    orderBy: () => chain,
     limit: () => chain,
     offset: () => chain,
     returning: () => Promise.resolve(result),
@@ -92,6 +93,17 @@ vi.mock('../../src/middleware/rate-limit', () => ({
   rateLimit: () => (_c: unknown, next: () => Promise<void>) => next(),
 }));
 
+// Mock geocoding entirely: the real thing calls the live Nominatim API, which
+// would make these tests slow, flaky and network-dependent. Create/update
+// fire it without awaiting it (see geocodeAndStoreTrajetLocation call sites
+// in ../../src/modules/trajet/index.ts) — mocked here just to assert it was
+// invoked with the right args, not to test geocoding itself (see
+// apps/api/tests/trajet/geocoding.test.ts for that).
+const geocodeAndStoreTrajetLocation = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../src/modules/trajet/geocoding', () => ({
+  geocodeAndStoreTrajetLocation: (...a: unknown[]) => geocodeAndStoreTrajetLocation(...a),
+}));
+
 import { trajetModule } from '../../src/modules/trajet';
 
 function sessionFor(role: string | null) {
@@ -117,6 +129,10 @@ function makeTrajetRow(overrides: Partial<Record<string, unknown>> = {}) {
     driverId: 'u_1',
     departureCity: 'Montreal',
     arrivalCity: 'Quebec',
+    departureLat: null,
+    departureLng: null,
+    arrivalLat: null,
+    arrivalLng: null,
     departureAt: now,
     seatsTotal: 3,
     seatsAvailable: 3,
@@ -154,6 +170,7 @@ describe('trajet module', () => {
     db.transaction.mockClear();
     getSession.mockReset();
     notifyUser.mockClear();
+    geocodeAndStoreTrajetLocation.mockClear();
     dbState.selectResult = [];
     dbState.selectQueue = [];
     dbState.insertResult = [];
@@ -232,6 +249,58 @@ describe('trajet module', () => {
     it('rejects a minDriverRating above 5', async () => {
       const res = await trajetModule.request('/trajets?minDriverRating=6');
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('GET /trajets near/radius search', () => {
+    it('accepts nearLat and nearLng together', async () => {
+      dbState.selectQueue = [[makeTrajetRow({ driverId: 'u_1' })], []];
+      const res = await trajetModule.request('/trajets?nearLat=45.5017&nearLng=-73.5673');
+      expect(res.status).toBe(200);
+    });
+
+    it('rejects nearLat without nearLng', async () => {
+      const res = await trajetModule.request('/trajets?nearLat=45.5017');
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects an out-of-range nearLat', async () => {
+      const res = await trajetModule.request('/trajets?nearLat=200&nearLng=-73.5673');
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects a negative radiusKm', async () => {
+      const res = await trajetModule.request('/trajets?nearLat=45.5017&nearLng=-73.5673&radiusKm=-5');
+      expect(res.status).toBe(400);
+    });
+
+    it('attaches a real-world distanceKm computed from the departure coordinates', async () => {
+      // Montreal → Quebec City great-circle distance is ~233 km.
+      dbState.selectQueue = [
+        [makeTrajetRow({ driverId: 'u_1', departureLat: '46.8139', departureLng: '-71.2080' })],
+        [],
+      ];
+      const res = await trajetModule.request('/trajets?nearLat=45.5017&nearLng=-73.5673');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { items: Array<{ distanceKm: number | null }> };
+      expect(body.items[0]?.distanceKm).toBeGreaterThan(220);
+      expect(body.items[0]?.distanceKm).toBeLessThan(245);
+    });
+
+    it('returns a null distanceKm when no near point is given', async () => {
+      dbState.selectQueue = [[makeTrajetRow({ driverId: 'u_1' })], []];
+      const res = await trajetModule.request('/trajets');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { items: Array<{ distanceKm: number | null }> };
+      expect(body.items[0]?.distanceKm).toBeNull();
+    });
+
+    it('returns a null distanceKm when the trajet was never geocoded, even with a near point', async () => {
+      dbState.selectQueue = [[makeTrajetRow({ driverId: 'u_1' })], []];
+      const res = await trajetModule.request('/trajets?nearLat=45.5017&nearLng=-73.5673');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { items: Array<{ distanceKm: number | null }> };
+      expect(body.items[0]?.distanceKm).toBeNull();
     });
   });
 
@@ -329,7 +398,15 @@ describe('trajet module', () => {
       seatsTotal: 3,
       seatsAvailable: 3,
       pricePerSeat: 20,
+      departureLat: null,
+      departureLng: null,
     });
+    // Fired without being awaited by the response — see createTrajetRoute.
+    expect(geocodeAndStoreTrajetLocation).toHaveBeenCalledWith(
+      '11111111-1111-4111-8111-111111111111',
+      'Montreal',
+      'Quebec',
+    );
   });
 
   it('POST /trajets rejects a departureDateTime in the past', async () => {
@@ -438,6 +515,27 @@ describe('trajet module', () => {
       expect(res.status).toBe(200);
       const body = (await res.json()) as { pricePerSeat: number };
       expect(body.pricePerSeat).toBe(25);
+      // Neither city changed — no reason to re-geocode.
+      expect(geocodeAndStoreTrajetLocation).not.toHaveBeenCalled();
+    });
+
+    it('re-geocodes when departureCity changes', async () => {
+      getSession.mockResolvedValue(sessionFor('user'));
+      dbState.selectResult = [makeTrajetRow({ driverId: 'u_1' })];
+      dbState.updateResult = [makeTrajetRow({ driverId: 'u_1', departureCity: 'Sherbrooke' })];
+
+      const res = await trajetModule.request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ departureCity: 'Sherbrooke' }),
+      });
+
+      expect(res.status).toBe(200);
+      expect(geocodeAndStoreTrajetLocation).toHaveBeenCalledWith(
+        '11111111-1111-4111-8111-111111111111',
+        'Sherbrooke',
+        'Quebec',
+      );
     });
 
     it('recalculates seatsAvailable when seatsTotal changes, preserving already-booked seats', async () => {

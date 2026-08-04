@@ -10,6 +10,7 @@ import { env } from '@/lib/env';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BookingMessages } from '@/components/trajets/booking-messages';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -193,6 +194,7 @@ export function MesReservationsList() {
                     </Button>
                   )
                 ) : null}
+                <BookingMessages bookingId={item.id} />
               </CardContent>
             </Card>
           </li>

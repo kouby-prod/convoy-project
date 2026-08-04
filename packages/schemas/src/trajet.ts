@@ -12,6 +12,13 @@ export const TrajetSchema = z
     driverId: z.string().min(1),
     departureCity: z.string().min(1),
     destinationCity: z.string().min(1),
+    // Geocoded server-side from the city names (best-effort, async — see
+    // geocodeAndStoreTrajetLocation in apps/api/src/modules/trajet/geocoding.ts).
+    // Null until that background job resolves, or forever if geocoding failed.
+    departureLat: z.number().min(-90).max(90).nullable(),
+    departureLng: z.number().min(-180).max(180).nullable(),
+    arrivalLat: z.number().min(-90).max(90).nullable(),
+    arrivalLng: z.number().min(-180).max(180).nullable(),
     departureDateTime: z.string().datetime(),
     seatsTotal: z.number().int().min(1),
     seatsAvailable: z.number().int().min(0),
@@ -100,14 +107,16 @@ export function paginatedSchema<Item extends z.ZodTypeAny>(itemSchema: Item) {
 export const TrajetPageSchema = paginatedSchema(TrajetSchema).describe('TrajetPage');
 
 /**
- * A trajet as returned by search, with the driver's rating summary attached
- * so the results list doesn't need a second fetch per row. `driverRating` is
- * null when the driver has no reviews yet (same convention as
- * RatingSummarySchema in review.ts).
+ * A trajet as returned by search, with the driver's rating summary and (when
+ * `nearLat`/`nearLng` were part of the query) the departure point's distance
+ * from that reference point attached, so the results list doesn't need a
+ * second fetch per row. `driverRating`/`distanceKm` are null when there's no
+ * driver review yet / no `nearLat`+`nearLng` in the query, respectively.
  */
 export const TrajetSearchResultSchema = TrajetSchema.extend({
   driverRating: z.number().min(1).max(5).nullable(),
   driverReviewCount: z.number().int().min(0),
+  distanceKm: z.number().nonnegative().nullable(),
 }).describe('TrajetSearchResult');
 export type TrajetSearchResult = z.infer<typeof TrajetSearchResultSchema>;
 
@@ -121,6 +130,12 @@ export const TrajetSearchPageSchema = paginatedSchema(TrajetSearchResultSchema).
  * `minDriverRating` keeps only trajets whose driver's average rating (across
  * their `passenger_to_driver` reviews) is at least that value — drivers with
  * no reviews yet never match a `minDriverRating` filter.
+ * `nearLat`/`nearLng` (a passenger's own location, e.g. from the browser's
+ * geolocation API) must be provided together; results are then sorted by
+ * distance from that point to the trajet's departure point, and trajets
+ * whose departure was never successfully geocoded never match. `radiusKm`
+ * additionally excludes anything farther than that — it's ignored if
+ * `nearLat`/`nearLng` are absent.
  */
 export const TrajetSearchQuerySchema = z
   .object({
@@ -136,8 +151,15 @@ export const TrajetSearchQuerySchema = z
     comfort: z.enum(['standard', 'confort', 'premium']).optional(),
     baggageAllowance: z.string().min(1).optional(),
     minDriverRating: z.coerce.number().min(1).max(5).optional(),
+    nearLat: z.coerce.number().min(-90).max(90).optional(),
+    nearLng: z.coerce.number().min(-180).max(180).optional(),
+    radiusKm: z.coerce.number().positive().max(20000).optional(),
   })
   .extend(PaginationQuerySchema.shape)
+  .refine((data) => (data.nearLat === undefined) === (data.nearLng === undefined), {
+    message: 'nearLat and nearLng must be provided together',
+    path: ['nearLat'],
+  })
   .describe('TrajetSearchQuery');
 export type TrajetSearchQuery = z.infer<typeof TrajetSearchQuerySchema>;
 

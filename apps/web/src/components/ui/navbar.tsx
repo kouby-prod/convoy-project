@@ -225,9 +225,9 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
             </>
           )}
 
-          {/* Avatar */}
-          <button
-            type="button"
+          {/* Avatar — links to account settings (redirects to sign-in itself if logged out) */}
+          <Link
+            href="/parametres"
             aria-label={translateNavbar('account')}
             className={cn(
               'flex size-10 items-center justify-center overflow-hidden rounded-full bg-white/90 text-slate-600 ring-1 ring-white/40 outline-none transition-all duration-200 hover:bg-white active:translate-y-px focus-visible:ring-3',
@@ -235,7 +235,7 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
             )}
           >
             <UserRound className="size-5" strokeWidth={2.25} />
-          </button>
+          </Link>
 
           {/* Mobile menu toggle */}
           <button
