@@ -36,7 +36,10 @@ export function LegalPage({
           <div key={section.heading} className="space-y-2">
             <h2 className="text-xl font-semibold text-foreground">{section.heading}</h2>
             {section.body.split('\n\n').map((paragraph) => (
-              <p key={paragraph} className="text-sm leading-relaxed text-muted-foreground">
+              <p
+                key={paragraph}
+                className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground"
+              >
                 {paragraph}
               </p>
             ))}
