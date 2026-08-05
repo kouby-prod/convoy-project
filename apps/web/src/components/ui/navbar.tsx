@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 /* ───────────────────────────────────────────────────────────────────────────
    Navbar — three color combinations, one layout.
 
-   - vibrant  : electric blue, high-energy, glassy CTA
+   - vibrant  : green/yellow brand (CAN-VOITURAGE charte graphique), glassy CTA
    - breezing : airy sky→cyan→teal, light and open
    - smooth   : muted indigo→slate, sophisticated and calm
 
@@ -25,7 +25,7 @@ const navbarVariants = cva(
   {
     variants: {
       theme: {
-        vibrant: 'bg-gradient-to-r from-blue-600 via-blue-600 to-blue-700 text-white ring-white/10 shadow-lg shadow-blue-900/20',
+        vibrant: 'bg-gradient-to-r from-green-600 via-green-600 to-green-700 text-white ring-white/10 shadow-lg shadow-green-900/20',
         breezing:
           'bg-gradient-to-r from-sky-400 via-cyan-400 to-teal-400 text-white ring-white/20 shadow-lg shadow-cyan-900/10',
         smooth:
@@ -42,8 +42,8 @@ const themeAccents = {
     link: 'hover:bg-white/15 focus-visible:ring-white/40',
     icon: 'hover:bg-white/15 focus-visible:ring-white/40',
     search: 'focus-within:ring-white/50 focus-within:border-white/60',
-    cta: 'bg-white text-blue-700 hover:bg-white/90 focus-visible:ring-white/50',
-    badge: 'bg-amber-400 text-blue-900',
+    cta: 'bg-white text-green-700 hover:bg-white/90 focus-visible:ring-white/50',
+    badge: 'bg-amber-400 text-green-900',
     logoMark: 'bg-white/15 text-white',
   },
   breezing: {
@@ -225,9 +225,9 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
             </>
           )}
 
-          {/* Avatar */}
-          <button
-            type="button"
+          {/* Avatar — links to account settings (redirects to sign-in itself if logged out) */}
+          <Link
+            href="/parametres"
             aria-label={translateNavbar('account')}
             className={cn(
               'flex size-10 items-center justify-center overflow-hidden rounded-full bg-white/90 text-slate-600 ring-1 ring-white/40 outline-none transition-all duration-200 hover:bg-white active:translate-y-px focus-visible:ring-3',
@@ -235,7 +235,7 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
             )}
           >
             <UserRound className="size-5" strokeWidth={2.25} />
-          </button>
+          </Link>
 
           {/* Mobile menu toggle */}
           <button

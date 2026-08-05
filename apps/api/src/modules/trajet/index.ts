@@ -1,11 +1,12 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, eq, gte, ilike, inArray, isNull, lt, lte } from 'drizzle-orm';
+import { and, asc, avg, count, eq, gte, ilike, inArray, isNotNull, isNull, lt, lte, sql, type SQL } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { rateLimit } from '../../middleware/rate-limit';
 import { db } from '../../db/client';
 import { trajet, booking } from '../../db/trajet-schema';
-import type { Trajet, Booking, BookingWithTrajet } from '@carpool/schemas';
+import { review } from '../../db/review';
+import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet } from '@carpool/schemas';
 import {
   listTrajetsRoute,
   getTrajetRoute,
@@ -20,6 +21,7 @@ import {
   myBookingsRoute,
 } from './trajet.routes';
 import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip } from './notifications';
+import { geocodeAndStoreTrajetLocation } from './geocoding';
 
 /**
  * Trajet module — an `OpenAPIHono` sub-app mounted by app.ts (see
@@ -96,6 +98,34 @@ function paginate<Row>(rows: Row[], limit: number): { items: Row[]; hasMore: boo
   return { items: hasMore ? rows.slice(0, limit) : rows, hasMore };
 }
 
+/**
+ * Great-circle distance (km) from `(lat, lng)` to each row's departure point,
+ * as a SQL expression usable in both `where` (capped by `radiusKm`) and
+ * `orderBy` — computed in SQL (not fetched-then-sorted in JS) so pagination
+ * stays correct: a page boundary has to be decided by the database, not by
+ * re-sorting whatever page it already handed back.
+ * `least`/`greatest` guard `acos`'s [-1, 1] domain against floating-point
+ * rounding when a point is compared to itself (or somewhere very close).
+ */
+function departureDistanceKmSql(lat: number, lng: number): SQL<number> {
+  return sql<number>`(6371 * acos(least(1, greatest(-1,
+    cos(radians(${lat})) * cos(radians(${trajet.departureLat}::double precision)) *
+      cos(radians(${trajet.departureLng}::double precision) - radians(${lng})) +
+    sin(radians(${lat})) * sin(radians(${trajet.departureLat}::double precision))
+  ))))`;
+}
+
+/** Same formula as departureDistanceKmSql, applied in JS to an already-fetched row's coordinates (for display only — filtering/sorting always happens in SQL, see above). */
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 // Reads are public; creating requires authentication. Adjust to your auth rules
 // (e.g. add `requireRole('admin')` from ../../auth for admin-only mutations).
 app.use('/trajets', async (c, next) =>
@@ -144,17 +174,51 @@ export const trajetModule = app
     if (query.baggageAllowance) {
       conditions.push(ilike(trajet.baggageAllowance, `%${query.baggageAllowance}%`));
     }
+    if (query.minDriverRating !== undefined) {
+      // Drivers with no reviews yet have no row here at all, so they never
+      // qualify for a minDriverRating filter — that's the desired behavior.
+      // Resolved eagerly (rather than as a lazy subquery) to keep this simple
+      // and match the same two-query style as attachDriverRatings below.
+      const qualifyingDriverRows = await db
+        .select({ driverId: review.driverId })
+        .from(review)
+        .where(eq(review.direction, 'passenger_to_driver'))
+        .groupBy(review.driverId)
+        .having(gte(avg(review.rating), query.minDriverRating));
+      const qualifyingDriverIds = qualifyingDriverRows.map((r) => r.driverId);
+      // A non-matching sentinel keeps `inArray` well-formed when no driver
+      // qualifies, instead of special-casing an empty array.
+      conditions.push(inArray(trajet.driverId, qualifyingDriverIds.length ? qualifyingDriverIds : ['__none__']));
+    }
+
+    // `nearLat`/`nearLng` are validated together (see TrajetSearchQuerySchema's
+    // refine) — either both are present or neither is.
+    const near =
+      query.nearLat !== undefined && query.nearLng !== undefined
+        ? { lat: query.nearLat, lng: query.nearLng }
+        : undefined;
+    if (near) {
+      // A trajet whose departure was never successfully geocoded has no
+      // distance to compare against `radiusKm` — it can never match.
+      conditions.push(isNotNull(trajet.departureLat), isNotNull(trajet.departureLng));
+      if (query.radiusKm !== undefined) {
+        conditions.push(lte(departureDistanceKmSql(near.lat, near.lng), query.radiusKm));
+      }
+    }
 
     const offset = (query.page - 1) * query.limit;
+    const orderExprs = near ? [asc(departureDistanceKmSql(near.lat, near.lng))] : [];
     const rows = await db
       .select()
       .from(trajet)
       .where(and(...conditions))
+      .orderBy(...orderExprs)
       .limit(query.limit + 1)
       .offset(offset);
 
     const { items, hasMore } = paginate(rows, query.limit);
-    return c.json({ items: items.map(serialize), page: query.page, limit: query.limit, hasMore }, 200);
+    const withMetadata = await attachSearchMetadata(items, near);
+    return c.json({ items: withMetadata, page: query.page, limit: query.limit, hasMore }, 200);
   })
   .openapi(getTrajetRoute, async (c) => {
     const { id } = c.req.valid('param');
@@ -182,6 +246,16 @@ export const trajetModule = app
       })
       .returning();
     if (!row) throw new Error('Insert returned no row'); // narrows away `undefined`
+
+    // Fire-and-forget: geocoding is a slow, best-effort enrichment (Nominatim
+    // rate-limits to ~1 req/sec and this needs two lookups) — a trajet must
+    // stay immediately bookable rather than wait on it. Coordinates land a
+    // couple of seconds later via a background UPDATE, or never if geocoding
+    // fails.
+    geocodeAndStoreTrajetLocation(row.id, row.departureCity, row.arrivalCity).catch((err) => {
+      console.error(`Failed to geocode trajet ${row.id}`, err);
+    });
+
     return c.json(serialize(row), 201);
   })
   .openapi(updateTrajetRoute, async (c) => {
@@ -234,6 +308,17 @@ export const trajetModule = app
     });
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
+
+    // Only re-geocode when a city actually changed — same fire-and-forget
+    // reasoning as createTrajetRoute above.
+    if (body.departureCity !== undefined || body.destinationCity !== undefined) {
+      geocodeAndStoreTrajetLocation(result.trajet.id, result.trajet.departureCity, result.trajet.arrivalCity).catch(
+        (err) => {
+          console.error(`Failed to re-geocode trajet ${result.trajet.id}`, err);
+        },
+      );
+    }
+
     return c.json(serialize(result.trajet), 200);
   })
   .openapi(cancelTrajetRoute, async (c) => {
@@ -504,8 +589,16 @@ export const trajetModule = app
   })
   .openapi(myTrajetsRoute, async (c) => {
     const { user } = getAuth(c);
-    const rows = await db.select().from(trajet).where(eq(trajet.driverId, user.id));
-    return c.json(rows.map(serialize), 200);
+    const { page, limit } = c.req.valid('query');
+    const rows = await db
+      .select()
+      .from(trajet)
+      .where(eq(trajet.driverId, user.id))
+      .limit(limit + 1)
+      .offset((page - 1) * limit);
+
+    const { items, hasMore } = paginate(rows, limit);
+    return c.json({ items: items.map(serialize), page, limit, hasMore }, 200);
   })
   .openapi(myBookingsRoute, async (c) => {
     const { user } = getAuth(c);
@@ -534,6 +627,53 @@ export const trajetModule = app
     return c.json({ items: items.map(serializeBookingWithTrajet), page, limit, hasMore }, 200);
   });
 
+/**
+ * Attaches each row's driver rating summary (from `passenger_to_driver`
+ * reviews, via a single grouped query keyed on the page's distinct driver
+ * ids rather than one rating query per row) and, when `near` was part of
+ * the search, its distance from that point — recomputed here in JS from the
+ * row's own coordinates rather than selected from SQL, since it's only
+ * needed for display (filtering/ordering by distance already happened in
+ * SQL before this page was fetched).
+ */
+async function attachSearchMetadata(
+  rows: (typeof trajet.$inferSelect)[],
+  near: { lat: number; lng: number } | undefined,
+): Promise<TrajetSearchResult[]> {
+  const driverIds = [...new Set(rows.map((row) => row.driverId))];
+  const ratingRows = driverIds.length
+    ? await db
+        .select({
+          driverId: review.driverId,
+          averageRating: avg(review.rating),
+          reviewCount: count(review.rating),
+        })
+        .from(review)
+        .where(and(inArray(review.driverId, driverIds), eq(review.direction, 'passenger_to_driver')))
+        .groupBy(review.driverId)
+    : [];
+  const ratingByDriver = new Map(
+    ratingRows.map((r) => [
+      r.driverId,
+      { averageRating: r.averageRating ? Number(r.averageRating) : null, reviewCount: r.reviewCount },
+    ]),
+  );
+
+  return rows.map((row) => {
+    const rating = ratingByDriver.get(row.driverId);
+    const distanceKm =
+      near && row.departureLat !== null && row.departureLng !== null
+        ? haversineKm(near.lat, near.lng, Number(row.departureLat), Number(row.departureLng))
+        : null;
+    return {
+      ...serialize(row),
+      driverRating: rating?.averageRating ?? null,
+      driverReviewCount: rating?.reviewCount ?? 0,
+      distanceKm,
+    };
+  });
+}
+
 /** Map a DB row (Date columns, DB column names) to the Zod contract shape. */
 function serialize(row: typeof trajet.$inferSelect): Trajet {
   return {
@@ -541,6 +681,10 @@ function serialize(row: typeof trajet.$inferSelect): Trajet {
     driverId: row.driverId,
     departureCity: row.departureCity,
     destinationCity: row.arrivalCity,
+    departureLat: row.departureLat !== null ? Number(row.departureLat) : null,
+    departureLng: row.departureLng !== null ? Number(row.departureLng) : null,
+    arrivalLat: row.arrivalLat !== null ? Number(row.arrivalLat) : null,
+    arrivalLng: row.arrivalLng !== null ? Number(row.arrivalLng) : null,
     departureDateTime: row.departureAt.toISOString(),
     seatsTotal: row.seatsTotal,
     seatsAvailable: row.seatsAvailable,
