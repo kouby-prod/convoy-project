@@ -31,6 +31,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       EMAIL_FROM: ${EMAIL_FROM}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL}
       # SMTP transport. Optional — empty SMTP_HOST falls back to the console stub.
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}

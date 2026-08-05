@@ -22,6 +22,10 @@ const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
 const COMFORT_ANY = 'all';
 
+const DRIVER_RATING_ANY = 'all';
+
+const RADIUS_ANY = 'all';
+
 interface Filters {
   departureCity: string;
   destinationCity: string;
@@ -30,6 +34,10 @@ interface Filters {
   maxPrice: string;
   minSeats: string;
   baggageAllowance: string;
+  minDriverRating: string;
+  nearLat: string;
+  nearLng: string;
+  radiusKm: string;
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -40,6 +48,10 @@ const EMPTY_FILTERS: Filters = {
   maxPrice: '',
   minSeats: '',
   baggageAllowance: '',
+  minDriverRating: DRIVER_RATING_ANY,
+  nearLat: '',
+  nearLng: '',
+  radiusKm: RADIUS_ANY,
 };
 
 function filtersFromSearchParams(searchParams: URLSearchParams): Filters {
@@ -51,6 +63,10 @@ function filtersFromSearchParams(searchParams: URLSearchParams): Filters {
     maxPrice: searchParams.get('maxPrice') ?? '',
     minSeats: searchParams.get('minSeats') ?? '',
     baggageAllowance: searchParams.get('baggageAllowance') ?? '',
+    minDriverRating: searchParams.get('minDriverRating') ?? DRIVER_RATING_ANY,
+    nearLat: searchParams.get('nearLat') ?? '',
+    nearLng: searchParams.get('nearLng') ?? '',
+    radiusKm: searchParams.get('radiusKm') ?? RADIUS_ANY,
   };
 }
 
@@ -64,6 +80,13 @@ function toQuery(filters: Filters): Record<string, string> {
   if (filters.maxPrice) query.maxPrice = filters.maxPrice;
   if (filters.minSeats) query.minSeats = filters.minSeats;
   if (filters.baggageAllowance) query.baggageAllowance = filters.baggageAllowance;
+  if (filters.minDriverRating !== DRIVER_RATING_ANY) query.minDriverRating = filters.minDriverRating;
+  // radiusKm is meaningless (and ignored server-side) without a location.
+  if (filters.nearLat && filters.nearLng) {
+    query.nearLat = filters.nearLat;
+    query.nearLng = filters.nearLng;
+    if (filters.radiusKm !== RADIUS_ANY) query.radiusKm = filters.radiusKm;
+  }
   return query;
 }
 
@@ -80,6 +103,8 @@ export function TrajetsList() {
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState<Filters>(() => filtersFromSearchParams(searchParams));
   const [page, setPage] = useState(1);
+  const [isLocating, setIsLocating] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
 
   const query = useMemo(() => toQuery(filters), [filters]);
 
@@ -99,6 +124,34 @@ export function TrajetsList() {
     setFilters((prev) => ({ ...prev, [key]: value }));
   }
 
+  function useMyLocation() {
+    setGeoError(null);
+    if (!('geolocation' in navigator)) {
+      setGeoError(t('filters.geoUnsupported'));
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFilters((prev) => ({
+          ...prev,
+          nearLat: String(position.coords.latitude),
+          nearLng: String(position.coords.longitude),
+        }));
+        setIsLocating(false);
+      },
+      () => {
+        setGeoError(t('filters.geoDenied'));
+        setIsLocating(false);
+      },
+    );
+  }
+
+  function clearLocation() {
+    setGeoError(null);
+    setFilters((prev) => ({ ...prev, nearLat: '', nearLng: '', radiusKm: RADIUS_ANY }));
+  }
+
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const params = new URLSearchParams(toQuery(filters));
@@ -107,6 +160,7 @@ export function TrajetsList() {
 
   function resetFilters() {
     setFilters(EMPTY_FILTERS);
+    setGeoError(null);
     router.push('/trajets');
   }
 
@@ -159,6 +213,60 @@ export function TrajetsList() {
           value={filters.baggageAllowance}
           onChange={(e) => updateFilter('baggageAllowance', e.target.value)}
         />
+        <Select
+          value={filters.minDriverRating}
+          onValueChange={(value) => updateFilter('minDriverRating', value)}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={DRIVER_RATING_ANY}>{t('filters.minDriverRatingAny')}</SelectItem>
+            {[4, 3, 2, 1].map((value) => (
+              <SelectItem key={value} value={String(value)}>
+                {t('filters.minDriverRatingValue', { value })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            disabled={isLocating}
+            onClick={useMyLocation}
+          >
+            {isLocating
+              ? t('filters.locating')
+              : filters.nearLat
+                ? t('filters.locationSet')
+                : t('filters.useMyLocation')}
+          </Button>
+          {filters.nearLat ? (
+            <Button type="button" variant="ghost" size="sm" onClick={clearLocation}>
+              {t('filters.clearLocation')}
+            </Button>
+          ) : null}
+        </div>
+        {filters.nearLat && filters.nearLng ? (
+          <Select value={filters.radiusKm} onValueChange={(value) => updateFilter('radiusKm', value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={RADIUS_ANY}>{t('filters.radiusAny')}</SelectItem>
+              {[10, 25, 50, 100, 200].map((value) => (
+                <SelectItem key={value} value={String(value)}>
+                  {t('filters.radiusValue', { value })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
+        {geoError ? <p className="text-sm text-destructive sm:col-span-2 lg:col-span-4">{geoError}</p> : null}
+
         <div className="flex gap-2">
           <Button type="submit" className="flex-1">
             {t('filters.apply')}
@@ -192,6 +300,21 @@ export function TrajetsList() {
                     <div>
                       <strong className="text-foreground">{t('departureAt')}:</strong>{' '}
                       {formatDateTime(item.departureDateTime)}
+                    </div>
+                    {item.distanceKm !== null ? (
+                      <div>
+                        <strong className="text-foreground">{t('distance.label')}:</strong>{' '}
+                        {t('distance.value', { km: item.distanceKm.toFixed(1) })}
+                      </div>
+                    ) : null}
+                    <div>
+                      <strong className="text-foreground">{t('driverRating.label')}:</strong>{' '}
+                      {item.driverRating !== null
+                        ? t('driverRating.summary', {
+                            rating: item.driverRating.toFixed(1),
+                            count: item.driverReviewCount,
+                          })
+                        : t('driverRating.none')}
                     </div>
                     <div>
                       <strong className="text-foreground">{t('seats')}:</strong>{' '}

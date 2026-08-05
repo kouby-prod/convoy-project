@@ -22,6 +22,8 @@
   "Footer": {
     "aboutTitle": "À Propos de nous",
     "terms": "Conditions d'utilisation",
+    "cgv": "Conditions de vente",
+    "contratConducteur": "Contrat conducteur",
     "responsibility": "Charte de responsabilité",
     "privacy": "Vie privée",
     "contact": "Contactez-nous",
@@ -31,6 +33,322 @@
     "passengerTips": "Conseils passagers",
     "driverTips": "Conseils conducteurs",
     "copyright": "© {year} covoiturage Kouby Drive tous droits réservés"
+  },
+  "Terms": {
+    "title": "Conditions Générales d'Utilisation",
+    "lastUpdated": "Dernière mise à jour : [à compléter]",
+    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication (voir « [à compléter] » ci-dessus).",
+    "sections": [
+      {
+        "heading": "1. Objet",
+        "body": "Les présentes Conditions Générales d'Utilisation (ci-après « CGU ») régissent l'accès et l'utilisation de la plateforme de covoiturage Kouby (ci-après « la Plateforme ») exploitée au Canada.\n\nLa Plateforme permet la mise en relation entre :\n• des conducteurs proposant des trajets,\n• des passagers souhaitant réserver une place.\n\nKouby agit exclusivement en tant qu'intermédiaire technique."
+      },
+      {
+        "heading": "2. Acceptation des conditions",
+        "body": "L'utilisation de la Plateforme implique l'acceptation pleine et entière des présentes CGU par tout utilisateur.\n\nLes utilisateurs s'engagent à respecter :\n• les présentes CGU,\n• les lois fédérales canadiennes,\n• les lois provinciales applicables (notamment Québec, Ontario, etc.),\n• la réglementation en vigueur en matière de transport, de sécurité routière et d'assurance."
+      },
+      {
+        "heading": "3. Accès à la plateforme",
+        "body": "L'inscription sur la Plateforme est :\n• gratuite,\n• sans frais d'adhésion."
+      },
+      {
+        "heading": "4. Rôle de la plateforme",
+        "body": "Kouby :\n• met en relation conducteurs et passagers,\n• facilite la réservation des trajets,\n• perçoit une commission de réservation.\n\nKouby n'est pas un transporteur et n'exploite aucun service de transport."
+      },
+      {
+        "heading": "5. Conditions applicables aux conducteurs",
+        "body": "Le conducteur est soumis aux conditions suivantes."
+      },
+      {
+        "heading": "5.1 Responsabilité et conformité",
+        "body": "Le conducteur est seul responsable :\n• de sa capacité légale à conduire au Canada,\n• de la validité de son permis de conduire,\n• de son assurance automobile,\n• de la conformité de son véhicule.\n\nEn cas de non-conformité, Kouby décline toute responsabilité."
+      },
+      {
+        "heading": "5.2 Informations obligatoires",
+        "body": "Le conducteur doit fournir des informations exactes et complètes, notamment :\n• identité,\n• permis de conduire,\n• informations du véhicule (immatriculation, modèle, assurance),\n• détails du trajet.\n\nToute fausse déclaration est strictement interdite."
+      },
+      {
+        "heading": "5.3 Engagements du conducteur",
+        "body": "Le conducteur s'engage à :\n• respecter les CGU et la réglementation locale et nationale,\n• respecter strictement les conditions de son annonce,\n• ne pas annuler ou remplacer un passager sans motif valable,\n• assurer le transport des passagers conformément à la réservation."
+      },
+      {
+        "heading": "5.4 Annulation de trajet",
+        "body": "En cas d'annulation par le conducteur :\n• il doit proposer une solution de remplacement aux passagers,\n• à défaut, il est tenu de rembourser le montant de la commission de réservation."
+      },
+      {
+        "heading": "5.5 Sanctions en cas de fraude",
+        "body": "Toute fausse annonce ou comportement frauduleux entraîne :\n• remboursement intégral de la commission,\n• possibilité de dommages et intérêts au profit des passagers,\n• suspension ou suppression du compte."
+      },
+      {
+        "heading": "6. Conditions applicables aux passagers",
+        "body": "Le passager s'engage à :\n• respecter les CGU,\n• respecter les lois en vigueur,\n• respecter les conditions spécifiques de l'annonce du conducteur."
+      },
+      {
+        "heading": "6.1 Commission de réservation",
+        "body": "Le passager paie une commission fixe de 5 CAD par réservation."
+      },
+      {
+        "heading": "6.2 Politique de remboursement",
+        "body": "• La commission de réservation est non remboursable après confirmation.\n• Aucun remboursement ne sera effectué, sauf cas expressément prévu par les présentes CGU."
+      },
+      {
+        "heading": "7.1 Responsabilité de Kouby",
+        "body": "Kouby ne peut être tenu responsable :\n• des incidents survenant durant le trajet,\n• des comportements des utilisateurs,\n• du non-respect de la réglementation par les conducteurs,\n• des dommages corporels ou matériels."
+      },
+      {
+        "heading": "7.2 Responsabilité des utilisateurs",
+        "body": "Chaque utilisateur est seul responsable de ses actes.\n\nLe conducteur assume l'entière responsabilité du transport."
+      },
+      {
+        "heading": "8. Respect de la réglementation canadienne",
+        "body": "Les utilisateurs doivent respecter :\n• le Code de la sécurité routière applicable dans leur province,\n• les obligations d'assurance automobile,\n• les lois relatives au covoiturage (non lucratif ou partage de frais)."
+      },
+      {
+        "heading": "9. Données personnelles",
+        "body": "Les données collectées sont utilisées uniquement dans le cadre du fonctionnement de la Plateforme.\n\nKouby s'engage à respecter les lois canadiennes en matière de protection des données, notamment la Loi sur la protection des renseignements personnels et les documents électroniques (LPRPDE / PIPEDA). Voir notre Politique de confidentialité pour plus de détails."
+      },
+      {
+        "heading": "10. Suspension ou résiliation",
+        "body": "Kouby se réserve le droit de :\n• suspendre ou supprimer un compte,\n• refuser l'accès à la Plateforme, en cas de non-respect des CGU."
+      },
+      {
+        "heading": "11. Droit applicable",
+        "body": "Les présentes CGU sont régies par :\n• les lois du Canada,\n• et les lois de la province de résidence de l'utilisateur (ex. : Québec).\n\nTout litige relève des juridictions compétentes de cette province."
+      },
+      {
+        "heading": "12. Modification des CGU",
+        "body": "Kouby se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés des mises à jour."
+      },
+      {
+        "heading": "13. Clause finale",
+        "body": "Kouby agit exclusivement comme plateforme de mise en relation. Le service de transport est assuré sous la seule responsabilité du conducteur, qui agit en tant que particulier ou professionnel indépendant."
+      }
+    ]
+  },
+  "Cgv": {
+    "title": "Conditions Générales de Vente (CGV)",
+    "lastUpdated": "Dernière mise à jour : [à compléter]",
+    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication (voir « [à compléter] » ci-dessus). Cette page décrit un modèle de commission qui n'est pas encore intégré dans l'application (aucun paiement n'y est actuellement traité).",
+    "sections": [
+      {
+        "heading": "1. Objet",
+        "body": "Les présentes Conditions Générales de Vente (ci-après « CGV ») régissent les modalités de paiement, de réservation et de facturation des services proposés sur la plateforme Kouby.\n\nKouby propose un service d'intermédiation permettant la mise en relation entre conducteurs et passagers dans le cadre de trajets en covoiturage."
+      },
+      {
+        "heading": "2. Nature du service",
+        "body": "Kouby agit exclusivement comme :\n• une plateforme de mise en relation,\n• un prestataire de service de réservation.\n\nKouby n'est ni transporteur, ni opérateur de transport."
+      },
+      {
+        "heading": "3.1 Commission de réservation",
+        "body": "• Chaque réservation effectuée par un passager donne lieu au paiement d'une commission fixe de 5 CAD.\n• Cette commission correspond aux frais d'utilisation de la plateforme."
+      },
+      {
+        "heading": "3.2 Gratuité pour les conducteurs",
+        "body": "• Les conducteurs ne paient aucun frais pour publier une annonce ou proposer un trajet.\n• Aucun abonnement ou frais d'adhésion n'est exigé."
+      },
+      {
+        "heading": "4. Processus de réservation",
+        "body": "1. Le passager sélectionne un trajet proposé par un conducteur.\n2. Il confirme sa réservation via la plateforme.\n3. Il procède au paiement de la commission de 5 CAD.\n4. La réservation est considérée comme ferme et définitive après confirmation du paiement."
+      },
+      {
+        "heading": "5.1 Moyens de paiement",
+        "body": "Les paiements peuvent être effectués via :\n• carte bancaire,\n• tout autre moyen de paiement sécurisé proposé sur la plateforme."
+      },
+      {
+        "heading": "5.2 Sécurisation",
+        "body": "Kouby met en place des solutions de paiement sécurisées conformes aux standards en vigueur."
+      },
+      {
+        "heading": "6.1 Principe général",
+        "body": "• La commission de réservation est non remboursable après confirmation de la réservation."
+      },
+      {
+        "heading": "6.2 Exception – Annulation par le conducteur",
+        "body": "En cas d'annulation du trajet par le conducteur :\n• le passager peut bénéficier du remboursement de la commission de 5 CAD,\n• ou d'une solution alternative proposée par le conducteur."
+      },
+      {
+        "heading": "7. Obligations du conducteur impactant la vente",
+        "body": "Le conducteur s'engage à :\n• respecter les conditions de son annonce,\n• effectuer le trajet conformément à la réservation,\n• ne pas annuler sans motif valable.\n\nEn cas de manquement :\n• remboursement de la commission,\n• éventuelles sanctions sur la plateforme."
+      },
+      {
+        "heading": "8. Obligations du passager",
+        "body": "Le passager s'engage à :\n• payer la commission de réservation,\n• respecter les conditions du trajet,\n• se présenter à l'heure et au lieu convenu."
+      },
+      {
+        "heading": "9. Absence de droit de rétractation",
+        "body": "Compte tenu de la nature du service (réservation liée à une date précise), le passager ne bénéficie pas d'un droit de rétractation après confirmation."
+      },
+      {
+        "heading": "10.1 Responsabilité de Kouby",
+        "body": "Kouby est responsable uniquement de :\n• la mise en relation,\n• le bon fonctionnement de la plateforme de réservation.\n\nKouby ne peut être tenu responsable :\n• du transport lui-même,\n• des incidents survenus durant le trajet,\n• du comportement des utilisateurs."
+      },
+      {
+        "heading": "10.2 Responsabilité du conducteur",
+        "body": "Le conducteur est seul responsable :\n• de la réalisation du trajet,\n• de la sécurité des passagers,\n• du respect des lois et réglementations."
+      },
+      {
+        "heading": "11. Litiges",
+        "body": "En cas de litige :\n• une tentative de résolution amiable est privilégiée,\n• à défaut, les tribunaux compétents du Canada et de la province concernée seront saisis."
+      },
+      {
+        "heading": "12. Conformité réglementaire",
+        "body": "Les services proposés respectent les lois applicables au Canada, notamment :\n• les règles relatives au covoiturage,\n• les obligations en matière de consommation,\n• les réglementations provinciales."
+      },
+      {
+        "heading": "13. Modification des CGV",
+        "body": "Kouby se réserve le droit de modifier les présentes CGV à tout moment. Les utilisateurs seront informés en cas de mise à jour."
+      },
+      {
+        "heading": "14. Clause finale",
+        "body": "La commission facturée par Kouby correspond uniquement à un service d'intermédiation numérique. Le service de transport est fourni indépendamment par le conducteur, sous sa seule responsabilité."
+      }
+    ]
+  },
+  "ContratConducteur": {
+    "title": "Contrat Conducteur",
+    "lastUpdated": "Dernière mise à jour : [à compléter]",
+    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication. Ce document est conçu pour être signé électroniquement par chaque conducteur : l'application n'a pas encore de parcours d'inscription conducteur dédié qui capture cette acceptation, cette page reste donc informative pour le moment.",
+    "sections": [
+      {
+        "heading": "1. Objet",
+        "body": "Le présent contrat définit les conditions dans lesquelles un conducteur utilise la plateforme Kouby pour proposer des trajets de covoiturage."
+      },
+      {
+        "heading": "2. Statut du conducteur",
+        "body": "Le conducteur agit en tant que personne indépendante. Il n'existe aucun lien de subordination entre Kouby et le conducteur."
+      },
+      {
+        "heading": "3. Conditions d'éligibilité",
+        "body": "Le conducteur doit :\n• détenir un permis de conduire valide au Canada,\n• disposer d'une assurance automobile conforme,\n• utiliser un véhicule en bon état et conforme à la réglementation,\n• être majeur."
+      },
+      {
+        "heading": "4. Responsabilité du conducteur",
+        "body": "Le conducteur est seul responsable :\n• de la conformité légale de son activité,\n• de la sécurité des passagers,\n• du respect des lois locales et nationales.\n\nKouby décline toute responsabilité en cas de non-conformité."
+      },
+      {
+        "heading": "5. Informations obligatoires",
+        "body": "Le conducteur doit fournir des informations exactes :\n• identité,\n• permis,\n• véhicule (immatriculation, modèle),\n• assurance,\n• détails du trajet.\n\nToute fausse information est interdite."
+      },
+      {
+        "heading": "6. Publication des trajets",
+        "body": "Le conducteur s'engage à :\n• publier des annonces réelles,\n• respecter les conditions annoncées,\n• transporter les passagers comme prévu."
+      },
+      {
+        "heading": "7. Annulation",
+        "body": "Le conducteur ne peut annuler un trajet sans motif valable.\n\nEn cas d'annulation :\n• il doit proposer une alternative,\n• ou rembourser la commission de réservation."
+      },
+      {
+        "heading": "8. Interdictions",
+        "body": "Il est interdit de :\n• publier de fausses annonces,\n• remplacer un passager sans autorisation,\n• ne pas respecter les engagements pris.\n\nSanctions possibles : suspension, suppression du compte, dommages et intérêts."
+      },
+      {
+        "heading": "9. Paiement et commissions",
+        "body": "Le conducteur ne paie aucun frais à Kouby."
+      },
+      {
+        "heading": "10. Assurance",
+        "body": "Le conducteur doit disposer d'une assurance couvrant :\n• les passagers,\n• les dommages matériels et corporels."
+      },
+      {
+        "heading": "11. Responsabilité limitée de Kouby",
+        "body": "Kouby n'est pas responsable :\n• des accidents,\n• des litiges entre utilisateurs,\n• des pertes ou dommages."
+      },
+      {
+        "heading": "12. Données personnelles",
+        "body": "Les données sont traitées conformément à la politique de confidentialité."
+      },
+      {
+        "heading": "13. Suspension",
+        "body": "Kouby peut suspendre ou supprimer un compte en cas de non-respect."
+      },
+      {
+        "heading": "14. Droit applicable",
+        "body": "Le contrat est régi par les lois du Canada et de la province applicable."
+      },
+      {
+        "heading": "15. Acceptation",
+        "body": "Le conducteur reconnaît avoir lu et accepté le présent contrat."
+      },
+      {
+        "heading": "16. Clause finale",
+        "body": "Le conducteur agit en tant qu'utilisateur indépendant. Kouby ne fournit aucun service de transport."
+      }
+    ]
+  },
+  "Privacy": {
+    "title": "Politique de confidentialité",
+    "lastUpdated": "Dernière mise à jour : [à compléter]",
+    "disclaimer": "Certaines mentions restent à compléter avant publication (date de mise à jour, coordonnées du responsable de la protection des données) — voir les indications « [à compléter] » ci-dessous.",
+    "sections": [
+      {
+        "heading": "1. Introduction",
+        "body": "La société Kouby (ci-après « Kouby », « nous ») accorde une importance primordiale à la protection des renseignements personnels de ses utilisateurs.\n\nLa présente politique de confidentialité décrit les types de données collectées, leur utilisation, leur conservation, ainsi que les droits des utilisateurs, conformément à la législation canadienne, notamment la Loi sur la protection des renseignements personnels et les documents électroniques (LPRPDE / PIPEDA)."
+      },
+      {
+        "heading": "2. Définition des renseignements personnels",
+        "body": "Les « renseignements personnels » désignent toute information permettant d'identifier directement ou indirectement une personne, notamment :\n• Nom, prénom\n• Adresse\n• Numéro de téléphone\n• Adresse email\n• Données de localisation\n• Informations relatives au véhicule (pour les conducteurs)\n• Informations de paiement"
+      },
+      {
+        "heading": "3.1 Données fournies par l'utilisateur",
+        "body": "Lors de l'inscription ou de l'utilisation de la plateforme, nous collectons :\n• Identité (nom, prénom)\n• Coordonnées (email, téléphone)\n• Informations de profil\n• Documents relatifs au conducteur (permis, véhicule, assurance)\n• Informations liées aux trajets (départ, destination, horaires)"
+      },
+      {
+        "heading": "3.2 Données collectées automatiquement",
+        "body": "Nous collectons également :\n• Adresse IP\n• Type d'appareil et navigateur\n• Données de navigation\n• Historique d'utilisation de la plateforme"
+      },
+      {
+        "heading": "3.3 Données de paiement",
+        "body": "Les paiements sont traités via des prestataires sécurisés. Kouby ne conserve pas les données bancaires complètes."
+      },
+      {
+        "heading": "4. Finalités de la collecte",
+        "body": "Les données sont collectées pour :\n• Créer et gérer les comptes utilisateurs\n• Faciliter la mise en relation conducteurs/passagers\n• Gérer les réservations et paiements\n• Améliorer les services et l'expérience utilisateur\n• Assurer la sécurité de la plateforme\n• Respecter les obligations légales et réglementaires"
+      },
+      {
+        "heading": "5. Consentement",
+        "body": "En utilisant la plateforme, l'utilisateur consent à la collecte, à l'utilisation et à la communication de ses données conformément à cette politique.\n\nLe consentement peut être retiré à tout moment, sous réserve des obligations légales."
+      },
+      {
+        "heading": "6. Partage des données",
+        "body": "Les données peuvent être partagées :\n• Entre utilisateurs (ex. : conducteur et passager)\n• Avec des prestataires techniques (hébergement, paiement)\n• Avec les autorités compétentes en cas d'obligation légale\n\nKouby ne vend jamais les données personnelles."
+      },
+      {
+        "heading": "7. Conservation des données",
+        "body": "Les données sont conservées :\n• pendant la durée nécessaire à la fourniture des services,\n• et conformément aux obligations légales canadiennes."
+      },
+      {
+        "heading": "8. Sécurité des données",
+        "body": "Kouby met en œuvre des mesures de sécurité adaptées :\n• Chiffrement des données\n• Accès restreint\n• Systèmes de protection contre les intrusions"
+      },
+      {
+        "heading": "9. Droits des utilisateurs",
+        "body": "Conformément à la LPRPDE, les utilisateurs disposent des droits suivants :\n• Accès à leurs données\n• Rectification des données inexactes\n• Suppression (dans les limites légales)\n• Retrait du consentement\n\nToute demande peut être adressée via notre page Contact, ou à l'adresse suivante : [e-mail à compléter]."
+      },
+      {
+        "heading": "10. Transfert international des données",
+        "body": "Les données peuvent être hébergées ou traitées en dehors du Canada. Dans un tel cas, Kouby veille à garantir un niveau de protection adéquat, conforme aux exigences de la LPRPDE."
+      },
+      {
+        "heading": "11. Cookies et technologies similaires",
+        "body": "La plateforme utilise des cookies pour :\n• Améliorer l'expérience utilisateur\n• Analyser l'utilisation du site\n\nL'utilisateur peut configurer ses préférences en matière de cookies directement via son navigateur."
+      },
+      {
+        "heading": "12. Protection des mineurs",
+        "body": "La plateforme n'est pas destinée aux personnes de moins de 18 ans. Aucune collecte volontaire de données concernant des mineurs n'est effectuée."
+      },
+      {
+        "heading": "13. Responsable de la protection des données",
+        "body": "Pour toute question ou demande relative à la présente politique, le responsable de la protection des données peut être contacté :\n📧 [e-mail à compléter]\n📍 [adresse à compléter]"
+      },
+      {
+        "heading": "14. Modification de la politique",
+        "body": "Kouby se réserve le droit de modifier la présente politique à tout moment. Les utilisateurs seront informés en cas de mise à jour substantielle."
+      },
+      {
+        "heading": "15. Clause finale",
+        "body": "Kouby s'engage à respecter les dix principes de la LPRPDE (PIPEDA), ainsi que les exigences de la Loi 25 du Québec relative à la protection des renseignements personnels :\n• Responsabilité\n• Détermination des fins de la collecte\n• Consentement\n• Limitation de la collecte\n• Limitation de l'utilisation, de la communication et de la conservation\n• Exactitude\n• Mesures de sécurité\n• Transparence\n• Accès individuel\n• Possibilité de porter plainte"
+      }
+    ]
   },
   "Hero": {
     "title": "Plus qu'un trajet, une rencontre !",
@@ -84,6 +402,62 @@
       }
     ]
   },
+  "Search": {
+    "title": "Rechercher un trajet",
+    "subtitle": "Indiquez vos villes et votre date pour trouver un covoiturage disponible."
+  },
+  "Contact": {
+    "title": "Contactez-nous",
+    "subtitle": "Une question, un problème avec un trajet ? Notre équipe vous répond rapidement.",
+    "form": {
+      "name": "Nom",
+      "email": "Adresse e-mail",
+      "subject": "Sujet",
+      "message": "Message",
+      "submit": "Envoyer",
+      "submitting": "Envoi en cours..."
+    },
+    "success": "Votre message a bien été envoyé. Nous vous répondrons rapidement.",
+    "errors": {
+      "generic": "Impossible d'envoyer votre message. Veuillez réessayer."
+    }
+  },
+  "Parametres": {
+    "title": "Paramètres du compte",
+    "subtitle": "Gérez vos informations personnelles et votre mot de passe.",
+    "loading": "Chargement...",
+    "profile": {
+      "title": "Profil",
+      "email": "Adresse e-mail",
+      "phone": "Numéro de téléphone",
+      "unverified": "non vérifié",
+      "name": "Nom",
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
+      "success": "Profil mis à jour.",
+      "error": "Impossible de mettre à jour le profil. Veuillez réessayer."
+    },
+    "password": {
+      "title": "Mot de passe",
+      "current": "Mot de passe actuel",
+      "new": "Nouveau mot de passe",
+      "save": "Mettre à jour",
+      "saving": "Mise à jour...",
+      "success": "Mot de passe mis à jour.",
+      "error": "Impossible de mettre à jour le mot de passe. Vérifiez votre mot de passe actuel."
+    }
+  },
+  "Messages": {
+    "show": "Messages",
+    "hide": "Masquer les messages",
+    "loading": "Chargement des messages...",
+    "empty": "Aucun message pour le moment.",
+    "error": "Impossible de charger les messages.",
+    "placeholder": "Écrire un message...",
+    "send": "Envoyer",
+    "sending": "Envoi en cours...",
+    "sendError": "Impossible d'envoyer le message. Veuillez réessayer."
+  },
   "Trajets": {
     "title": "Trouvez votre prochain trajet",
     "subtitle": "Consultez les annonces de covoiturage disponibles et réservez une place en quelques clics.",
@@ -110,6 +484,10 @@
       "none": "Pas encore d'avis",
       "summary": "★ {rating} ({count} avis)"
     },
+    "distance": {
+      "label": "Distance",
+      "value": "{km} km"
+    },
     "owner": {
       "edit": "Modifier",
       "closeEdit": "Fermer",
@@ -135,6 +513,16 @@
       "maxPrice": "Prix maximum",
       "minSeats": "Places minimum",
       "baggageAllowance": "Bagages recherchés",
+      "minDriverRatingAny": "Toutes les notes",
+      "minDriverRatingValue": "★ {value} et plus",
+      "useMyLocation": "Utiliser ma position",
+      "locating": "Localisation en cours...",
+      "locationSet": "Position utilisée",
+      "clearLocation": "Retirer",
+      "geoUnsupported": "La géolocalisation n'est pas disponible sur cet appareil.",
+      "geoDenied": "Impossible d'accéder à votre position. Vérifiez les autorisations de votre navigateur.",
+      "radiusAny": "Toutes distances",
+      "radiusValue": "Dans un rayon de {value} km",
       "apply": "Rechercher",
       "reset": "Réinitialiser"
     },
@@ -170,6 +558,15 @@
         "rejected": "Refusée",
         "cancelled": "Annulée",
         "expired": "Expirée"
+      },
+      "review": {
+        "cta": "Noter ce passager",
+        "ratingLabel": "Note",
+        "commentLabel": "Commentaire (optionnel)",
+        "submit": "Envoyer",
+        "submitting": "Envoi en cours...",
+        "success": "Merci pour votre avis !",
+        "error": "Impossible d'envoyer votre avis. Veuillez réessayer."
       }
     }
   },
@@ -235,7 +632,12 @@
     "departureAt": "Départ",
     "seats": "Places",
     "price": "Prix",
-    "cancelledBadge": "Annulé"
+    "cancelledBadge": "Annulé",
+    "pagination": {
+      "previous": "Précédent",
+      "next": "Suivant",
+      "page": "Page {page}"
+    }
   },
   "MesReservations": {
     "title": "Mes réservations",
