@@ -26,6 +26,7 @@
     "contratConducteur": "Driver agreement",
     "responsibility": "Responsibility charter",
     "privacy": "Privacy",
+    "mentionsLegales": "Legal notice",
     "contact": "Contact us",
     "infoTitle": "Information",
     "becomeDriver": "How to become a driver?",
@@ -347,6 +348,65 @@
       {
         "heading": "15. Final clause",
         "body": "Kouby is committed to complying with PIPEDA's ten fair information principles, as well as the requirements of Quebec's Law 25 on the protection of personal information:\n• Accountability\n• Identifying purposes\n• Consent\n• Limiting collection\n• Limiting use, disclosure, and retention\n• Accuracy\n• Safeguards\n• Openness\n• Individual access\n• Challenging compliance"
+      }
+    ]
+  },
+  "MentionsLegales": {
+    "title": "Legal notice",
+    "lastUpdated": "Last updated: [to be completed]",
+    "disclaimer": "Many fields still need to be completed before publishing (legal form, address, business numbers NEQ/BN, hosting provider, publication manager, contact details) — see the \"[to be completed]\" markers below. A legal notice page with these fields left blank is not compliant.",
+    "sections": [
+      {
+        "heading": "1. Platform publisher",
+        "body": "The Kouby platform is published by:\n\nLegal name: Kouby\nLegal form: [to be completed – e.g. business corporation (Canada) / sole proprietorship]\nRegistered address: [to be completed]\nPhone: [to be completed]\nEmail: [to be completed]\n\nQuebec enterprise number (NEQ): [to be completed]\nCanada business number (BN): [to be completed]"
+      },
+      {
+        "heading": "2. Publication manager",
+        "body": "Name: [to be completed]\nRole: [to be completed]\nEmail: [to be completed]"
+      },
+      {
+        "heading": "3. Hosting",
+        "body": "Host: [hosting provider name – e.g. AWS, Google Cloud, OVH, etc.]\nAddress: [to be completed]\nContact: [to be completed]"
+      },
+      {
+        "heading": "4. Nature of the service",
+        "body": "The Kouby platform is a digital service connecting:\n• drivers offering rides,\n• passengers looking to book a seat.\n\nKouby acts exclusively as an intermediary platform.\n\nKouby is not a carrier."
+      },
+      {
+        "heading": "5.1 Kouby's liability",
+        "body": "Kouby cannot be held liable for:\n• trips carried out between users,\n• incidents, accidents, or damages,\n• drivers' or passengers' failure to comply with the law."
+      },
+      {
+        "heading": "5.2 Users' liability",
+        "body": "Drivers and passengers are solely responsible for:\n• their legal obligations,\n• their conduct,\n• the compliance of their activities."
+      },
+      {
+        "heading": "6. Regulatory compliance",
+        "body": "Users must comply with:\n• Canadian federal laws,\n• provincial laws (notably Quebec),\n• the Highway Safety Code,\n• automobile insurance obligations.\n\nThe driver is solely responsible for their legal compliance."
+      },
+      {
+        "heading": "7. Intellectual property",
+        "body": "All content on the platform (text, logos, images, software) is the exclusive property of Kouby, unless otherwise stated.\n\nAny reproduction or use without authorization is prohibited."
+      },
+      {
+        "heading": "8. Personal data",
+        "body": "Kouby collects and processes personal data in accordance with:\n• PIPEDA at the federal level,\n• Quebec's Law 25.\n\nThe details are set out in the Privacy Policy."
+      },
+      {
+        "heading": "9. Cookies",
+        "body": "The platform uses cookies and similar technologies necessary for it to function properly (authentication, language preferences, audience measurement).\n\nFor more details on the cookies used and consent management, see the Privacy Policy."
+      },
+      {
+        "heading": "10. Governing law and jurisdiction",
+        "body": "This legal notice is governed by Canadian law and, where applicable, by the law of the province of [to be completed].\n\nAny dispute relating to the use of the platform falls under the exclusive jurisdiction of the courts of [to be completed]."
+      },
+      {
+        "heading": "11. Changes to this legal notice",
+        "body": "Kouby reserves the right to modify this legal notice at any time, in particular to comply with regulatory changes.\n\nThe version in effect is the one published on the platform at the time of consultation."
+      },
+      {
+        "heading": "12. Final clause",
+        "body": "If any provision of this legal notice is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect."
       }
     ]
   },

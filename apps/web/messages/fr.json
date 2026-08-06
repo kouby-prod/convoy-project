@@ -26,6 +26,7 @@
     "contratConducteur": "Contrat conducteur",
     "responsibility": "Charte de responsabilité",
     "privacy": "Vie privée",
+    "mentionsLegales": "Mentions légales",
     "contact": "Contactez-nous",
     "infoTitle": "Informations",
     "becomeDriver": "Comment devenir chauffeur ?",
@@ -347,6 +348,65 @@
       {
         "heading": "15. Clause finale",
         "body": "Kouby s'engage à respecter les dix principes de la LPRPDE (PIPEDA), ainsi que les exigences de la Loi 25 du Québec relative à la protection des renseignements personnels :\n• Responsabilité\n• Détermination des fins de la collecte\n• Consentement\n• Limitation de la collecte\n• Limitation de l'utilisation, de la communication et de la conservation\n• Exactitude\n• Mesures de sécurité\n• Transparence\n• Accès individuel\n• Possibilité de porter plainte"
+      }
+    ]
+  },
+  "MentionsLegales": {
+    "title": "Mentions légales",
+    "lastUpdated": "Dernière mise à jour : [à compléter]",
+    "disclaimer": "De nombreux champs restent à compléter avant publication (forme juridique, adresse, numéros d'entreprise NEQ/BN, hébergeur, responsable de la publication, coordonnées de contact) — voir les indications « [à compléter] » ci-dessous. Une page de mentions légales avec ces champs vides n'est pas conforme.",
+    "sections": [
+      {
+        "heading": "1. Éditeur de la plateforme",
+        "body": "La plateforme Kouby est éditée par :\n\nRaison sociale : Kouby\nForme juridique : [à compléter – ex. société par actions (Canada) / entreprise individuelle]\nAdresse du siège : [à compléter]\nTéléphone : [à compléter]\nEmail : [à compléter]\n\nNuméro d'entreprise (NEQ – Québec) : [à compléter]\nNuméro d'entreprise du Canada (BN) : [à compléter]"
+      },
+      {
+        "heading": "2. Responsable de la publication",
+        "body": "Nom : [à compléter]\nFonction : [à compléter]\nEmail : [à compléter]"
+      },
+      {
+        "heading": "3. Hébergement",
+        "body": "Hébergeur : [nom de l'hébergeur – ex. AWS, Google Cloud, OVH, etc.]\nAdresse : [à compléter]\nContact : [à compléter]"
+      },
+      {
+        "heading": "4. Nature du service",
+        "body": "La plateforme Kouby est un service numérique permettant la mise en relation entre :\n• des conducteurs proposant des trajets,\n• des passagers souhaitant réserver une place.\n\nKouby agit exclusivement en tant que plateforme d'intermédiation.\n\nKouby n'est pas un transporteur."
+      },
+      {
+        "heading": "5.1 Responsabilité de Kouby",
+        "body": "Kouby ne peut être tenu responsable :\n• des trajets effectués entre utilisateurs,\n• des incidents, accidents ou dommages,\n• du non-respect des lois par les conducteurs ou passagers."
+      },
+      {
+        "heading": "5.2 Responsabilité des utilisateurs",
+        "body": "Les conducteurs et passagers sont seuls responsables :\n• de leurs obligations légales,\n• de leurs comportements,\n• de la conformité de leurs activités."
+      },
+      {
+        "heading": "6. Conformité réglementaire",
+        "body": "Les utilisateurs doivent respecter :\n• les lois fédérales canadiennes,\n• les lois provinciales (notamment Québec),\n• le Code de la sécurité routière,\n• les obligations d'assurance automobile.\n\nLe conducteur est seul responsable de sa conformité légale."
+      },
+      {
+        "heading": "7. Propriété intellectuelle",
+        "body": "Tous les contenus présents sur la plateforme (textes, logos, images, logiciels) sont la propriété exclusive de Kouby, sauf mention contraire.\n\nToute reproduction ou utilisation sans autorisation est interdite."
+      },
+      {
+        "heading": "8. Données personnelles",
+        "body": "Kouby collecte et traite les données personnelles conformément :\n• à la LPRPDE (PIPEDA) au niveau fédéral,\n• à la Loi 25 du Québec.\n\nLes modalités sont détaillées dans la Politique de confidentialité."
+      },
+      {
+        "heading": "9. Cookies",
+        "body": "La plateforme utilise des cookies et technologies similaires nécessaires à son bon fonctionnement (authentification, préférences de langue, mesure d'audience).\n\nPour plus de détails sur les cookies utilisés et la gestion du consentement, voir la Politique de confidentialité."
+      },
+      {
+        "heading": "10. Droit applicable et juridiction compétente",
+        "body": "Les présentes mentions légales sont régies par le droit canadien et, le cas échéant, par le droit applicable dans la province de [à compléter].\n\nTout litige relatif à l'utilisation de la plateforme relève de la compétence exclusive des tribunaux de [à compléter]."
+      },
+      {
+        "heading": "11. Modification des mentions légales",
+        "body": "Kouby se réserve le droit de modifier les présentes mentions légales à tout moment, notamment pour se conformer à l'évolution de la réglementation.\n\nLa version en vigueur est celle publiée sur la plateforme à la date de consultation."
+      },
+      {
+        "heading": "12. Clause finale",
+        "body": "Si l'une des dispositions des présentes mentions légales est jugée invalide ou inapplicable, les autres dispositions demeurent pleinement en vigueur."
       }
     ]
   },
