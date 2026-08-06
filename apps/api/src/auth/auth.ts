@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin, bearer, phoneNumber } from 'better-auth/plugins';
+import { expo } from '@better-auth/expo';
 import { db } from '../db/client';
 import { env } from '../env';
 import * as authSchema from '../db/auth-schema';
@@ -95,7 +96,11 @@ export const auth = betterAuth({
   },
 
   // --- Security ---
-  trustedOrigins: env.TRUSTED_ORIGINS,
+  // `carpool://` is the mobile app's scheme (apps/mobile/app.json); `exp://**`
+  // covers Expo Go / dev-client sessions over a LAN IP during development.
+  // Both are compile-time app constants, not per-deployment config, so they
+  // are hardcoded here rather than added to TRUSTED_ORIGINS in env.ts.
+  trustedOrigins: [...env.TRUSTED_ORIGINS, 'carpool://', 'exp://**'],
   advanced: {
     // CSRF is enforced via origin checking against trustedOrigins (on by
     // default — we do NOT disable it). Cookies are httpOnly + sameSite=lax.
@@ -154,6 +159,11 @@ export const auth = betterAuth({
     // Bearer tokens for mobile/API clients: read the `set-auth-token` response
     // header on sign-in, send it back as `Authorization: Bearer <token>`.
     bearer(),
+    // React Native (Expo) support: registers the `carpool://` deep-link
+    // callback for OAuth and lets `expoClient` (mobile's auth-client plugin)
+    // persist the session via a custom `expo-origin` request header instead
+    // of a browser cookie jar.
+    expo(),
   ],
 });
 

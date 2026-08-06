@@ -11,12 +11,24 @@ export type ApiClient = ReturnType<typeof hc<AppType>>;
 
 /**
  * Create an RPC client bound to a given API base URL (e.g. http://localhost:3001).
+ *
+ * `options.headers` lets a caller attach per-request headers computed at call
+ * time (sync or async) — the mobile app uses this to read its session cookie
+ * out of SecureStore, since React Native's `fetch` has no cookie jar to send
+ * `credentials: 'include'` from. Web callers omit it and keep relying on the
+ * browser's cookie jar.
  */
-export function createApiClient(baseUrl: string): ApiClient {
+export function createApiClient(
+  baseUrl: string,
+  options?: {
+    headers?: Record<string, string> | (() => Record<string, string> | Promise<Record<string, string>>);
+  },
+): ApiClient {
   return hc<AppType>(baseUrl, {
     init: {
       credentials: 'include',
     },
+    ...(options?.headers ? { headers: options.headers } : {}),
   });
 }
 
