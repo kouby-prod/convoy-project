@@ -561,7 +561,10 @@
     "licenceYears": "Permis depuis {count, plural, one {# an} other {# ans}}",
     "rideOptions": "Options du trajet",
     "itinerary": {
-      "arrivalApprox": "—"
+      "arrivalApprox": "—:—",
+      "durationMinutes": "{count} min",
+      "durationHours": "{count} h",
+      "durationFull": "{hours} h {minutes}"
     },
     "seatsLeft": "{count, plural, =0 {Complet} one {# place restante} other {# places restantes}}",
     "ownerAside": {

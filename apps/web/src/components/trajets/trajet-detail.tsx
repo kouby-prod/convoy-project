@@ -10,9 +10,12 @@ import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { RatingStars } from '@/components/trajet/rating-stars';
 import { AmenityIcon, isAmenity } from '@/components/trajet/trajet-amenities';
+import {
+  formatTripDuration,
+  ItineraryTimeline,
+} from '@/components/trajet/itinerary-timeline';
 import { TrajetBookings } from '@/components/trajets/trajet-bookings';
 import { TrajetBookingForm } from '@/components/trajets/trajet-booking-form';
 import { TrajetOwnerActions } from '@/components/trajets/trajet-owner-actions';
@@ -78,43 +81,40 @@ export function TrajetDetail({ id }: { id: string }) {
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_17.5rem] lg:items-start lg:gap-12">
         {/* ── Main column: itinerary → driver → options ─────────── */}
         <div className="flex flex-col gap-10">
-          {/* Date eyebrow + itinerary timeline */}
-          <section aria-labelledby="itinerary-heading">
-            <p className="text-sm capitalize text-muted-foreground">
-              {format.dateTime(departure, {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
-            <h1 id="itinerary-heading" className="sr-only">
-              {data.departureCity} → {data.destinationCity}
-            </h1>
+          <h1 className="sr-only">
+            {data.departureCity} → {data.destinationCity}
+          </h1>
 
-            <ol className="relative mt-6 space-y-0">
-              <ItineraryNode
-                time={format.dateTime(departure, clock)}
-                city={data.departureCity}
-                place={data.departurePlace}
-                kind="start"
-              />
-              <li aria-hidden className="flex gap-4 py-1 pl-[4.25rem]">
-                <div className="relative ml-[0.4375rem] h-8 w-px bg-border" />
-              </li>
-              <ItineraryNode
-                time={
-                  arrival
-                    ? format.dateTime(arrival, clock)
-                    : t('itinerary.arrivalApprox')
-                }
-                city={data.destinationCity}
-                place={data.arrivalPlace}
-                kind="end"
-                mutedTime={!arrival}
-              />
-            </ol>
-          </section>
+          <ItineraryTimeline
+            dateLabel={format.dateTime(departure, {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+            departure={{
+              timeLabel: format.dateTime(departure, clock),
+              city: data.departureCity,
+              place: data.departurePlace,
+            }}
+            arrival={{
+              timeLabel: arrival
+                ? format.dateTime(arrival, clock)
+                : t('itinerary.arrivalApprox'),
+              city: data.destinationCity,
+              place: data.arrivalPlace,
+              timeMuted: !arrival,
+            }}
+            durationLabel={
+              arrival
+                ? formatTripDuration(departure, arrival, {
+                    minutes: (n) => t('itinerary.durationMinutes', { count: n }),
+                    hours: (n) => t('itinerary.durationHours', { count: n }),
+                    full: (h, m) => t('itinerary.durationFull', { hours: h, minutes: m }),
+                  })
+                : null
+            }
+          />
 
           {/* Driver — trust strip */}
           <section aria-labelledby="driver-heading" className="border-t border-border pt-8">
@@ -250,46 +250,6 @@ export function TrajetDetail({ id }: { id: string }) {
         </aside>
       </div>
     </div>
-  );
-}
-
-function ItineraryNode({
-  time,
-  city,
-  place,
-  kind,
-  mutedTime,
-}: {
-  time: string;
-  city: string;
-  place?: string | null;
-  kind: 'start' | 'end';
-  mutedTime?: boolean;
-}) {
-  return (
-    <li className="grid grid-cols-[4.25rem_1.25rem_minmax(0,1fr)] items-start gap-x-0">
-      <p
-        className={cn(
-          'pt-0.5 text-right text-sm font-semibold tabular-nums',
-          mutedTime ? 'font-normal text-muted-foreground' : 'text-foreground',
-        )}
-      >
-        {time}
-      </p>
-      <div className="relative flex justify-center pt-1.5">
-        <span
-          className={cn(
-            'size-2.5 rounded-full ring-4 ring-background',
-            kind === 'start' ? 'bg-brand-green' : 'bg-brand-blue',
-          )}
-          aria-hidden
-        />
-      </div>
-      <div className="min-w-0 pb-1">
-        <p className="text-base font-semibold tracking-tight text-foreground">{city}</p>
-        {place ? <p className="mt-0.5 text-sm text-muted-foreground">{place}</p> : null}
-      </div>
-    </li>
   );
 }
 
