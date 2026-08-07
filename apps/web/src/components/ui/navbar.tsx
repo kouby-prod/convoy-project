@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { useTranslations } from 'next-intl';
 import { Search, ShoppingCart, UserRound, Menu, X, LogOut } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
-import { authClient } from '@/lib/auth-client';
+import { authClient, isAdminRole } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -65,12 +65,18 @@ const themeAccents = {
 } as const;
 
 /** Nav links: a translation key + the route it points to. */
-const NAV_LINKS = [
-  { translationKey: 'search', href: '/search' },
-  { translationKey: 'trajets', href: '/trajets' },
-  { translationKey: 'post', href: '/annoncer' },
-  { translationKey: 'contact', href: '/contact' },
-] as const;
+interface NavLink {
+  translationKey: string;
+  href: string;
+}
+
+/** Shown to everyone, signed in or not. */
+const PUBLIC_NAV_LINKS: NavLink[] = [
+  { translationKey: 'search', href: '/trajet' },
+  { translationKey: 'post', href: '/trajet/nouveau' },
+];
+
+const CONTACT_NAV_LINK: NavLink = { translationKey: 'contact', href: '/contact' };
 
 export interface NavbarProps extends VariantProps<typeof navbarVariants> {
   className?: string;
@@ -86,6 +92,16 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
   const router = useRouter();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const user = session?.user;
+
+  // "Mes documents" only means something once you have an account, and the
+  // backoffice link is offered only to admins. Hiding the link is courtesy —
+  // both routes are enforced server-side regardless of what is rendered here.
+  const navLinks: NavLink[] = [
+    ...PUBLIC_NAV_LINKS,
+    ...(user ? [{ translationKey: 'documents', href: '/mes-documents' }] : []),
+    ...(isAdminRole(user?.role) ? [{ translationKey: 'admin', href: '/admin' }] : []),
+    CONTACT_NAV_LINK,
+  ];
 
   async function handleSignOut() {
     await authClient.signOut();
@@ -132,7 +148,7 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
 
         {/* Desktop nav links */}
         <nav className="hidden items-center gap-1 lg:flex">
-          {NAV_LINKS.map(({ translationKey, href }) => (
+          {navLinks.map(({ translationKey, href }) => (
             <Link
               key={translationKey}
               href={href}
@@ -261,7 +277,7 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
         )}
       >
         <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 sm:px-6">
-          {NAV_LINKS.map(({ translationKey, href }) => (
+          {navLinks.map(({ translationKey, href }) => (
             <Link
               key={translationKey}
               href={href}

@@ -445,7 +445,8 @@ Le Docker est réparti en **deux fichiers compose** :
 
 - `docker-compose.yml` (**à la racine**) — la stack applicative : **api**,
   **web** (et **mobile** via un profil). Il **inclut** automatiquement l'infra.
-- `infra/docker-compose.infra.yml` — l'infra seule : **Postgres** + **Redis**.
+- `infra/docker-compose.infra.yml` — l'infra seule : **Postgres** + **Redis** +
+  **MinIO** (stockage objet des documents conducteurs).
 
 Grâce au `include:`, lancer la stack racine démarre aussi l'infra ; on peut
 aussi lancer l'infra seule (utile si les apps tournent sur la machine hôte).
@@ -465,7 +466,7 @@ cp .env.example .env
 pnpm docker:up
 #     équivaut à :  docker compose --env-file .env up --build
 
-# 2b. (option) démarrer SEULEMENT l'infra (Postgres + Redis), apps sur l'hôte
+# 2b. (option) démarrer SEULEMENT l'infra (Postgres + Redis + MinIO), apps sur l'hôte
 pnpm docker:infra
 #     équivaut à :  docker compose --env-file .env -f infra/docker-compose.infra.yml up -d
 
@@ -478,11 +479,17 @@ pnpm docker:down
 > tout de suite** avec un message clair (au lieu de laisser l'API planter au
 > démarrage). Le `.env` racine est gitignoré.
 
-- **postgres** : exposé sur `localhost:${POSTGRES_PORT}` (défaut `5432`).
+- **postgres** : exposé sur `localhost:${POSTGRES_PORT}` (défaut `5433`, pour ne
+  pas entrer en conflit avec un Postgres déjà installé sur le poste).
 - **redis** : exposé sur `localhost:${REDIS_PORT}` (défaut `6379`). **Pas encore
   utilisé** par l'app — infra prête pour plus tard (cache, files d'attente).
+- **minio** : API S3 sur `localhost:${S3_PORT}` (défaut `9000`), console web sur
+  `localhost:${S3_CONSOLE_PORT}` (défaut `9001`). Contient les documents
+  d'identité des conducteurs. Le bucket `${S3_BUCKET}` est **créé automatiquement
+  au démarrage de l'API** — aucune étape manuelle.
 - **api** : `localhost:${API_PORT}` (défaut `3001`). Dans le conteneur, l'API
-  parle à Postgres via `DOCKER_DATABASE_URL` (hôte = le service `postgres`).
+  parle à Postgres via `DOCKER_DATABASE_URL` (hôte = le service `postgres`) et à
+  MinIO via `DOCKER_S3_ENDPOINT` (hôte = le service `minio`).
 - **web** : `localhost:${WEB_PORT}` (défaut `3000`).
 - **mobile** : fourni mais optionnel (`pnpm docker:up --profile mobile`). Le dev
   mobile se fait normalement sur la machine hôte, pas dans un conteneur. Voir
