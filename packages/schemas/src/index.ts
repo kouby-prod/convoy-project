@@ -5,4 +5,7 @@ export * from './ping';
 // plop:schemas
 export * from './admin';
 export * from './document';
+export * from './contact';
+export * from './message';
+export * from './review';
 export * from './trajet';

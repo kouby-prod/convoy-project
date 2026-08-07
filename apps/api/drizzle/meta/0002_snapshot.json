@@ -1,5 +1,5 @@
 {
-  "id": "dd6017cc-0763-4c27-8028-54a5cedf40dc",
+  "id": "e9dfa0af-1775-47d5-b5df-140a759d330e",
   "prevId": "318b3030-a666-409d-886b-0eb46adbab80",
   "version": "7",
   "dialect": "postgresql",
@@ -443,36 +443,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "first_name": {
-          "name": "first_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_name": {
-          "name": "last_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "phone": {
-          "name": "phone",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "message": {
-          "name": "message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -551,7 +521,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "booking_status_check": {
+          "name": "booking_status_check",
+          "value": "\"booking\".\"status\" in ('pending', 'confirmed', 'rejected', 'cancelled')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.trajet": {
@@ -588,24 +563,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "departure_place": {
-          "name": "departure_place",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "arrival_place": {
-          "name": "arrival_place",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "arrival_at": {
-          "name": "arrival_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "seats_total": {
           "name": "seats_total",
           "type": "integer",
@@ -641,20 +598,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "amenities": {
-          "name": "amenities",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'"
-        },
-        "has_intermediate_stop": {
-          "name": "has_intermediate_stop",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "created_at": {
           "name": "created_at",

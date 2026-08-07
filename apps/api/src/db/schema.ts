@@ -11,3 +11,5 @@ export * from './auth-schema';
 export * from './document';
 export * from './eligibility';
 export * from './trajet-schema';
+export * from './review';
+export * from './message';

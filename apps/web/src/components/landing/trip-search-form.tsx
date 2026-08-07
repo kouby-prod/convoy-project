@@ -8,56 +8,43 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DropdownDatePicker } from '@/components/ui/dropdown-date-picker';
 import { DropdownTimePicker } from '@/components/ui/dropdown-time-picker';
-import { DEFAULT_TIME, formatTime, type TimeValue } from '@/components/ui/time-picker';
-import { toDateKey } from '@/lib/trajets';
+import { DEFAULT_TIME, type TimeValue } from '@/components/ui/time-picker';
+
+function toDateParam(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
 
 /* The hero trip-search form: city inputs, a calendar date-picker, and a
-   segmented time-picker (defaults to 12:00 AM). Submitting hands the criteria
-   to /trajet through the query string, where the search rail picks them up. */
+   segmented time-picker (defaults to 12:00 AM). Submitting navigates to
+   /trajets with the search carried over as query params — the time picker
+   only shapes the departure display elsewhere, it isn't filterable (an exact
+   minute rarely matches, so /trajets only filters by calendar day). */
 export function TripSearchForm() {
   const translateHero = useTranslations('Hero');
   const router = useRouter();
-  const [departure, setDeparture] = useState('');
-  const [arrival, setArrival] = useState('');
   const [departureDate, setDepartureDate] = useState<Date>();
   const [departureTime, setDepartureTime] = useState<TimeValue>(DEFAULT_TIME);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const departureCity = formData.get('departure')?.toString().trim();
+    const destinationCity = formData.get('arrival')?.toString().trim();
 
     const params = new URLSearchParams();
-    if (departure.trim()) params.set('from', departure.trim());
-    if (arrival.trim()) params.set('to', arrival.trim());
-    // The picker has no empty state — it pre-fills today. Sending that as a
-    // filter would silently hide every later ride, so a visitor who only typed
-    // two cities would be told there are none. Today's value means "any day";
-    // rides today still match, because no date filter is applied at all.
-    if (departureDate && toDateKey(departureDate) !== toDateKey(new Date())) {
-      params.set('date', toDateKey(departureDate));
-    }
-    // Midnight is the picker's untouched default — not a real "leave after" filter.
-    if (departureTime.hour !== 0 || departureTime.minute !== 0) {
-      params.set('time', formatTime(departureTime));
-    }
+    if (departureCity) params.set('departureCity', departureCity);
+    if (destinationCity) params.set('destinationCity', destinationCity);
+    if (departureDate) params.set('date', toDateParam(departureDate));
 
-    const query = params.toString();
-    router.push(query ? `/trajet?${query}` : '/trajet');
+    const queryString = params.toString();
+    router.push(`/trajets${queryString ? `?${queryString}` : ''}`);
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      <Input
-        name="departure"
-        value={departure}
-        onChange={(event) => setDeparture(event.target.value)}
-        placeholder={translateHero('departurePlaceholder')}
-      />
-      <Input
-        name="arrival"
-        value={arrival}
-        onChange={(event) => setArrival(event.target.value)}
-        placeholder={translateHero('arrivalPlaceholder')}
-      />
+      <Input name="departure" placeholder={translateHero('departurePlaceholder')} />
+      <Input name="arrival" placeholder={translateHero('arrivalPlaceholder')} />
       <div className="grid grid-cols-2 gap-3">
         <DropdownDatePicker
           value={departureDate}

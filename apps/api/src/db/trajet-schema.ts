@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   pgTable,
   text,
@@ -7,6 +7,7 @@ import {
   numeric,
   boolean,
   index,
+  check,
 } from 'drizzle-orm/pg-core';
 import { user } from './auth-schema';
 
@@ -15,6 +16,14 @@ export const trajet = pgTable('trajet', {
   driverId: text('driver_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
   departureCity: text('departure_city').notNull(),
   arrivalCity: text('arrival_city').notNull(),
+  // Geocoded server-side from the city names on create/update (see
+  // apps/api/src/modules/trajet/geocoding.ts) — nullable because geocoding is
+  // best-effort against a third-party service and must never block publishing
+  // a trajet. Powers the `nearLat`/`nearLng`/`radiusKm` proximity search.
+  departureLat: numeric('departure_lat'),
+  departureLng: numeric('departure_lng'),
+  arrivalLat: numeric('arrival_lat'),
+  arrivalLng: numeric('arrival_lng'),
   departureAt: timestamp('departure_at').notNull(),
   /** Pickup / drop-off points and the estimated arrival — optional, the short
       /annoncer form does not collect them. */
@@ -30,6 +39,7 @@ export const trajet = pgTable('trajet', {
   /** Advertised options, stored as the `TrajetAmenity` string values. */
   amenities: text('amenities').array().notNull().default([]),
   hasIntermediateStop: boolean('has_intermediate_stop').notNull().default(false),
+  cancelledAt: timestamp('cancelled_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()).notNull(),
 });
@@ -52,7 +62,14 @@ export const booking = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()).notNull(),
   },
-  (t) => [index('booking_trajet_idx').on(t.trajetId), index('booking_passenger_idx').on(t.passengerId)],
+  (t) => [
+    index('booking_trajet_idx').on(t.trajetId),
+    index('booking_passenger_idx').on(t.passengerId),
+    check(
+      'booking_status_check',
+      sql`${t.status} in ('pending', 'confirmed', 'rejected', 'cancelled', 'expired')`,
+    ),
+  ],
 );
 
 export const trajetRelations = relations(trajet, ({ many, one }) => ({

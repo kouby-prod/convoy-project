@@ -1,5 +1,5 @@
 import { createAuthClient } from 'better-auth/react';
-import { adminClient } from 'better-auth/client/plugins';
+import { adminClient, phoneNumberClient } from 'better-auth/client/plugins';
 import { env } from './env';
 
 /**
@@ -14,12 +14,14 @@ import { env } from './env';
  * typed — the navbar needs it to decide whether to offer the backoffice link.
  * That is presentation only: `/admin` itself is guarded by `requireRole('admin')`
  * on the API, so hiding the link is convenience, never the security boundary.
- * The server's `phoneNumber` plugin has a matching `phoneNumberClient` — add it
- * when the web app actually surfaces phone OTP.
+ *
+ * `phoneNumberClient` only adds the `phoneNumber`/`phoneNumberVerified` fields
+ * to the inferred session type (read on the account-settings page) — it does
+ * not by itself surface an OTP flow in the UI.
  */
 export const authClient = createAuthClient({
   baseURL: env.NEXT_PUBLIC_API_URL,
-  plugins: [adminClient()],
+  plugins: [adminClient(), phoneNumberClient()],
   fetchOptions: {
     credentials: 'include',
   },
