@@ -27,6 +27,9 @@ const EnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   // Comma-separated list of origins allowed to make credentialed auth requests.
+  // The first entry doubles as the web app's own origin for building links in
+  // notification emails (see apps/api/src/modules/trajet/notifications.ts) —
+  // put the real web app URL first if you ever need more than one origin.
   TRUSTED_ORIGINS: z
     .string()
     .default('http://localhost:3000,http://localhost:3001')
@@ -40,6 +43,9 @@ const EnvSchema = z.object({
   // --- Email sender ---
   // The "From" address used on outgoing email.
   EMAIL_FROM: z.string().default('no-reply@carpool.local'),
+  // Support inbox the /contact form forwards to. Optional — falls back to
+  // EMAIL_FROM (see apps/api/src/modules/contact/index.ts) when unset.
+  SUPPORT_EMAIL: z.string().optional(),
   // SMTP transport. When SMTP_HOST is set, real email is sent via SMTP;
   // otherwise the console stub is used (dev). SMTP_USER/PASS are optional so
   // local relays without auth (Mailpit/MailHog) work out of the box.

@@ -3,7 +3,10 @@
     "brand": "Convoy",
     "searchPlaceholder": "Search for a ride, a city…",
     "search": "Search",
+    "trajets": "Rides",
     "post": "Offer a ride",
+    "myTrajets": "My rides",
+    "myBookings": "My bookings",
     "contact": "Contact",
     "signIn": "Sign in",
     "signOut": "Sign out",
@@ -21,6 +24,8 @@
   "Footer": {
     "aboutTitle": "About us",
     "terms": "Terms of use",
+    "cgv": "Terms of sale",
+    "contratConducteur": "Driver agreement",
     "responsibility": "Responsibility charter",
     "privacy": "Privacy",
     "contact": "Contact us",
@@ -31,6 +36,322 @@
     "driverTips": "Tips for drivers",
     "copyright": "© {year} Kouby Drive carpooling — all rights reserved"
   },
+  "Terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: [to be completed]",
+    "disclaimer": "Only the last-updated date still needs to be filled in before publishing (see \"[to be completed]\" above).",
+    "sections": [
+      {
+        "heading": "1. Purpose",
+        "body": "These Terms of Service (\"Terms\") govern access to and use of the Kouby carpooling platform (the \"Platform\") operated in Canada.\n\nThe Platform connects:\n• drivers offering trips,\n• passengers looking to book a seat.\n\nKouby acts exclusively as a technical intermediary."
+      },
+      {
+        "heading": "2. Acceptance of these Terms",
+        "body": "Using the Platform means fully and unconditionally accepting these Terms.\n\nUsers agree to comply with:\n• these Terms,\n• Canadian federal law,\n• applicable provincial law (notably Quebec, Ontario, etc.),\n• regulations in force regarding transportation, road safety, and insurance."
+      },
+      {
+        "heading": "3. Access to the platform",
+        "body": "Registering on the Platform is:\n• free,\n• with no membership fee."
+      },
+      {
+        "heading": "4. Role of the platform",
+        "body": "Kouby:\n• connects drivers and passengers,\n• facilitates trip bookings,\n• collects a booking commission.\n\nKouby is not a carrier and does not operate any transport service."
+      },
+      {
+        "heading": "5. Conditions applicable to drivers",
+        "body": "Drivers are subject to the following conditions."
+      },
+      {
+        "heading": "5.1 Responsibility and compliance",
+        "body": "Drivers are solely responsible for:\n• their legal capacity to drive in Canada,\n• the validity of their driver's licence,\n• their auto insurance,\n• their vehicle's compliance.\n\nKouby disclaims all liability in the event of non-compliance."
+      },
+      {
+        "heading": "5.2 Mandatory information",
+        "body": "Drivers must provide accurate and complete information, including:\n• identity,\n• driver's licence,\n• vehicle information (registration, model, insurance),\n• trip details.\n\nAny false statement is strictly prohibited."
+      },
+      {
+        "heading": "5.3 Driver commitments",
+        "body": "Drivers agree to:\n• comply with these Terms and with local and national regulations,\n• strictly comply with the conditions of their listing,\n• not cancel or replace a passenger without valid reason,\n• carry out the trip in accordance with the booking."
+      },
+      {
+        "heading": "5.4 Trip cancellation",
+        "body": "If a driver cancels:\n• they must offer passengers an alternative solution,\n• failing that, they must refund the booking commission."
+      },
+      {
+        "heading": "5.5 Penalties for fraud",
+        "body": "Any false listing or fraudulent behaviour results in:\n• full refund of the commission,\n• possible damages payable to passengers,\n• suspension or deletion of the account."
+      },
+      {
+        "heading": "6. Conditions applicable to passengers",
+        "body": "Passengers agree to:\n• comply with these Terms,\n• comply with applicable law,\n• comply with the specific conditions of the driver's listing."
+      },
+      {
+        "heading": "6.1 Booking commission",
+        "body": "Passengers pay a fixed commission of 5 CAD per booking."
+      },
+      {
+        "heading": "6.2 Refund policy",
+        "body": "• The booking commission is non-refundable once the booking is confirmed.\n• No refund will be issued except as expressly provided for in these Terms."
+      },
+      {
+        "heading": "7.1 Kouby's liability",
+        "body": "Kouby cannot be held liable for:\n• incidents occurring during the trip,\n• the behaviour of users,\n• a driver's failure to comply with regulations,\n• bodily injury or property damage."
+      },
+      {
+        "heading": "7.2 Users' liability",
+        "body": "Each user is solely responsible for their own actions.\n\nThe driver bears full responsibility for the transportation itself."
+      },
+      {
+        "heading": "8. Compliance with Canadian regulations",
+        "body": "Users must comply with:\n• the highway safety code applicable in their province,\n• auto insurance obligations,\n• laws governing carpooling (non-profit or cost-sharing)."
+      },
+      {
+        "heading": "9. Personal data",
+        "body": "Data collected is used solely in connection with operating the Platform.\n\nKouby is committed to complying with Canadian data protection law, notably the Personal Information Protection and Electronic Documents Act (PIPEDA). See our Privacy Policy for further details."
+      },
+      {
+        "heading": "10. Suspension or termination",
+        "body": "Kouby reserves the right to:\n• suspend or delete an account,\n• deny access to the Platform, in the event of non-compliance with these Terms."
+      },
+      {
+        "heading": "11. Governing law",
+        "body": "These Terms are governed by:\n• the laws of Canada,\n• and the laws of the user's province of residence (e.g. Quebec).\n\nAny dispute falls under the jurisdiction of the competent courts of that province."
+      },
+      {
+        "heading": "12. Changes to these Terms",
+        "body": "Kouby reserves the right to modify these Terms at any time. Users will be informed of any updates."
+      },
+      {
+        "heading": "13. Final clause",
+        "body": "Kouby acts exclusively as a platform connecting users. The transport service is provided solely under the driver's responsibility, whether acting as an individual or an independent professional."
+      }
+    ]
+  },
+  "Cgv": {
+    "title": "Terms of Sale",
+    "lastUpdated": "Last updated: [to be completed]",
+    "disclaimer": "Only the last-updated date still needs to be filled in before publishing (see \"[to be completed]\" above). This page describes a commission model that isn't yet built into the app (no payment is currently processed).",
+    "sections": [
+      {
+        "heading": "1. Purpose",
+        "body": "These Terms of Sale govern the payment, booking, and billing terms for the services offered on the Kouby platform.\n\nKouby provides an intermediation service connecting drivers and passengers for carpooling trips."
+      },
+      {
+        "heading": "2. Nature of the service",
+        "body": "Kouby acts exclusively as:\n• a platform connecting users,\n• a booking service provider.\n\nKouby is neither a carrier nor a transport operator."
+      },
+      {
+        "heading": "3.1 Booking commission",
+        "body": "• Each booking made by a passenger is subject to a fixed commission of 5 CAD.\n• This commission corresponds to the platform usage fee."
+      },
+      {
+        "heading": "3.2 Free for drivers",
+        "body": "• Drivers pay no fee to publish a listing or offer a trip.\n• No subscription or membership fee is required."
+      },
+      {
+        "heading": "4. Booking process",
+        "body": "1. The passenger selects a trip offered by a driver.\n2. They confirm their booking through the platform.\n3. They pay the 5 CAD commission.\n4. The booking is considered firm and final once payment is confirmed."
+      },
+      {
+        "heading": "5.1 Payment methods",
+        "body": "Payments can be made via:\n• credit/debit card,\n• any other secure payment method offered on the platform."
+      },
+      {
+        "heading": "5.2 Security",
+        "body": "Kouby implements secure payment solutions that comply with current standards."
+      },
+      {
+        "heading": "6.1 General principle",
+        "body": "• The booking commission is non-refundable once the booking is confirmed."
+      },
+      {
+        "heading": "6.2 Exception — Cancellation by the driver",
+        "body": "If the driver cancels the trip:\n• the passenger may receive a refund of the 5 CAD commission,\n• or an alternative solution offered by the driver."
+      },
+      {
+        "heading": "7. Driver obligations affecting the sale",
+        "body": "Drivers agree to:\n• comply with the conditions of their listing,\n• carry out the trip in accordance with the booking,\n• not cancel without valid reason.\n\nIn the event of a breach:\n• the commission is refunded,\n• the platform may apply penalties."
+      },
+      {
+        "heading": "8. Passenger obligations",
+        "body": "Passengers agree to:\n• pay the booking commission,\n• comply with the conditions of the trip,\n• be present at the agreed time and place."
+      },
+      {
+        "heading": "9. No right of withdrawal",
+        "body": "Given the nature of the service (a booking tied to a specific date), passengers do not have a right of withdrawal once the booking is confirmed."
+      },
+      {
+        "heading": "10.1 Kouby's liability",
+        "body": "Kouby is responsible only for:\n• connecting users,\n• the proper functioning of the booking platform.\n\nKouby cannot be held liable for:\n• the transportation itself,\n• incidents occurring during the trip,\n• the behaviour of users."
+      },
+      {
+        "heading": "10.2 Driver's liability",
+        "body": "Drivers are solely responsible for:\n• carrying out the trip,\n• passenger safety,\n• compliance with applicable laws and regulations."
+      },
+      {
+        "heading": "11. Disputes",
+        "body": "In the event of a dispute:\n• an amicable resolution will be attempted first,\n• failing that, the competent courts of Canada and the relevant province will have jurisdiction."
+      },
+      {
+        "heading": "12. Regulatory compliance",
+        "body": "The services offered comply with applicable Canadian law, notably:\n• rules relating to carpooling,\n• consumer protection obligations,\n• provincial regulations."
+      },
+      {
+        "heading": "13. Changes to these Terms of Sale",
+        "body": "Kouby reserves the right to modify these Terms of Sale at any time. Users will be informed of any updates."
+      },
+      {
+        "heading": "14. Final clause",
+        "body": "The commission charged by Kouby corresponds solely to a digital intermediation service. The transport service is provided independently by the driver, under their sole responsibility."
+      }
+    ]
+  },
+  "ContratConducteur": {
+    "title": "Driver Agreement",
+    "lastUpdated": "Last updated: [to be completed]",
+    "disclaimer": "Only the last-updated date still needs to be filled in before publishing. This document is designed to be signed electronically by each driver — the app doesn't yet have a dedicated driver-onboarding flow that captures that acceptance, so this page remains informational for now.",
+    "sections": [
+      {
+        "heading": "1. Purpose",
+        "body": "This Agreement governs the conditions under which a driver uses the Kouby platform to offer ridesharing services."
+      },
+      {
+        "heading": "2. Driver Status",
+        "body": "The driver acts as an independent individual. No employment or subordination relationship exists between Kouby and the driver."
+      },
+      {
+        "heading": "3. Eligibility Requirements",
+        "body": "The driver must:\n• hold a valid Canadian driver's license,\n• have valid auto insurance,\n• operate a compliant and roadworthy vehicle,\n• be at least 18 years old."
+      },
+      {
+        "heading": "4. Driver Responsibility",
+        "body": "The driver is solely responsible for:\n• legal compliance,\n• passenger safety,\n• compliance with applicable laws.\n\nKouby disclaims all liability for non-compliance."
+      },
+      {
+        "heading": "5. Required Information",
+        "body": "The driver must provide accurate information:\n• identity,\n• license,\n• vehicle details,\n• insurance,\n• trip details.\n\nFalse information is strictly prohibited."
+      },
+      {
+        "heading": "6. Trip Listings",
+        "body": "The driver agrees to:\n• publish accurate listings,\n• respect trip conditions,\n• transport passengers as agreed."
+      },
+      {
+        "heading": "7. Cancellation",
+        "body": "The driver may not cancel without valid reason.\n\nIn case of cancellation:\n• must offer an alternative,\n• or reimburse the reservation fee."
+      },
+      {
+        "heading": "8. Prohibited Conduct",
+        "body": "It is prohibited to:\n• publish false listings,\n• replace passengers without consent,\n• fail to meet commitments.\n\nSanctions may include suspension, termination, and damages."
+      },
+      {
+        "heading": "9. Payments and Fees",
+        "body": "The driver pays no fees to Kouby."
+      },
+      {
+        "heading": "10. Insurance",
+        "body": "The driver must maintain insurance covering:\n• passengers,\n• property and bodily damage."
+      },
+      {
+        "heading": "11. Limitation of Liability",
+        "body": "Kouby is not liable for:\n• accidents,\n• disputes between users,\n• losses or damages."
+      },
+      {
+        "heading": "12. Personal Data",
+        "body": "Data is processed in accordance with the Privacy Policy."
+      },
+      {
+        "heading": "13. Suspension",
+        "body": "Kouby may suspend or terminate accounts for violations."
+      },
+      {
+        "heading": "14. Governing Law",
+        "body": "This Agreement is governed by the laws of Canada and the applicable province."
+      },
+      {
+        "heading": "15. Acceptance",
+        "body": "The driver acknowledges having read and accepted this Agreement."
+      },
+      {
+        "heading": "16. Final clause",
+        "body": "The driver acts as an independent user. Kouby does not provide transportation services."
+      }
+    ]
+  },
+  "Privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: [to be completed]",
+    "disclaimer": "Some details still need to be filled in before publishing (last-updated date, data protection officer contact information) — see the \"[to be completed]\" notes below.",
+    "sections": [
+      {
+        "heading": "1. Introduction",
+        "body": "Kouby (\"Kouby,\" \"we\") places the utmost importance on protecting its users' personal information.\n\nThis privacy policy describes the types of data we collect, how we use and retain it, and users' rights, in accordance with Canadian law — notably the Personal Information Protection and Electronic Documents Act (PIPEDA)."
+      },
+      {
+        "heading": "2. Definition of personal information",
+        "body": "\"Personal information\" refers to any information that can directly or indirectly identify an individual, including:\n• First and last name\n• Address\n• Phone number\n• Email address\n• Location data\n• Vehicle information (for drivers)\n• Payment information"
+      },
+      {
+        "heading": "3.1 Information provided by the user",
+        "body": "When registering or using the platform, we collect:\n• Identity (first and last name)\n• Contact details (email, phone number)\n• Profile information\n• Driver-related documents (licence, vehicle, insurance)\n• Trip-related information (departure, destination, schedule)"
+      },
+      {
+        "heading": "3.2 Automatically collected data",
+        "body": "We also collect:\n• IP address\n• Device and browser type\n• Browsing data\n• Platform usage history"
+      },
+      {
+        "heading": "3.3 Payment data",
+        "body": "Payments are processed through secure third-party providers. Kouby does not store full banking details."
+      },
+      {
+        "heading": "4. Purpose of collection",
+        "body": "Data is collected to:\n• Create and manage user accounts\n• Facilitate connections between drivers and passengers\n• Manage bookings and payments\n• Improve our services and the user experience\n• Keep the platform secure\n• Comply with legal and regulatory obligations"
+      },
+      {
+        "heading": "5. Consent",
+        "body": "By using the platform, users consent to the collection, use, and disclosure of their data in accordance with this policy.\n\nConsent may be withdrawn at any time, subject to legal obligations."
+      },
+      {
+        "heading": "6. Data sharing",
+        "body": "Data may be shared:\n• Between users (e.g. driver and passenger)\n• With technical service providers (hosting, payments)\n• With competent authorities where legally required\n\nKouby never sells personal data."
+      },
+      {
+        "heading": "7. Data retention",
+        "body": "Data is retained:\n• for as long as necessary to provide the service,\n• and in accordance with Canadian legal obligations."
+      },
+      {
+        "heading": "8. Data security",
+        "body": "Kouby implements appropriate security measures:\n• Data encryption\n• Restricted access\n• Intrusion protection systems"
+      },
+      {
+        "heading": "9. User rights",
+        "body": "Under PIPEDA, users have the following rights:\n• Access to their data\n• Correction of inaccurate data\n• Deletion (within legal limits)\n• Withdrawal of consent\n\nRequests can be sent via our Contact page, or to: [email to be completed]."
+      },
+      {
+        "heading": "10. International data transfers",
+        "body": "Data may be hosted or processed outside Canada. In such cases, Kouby ensures an adequate level of protection, consistent with PIPEDA's requirements."
+      },
+      {
+        "heading": "11. Cookies and similar technologies",
+        "body": "The platform uses cookies to:\n• Improve the user experience\n• Analyze site usage\n\nUsers can manage their cookie preferences directly through their browser."
+      },
+      {
+        "heading": "12. Protection of minors",
+        "body": "The platform is not intended for individuals under 18. We do not knowingly collect data from minors."
+      },
+      {
+        "heading": "13. Data protection officer",
+        "body": "For any question or request regarding this policy, our data protection officer can be reached at:\n📧 [email to be completed]\n📍 [address to be completed]"
+      },
+      {
+        "heading": "14. Changes to this policy",
+        "body": "Kouby reserves the right to modify this policy at any time. Users will be notified of any material update."
+      },
+      {
+        "heading": "15. Final clause",
+        "body": "Kouby is committed to complying with PIPEDA's ten fair information principles, as well as the requirements of Quebec's Law 25 on the protection of personal information:\n• Accountability\n• Identifying purposes\n• Consent\n• Limiting collection\n• Limiting use, disclosure, and retention\n• Accuracy\n• Safeguards\n• Openness\n• Individual access\n• Challenging compliance"
+      }
+    ]
+  },
   "Hero": {
     "title": "More than a ride, a meeting!",
     "illustrationPlaceholder": "Illustration",
@@ -39,103 +360,6 @@
     "dateLabel": "Date",
     "timeLabel": "Time",
     "search": "Search"
-  },
-  "Trajet": {
-    "title": "Available rides",
-    "subtitle": "Pick a ride, then book your seat online.",
-    "loading": "Loading rides…",
-    "empty": "No ride matches your search.",
-    "error": "Could not load the rides. Please try again later.",
-    "ratingLabel": "{rating} out of 5 — {count} reviews",
-    "seatsAvailable": "{count, plural, =0 {full} one {# seat left} other {# seats left}}",
-    "authRequired": "Sign in to continue.",
-    "authCta": "Sign in",
-    "amenities": {
-      "smoking": "Smoking allowed",
-      "nonSmoking": "Non-smoking",
-      "pets": "Pets allowed",
-      "noPets": "No pets",
-      "skiRack": "Ski rack",
-      "luggage": "Large suitcase",
-      "handLuggage": "Hand luggage",
-      "insurance": "Insured ride",
-      "bikeRack": "Bike rack",
-      "cardPayment": "Card payment"
-    },
-    "filters": {
-      "from": "Departure city",
-      "to": "Arrival city",
-      "date": "Date",
-      "time": "Time",
-      "more": "Filters",
-      "seats": "Number of seats",
-      "maxPrice": "Maximum price",
-      "amenitiesLegend": "Ride options",
-      "direct": "No intermediate stop",
-      "withStops": "With an intermediate stop",
-      "submit": "Search"
-    },
-    "comfort": {
-      "legend": "Comfort",
-      "standard": "Standard",
-      "confort": "Comfort",
-      "premium": "Premium"
-    },
-    "detail": {
-      "departureAt": "Departs at {time}",
-      "arrivalAt": "Arrives around {time}",
-      "driverTitle": "Driver profile",
-      "driverName": "Full name",
-      "licenceYears": "Licence held for",
-      "licenceYearsValue": "{count, plural, one {# year} other {# years}}",
-      "vehicle": "Make and model",
-      "carSeats": "Seats in the car",
-      "carSeatsValue": "{count, plural, one {# seat} other {# seats}}",
-      "carPhoto": "Photo",
-      "comfort": "Comfort",
-      "baggage": "Baggage"
-    },
-    "booking": {
-      "title": "Book this ride",
-      "lastName": "Last name",
-      "firstName": "First name",
-      "email": "Email",
-      "phone": "Phone",
-      "message": "Important message:",
-      "submit": "Book",
-      "submitting": "Booking…",
-      "back": "Back",
-      "success": "Your request has been sent. The driver will get back to you.",
-      "failed": "The booking failed. Please try again later.",
-      "invalid": "Please check your details before booking.",
-      "full": "This ride is full."
-    },
-    "create": {
-      "cta": "Offer a ride",
-      "title": "Offer a ride",
-      "subtitle": "Fill in this form to publish your free seats.",
-      "departure": "Departure",
-      "departurePlace": "Pick-up point",
-      "arrival": "Arrival",
-      "arrivalPlace": "Drop-off point",
-      "when": "Date and times",
-      "departureTime": "Departure time",
-      "arrivalTime": "Arrival time (approximate)",
-      "timesHint": "If the arrival time is before the departure time, arrival is the next day.",
-      "seatsAndPrice": "Seats and price",
-      "seatsTotal": "Number of seats",
-      "pricePerSeat": "Price per seat (€)",
-      "options": "Options",
-      "intermediateStop": "I accept an intermediate stop",
-      "description": "Message for passengers",
-      "descriptionPlaceholder": "Meeting point, luggage, music…",
-      "submit": "Publish the ride",
-      "submitting": "Publishing…",
-      "failed": "Publishing failed. Please try again later.",
-      "invalid": "Please check the form fields.",
-      "baggage": "Baggage",
-      "baggagePlaceholder": "E.g. one cabin bag per person"
-    }
   },
   "Testimonials": {
     "title": "Testimonials",
@@ -180,6 +404,174 @@
       }
     ]
   },
+  "Search": {
+    "title": "Search for a ride",
+    "subtitle": "Enter your cities and date to find an available carpool."
+  },
+  "Contact": {
+    "title": "Contact us",
+    "subtitle": "A question, an issue with a ride? Our team gets back to you quickly.",
+    "form": {
+      "name": "Name",
+      "email": "Email address",
+      "subject": "Subject",
+      "message": "Message",
+      "submit": "Send",
+      "submitting": "Sending..."
+    },
+    "success": "Your message has been sent. We'll get back to you soon.",
+    "errors": {
+      "generic": "Unable to send your message. Please try again."
+    }
+  },
+  "Parametres": {
+    "title": "Account settings",
+    "subtitle": "Manage your personal information and your password.",
+    "loading": "Loading...",
+    "profile": {
+      "title": "Profile",
+      "email": "Email address",
+      "phone": "Phone number",
+      "unverified": "unverified",
+      "name": "Name",
+      "save": "Save",
+      "saving": "Saving...",
+      "success": "Profile updated.",
+      "error": "Unable to update the profile. Please try again."
+    },
+    "password": {
+      "title": "Password",
+      "current": "Current password",
+      "new": "New password",
+      "save": "Update",
+      "saving": "Updating...",
+      "success": "Password updated.",
+      "error": "Unable to update the password. Check your current password."
+    }
+  },
+  "Messages": {
+    "show": "Messages",
+    "hide": "Hide messages",
+    "loading": "Loading messages...",
+    "empty": "No messages yet.",
+    "error": "Unable to load messages.",
+    "placeholder": "Write a message...",
+    "send": "Send",
+    "sending": "Sending...",
+    "sendError": "Unable to send the message. Please try again."
+  },
+  "Trajets": {
+    "title": "Find your next ride",
+    "subtitle": "Browse available carpool listings and book your seat in a few clicks.",
+    "loading": "Loading rides...",
+    "empty": "No rides available at the moment.",
+    "error": "Unable to load rides.",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}"
+    },
+    "departureAt": "Departure",
+    "seats": "Seats",
+    "price": "Price",
+    "description": "Description",
+    "detailTitle": "Ride details",
+    "detailSubtitle": "Review the published ride information.",
+    "backToList": "Back to rides",
+    "comfort": "Comfort",
+    "baggageAllowance": "Baggage",
+    "cancelledBanner": "This ride has been cancelled by the driver.",
+    "driverRating": {
+      "label": "Driver rating",
+      "none": "No reviews yet",
+      "summary": "★ {rating} ({count} reviews)"
+    },
+    "distance": {
+      "label": "Distance",
+      "value": "{km} km"
+    },
+    "owner": {
+      "edit": "Edit",
+      "closeEdit": "Close",
+      "save": "Save",
+      "saving": "Saving...",
+      "updateSuccess": "Ride updated.",
+      "updateError": "Unable to update this ride. Please try again.",
+      "cancelTrajet": "Cancel this ride",
+      "cancelling": "Cancelling...",
+      "confirmPrompt": "Confirm cancelling this ride?",
+      "confirmYes": "Yes, cancel it",
+      "confirmNo": "No",
+      "cancelError": "Unable to cancel this ride. Please try again."
+    },
+    "filters": {
+      "departureCity": "Departure city",
+      "destinationCity": "Destination city",
+      "date": "Date",
+      "comfortAny": "Any comfort",
+      "comfortStandard": "Standard",
+      "comfortConfort": "Comfort",
+      "comfortPremium": "Premium",
+      "maxPrice": "Max price",
+      "minSeats": "Min seats",
+      "baggageAllowance": "Baggage needed",
+      "minDriverRatingAny": "Any rating",
+      "minDriverRatingValue": "★ {value} and up",
+      "useMyLocation": "Use my location",
+      "locating": "Locating...",
+      "locationSet": "Location in use",
+      "clearLocation": "Clear",
+      "geoUnsupported": "Geolocation isn't available on this device.",
+      "geoDenied": "Couldn't access your location. Check your browser's permissions.",
+      "radiusAny": "Any distance",
+      "radiusValue": "Within {value} km",
+      "apply": "Search",
+      "reset": "Reset"
+    },
+    "booking": {
+      "title": "Book a seat",
+      "seatsLabel": "Number of seats",
+      "submit": "Book",
+      "submitting": "Booking...",
+      "success": "Your booking request has been sent to the driver.",
+      "full": "This ride is full.",
+      "signInPrompt": "Sign in to book a seat on this ride.",
+      "signInLink": "Sign in",
+      "cancel": "Cancel my booking",
+      "cancelling": "Cancelling...",
+      "cancelledNotice": "Your booking has been cancelled.",
+      "errors": {
+        "generic": "Unable to complete the booking. Please try again.",
+        "cancelGeneric": "Unable to cancel this booking. Please try again."
+      }
+    },
+    "bookings": {
+      "title": "Booking requests",
+      "loading": "Loading bookings...",
+      "empty": "No booking requests for this ride.",
+      "error": "Unable to load bookings.",
+      "seats": "Seats requested",
+      "accept": "Accept",
+      "reject": "Reject",
+      "actionError": "Unable to update this booking.",
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled",
+        "expired": "Expired"
+      },
+      "review": {
+        "cta": "Rate this passenger",
+        "ratingLabel": "Rating",
+        "commentLabel": "Comment (optional)",
+        "submit": "Submit",
+        "submitting": "Submitting...",
+        "success": "Thanks for your review!",
+        "error": "Unable to submit your review. Please try again."
+      }
+    }
+  },
   "Features": {
     "title": "What you can do on the site",
     "howItWorks": "How does it work?",
@@ -194,6 +586,149 @@
         "description": "Got free seats in your car? Turn them into an opportunity."
       }
     ]
+  },
+  "Annoncer": {
+    "title": "Announce a ride",
+    "subtitle": "Publish your ride and start traveling with passengers",
+    "loading": "Loading form...",
+    "empty": "No announcements available.",
+    "error": "Error loading the form.",
+    "form": {
+      "departureCity": "Departure city",
+      "departureCityPlaceholder": "e.g. Paris",
+      "destinationCity": "Destination city",
+      "destinationCityPlaceholder": "e.g. Lyon",
+      "departureDateTime": "Departure date and time",
+      "seatsTotal": "Number of seats",
+      "seatsTotalPlaceholder": "e.g. 4",
+      "pricePerSeat": "Price per seat (€)",
+      "pricePerSeatPlaceholder": "e.g. 25",
+      "description": "Description (optional)",
+      "descriptionPlaceholder": "Music, wifi, air conditioning...",
+      "comfort": "Comfort level",
+      "comfortStandard": "Standard",
+      "comfortConfort": "Comfort",
+      "comfortPremium": "Premium",
+      "baggageAllowance": "Baggage allowed",
+      "baggageAllowancePlaceholder": "e.g. 1 suitcase, 1 backpack",
+      "submit": "Publish the ride",
+      "submitting": "Publishing...",
+      "errors": {
+        "required": "This field is required",
+        "invalidCity": "Please enter a valid city",
+        "seatsMin": "At least 1 seat required",
+        "priceMin": "Price must be positive",
+        "sameCities": "Departure and destination cities must be different",
+        "pastDate": "Date must be in the future",
+        "apiError": "Error publishing ride. Please try again."
+      },
+      "success": "Ride published successfully!"
+    }
+  },
+  "MesTrajets": {
+    "title": "My rides",
+    "subtitle": "Find the rides you've published and manage booking requests.",
+    "loading": "Loading your rides...",
+    "empty": "You haven't published any ride yet.",
+    "error": "Unable to load your rides.",
+    "departureAt": "Departure",
+    "seats": "Seats",
+    "price": "Price",
+    "cancelledBadge": "Cancelled",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}"
+    }
+  },
+  "MesReservations": {
+    "title": "My bookings",
+    "subtitle": "Find your booking requests and their status.",
+    "loading": "Loading your bookings...",
+    "empty": "You don't have any booking yet.",
+    "error": "Unable to load your bookings.",
+    "departureAt": "Departure",
+    "seats": "Seats booked",
+    "status": "Status",
+    "cancel": "Cancel my booking",
+    "cancelling": "Cancelling...",
+    "cancelError": "Unable to cancel this booking. Please try again.",
+    "review": {
+      "cta": "Rate this ride",
+      "ratingLabel": "Rating",
+      "commentLabel": "Comment (optional)",
+      "submit": "Submit",
+      "submitting": "Submitting...",
+      "success": "Thanks for your review!",
+      "error": "Unable to submit your review. Please try again."
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}"
+    }
+  },
+  "Admin": {
+    "title": "Backoffice",
+    "subtitle": "Track and approve the documents sent by drivers.",
+    "loading": "Loading…",
+    "error": "Could not load the data.",
+    "authRequired": "Sign in to open the backoffice.",
+    "authCta": "Sign in",
+    "forbidden": "This page is for administrators only.",
+    "backHome": "Back to home",
+    "stats": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "users": "Accounts"
+    },
+    "tabs": {
+      "label": "Backoffice views",
+      "queue": "Documents",
+      "users": "Accounts"
+    },
+    "filters": {
+      "status": "Status",
+      "type": "Document type",
+      "search": "Search",
+      "searchPlaceholder": "Driver name or email",
+      "allStatuses": "All statuses",
+      "allTypes": "All types"
+    },
+    "queue": {
+      "empty": "No document matches these filters.",
+      "view": "View",
+      "approve": "Approve",
+      "reject": "Reject",
+      "confirmReject": "Confirm rejection",
+      "cancel": "Cancel",
+      "submitting": "Saving…",
+      "reasonLabel": "Reason for rejection",
+      "reasonPlaceholder": "Explain what is wrong: blurry photo, expired document…",
+      "reasonRequired": "Give a reason to reject this document.",
+      "currentReason": "Current reason: {reason}",
+      "reviewFailed": "The decision could not be saved.",
+      "showPreview": "Preview",
+      "hidePreview": "Hide preview",
+      "previewFailed": "The preview could not be loaded.",
+      "previewUnsupported": "This format cannot be displayed here.",
+      "declaredBirthDate": "Declared date of birth: {date} · {age} years old",
+      "noBirthDate": "This driver has not declared a date of birth yet.",
+      "confirmAge": "I confirm the date of birth matches the licence and the driver is {min} or older."
+    },
+    "users": {
+      "empty": "No account yet.",
+      "name": "Driver",
+      "role": "Role",
+      "joined": "Joined",
+      "documents": "Documents",
+      "pending": "Pending",
+      "approved": "Approved",
+      "admin": "Admin",
+      "driver": "Driver",
+      "verification": "Verification"
+    }
   },
   "Documents": {
     "title": "My documents",
@@ -294,66 +829,101 @@
       "saveFailed": "Saving failed. Please try again."
     }
   },
-  "Admin": {
-    "title": "Backoffice",
-    "subtitle": "Track and approve the documents sent by drivers.",
-    "loading": "Loading…",
-    "error": "Could not load the data.",
-    "authRequired": "Sign in to open the backoffice.",
+  "Trajet": {
+    "title": "Available rides",
+    "subtitle": "Pick a ride, then book your seat online.",
+    "loading": "Loading rides…",
+    "empty": "No ride matches your search.",
+    "error": "Could not load the rides. Please try again later.",
+    "ratingLabel": "{rating} out of 5 — {count} reviews",
+    "seatsAvailable": "{count, plural, =0 {full} one {# seat left} other {# seats left}}",
+    "authRequired": "Sign in to continue.",
     "authCta": "Sign in",
-    "forbidden": "This page is for administrators only.",
-    "backHome": "Back to home",
-    "stats": {
-      "pending": "Pending",
-      "approved": "Approved",
-      "rejected": "Rejected",
-      "users": "Accounts"
-    },
-    "tabs": {
-      "label": "Backoffice views",
-      "queue": "Documents",
-      "users": "Accounts"
+    "amenities": {
+      "smoking": "Smoking allowed",
+      "nonSmoking": "Non-smoking",
+      "pets": "Pets allowed",
+      "noPets": "No pets",
+      "skiRack": "Ski rack",
+      "luggage": "Large suitcase",
+      "handLuggage": "Hand luggage",
+      "insurance": "Insured ride",
+      "bikeRack": "Bike rack",
+      "cardPayment": "Card payment"
     },
     "filters": {
-      "status": "Status",
-      "type": "Document type",
-      "search": "Search",
-      "searchPlaceholder": "Driver name or email",
-      "allStatuses": "All statuses",
-      "allTypes": "All types"
+      "from": "Departure city",
+      "to": "Arrival city",
+      "date": "Date",
+      "time": "Time",
+      "more": "Filters",
+      "seats": "Number of seats",
+      "maxPrice": "Maximum price",
+      "amenitiesLegend": "Ride options",
+      "direct": "No intermediate stop",
+      "withStops": "With an intermediate stop",
+      "submit": "Search"
     },
-    "queue": {
-      "empty": "No document matches these filters.",
-      "view": "View",
-      "approve": "Approve",
-      "reject": "Reject",
-      "confirmReject": "Confirm rejection",
-      "cancel": "Cancel",
-      "submitting": "Saving…",
-      "reasonLabel": "Reason for rejection",
-      "reasonPlaceholder": "Explain what is wrong: blurry photo, expired document…",
-      "reasonRequired": "Give a reason to reject this document.",
-      "currentReason": "Current reason: {reason}",
-      "reviewFailed": "The decision could not be saved.",
-      "showPreview": "Preview",
-      "hidePreview": "Hide preview",
-      "previewFailed": "The preview could not be loaded.",
-      "previewUnsupported": "This format cannot be displayed here.",
-      "declaredBirthDate": "Declared date of birth: {date} · {age} years old",
-      "noBirthDate": "This driver has not declared a date of birth yet.",
-      "confirmAge": "I confirm the date of birth matches the licence and the driver is {min} or older."
+    "comfort": {
+      "legend": "Comfort",
+      "standard": "Standard",
+      "confort": "Comfort",
+      "premium": "Premium"
     },
-    "users": {
-      "empty": "No account yet.",
-      "name": "Driver",
-      "role": "Role",
-      "joined": "Joined",
-      "documents": "Documents",
-      "pending": "Pending",
-      "approved": "Approved",
-      "admin": "Admin",
-      "driver": "Driver",
-      "verification": "Verification"
+    "detail": {
+      "departureAt": "Departs at {time}",
+      "arrivalAt": "Arrives around {time}",
+      "driverTitle": "Driver profile",
+      "driverName": "Full name",
+      "licenceYears": "Licence held for",
+      "licenceYearsValue": "{count, plural, one {# year} other {# years}}",
+      "vehicle": "Make and model",
+      "carSeats": "Seats in the car",
+      "carSeatsValue": "{count, plural, one {# seat} other {# seats}}",
+      "carPhoto": "Photo",
+      "comfort": "Comfort",
+      "baggage": "Baggage"
+    },
+    "booking": {
+      "title": "Book this ride",
+      "lastName": "Last name",
+      "firstName": "First name",
+      "email": "Email",
+      "phone": "Phone",
+      "message": "Important message:",
+      "submit": "Book",
+      "submitting": "Booking…",
+      "back": "Back",
+      "success": "Your request has been sent. The driver will get back to you.",
+      "failed": "The booking failed. Please try again later.",
+      "invalid": "Please check your details before booking.",
+      "full": "This ride is full."
+    },
+    "create": {
+      "cta": "Offer a ride",
+      "title": "Offer a ride",
+      "subtitle": "Fill in this form to publish your free seats.",
+      "departure": "Departure",
+      "departurePlace": "Pick-up point",
+      "arrival": "Arrival",
+      "arrivalPlace": "Drop-off point",
+      "when": "Date and times",
+      "departureTime": "Departure time",
+      "arrivalTime": "Arrival time (approximate)",
+      "timesHint": "If the arrival time is before the departure time, arrival is the next day.",
+      "seatsAndPrice": "Seats and price",
+      "seatsTotal": "Number of seats",
+      "pricePerSeat": "Price per seat (€)",
+      "options": "Options",
+      "intermediateStop": "I accept an intermediate stop",
+      "description": "Message for passengers",
+      "descriptionPlaceholder": "Meeting point, luggage, music…",
+      "submit": "Publish the ride",
+      "submitting": "Publishing…",
+      "failed": "Publishing failed. Please try again later.",
+      "invalid": "Please check the form fields.",
+      "baggage": "Baggage",
+      "baggagePlaceholder": "E.g. one cabin bag per person"
     }
   }
 }

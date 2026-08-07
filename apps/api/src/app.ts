@@ -7,6 +7,9 @@ import { adminHealthRoute, meRoute } from './routes/auth-proofs';
 import { trajetModule } from './modules/trajet';
 import { documentModule } from './modules/document';
 import { adminModule } from './modules/admin';
+import { reviewModule } from './modules/review';
+import { messageModule } from './modules/message';
+import { contactModule } from './modules/contact';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
 // TODO: domain modules — mount feature routers from ./modules here.
@@ -71,6 +74,12 @@ const routes = app
   .route('/', documentModule)
   // --- ADMIN backoffice routes (review queue, stats, accounts) ---
   .route('/', adminModule)
+  // --- REVIEW domain routes ---
+  .route('/', reviewModule)
+  // --- MESSAGE domain routes ---
+  .route('/', messageModule)
+  // --- CONTACT domain routes ---
+  .route('/', contactModule)
   // --- PROOF routes (not domain logic) ---
   .openapi(meRoute, (c) => {
     const { user } = getAuth(c);
