@@ -49,8 +49,8 @@ export function ContactForm() {
   });
 
   return (
-    <Card className="md:max-w-lg">
-      <CardContent className="p-6">
+    <Card className="w-full gap-0 py-0 shadow-md">
+      <CardContent className="p-6 sm:p-8">
         <form
           onSubmit={(event) => {
             event.preventDefault();

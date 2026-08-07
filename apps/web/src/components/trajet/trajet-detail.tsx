@@ -60,7 +60,7 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
 
             <div className="flex items-center justify-between gap-4 lg:flex-col lg:items-end lg:gap-1.5">
               <p className="text-lg font-semibold text-foreground">
-                {format.number(trajet.pricePerSeat, { style: 'currency', currency: 'EUR' })}
+                {format.number(trajet.pricePerSeat, { style: 'currency', currency: 'CAD' })}
               </p>
               {trajet.driver.rating !== null ? (
                 <RatingStars
@@ -125,7 +125,7 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
                 <div>
                   <dt className="text-muted-foreground">{t('detail.licenceYears')}</dt>
                   <dd className="flex items-center gap-1.5 font-medium text-foreground">
-                    <BadgeCheck className="size-4 text-secondary" strokeWidth={2} aria-hidden />
+                    <BadgeCheck className="size-4 text-success" strokeWidth={2} aria-hidden />
                     {t('detail.licenceYearsValue', { count: trajet.driver.licenceYears })}
                   </dd>
                 </div>
@@ -155,7 +155,7 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
               {[0, 1].map((index) => (
                 <li
                   key={index}
-                  className="flex size-24 flex-col items-center justify-center gap-1 rounded-3xl bg-muted text-muted-foreground ring-1 ring-foreground/5"
+                  className="flex size-24 flex-col items-center justify-center gap-1 rounded-md bg-muted text-muted-foreground ring-1 ring-foreground/5"
                 >
                   <ImageIcon className="size-6" strokeWidth={1.75} aria-hidden />
                   <span className="text-[11px] font-medium">{t('detail.carPhoto')}</span>

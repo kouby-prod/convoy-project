@@ -223,7 +223,7 @@ function QueueRow({ document, submittedOn }: { document: AdminDocument; submitte
       </div>
 
       {/* ── Zone 2: what is being judged ──────────────────────────────── */}
-      <div className="flex flex-col gap-3 rounded-2xl bg-muted p-3">
+      <div className="flex flex-col gap-3 rounded-md bg-muted p-3">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <div className="flex min-w-0 items-center gap-2">
             <FileText
@@ -258,14 +258,14 @@ function QueueRow({ document, submittedOn }: { document: AdminDocument; submitte
 
       {/* The reviewer's existing decision, so a re-review has context. */}
       {document.status === 'rejected' && document.reviewNote ? (
-        <p className="rounded-2xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+        <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {t('queue.currentReason', { reason: document.reviewNote })}
         </p>
       ) : null}
 
       {/* ── Zone 3: the decision ──────────────────────────────────────── */}
       {isRejecting ? (
-        <div className="flex flex-col gap-2 rounded-2xl border border-destructive/20 bg-destructive/5 p-3">
+        <div className="flex flex-col gap-2 rounded-md border border-destructive/20 bg-destructive/5 p-3">
           <label
             htmlFor={`reject-note-${document.id}`}
             className="text-sm font-medium text-foreground"
@@ -305,7 +305,7 @@ function QueueRow({ document, submittedOn }: { document: AdminDocument; submitte
         <div className="flex flex-col gap-3">
           {/* The minimum-age check, on the only document that can answer it. */}
           {isLicence && document.status !== 'approved' ? (
-            <div className="flex flex-col gap-2 rounded-2xl bg-muted p-3">
+            <div className="flex flex-col gap-2 rounded-md bg-muted p-3">
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <CalendarDays className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
                 {age.dateOfBirth

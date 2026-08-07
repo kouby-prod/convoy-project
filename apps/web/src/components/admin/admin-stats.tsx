@@ -29,7 +29,7 @@ export function AdminStatsTiles({ stats }: { stats: AdminStats }) {
       label: t('stats.approved'),
       value: stats.documents.approved,
       Icon: CheckCircle2,
-      tone: 'bg-secondary/15 text-secondary',
+      tone: 'bg-success/15 text-success',
     },
     {
       key: 'rejected',
@@ -53,7 +53,7 @@ export function AdminStatsTiles({ stats }: { stats: AdminStats }) {
         <Card key={key}>
           <CardContent className="flex items-center gap-4 p-5 pt-5">
             <span
-              className={cn('flex size-11 shrink-0 items-center justify-center rounded-3xl', tone)}
+              className={cn('flex size-11 shrink-0 items-center justify-center rounded-md', tone)}
             >
               <Icon className="size-5" strokeWidth={2.25} aria-hidden />
             </span>

@@ -291,7 +291,7 @@ export function TrajetsList() {
                 <Card>
                   <CardHeader>
                     <CardTitle>
-                      <Link href={`/trajets/${item.id}`} className="hover:underline">
+                      <Link href={`/trajet/${item.id}`} className="hover:underline">
                         {item.departureCity} - {item.destinationCity}
                       </Link>
                     </CardTitle>

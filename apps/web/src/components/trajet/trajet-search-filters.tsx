@@ -1,41 +1,66 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Plus, Minus, Search } from 'lucide-react';
+import { ArrowUpDown, Minus, Plus, Search, X } from 'lucide-react';
 import { StopPolicySchema, type StopPolicy, type TrajetAmenity } from '@carpool/schemas';
 import { useRouter } from '@/i18n/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CityCombobox } from '@/components/ui/city-combobox';
 import { LabelledField } from '@/components/ui/labelled-field';
 import { AmenityToggleGroup, isAmenity } from '@/components/trajet/trajet-amenities';
 
-/* The left-hand search rail on /trajet. Filters live in the URL, so a result
-   set is shareable and the browser Back button restores the previous search. */
+/* Left-hand search rail on /trajet. Filters live in the URL so results are
+   shareable and Back restores the previous search. */
 export function TrajetSearchFilters() {
   const t = useTranslations('Trajet');
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [from, setFrom] = useState(searchParams.get('from') ?? '');
-  const [to, setTo] = useState(searchParams.get('to') ?? '');
-  const [date, setDate] = useState(searchParams.get('date') ?? '');
-  const [time, setTime] = useState(searchParams.get('time') ?? '');
-  const [seats, setSeats] = useState(searchParams.get('seats') ?? '');
-  const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') ?? '');
-  const [amenities, setAmenities] = useState<TrajetAmenity[]>(
-    searchParams.getAll('amenities').filter(isAmenity),
-  );
-  const [stopPolicy, setStopPolicy] = useState<StopPolicy>(
-    StopPolicySchema.catch('any').parse(searchParams.get('stopPolicy')),
-  );
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [seats, setSeats] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [amenities, setAmenities] = useState<TrajetAmenity[]>([]);
+  const [stopPolicy, setStopPolicy] = useState<StopPolicy>('any');
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
-  // Open the advanced block when the current URL already uses one of its filters.
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(
-    Boolean(seats || maxPrice) || amenities.length > 0 || stopPolicy !== 'any',
+  // Keep local fields in sync when the URL changes (hero search, Back, navbar).
+  useEffect(() => {
+    const nextFrom = searchParams.get('from') ?? '';
+    const nextTo = searchParams.get('to') ?? '';
+    const nextDate = searchParams.get('date') ?? '';
+    const nextTime = searchParams.get('time') ?? '';
+    const nextSeats = searchParams.get('seats') ?? '';
+    const nextMaxPrice = searchParams.get('maxPrice') ?? '';
+    const nextAmenities = searchParams.getAll('amenities').filter(isAmenity);
+    const nextStop = StopPolicySchema.catch('any').parse(searchParams.get('stopPolicy'));
+
+    setFrom(nextFrom);
+    setTo(nextTo);
+    setDate(nextDate);
+    setTime(nextTime);
+    setSeats(nextSeats);
+    setMaxPrice(nextMaxPrice);
+    setAmenities(nextAmenities);
+    setStopPolicy(nextStop);
+    setIsAdvancedOpen(
+      Boolean(nextSeats || nextMaxPrice) || nextAmenities.length > 0 || nextStop !== 'any',
+    );
+  }, [searchParams]);
+
+  const hasActiveFilters = useMemo(
+    () =>
+      Boolean(from.trim() || to.trim() || date || time || seats || maxPrice) ||
+      amenities.length > 0 ||
+      stopPolicy !== 'any',
+    [from, to, date, time, seats, maxPrice, amenities, stopPolicy],
   );
 
   function toggleAmenity(amenity: TrajetAmenity) {
@@ -49,6 +74,15 @@ export function TrajetSearchFilters() {
   /** `direct` and `withStops` are mutually exclusive; unchecking either means "any". */
   function toggleStopPolicy(policy: Exclude<StopPolicy, 'any'>) {
     setStopPolicy((current) => (current === policy ? 'any' : policy));
+  }
+
+  function swapCities() {
+    setFrom(to);
+    setTo(from);
+  }
+
+  function clearFilters() {
+    router.push('/trajet');
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -69,23 +103,48 @@ export function TrajetSearchFilters() {
   }
 
   return (
-    <Card className="h-fit">
+    <Card className="h-fit lg:sticky lg:top-20">
       <CardContent className="p-5 pt-5">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <Input
-            name="from"
-            value={from}
-            onChange={(event) => setFrom(event.target.value)}
-            placeholder={t('filters.from')}
-            aria-label={t('filters.from')}
-          />
-          <Input
-            name="to"
-            value={to}
-            onChange={(event) => setTo(event.target.value)}
-            placeholder={t('filters.to')}
-            aria-label={t('filters.to')}
-          />
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-foreground">{t('filters.title')}</h2>
+            {hasActiveFilters ? (
+              <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
+                <X className="size-3.5" strokeWidth={2.25} />
+                {t('filters.clear')}
+              </Button>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <CityCombobox
+              name="from"
+              value={from}
+              onChange={setFrom}
+              placeholder={t('filters.from')}
+              aria-label={t('filters.from')}
+            />
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={swapCities}
+                aria-label={t('filters.swap')}
+                className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground"
+              >
+                <ArrowUpDown className="size-3.5" strokeWidth={2.25} />
+                {t('filters.swapShort')}
+              </Button>
+            </div>
+            <CityCombobox
+              name="to"
+              value={to}
+              onChange={setTo}
+              placeholder={t('filters.to')}
+              aria-label={t('filters.to')}
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <LabelledField label={t('filters.date')} htmlFor="filter-date">
@@ -109,17 +168,18 @@ export function TrajetSearchFilters() {
           </div>
 
           <Button
-            variant="link"
+            type="button"
+            variant="ghost"
             size="sm"
             onClick={() => setIsAdvancedOpen((isOpen) => !isOpen)}
             aria-expanded={isAdvancedOpen}
-            className="self-center"
+            className="self-start px-1 text-brand-blue"
           >
             {isAdvancedOpen ? <Minus className="size-4" /> : <Plus className="size-4" />}
-            {t('filters.more')}
+            {isAdvancedOpen ? t('filters.less') : t('filters.more')}
           </Button>
 
-          {isAdvancedOpen && (
+          {isAdvancedOpen ? (
             <div className="flex flex-col gap-4 border-t border-border pt-4">
               <div className="grid grid-cols-2 gap-3">
                 <LabelledField label={t('filters.seats')} htmlFor="filter-seats">
@@ -169,10 +229,10 @@ export function TrajetSearchFilters() {
                 />
               </div>
             </div>
-          )}
+          ) : null}
 
-          <Button type="submit" variant="accent" size="lg" className="mt-2 self-center px-10">
-            <Search className="size-5" strokeWidth={2.25} />
+          <Button type="submit" variant="primary" size="lg" className="mt-1 w-full font-semibold">
+            <Search className="size-4" strokeWidth={2.25} />
             {t('filters.submit')}
           </Button>
         </form>

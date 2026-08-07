@@ -80,7 +80,7 @@ export function TrajetBookingForm({ trajetId, seatsAvailable }: TrajetBookingFor
     return (
       <Card className="mx-auto w-full max-w-md">
         <CardContent className="flex flex-col items-center gap-3 p-8 pt-8 text-center">
-          <CheckCircle2 className="size-8 text-secondary" strokeWidth={2} aria-hidden />
+          <CheckCircle2 className="size-8 text-success" strokeWidth={2} aria-hidden />
           <p className="text-sm font-medium text-foreground">{t('booking.success')}</p>
           <Link href="/trajet" className="text-sm font-semibold text-primary hover:underline">
             {t('booking.back')}
@@ -129,20 +129,20 @@ export function TrajetBookingForm({ trajetId, seatsAvailable }: TrajetBookingFor
           </div>
 
           {seatsAvailable === 0 ? (
-            <p className="rounded-3xl bg-muted px-4 py-3 text-center text-sm text-muted-foreground">
+            <p className="rounded-md bg-muted px-4 py-3 text-center text-sm text-muted-foreground">
               {t('booking.full')}
             </p>
           ) : null}
 
           {error ? (
-            <p className="rounded-3xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            <p className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               {error}
             </p>
           ) : null}
 
           <Button
             type="submit"
-            variant="accent"
+            variant="primary"
             size="lg"
             className="mx-auto flex px-10"
             disabled={mutation.isPending || seatsAvailable === 0}

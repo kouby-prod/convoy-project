@@ -4,6 +4,7 @@
     "searchPlaceholder": "Search for a ride, a city…",
     "search": "Search",
     "trajets": "Rides",
+    "trajetsHint": "Browse all available rides",
     "post": "Offer a ride",
     "myTrajets": "My rides",
     "myBookings": "My bookings",
@@ -15,7 +16,12 @@
     "account": "My account",
     "menu": "Menu",
     "documents": "My documents",
-    "admin": "Backoffice"
+    "admin": "Backoffice",
+    "sections": {
+      "search": "Search",
+      "actions": "Actions",
+      "account": "Account"
+    }
   },
   "LocaleSwitcher": {
     "label": "Language",
@@ -35,7 +41,46 @@
     "becomePassenger": "How to become a passenger?",
     "passengerTips": "Tips for passengers",
     "driverTips": "Tips for drivers",
-    "copyright": "© {year} Kouby Drive carpooling — all rights reserved"
+    "copyright": "© {year} Convoy carpooling — all rights reserved."
+  },
+  "Auth": {
+    "signIn": {
+      "title": "Sign in and start carpooling",
+      "subtitle": "Access your rides, bookings, and messages.",
+      "submit": "Sign in",
+      "pending": "Signing in…",
+      "noAccount": "No account yet?",
+      "createAccount": "Create an account"
+    },
+    "signUp": {
+      "title": "Create a Convoy account",
+      "subtitle": "Join the community and travel differently.",
+      "submit": "Sign up",
+      "pending": "Creating…",
+      "hasAccount": "Already registered?",
+      "signIn": "Sign in"
+    },
+    "fields": {
+      "email": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "Your password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Repeat your password",
+      "firstName": "First name",
+      "firstNamePlaceholder": "Your first name",
+      "lastName": "Last name",
+      "lastNamePlaceholder": "Your last name"
+    },
+    "errors": {
+      "missingCredentials": "Please enter your email and password.",
+      "signInFailed": "Sign-in failed. Check your credentials.",
+      "signInUnavailable": "Unable to sign in. Please try again later.",
+      "missingFields": "Please fill in all fields.",
+      "passwordMismatch": "Passwords do not match.",
+      "signUpFailed": "Sign-up failed. Please try again.",
+      "signUpUnavailable": "Unable to create the account. Please try again later."
+    }
   },
   "Terms": {
     "title": "Terms of Service",
@@ -354,8 +399,10 @@
     ]
   },
   "Hero": {
+    "brand": "Convoy",
     "title": "More than a ride, a meeting!",
-    "illustrationPlaceholder": "Illustration",
+    "subtitle": "Search for a ride, book in a few taps, and travel with peace of mind.",
+    "imageAlt": "Travelers sharing a car ride",
     "departurePlaceholder": "Departure city",
     "arrivalPlaceholder": "Arrival city",
     "dateLabel": "Date",
@@ -363,31 +410,32 @@
     "search": "Search"
   },
   "Testimonials": {
+    "eyebrow": "Community",
     "title": "Testimonials",
-    "seeMore": "See more testimonials",
     "items": [
       {
         "quote": "Guaranteed safety",
-        "author": "Kouby Drive member",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "author": "Camille, Convoy member",
+        "body": "Drivers' documents are checked before every trip. I feel confident from the moment I book."
       },
       {
         "quote": "Top-notch service",
-        "author": "Kouby Drive member",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "author": "Karim, Convoy member",
+        "body": "Booking a seat takes two minutes, and trip tracking stays clear from departure to arrival."
       },
       {
         "quote": "The community is a family",
-        "author": "Kouby Drive member",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "author": "Léa, Convoy member",
+        "body": "I've met wonderful people on the road. Convoy makes sharing simple and enjoyable."
       }
     ]
   },
   "Guarantees": {
+    "eyebrow": "Trust",
     "title": "Our guarantees",
     "columns": [
       {
-        "title": "A structured, professional framework",
+        "title": "A clear, secure framework",
         "points": [
           "Verification of mandatory documents (licence, insurance, registration).",
           "Secured payments and transactions.",
@@ -397,10 +445,10 @@
         ]
       },
       {
-        "title": "We're here for you, anytime.",
+        "title": "We're here for you, anytime",
         "points": [
-          "Phone support available 7 days a week, all year round without interruption.",
-          "KoubyDrive grows with you. Your suggestions inspire us."
+          "Support available 7 days a week to help you along the way.",
+          "Convoy grows with you — your feedback shapes what we improve next."
         ]
       }
     ]
@@ -494,7 +542,10 @@
       "page": "Page {page}"
     },
     "departureAt": "Departure",
+    "arrivalAt": "Arrival",
     "seats": "Seats",
+    "seatsAvailable": "{available}/{total} seats",
+    "perSeat": "per seat",
     "price": "Price",
     "description": "Description",
     "detailTitle": "Ride details",
@@ -503,6 +554,20 @@
     "comfort": "Comfort",
     "baggageAllowance": "Baggage",
     "cancelledBanner": "This ride has been cancelled by the driver.",
+    "driverTitle": "Driver",
+    "vehicle": "Vehicle",
+    "carSeats": "Car seats",
+    "carSeatsValue": "{count, plural, one {# seat} other {# seats}}",
+    "licenceYears": "Licence for {count, plural, one {# year} other {# years}}",
+    "rideOptions": "Ride options",
+    "itinerary": {
+      "arrivalApprox": "—"
+    },
+    "seatsLeft": "{count, plural, =0 {Full} one {# seat left} other {# seats left}}",
+    "ownerAside": {
+      "title": "You are the driver",
+      "body": "Manage your listing and booking requests below."
+    },
     "driverRating": {
       "label": "Driver rating",
       "none": "No reviews yet",
@@ -553,6 +618,7 @@
     "booking": {
       "title": "Book a seat",
       "seatsLabel": "Number of seats",
+      "estimatedTotal": "Estimated total: {amount}",
       "submit": "Book",
       "submitting": "Booking...",
       "success": "Your booking request has been sent to the driver.",
@@ -595,17 +661,30 @@
     }
   },
   "Features": {
-    "title": "What you can do on the site",
-    "howItWorks": "How does it work?",
-    "videoPlaceholder": "Video",
+    "eyebrow": "For everyone",
+    "title": "How does it work?",
     "cards": [
       {
         "title": "Travel without driving",
-        "description": "Choose your ride, book online and travel with peace of mind."
+        "description": "Choose your ride, book online and travel with peace of mind.",
+        "steps": [
+          "Enter departure, arrival, and date.",
+          "Compare rides and book a seat.",
+          "Chat with the driver and go."
+        ],
+        "ctaHref": "/trajet",
+        "ctaLabel": "Find a ride"
       },
       {
         "title": "Drive and share",
-        "description": "Got free seats in your car? Turn them into an opportunity."
+        "description": "Got free seats in your car? Turn them into an opportunity.",
+        "steps": [
+          "Publish your ride in a few minutes.",
+          "Review booking requests.",
+          "Share costs and the journey."
+        ],
+        "ctaHref": "/trajet/nouveau",
+        "ctaLabel": "Offer a ride"
       }
     ]
   },
@@ -617,9 +696,9 @@
     "error": "Error loading the form.",
     "form": {
       "departureCity": "Departure city",
-      "departureCityPlaceholder": "e.g. Paris",
+      "departureCityPlaceholder": "e.g. Montréal",
       "destinationCity": "Destination city",
-      "destinationCityPlaceholder": "e.g. Lyon",
+      "destinationCityPlaceholder": "e.g. Québec",
       "departureDateTime": "Departure date and time",
       "seatsTotal": "Number of seats",
       "seatsTotalPlaceholder": "e.g. 4",
@@ -856,9 +935,14 @@
     "subtitle": "Pick a ride, then book your seat online.",
     "loading": "Loading rides…",
     "empty": "No ride matches your search.",
+    "emptyHint": "Widen your criteria or clear filters to see all rides.",
+    "emptyClear": "See all rides",
+    "resultsCount": "{count, plural, =0 {No rides} one {# ride} other {# rides}}",
     "error": "Could not load the rides. Please try again later.",
     "ratingLabel": "{rating} out of 5 — {count} reviews",
-    "seatsAvailable": "{count, plural, =0 {full} one {# seat left} other {# seats left}}",
+    "seatsAvailable": "{count, plural, =0 {Full} one {# seat} other {# seats}}",
+    "perSeat": "per seat",
+    "driverBy": "with {name}",
     "authRequired": "Sign in to continue.",
     "authCta": "Sign in",
     "amenities": {
@@ -874,13 +958,18 @@
       "cardPayment": "Card payment"
     },
     "filters": {
+      "title": "Search",
       "from": "Departure city",
       "to": "Arrival city",
       "date": "Date",
       "time": "Time",
-      "more": "Filters",
-      "seats": "Number of seats",
-      "maxPrice": "Maximum price",
+      "more": "More filters",
+      "less": "Fewer filters",
+      "clear": "Clear",
+      "swap": "Swap departure and arrival",
+      "swapShort": "Swap",
+      "seats": "Seats",
+      "maxPrice": "Max price",
       "amenitiesLegend": "Ride options",
       "direct": "No intermediate stop",
       "withStops": "With an intermediate stop",

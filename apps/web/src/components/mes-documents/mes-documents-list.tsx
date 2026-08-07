@@ -71,7 +71,7 @@ export function MesDocumentsHistory({ documents }: { documents: DriverDocument[]
 
               {/* The reason is the only thing that makes a rejection actionable. */}
               {document.status === 'rejected' && document.reviewNote ? (
-                <p className="rounded-3xl border border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm text-destructive">
+                <p className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm text-destructive">
                   {t('history.reason', { reason: document.reviewNote })}
                 </p>
               ) : null}

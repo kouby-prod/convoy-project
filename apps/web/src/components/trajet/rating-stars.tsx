@@ -21,7 +21,7 @@ export function RatingStars({ rating, label, className }: RatingStarsProps) {
           aria-hidden
           className={cn(
             'size-4',
-            index < filled ? 'fill-accent text-accent' : 'fill-transparent text-border',
+            index < filled ? 'fill-primary text-primary' : 'fill-transparent text-muted-foreground/40',
           )}
           strokeWidth={1.75}
         />

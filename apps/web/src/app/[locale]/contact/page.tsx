@@ -1,12 +1,7 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ContactForm } from '@/components/contact/contact-form';
+import { PageHeader } from '@/components/ui/page-header';
 
-/**
- * Contact / customer support page. Server component: locale-aware,
- * statically rendered. All copy comes from the `Contact` next-intl
- * namespace — add the keys to BOTH messages/fr.json (primary) and
- * messages/en.json.
- */
 export default async function ContactPage({
   params,
 }: {
@@ -17,12 +12,8 @@ export default async function ContactPage({
   const t = await getTranslations('Contact');
 
   return (
-    <section className="flex flex-col gap-8 py-12">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('title')}</h1>
-        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
-      </div>
-
+    <section className="mx-auto flex w-full max-w-2xl flex-col gap-8">
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
       <ContactForm />
     </section>
   );

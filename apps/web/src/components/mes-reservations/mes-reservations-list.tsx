@@ -144,7 +144,7 @@ export function MesReservationsList() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  <Link href={`/trajets/${item.trajetId}`} className="hover:underline">
+                  <Link href={`/trajet/${item.trajetId}`} className="hover:underline">
                     {item.trajet.departureCity} - {item.trajet.destinationCity}
                   </Link>
                 </CardTitle>

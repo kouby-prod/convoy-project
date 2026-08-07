@@ -161,7 +161,7 @@ export function MessageThread({ bookingId, variant = 'full', className }: Messag
       {isOpen ? (
         <div
           className={cn(
-            'grid gap-3 rounded-4xl bg-card p-4 shadow-md ring-1 ring-foreground/5 dark:ring-foreground/10',
+            'grid gap-3 rounded-lg bg-card p-4 shadow-md ring-1 ring-foreground/5 dark:ring-foreground/10',
             variant === 'full' && 'min-h-[24rem]',
           )}
         >
@@ -192,7 +192,7 @@ export function MessageThread({ bookingId, variant = 'full', className }: Messag
                   <li key={item.id} className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}>
                     <div
                       className={cn(
-                        'max-w-[85%] rounded-3xl px-3.5 py-2 text-sm shadow-sm',
+                        'max-w-[85%] rounded-md px-3.5 py-2 text-sm shadow-sm',
                         isOwn
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-foreground ring-1 ring-foreground/5',
@@ -220,7 +220,7 @@ export function MessageThread({ bookingId, variant = 'full', className }: Messag
               value={body}
               onChange={(event) => setBody(event.target.value)}
               placeholder={t('placeholder')}
-              className="min-h-11 flex-1 rounded-3xl"
+              className="min-h-11 flex-1 rounded-md"
               maxLength={2000}
               required
               disabled={mutation.isPending}

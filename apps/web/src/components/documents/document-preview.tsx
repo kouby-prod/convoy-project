@@ -61,7 +61,7 @@ export function DocumentPreview({ id, mimeType, fileName }: DocumentPreviewProps
       {isOpen ? (
         // `bg-card`, not `bg-muted`: this sits inside a muted well, and a
         // checkerboard behind a transparent PNG needs to be a plain surface.
-        <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border">
+        <div className="overflow-hidden rounded-md bg-card ring-1 ring-border">
           {isLoading ? (
             <p className="p-8 text-center text-sm text-muted-foreground">{t('loading')}</p>
           ) : isError || !data ? (

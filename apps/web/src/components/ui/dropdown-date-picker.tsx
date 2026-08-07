@@ -32,7 +32,7 @@ export function DropdownDatePicker({ value, onChange, placeholder, className }: 
         <Button
           variant="outline"
           id="date-picker-optional"
-          className="w-32 justify-between font-normal"
+          className="h-11 w-full justify-between font-normal"
           onClick={() => setIsOpen((prev) => !prev)}
         >
           {formattedDate || placeholder || 'Select date'}

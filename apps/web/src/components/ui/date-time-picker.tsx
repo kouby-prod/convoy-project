@@ -41,7 +41,7 @@ export function DateTimePicker({
             aria-label="Select date"
             onClick={() => setIsOpenDate((prev) => !prev)}
             className={cn(
-              'flex h-12 items-center justify-between gap-2 rounded-full bg-card px-5 text-sm shadow-sm ring-1 ring-border outline-none transition-all duration-200 hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30',
+              'flex h-12 items-center justify-between gap-2 rounded-md bg-card px-5 text-sm shadow-sm ring-1 ring-border outline-none transition-all duration-200 hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30',
             )}
           >
             <span className={cn('truncate', formattedDate ? 'text-foreground' : 'text-muted-foreground')}>

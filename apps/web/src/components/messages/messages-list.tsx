@@ -46,7 +46,7 @@ export function MessagesList() {
   if (isError) return <p className="text-destructive">{t('error')}</p>;
   if (!data?.length) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-4xl bg-muted/40 px-6 py-12 text-center ring-1 ring-foreground/5">
+      <div className="flex flex-col items-center gap-3 rounded-lg bg-muted/40 px-6 py-12 text-center ring-1 ring-foreground/5">
         <MessageSquare className="size-10 text-muted-foreground" strokeWidth={1.75} />
         <p className="max-w-sm text-sm text-muted-foreground">{t('empty')}</p>
       </div>
@@ -65,7 +65,7 @@ export function MessagesList() {
             <Link href={`/messages/${item.bookingId}`} className="block outline-none">
               <Card className="transition-all duration-200 hover:bg-accent/60 focus-within:ring-3 focus-within:ring-ring/30">
                 <CardContent className="flex items-center gap-4 p-5">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                     <MessageSquare className="size-5" strokeWidth={2.25} />
                   </span>
                   <div className="min-w-0 flex-1 space-y-1">
@@ -96,7 +96,7 @@ export function MessagesList() {
                         item.bookingStatus === 'confirmed'
                           ? 'bg-primary/10 text-primary'
                           : item.bookingStatus === 'pending'
-                            ? 'bg-secondary text-secondary-foreground'
+                            ? 'bg-primary text-primary-foreground'
                             : 'bg-muted text-muted-foreground',
                       )}
                     >
