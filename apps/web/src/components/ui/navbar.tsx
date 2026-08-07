@@ -164,6 +164,15 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
               >
                 {translateNavbar('myBookings')}
               </Link>
+              <Link
+                href="/messages"
+                className={cn(
+                  'rounded-full px-4 py-2 text-sm font-medium outline-none transition-all duration-200 focus-visible:ring-3',
+                  palette.link,
+                )}
+              >
+                {translateNavbar('messages')}
+              </Link>
             </>
           )}
         </nav>
@@ -257,7 +266,7 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
       <div
         className={cn(
           'overflow-hidden border-t border-white/10 transition-all duration-500 ease-smooth lg:hidden',
-          isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0',
+          isMobileMenuOpen ? 'max-h-[32rem] opacity-100' : 'max-h-0 opacity-0',
         )}
       >
         <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 sm:px-6">
@@ -292,6 +301,15 @@ export function Navbar({ theme = 'vibrant', className, cartCount = 0 }: NavbarPr
                 )}
               >
                 {translateNavbar('myBookings')}
+              </Link>
+              <Link
+                href="/messages"
+                className={cn(
+                  'rounded-2xl px-4 py-2.5 text-sm font-medium outline-none transition-all duration-200 focus-visible:ring-3',
+                  palette.link,
+                )}
+              >
+                {translateNavbar('messages')}
               </Link>
             </>
           )}

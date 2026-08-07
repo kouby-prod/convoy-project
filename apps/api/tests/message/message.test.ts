@@ -12,6 +12,9 @@ function createChain(result: unknown) {
     orderBy: () => chain,
     limit: () => chain,
     offset: () => chain,
+    innerJoin: () => chain,
+    leftJoin: () => chain,
+    as: () => chain,
     returning: () => Promise.resolve(result),
     then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
       Promise.resolve(result).then(resolve, reject),
@@ -32,6 +35,9 @@ const db = vi.hoisted(() => ({
   select: vi.fn(() =>
     createChain(dbState.selectQueue.length ? dbState.selectQueue.shift() : dbState.selectResult),
   ),
+  selectDistinctOn: vi.fn(() =>
+    createChain(dbState.selectQueue.length ? dbState.selectQueue.shift() : dbState.selectResult),
+  ),
   insert: vi.fn(() => createChain(dbState.insertResult)),
 }));
 
@@ -43,16 +49,11 @@ vi.mock('../../src/auth/auth', () => ({
   auth: { api: { getSession: (...a: unknown[]) => getSession(...a) } },
 }));
 
-// Mock notifications entirely — real `notifyUser` looks up an email via `db`
-// (the same mocked chain everything else shares) and calls the real
-// `sendEmail`. Stubbing it out also lets tests assert who got notified.
-const notifyUser = vi.fn();
-vi.mock('../../src/modules/trajet/notifications', () => ({
-  notifyUser: (...a: unknown[]) => notifyUser(...a),
-  trajetUrl: (id: string) => `https://example.test/trajets/${id}`,
-  trajetSearchUrl: () => 'https://example.test/trajets',
-  describeTrip: (trip: { departureCity: string; arrivalCity: string; departureAt: Date }) =>
-    `${trip.departureCity} to ${trip.arrivalCity} (departing ${trip.departureAt.toUTCString()})`,
+// Offline email + WS fan-out go through BullMQ — stub the enqueue so tests
+// never touch Redis, and assert the job payload instead.
+const enqueueMessageNotify = vi.fn();
+vi.mock('../../src/queue/message-jobs', () => ({
+  enqueueMessageNotify: (...a: unknown[]) => enqueueMessageNotify(...a),
 }));
 
 import { messageModule } from '../../src/modules/message';
@@ -125,9 +126,11 @@ function makeMessageRow(overrides: Partial<Record<string, unknown>> = {}) {
 describe('message module', () => {
   beforeEach(() => {
     db.select.mockClear();
+    db.selectDistinctOn.mockClear();
     db.insert.mockClear();
     getSession.mockReset();
-    notifyUser.mockClear();
+    enqueueMessageNotify.mockReset();
+    enqueueMessageNotify.mockResolvedValue(undefined);
     dbState.selectResult = [];
     dbState.selectQueue = [];
     dbState.insertResult = [];
@@ -170,7 +173,7 @@ describe('message module', () => {
       expect(res.status).toBe(403);
     });
 
-    it('lets the passenger message the driver and notifies the driver', async () => {
+    it('lets the passenger message the driver and enqueues notify for the driver', async () => {
       getSession.mockResolvedValue(sessionFor('passenger_1'));
       dbState.selectQueue = [[makeBookingRow()], [makeTrajetRow()]];
       dbState.insertResult = [makeMessageRow({ senderId: 'passenger_1', body: 'Running 5 min late' })];
@@ -189,14 +192,19 @@ describe('message module', () => {
         senderId: 'passenger_1',
         body: 'Running 5 min late',
       });
-      expect(notifyUser).toHaveBeenCalledWith(
-        'driver_1',
-        expect.stringContaining('New message'),
-        expect.stringContaining('Running 5 min late'),
+      expect(enqueueMessageNotify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientId: 'driver_1',
+          trajetId: TRAJET_ID,
+          message: expect.objectContaining({
+            id: MESSAGE_ID,
+            body: 'Running 5 min late',
+          }),
+        }),
       );
     });
 
-    it('lets the driver message the passenger and notifies the passenger', async () => {
+    it('lets the driver message the passenger and enqueues notify for the passenger', async () => {
       getSession.mockResolvedValue(sessionFor('driver_1'));
       dbState.selectQueue = [[makeBookingRow()], [makeTrajetRow()]];
       dbState.insertResult = [makeMessageRow({ senderId: 'driver_1', body: "I'm outside" })];
@@ -208,10 +216,11 @@ describe('message module', () => {
       });
 
       expect(res.status).toBe(201);
-      expect(notifyUser).toHaveBeenCalledWith(
-        'passenger_1',
-        expect.stringContaining('New message'),
-        expect.stringContaining("I'm outside"),
+      expect(enqueueMessageNotify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientId: 'passenger_1',
+          message: expect.objectContaining({ body: "I'm outside" }),
+        }),
       );
     });
 
@@ -296,6 +305,56 @@ describe('message module', () => {
       const body = (await res.json()) as { items: unknown[]; hasMore: boolean };
       expect(body.items).toHaveLength(2);
       expect(body.hasMore).toBe(true);
+    });
+  });
+
+  describe('GET /messages/conversations', () => {
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await messageModule.request('/messages/conversations');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns inbox rows for the caller', async () => {
+      getSession.mockResolvedValue(sessionFor('passenger_1'));
+      // The conversations handler builds a subquery via selectDistinctOn then
+      // one main select — the fake chain returns the final page from select().
+      dbState.selectResult = [
+        {
+          bookingId: BOOKING_ID,
+          trajetId: TRAJET_ID,
+          bookingStatus: 'confirmed',
+          passengerId: 'passenger_1',
+          driverId: 'driver_1',
+          departureCity: 'Montreal',
+          arrivalCity: 'Quebec',
+          departureAt: now,
+          passengerName: 'Pat',
+          driverName: 'Dana',
+          lastMessageId: MESSAGE_ID,
+          lastMessageSenderId: 'driver_1',
+          lastMessageBody: 'See you at the station',
+          lastMessageCreatedAt: now,
+        },
+      ];
+
+      const res = await messageModule.request('/messages/conversations');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        items: Array<{
+          bookingId: string;
+          role: string;
+          counterpart: { id: string; name: string };
+          lastMessage: { body: string } | null;
+        }>;
+      };
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0]).toMatchObject({
+        bookingId: BOOKING_ID,
+        role: 'passenger',
+        counterpart: { id: 'driver_1', name: 'Dana' },
+        lastMessage: { body: 'See you at the station' },
+      });
     });
   });
 });

@@ -30,8 +30,8 @@ services:
       timeout: 5s
       retries: 10
 
-  # Infra provisioned for the future. NOT wired into the app yet.
-  # TODO: caching / rate limiting / queues will use this. Out of scope for now.
+  # Used by the API for BullMQ (message notify jobs) and Redis pub/sub
+  # fan-out to WebSocket hubs across instances.
   redis:
     image: redis:7-alpine
     restart: unless-stopped

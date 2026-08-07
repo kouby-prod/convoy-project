@@ -10,6 +10,7 @@ import { messageModule } from './modules/message';
 import { contactModule } from './modules/contact';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
+import { messagesWebSocketHandler } from './realtime/messages-ws';
 // TODO: domain modules — mount feature routers from ./modules here.
 // import { rideRoutes } from './modules/rides';
 
@@ -115,6 +116,13 @@ app.doc('/openapi.json', {
 });
 
 app.get('/docs', swaggerUI({ url: '/openapi.json' }));
+
+// ---------------------------------------------------------------------------
+// WebSocket — live booking threads. Mounted on `app` (not the `routes` chain)
+// so it does not pollute the typed RPC client; history stays on REST.
+// Clients: `GET /ws/messages?token=<bearer>` then `{ type: "subscribe", bookingId }`.
+// ---------------------------------------------------------------------------
+app.get('/ws/messages', messagesWebSocketHandler);
 
 // ---------------------------------------------------------------------------
 // PROOF helper (dev only): one-click "Continue with Google" page to exercise
