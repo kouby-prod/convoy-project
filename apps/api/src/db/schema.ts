@@ -10,3 +10,4 @@ export * from './trajet-schema';
 export * from './review';
 // plop:tables
 export * from './message';
+export * from './document';
