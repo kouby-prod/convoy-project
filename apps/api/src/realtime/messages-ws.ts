@@ -7,6 +7,9 @@ import { booking, trajet } from '../db/trajet-schema';
 import { eq } from 'drizzle-orm';
 import { messageHub } from './hub';
 
+/** Application close code: auth failed — clients should not reconnect with the same token. */
+export const WS_CLOSE_UNAUTHORIZED = 4001;
+
 async function resolvePartyAccess(
   bookingId: string,
   userId: string,
@@ -45,6 +48,10 @@ function sendFrame(send: (data: string) => void, frame: WsServerFrame) {
  * Clients send `{ type: "subscribe", bookingId }` after connect; the server
  * pushes `{ type: "message.created", message }` when the BullMQ worker
  * publishes to Redis (see queue/message-worker.ts + realtime/hub.ts).
+ *
+ * Unauthenticated upgrades are accepted then closed with {@link WS_CLOSE_UNAUTHORIZED}
+ * — browsers swallow HTTP 401 on failed handshakes, so a structured close is
+ * the reliable auth signal.
  */
 export const messagesWebSocketHandler = upgradeWebSocket(async (c) => {
   const token = c.req.query('token');
@@ -54,7 +61,7 @@ export const messagesWebSocketHandler = upgradeWebSocket(async (c) => {
     return {
       onOpen(_event, ws) {
         sendFrame((data) => ws.send(data), { type: 'error', error: 'Unauthorized' });
-        ws.close();
+        ws.close(WS_CLOSE_UNAUTHORIZED, 'Unauthorized');
       },
     };
   }
@@ -97,7 +104,19 @@ export const messagesWebSocketHandler = upgradeWebSocket(async (c) => {
         return;
       }
 
-      const access = await resolvePartyAccess(frame.bookingId, userId);
+      let access: Awaited<ReturnType<typeof resolvePartyAccess>>;
+      try {
+        access = await resolvePartyAccess(frame.bookingId, userId);
+      } catch (err) {
+        console.error('[messages-ws] access check failed', err);
+        sendFrame((data) => ws.send(data), {
+          type: 'error',
+          error: 'Access check failed',
+          bookingId: frame.bookingId,
+        });
+        return;
+      }
+
       if (!access.ok) {
         sendFrame((data) => ws.send(data), {
           type: 'error',

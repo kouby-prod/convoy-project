@@ -3,7 +3,7 @@ import {
   TrajetSchema,
   TrajetPageSchema,
   TrajetSearchPageSchema,
-  TrajetSearchQuerySchema,
+  TrajetApiSearchQuerySchema,
   PaginationQuerySchema,
   CreateTrajetSchema,
   UpdateTrajetSchema,
@@ -33,7 +33,7 @@ export const listTrajetsRoute = createRoute({
   summary:
     'List trajets, optionally filtered by city, date, seats, price, comfort, baggage or minimum driver ' +
     'rating. Each result includes the driver\'s rating summary.',
-  request: { query: TrajetSearchQuerySchema },
+  request: { query: TrajetApiSearchQuerySchema },
   responses: {
     200: {
       description: 'A page of trajets, each with the driver rating attached',

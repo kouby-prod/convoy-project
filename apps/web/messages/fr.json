@@ -13,7 +13,9 @@
     "signOut": "Déconnexion",
     "cart": "Panier",
     "account": "Mon compte",
-    "menu": "Menu"
+    "menu": "Menu",
+    "documents": "Mes documents",
+    "admin": "Back-office"
   },
   "LocaleSwitcher": {
     "label": "Langue",
@@ -686,6 +688,264 @@
       "previous": "Précédent",
       "next": "Suivant",
       "page": "Page {page}"
+    }
+  },
+  "Admin": {
+    "title": "Back-office",
+    "subtitle": "Suivez et validez les documents envoyés par les conducteurs.",
+    "loading": "Chargement…",
+    "error": "Impossible de charger les données.",
+    "authRequired": "Connectez-vous pour accéder au back-office.",
+    "authCta": "Se connecter",
+    "forbidden": "Cette page est réservée aux administrateurs.",
+    "backHome": "Retour à l'accueil",
+    "stats": {
+      "pending": "En attente",
+      "approved": "Validés",
+      "rejected": "Refusés",
+      "users": "Comptes"
+    },
+    "tabs": {
+      "label": "Vues du back-office",
+      "queue": "Documents",
+      "users": "Comptes"
+    },
+    "filters": {
+      "status": "Statut",
+      "type": "Type de document",
+      "search": "Rechercher",
+      "searchPlaceholder": "Nom ou e-mail du conducteur",
+      "allStatuses": "Tous les statuts",
+      "allTypes": "Tous les types"
+    },
+    "queue": {
+      "empty": "Aucun document ne correspond à ces filtres.",
+      "view": "Voir",
+      "approve": "Valider",
+      "reject": "Refuser",
+      "confirmReject": "Confirmer le refus",
+      "cancel": "Annuler",
+      "submitting": "Envoi…",
+      "reasonLabel": "Motif du refus",
+      "reasonPlaceholder": "Expliquez ce qui ne va pas : photo floue, document expiré…",
+      "reasonRequired": "Indiquez un motif pour refuser ce document.",
+      "currentReason": "Motif actuel : {reason}",
+      "reviewFailed": "La décision n'a pas pu être enregistrée.",
+      "showPreview": "Aperçu",
+      "hidePreview": "Masquer l'aperçu",
+      "previewFailed": "L'aperçu n'a pas pu être chargé.",
+      "previewUnsupported": "Ce format ne peut pas être affiché ici.",
+      "declaredBirthDate": "Date de naissance déclarée : {date} · {age} ans",
+      "noBirthDate": "Ce conducteur n'a pas encore déclaré sa date de naissance.",
+      "confirmAge": "Je confirme que la date de naissance correspond au permis et que le conducteur a {min} ans ou plus."
+    },
+    "users": {
+      "empty": "Aucun compte pour le moment.",
+      "name": "Conducteur",
+      "role": "Rôle",
+      "joined": "Inscrit le",
+      "documents": "Documents",
+      "pending": "En attente",
+      "approved": "Validés",
+      "admin": "Admin",
+      "driver": "Conducteur",
+      "verification": "Vérification"
+    }
+  },
+  "Documents": {
+    "title": "Mes documents",
+    "subtitle": "Envoyez vos trois documents. Notre équipe les vérifie avant de valider votre compte.",
+    "loading": "Chargement…",
+    "empty": "Vous n'avez encore envoyé aucun document.",
+    "error": "Impossible de charger vos documents.",
+    "view": "Voir",
+    "authRequired": "Connectez-vous pour envoyer vos documents.",
+    "authCta": "Se connecter",
+    "status": {
+      "missing": "À envoyer",
+      "pending": "En attente",
+      "approved": "Validé",
+      "rejected": "Refusé"
+    },
+    "type": {
+      "permis": "Permis de conduire",
+      "carteIdentite": "Carte d'identité",
+      "carteGrise": "Carte grise",
+      "assurance": "Assurance automobile",
+      "immatriculation": "Immatriculation du véhicule"
+    },
+    "history": {
+      "title": "Mes envois",
+      "reason": "Motif du refus : {reason}"
+    },
+    "upload": {
+      "expiryLabel": "Date d'expiration (facultatif)",
+      "hint": "JPG, PNG, WEBP ou PDF. {max} Mo maximum.",
+      "submit": "Envoyer le document",
+      "submitting": "Envoi en cours…",
+      "noFile": "Choisissez d'abord un fichier.",
+      "tooLarge": "Le fichier dépasse {max} Mo.",
+      "unsupported": "Ce format de fichier n'est pas accepté.",
+      "failed": "L'envoi a échoué. Réessayez.",
+      "dropzone": "Glissez un fichier ici ou cliquez pour choisir",
+      "replace": "Remplacer le document",
+      "cancel": "Annuler",
+      "remove": "Retirer ce fichier",
+      "ready": "Prêt à envoyer"
+    },
+    "viewFailed": "Lien indisponible",
+    "slot": {
+      "permis": {
+        "hint": "Permis canadien valide, recto et verso.",
+        "why": "Nous vérifions que vous avez le droit de conduire au Canada."
+      },
+      "assurance": {
+        "hint": "Attestation d'assurance en cours de validité.",
+        "why": "Nous vérifions que votre véhicule est bien assuré."
+      },
+      "immatriculation": {
+        "hint": "Certificat d’immatriculation du véhicule.",
+        "why": "Nous vérifions que le véhicule est conforme et en bon état."
+      }
+    },
+    "verification": {
+      "progress": "{approved}/{total} validés",
+      "incomplete": {
+        "chip": "Incomplet",
+        "title": "Il vous manque un document",
+        "body": "Complétez les conditions ci-dessous pour valider votre compte."
+      },
+      "pending": {
+        "chip": "En attente",
+        "title": "Vérification en cours",
+        "body": "Nous avons bien reçu vos documents. Notre équipe les vérifie."
+      },
+      "rejected": {
+        "chip": "Refusé",
+        "title": "Un document a été refusé",
+        "body": "Corrigez le document refusé, puis envoyez-le à nouveau."
+      },
+      "approved": {
+        "chip": "Vérifié",
+        "title": "Votre compte est vérifié",
+        "body": "Vous remplissez toutes les conditions. Vous pouvez publier vos trajets."
+      },
+      "label": "Avancement de la vérification"
+    },
+    "eligibility": {
+      "title": "Conditions d'éligibilité",
+      "subtitle": "Vous devez remplir ces quatre conditions pour proposer un trajet.",
+      "condition": {
+        "permis": "Détenir un permis de conduire valide au Canada",
+        "assurance": "Disposer d'une assurance automobile conforme",
+        "immatriculation": "Utiliser un véhicule en bon état et conforme à la réglementation",
+        "age": "Être majeur ({min} ans et plus)"
+      },
+      "bornOn": "Né(e) le {date} · {age} ans",
+      "dateOfBirthLabel": "Votre date de naissance",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "change": "Modifier ma date de naissance",
+      "required": "Indiquez votre date de naissance.",
+      "tooYoung": "Vous devez avoir {min} ans ou plus pour conduire.",
+      "saveFailed": "L'enregistrement a échoué. Réessayez."
+    }
+  },
+  "Trajet": {
+    "title": "Trajets disponibles",
+    "subtitle": "Choisissez un trajet, puis réservez votre place en ligne.",
+    "loading": "Chargement des trajets…",
+    "empty": "Aucun trajet ne correspond à votre recherche.",
+    "error": "Impossible de charger les trajets. Réessayez plus tard.",
+    "ratingLabel": "{rating} sur 5 — {count} avis",
+    "seatsAvailable": "{count, plural, =0 {complet} one {# place libre} other {# places libres}}",
+    "authRequired": "Connectez-vous pour continuer.",
+    "authCta": "Se connecter",
+    "amenities": {
+      "smoking": "Fumeur accepté",
+      "nonSmoking": "Non-fumeur",
+      "pets": "Animaux acceptés",
+      "noPets": "Animaux non acceptés",
+      "skiRack": "Porte-skis",
+      "luggage": "Grande valise",
+      "handLuggage": "Bagage à main",
+      "insurance": "Trajet assuré",
+      "bikeRack": "Porte-vélos",
+      "cardPayment": "Paiement par carte"
+    },
+    "filters": {
+      "from": "Ville de départ",
+      "to": "Ville d'arrivée",
+      "date": "Date",
+      "time": "Heure",
+      "more": "Filtre",
+      "seats": "Nombre de places",
+      "maxPrice": "Prix maximum",
+      "amenitiesLegend": "Options du trajet",
+      "direct": "Sans arrêt intermédiaire",
+      "withStops": "Avec arrêt intermédiaire",
+      "submit": "Rechercher"
+    },
+    "comfort": {
+      "legend": "Confort",
+      "standard": "Standard",
+      "confort": "Confort",
+      "premium": "Premium"
+    },
+    "detail": {
+      "departureAt": "Départ à {time}",
+      "arrivalAt": "Arrivée vers {time}",
+      "driverTitle": "Profil du conducteur",
+      "driverName": "Nom et prénom",
+      "licenceYears": "Permis depuis",
+      "licenceYearsValue": "{count, plural, one {# an} other {# ans}}",
+      "vehicle": "Marque et modèle",
+      "carSeats": "Places dans la voiture",
+      "carSeatsValue": "{count, plural, one {# place} other {# places}}",
+      "carPhoto": "Photo",
+      "comfort": "Confort",
+      "baggage": "Bagages"
+    },
+    "booking": {
+      "title": "Réserver ce trajet",
+      "lastName": "Nom",
+      "firstName": "Prénom",
+      "email": "Email",
+      "phone": "Téléphone",
+      "message": "Message important :",
+      "submit": "Réserver",
+      "submitting": "Réservation…",
+      "back": "Précédent",
+      "success": "Votre demande est envoyée. Le conducteur va vous répondre.",
+      "failed": "La réservation a échoué. Réessayez plus tard.",
+      "invalid": "Vérifiez vos informations avant de réserver.",
+      "full": "Ce trajet est complet."
+    },
+    "create": {
+      "cta": "Proposer un trajet",
+      "title": "Proposer un trajet",
+      "subtitle": "Remplissez ce formulaire pour publier vos places libres.",
+      "departure": "Départ",
+      "departurePlace": "Lieu de départ",
+      "arrival": "Arrivée",
+      "arrivalPlace": "Lieu d'arrivée",
+      "when": "Date et heures",
+      "departureTime": "Heure de départ",
+      "arrivalTime": "Heure d'arrivée (environ)",
+      "timesHint": "Si l'heure d'arrivée est avant l'heure de départ, l'arrivée est le lendemain.",
+      "seatsAndPrice": "Places et prix",
+      "seatsTotal": "Nombre de places",
+      "pricePerSeat": "Prix par place (€)",
+      "options": "Options",
+      "intermediateStop": "J'accepte un arrêt intermédiaire",
+      "description": "Message pour les passagers",
+      "descriptionPlaceholder": "Point de rendez-vous, bagages, musique…",
+      "submit": "Publier le trajet",
+      "submitting": "Publication…",
+      "failed": "La publication a échoué. Réessayez plus tard.",
+      "invalid": "Vérifiez les champs du formulaire.",
+      "baggage": "Bagages",
+      "baggagePlaceholder": "Ex. : un bagage cabine par personne"
     }
   }
 }

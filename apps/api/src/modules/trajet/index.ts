@@ -1,12 +1,29 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, asc, avg, count, eq, gte, ilike, inArray, isNotNull, isNull, lt, lte, sql, type SQL } from 'drizzle-orm';
+import {
+  and,
+  arrayContains,
+  asc,
+  avg,
+  count,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { rateLimit } from '../../middleware/rate-limit';
 import { db } from '../../db/client';
 import { trajet, booking } from '../../db/trajet-schema';
 import { review } from '../../db/review';
-import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet } from '@carpool/schemas';
+import { user } from '../../db/auth-schema';
+import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet, DriverProfile } from '@carpool/schemas';
 import {
   listTrajetsRoute,
   getTrajetRoute,
@@ -126,6 +143,46 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/**
+ * Builds the `DriverProfile` embedded in every `Trajet`/`TrajetSearchResult`.
+ * The platform has no vehicle table yet, so licence/vehicle fields are always
+ * null — the UI hides them rather than showing invented data.
+ */
+function buildDriverProfile(
+  driverId: string,
+  name: string,
+  rating: number | null,
+  reviewCount: number,
+): DriverProfile {
+  const [firstName, ...rest] = name.split(' ').filter(Boolean);
+  return {
+    id: driverId,
+    firstName: firstName ?? '',
+    lastName: rest.join(' '),
+    licenceYears: null,
+    carMake: null,
+    carModel: null,
+    carSeats: null,
+    rating,
+    reviewCount,
+  };
+}
+
+/** Single-driver lookup — used wherever only one row's driver is needed. */
+async function getDriverProfile(driverId: string): Promise<DriverProfile> {
+  const [driverRow] = await db.select({ name: user.name }).from(user).where(eq(user.id, driverId));
+  const [ratingRow] = await db
+    .select({ averageRating: avg(review.rating), reviewCount: count(review.rating) })
+    .from(review)
+    .where(and(eq(review.driverId, driverId), eq(review.direction, 'passenger_to_driver')));
+  return buildDriverProfile(
+    driverId,
+    driverRow?.name ?? '',
+    ratingRow?.averageRating ? Number(ratingRow.averageRating) : null,
+    ratingRow?.reviewCount ?? 0,
+  );
+}
+
 // Reads are public; creating requires authentication. Adjust to your auth rules
 // (e.g. add `requireRole('admin')` from ../../auth for admin-only mutations).
 app.use('/trajets', async (c, next) =>
@@ -166,7 +223,10 @@ export const trajetModule = app
     if (query.date) {
       const dayStart = new Date(`${query.date}T00:00:00.000Z`);
       const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-      conditions.push(gte(trajet.departureAt, dayStart), lt(trajet.departureAt, dayEnd));
+      // `time` narrows the range's start (earliest departure that day) rather
+      // than requiring an exact match.
+      const rangeStart = query.time ? new Date(`${query.date}T${query.time}:00.000Z`) : dayStart;
+      conditions.push(gte(trajet.departureAt, rangeStart), lt(trajet.departureAt, dayEnd));
     }
     if (query.minSeats !== undefined) conditions.push(gte(trajet.seatsAvailable, query.minSeats));
     if (query.maxPrice !== undefined) conditions.push(lte(trajet.pricePerSeat, query.maxPrice.toString()));
@@ -174,6 +234,9 @@ export const trajetModule = app
     if (query.baggageAllowance) {
       conditions.push(ilike(trajet.baggageAllowance, `%${query.baggageAllowance}%`));
     }
+    if (query.amenities.length > 0) conditions.push(arrayContains(trajet.amenities, query.amenities));
+    if (query.stopPolicy === 'direct') conditions.push(eq(trajet.hasIntermediateStop, false));
+    if (query.stopPolicy === 'withStops') conditions.push(eq(trajet.hasIntermediateStop, true));
     if (query.minDriverRating !== undefined) {
       // Drivers with no reviews yet have no row here at all, so they never
       // qualify for a minDriverRating filter — that's the desired behavior.
@@ -224,25 +287,31 @@ export const trajetModule = app
     const { id } = c.req.valid('param');
     const [row] = await db.select().from(trajet).where(eq(trajet.id, id));
     if (!row) return c.json({ error: 'Not found' }, 404);
-    return c.json(serialize(row), 200);
+    const driver = await getDriverProfile(row.driverId);
+    return c.json(serialize(row, driver), 200);
   })
   .openapi(createTrajetRoute, async (c) => {
-    const { user } = getAuth(c); // throws if requireAuth did not run (programmer error, not 401)
+    const { user: authUser } = getAuth(c); // throws if requireAuth did not run (programmer error, not 401)
     const body = c.req.valid('json');
     const [row] = await db
       .insert(trajet)
       .values({
         id: randomUUID(),
-        driverId: user.id,
+        driverId: authUser.id,
         departureCity: body.departureCity,
         arrivalCity: body.destinationCity,
         departureAt: new Date(body.departureDateTime),
+        departurePlace: body.departurePlace ?? null,
+        arrivalPlace: body.arrivalPlace ?? null,
+        arrivalAt: body.arrivalDateTime ? new Date(body.arrivalDateTime) : null,
         seatsTotal: body.seatsTotal,
         seatsAvailable: body.seatsTotal,
         pricePerSeat: body.pricePerSeat.toString(),
         description: body.description ?? null,
         comfort: body.comfort ?? null,
         baggageAllowance: body.baggageAllowance ?? null,
+        amenities: body.amenities ?? [],
+        hasIntermediateStop: body.hasIntermediateStop ?? false,
       })
       .returning();
     if (!row) throw new Error('Insert returned no row'); // narrows away `undefined`
@@ -256,7 +325,8 @@ export const trajetModule = app
       console.error(`Failed to geocode trajet ${row.id}`, err);
     });
 
-    return c.json(serialize(row), 201);
+    const driver = await getDriverProfile(authUser.id);
+    return c.json(serialize(row, driver), 201);
   })
   .openapi(updateTrajetRoute, async (c) => {
     const { user } = getAuth(c);
@@ -299,6 +369,13 @@ export const trajetModule = app
           ...(body.description !== undefined && { description: body.description }),
           ...(body.comfort !== undefined && { comfort: body.comfort }),
           ...(body.baggageAllowance !== undefined && { baggageAllowance: body.baggageAllowance }),
+          ...(body.departurePlace !== undefined && { departurePlace: body.departurePlace }),
+          ...(body.arrivalPlace !== undefined && { arrivalPlace: body.arrivalPlace }),
+          ...(body.arrivalDateTime !== undefined && {
+            arrivalAt: body.arrivalDateTime ? new Date(body.arrivalDateTime) : null,
+          }),
+          ...(body.amenities !== undefined && { amenities: body.amenities }),
+          ...(body.hasIntermediateStop !== undefined && { hasIntermediateStop: body.hasIntermediateStop }),
         })
         .where(eq(trajet.id, id))
         .returning();
@@ -319,7 +396,8 @@ export const trajetModule = app
       );
     }
 
-    return c.json(serialize(result.trajet), 200);
+    const driver = await getDriverProfile(result.trajet.driverId);
+    return c.json(serialize(result.trajet, driver), 200);
   })
   .openapi(cancelTrajetRoute, async (c) => {
     const { user } = getAuth(c);
@@ -363,12 +441,13 @@ export const trajetModule = app
         ),
       ),
     );
-    return c.json(serialize(result.trajet), 200);
+    const cancelDriver = await getDriverProfile(result.trajet.driverId);
+    return c.json(serialize(result.trajet, cancelDriver), 200);
   })
   .openapi(bookTrajetRoute, async (c) => {
     const { user } = getAuth(c);
     const { id } = c.req.valid('param');
-    const { seats } = c.req.valid('json');
+    const { seats, firstName, lastName, email, phone, message } = c.req.valid('json');
 
     let expiredBookings: ExpiredBooking[] = [];
     let trip: { departureCity: string; arrivalCity: string; departureAt: Date } | undefined;
@@ -400,6 +479,11 @@ export const trajetModule = app
           // Seats are held immediately (below) so a booking always starts
           // `pending` — the driver still has to accept or reject it.
           status: 'pending',
+          firstName: firstName ?? null,
+          lastName: lastName ?? null,
+          email: email ?? null,
+          phone: phone ?? null,
+          message: message ?? null,
         })
         .returning();
       if (!created) throw new Error('Insert returned no row');
@@ -598,7 +682,9 @@ export const trajetModule = app
       .offset((page - 1) * limit);
 
     const { items, hasMore } = paginate(rows, limit);
-    return c.json({ items: items.map(serialize), page, limit, hasMore }, 200);
+    // Every row shares the same driver (the caller) — fetch the profile once.
+    const driver = await getDriverProfile(user.id);
+    return c.json({ items: items.map((row) => serialize(row, driver)), page, limit, hasMore }, 200);
   })
   .openapi(myBookingsRoute, async (c) => {
     const { user } = getAuth(c);
@@ -610,6 +696,11 @@ export const trajetModule = app
         passengerId: booking.passengerId,
         seats: booking.seats,
         status: booking.status,
+        firstName: booking.firstName,
+        lastName: booking.lastName,
+        email: booking.email,
+        phone: booking.phone,
+        message: booking.message,
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
         departureCity: trajet.departureCity,
@@ -641,23 +732,29 @@ async function attachSearchMetadata(
   near: { lat: number; lng: number } | undefined,
 ): Promise<TrajetSearchResult[]> {
   const driverIds = [...new Set(rows.map((row) => row.driverId))];
-  const ratingRows = driverIds.length
-    ? await db
-        .select({
-          driverId: review.driverId,
-          averageRating: avg(review.rating),
-          reviewCount: count(review.rating),
-        })
-        .from(review)
-        .where(and(inArray(review.driverId, driverIds), eq(review.direction, 'passenger_to_driver')))
-        .groupBy(review.driverId)
-    : [];
+  const [ratingRows, nameRows] = await Promise.all([
+    driverIds.length
+      ? db
+          .select({
+            driverId: review.driverId,
+            averageRating: avg(review.rating),
+            reviewCount: count(review.rating),
+          })
+          .from(review)
+          .where(and(inArray(review.driverId, driverIds), eq(review.direction, 'passenger_to_driver')))
+          .groupBy(review.driverId)
+      : Promise.resolve([]),
+    driverIds.length
+      ? db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, driverIds))
+      : Promise.resolve([]),
+  ]);
   const ratingByDriver = new Map(
     ratingRows.map((r) => [
       r.driverId,
       { averageRating: r.averageRating ? Number(r.averageRating) : null, reviewCount: r.reviewCount },
     ]),
   );
+  const nameByDriver = new Map(nameRows.map((r) => [r.id, r.name]));
 
   return rows.map((row) => {
     const rating = ratingByDriver.get(row.driverId);
@@ -665,8 +762,14 @@ async function attachSearchMetadata(
       near && row.departureLat !== null && row.departureLng !== null
         ? haversineKm(near.lat, near.lng, Number(row.departureLat), Number(row.departureLng))
         : null;
+    const driver = buildDriverProfile(
+      row.driverId,
+      nameByDriver.get(row.driverId) ?? '',
+      rating?.averageRating ?? null,
+      rating?.reviewCount ?? 0,
+    );
     return {
-      ...serialize(row),
+      ...serialize(row, driver),
       driverRating: rating?.averageRating ?? null,
       driverReviewCount: rating?.reviewCount ?? 0,
       distanceKm,
@@ -675,7 +778,7 @@ async function attachSearchMetadata(
 }
 
 /** Map a DB row (Date columns, DB column names) to the Zod contract shape. */
-function serialize(row: typeof trajet.$inferSelect): Trajet {
+function serialize(row: typeof trajet.$inferSelect, driver: DriverProfile): Trajet {
   return {
     id: row.id,
     driverId: row.driverId,
@@ -686,12 +789,18 @@ function serialize(row: typeof trajet.$inferSelect): Trajet {
     arrivalLat: row.arrivalLat !== null ? Number(row.arrivalLat) : null,
     arrivalLng: row.arrivalLng !== null ? Number(row.arrivalLng) : null,
     departureDateTime: row.departureAt.toISOString(),
+    departurePlace: row.departurePlace,
+    arrivalPlace: row.arrivalPlace,
+    arrivalDateTime: row.arrivalAt ? row.arrivalAt.toISOString() : null,
     seatsTotal: row.seatsTotal,
     seatsAvailable: row.seatsAvailable,
     pricePerSeat: Number(row.pricePerSeat),
     description: row.description,
     comfort: row.comfort as Trajet['comfort'],
     baggageAllowance: row.baggageAllowance,
+    amenities: row.amenities as Trajet['amenities'],
+    hasIntermediateStop: row.hasIntermediateStop,
+    driver,
     cancelledAt: row.cancelledAt ? row.cancelledAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -705,6 +814,11 @@ function serializeBooking(row: typeof booking.$inferSelect): Booking {
     passengerId: row.passengerId,
     seats: row.seats,
     status: row.status as Booking['status'],
+    firstName: row.firstName,
+    lastName: row.lastName,
+    email: row.email,
+    phone: row.phone,
+    message: row.message,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -717,6 +831,11 @@ function serializeBookingWithTrajet(row: {
   passengerId: string;
   seats: number;
   status: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  message: string | null;
   createdAt: Date;
   updatedAt: Date;
   departureCity: string;
@@ -730,6 +849,11 @@ function serializeBookingWithTrajet(row: {
     passengerId: row.passengerId,
     seats: row.seats,
     status: row.status as BookingWithTrajet['status'],
+    firstName: row.firstName,
+    lastName: row.lastName,
+    email: row.email,
+    phone: row.phone,
+    message: row.message,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     trajet: {

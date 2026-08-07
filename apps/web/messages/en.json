@@ -13,7 +13,9 @@
     "signOut": "Sign out",
     "cart": "Cart",
     "account": "My account",
-    "menu": "Menu"
+    "menu": "Menu",
+    "documents": "My documents",
+    "admin": "Backoffice"
   },
   "LocaleSwitcher": {
     "label": "Language",
@@ -605,7 +607,8 @@
         "title": "Drive and share",
         "description": "Got free seats in your car? Turn them into an opportunity."
       }
-    ]  },
+    ]
+  },
   "Annoncer": {
     "title": "Announce a ride",
     "subtitle": "Publish your ride and start traveling with passengers",
@@ -642,7 +645,8 @@
         "apiError": "Error publishing ride. Please try again."
       },
       "success": "Ride published successfully!"
-    }  },
+    }
+  },
   "MesTrajets": {
     "title": "My rides",
     "subtitle": "Find the rides you've published and manage booking requests.",
@@ -684,6 +688,264 @@
       "previous": "Previous",
       "next": "Next",
       "page": "Page {page}"
+    }
+  },
+  "Admin": {
+    "title": "Backoffice",
+    "subtitle": "Track and approve the documents sent by drivers.",
+    "loading": "Loading…",
+    "error": "Could not load the data.",
+    "authRequired": "Sign in to open the backoffice.",
+    "authCta": "Sign in",
+    "forbidden": "This page is for administrators only.",
+    "backHome": "Back to home",
+    "stats": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "users": "Accounts"
+    },
+    "tabs": {
+      "label": "Backoffice views",
+      "queue": "Documents",
+      "users": "Accounts"
+    },
+    "filters": {
+      "status": "Status",
+      "type": "Document type",
+      "search": "Search",
+      "searchPlaceholder": "Driver name or email",
+      "allStatuses": "All statuses",
+      "allTypes": "All types"
+    },
+    "queue": {
+      "empty": "No document matches these filters.",
+      "view": "View",
+      "approve": "Approve",
+      "reject": "Reject",
+      "confirmReject": "Confirm rejection",
+      "cancel": "Cancel",
+      "submitting": "Saving…",
+      "reasonLabel": "Reason for rejection",
+      "reasonPlaceholder": "Explain what is wrong: blurry photo, expired document…",
+      "reasonRequired": "Give a reason to reject this document.",
+      "currentReason": "Current reason: {reason}",
+      "reviewFailed": "The decision could not be saved.",
+      "showPreview": "Preview",
+      "hidePreview": "Hide preview",
+      "previewFailed": "The preview could not be loaded.",
+      "previewUnsupported": "This format cannot be displayed here.",
+      "declaredBirthDate": "Declared date of birth: {date} · {age} years old",
+      "noBirthDate": "This driver has not declared a date of birth yet.",
+      "confirmAge": "I confirm the date of birth matches the licence and the driver is {min} or older."
+    },
+    "users": {
+      "empty": "No account yet.",
+      "name": "Driver",
+      "role": "Role",
+      "joined": "Joined",
+      "documents": "Documents",
+      "pending": "Pending",
+      "approved": "Approved",
+      "admin": "Admin",
+      "driver": "Driver",
+      "verification": "Verification"
+    }
+  },
+  "Documents": {
+    "title": "My documents",
+    "subtitle": "Send your three documents. Our team reviews them before your account is approved.",
+    "loading": "Loading…",
+    "empty": "You have not sent any document yet.",
+    "error": "Could not load your documents.",
+    "view": "View",
+    "authRequired": "Sign in to send your documents.",
+    "authCta": "Sign in",
+    "status": {
+      "missing": "To send",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "type": {
+      "permis": "Driver's licence",
+      "carteIdentite": "ID card",
+      "carteGrise": "Vehicle registration (legacy)",
+      "assurance": "Auto insurance",
+      "immatriculation": "Vehicle registration"
+    },
+    "history": {
+      "title": "My submissions",
+      "reason": "Reason for rejection: {reason}"
+    },
+    "upload": {
+      "expiryLabel": "Expiry date (optional)",
+      "hint": "JPG, PNG, WEBP or PDF. {max} MB maximum.",
+      "submit": "Send document",
+      "submitting": "Sending…",
+      "noFile": "Choose a file first.",
+      "tooLarge": "The file is larger than {max} MB.",
+      "unsupported": "This file format is not accepted.",
+      "failed": "The upload failed. Please try again.",
+      "dropzone": "Drag a file here, or click to choose one",
+      "replace": "Replace document",
+      "cancel": "Cancel",
+      "remove": "Remove this file",
+      "ready": "Ready to send"
+    },
+    "viewFailed": "Link unavailable",
+    "slot": {
+      "permis": {
+        "hint": "Valid Canadian licence, front and back.",
+        "why": "We check that you are allowed to drive in Canada."
+      },
+      "assurance": {
+        "hint": "Proof of insurance, still in force.",
+        "why": "We check that your vehicle is properly insured."
+      },
+      "immatriculation": {
+        "hint": "Vehicle registration certificate.",
+        "why": "We check that the vehicle is compliant and roadworthy."
+      }
+    },
+    "verification": {
+      "progress": "{approved}/{total} approved",
+      "incomplete": {
+        "chip": "Incomplete",
+        "title": "Something is still missing",
+        "body": "Complete the requirements below to get your account approved."
+      },
+      "pending": {
+        "chip": "Pending",
+        "title": "Review in progress",
+        "body": "We received your documents. Our team is reviewing them."
+      },
+      "rejected": {
+        "chip": "Rejected",
+        "title": "A document was rejected",
+        "body": "Fix the rejected document, then send it again."
+      },
+      "approved": {
+        "chip": "Verified",
+        "title": "Your account is verified",
+        "body": "You meet every requirement. You can publish your rides."
+      },
+      "label": "Verification progress"
+    },
+    "eligibility": {
+      "title": "Eligibility requirements",
+      "subtitle": "You must meet these four requirements to offer a ride.",
+      "condition": {
+        "permis": "Hold a valid Canadian driver's licence",
+        "assurance": "Have valid auto insurance",
+        "immatriculation": "Operate a compliant and roadworthy vehicle",
+        "age": "Be at least {min} years old"
+      },
+      "bornOn": "Born {date} · {age} years old",
+      "dateOfBirthLabel": "Your date of birth",
+      "save": "Save",
+      "saving": "Saving…",
+      "change": "Change my date of birth",
+      "required": "Enter your date of birth.",
+      "tooYoung": "You must be {min} or older to drive.",
+      "saveFailed": "Saving failed. Please try again."
+    }
+  },
+  "Trajet": {
+    "title": "Available rides",
+    "subtitle": "Pick a ride, then book your seat online.",
+    "loading": "Loading rides…",
+    "empty": "No ride matches your search.",
+    "error": "Could not load the rides. Please try again later.",
+    "ratingLabel": "{rating} out of 5 — {count} reviews",
+    "seatsAvailable": "{count, plural, =0 {full} one {# seat left} other {# seats left}}",
+    "authRequired": "Sign in to continue.",
+    "authCta": "Sign in",
+    "amenities": {
+      "smoking": "Smoking allowed",
+      "nonSmoking": "Non-smoking",
+      "pets": "Pets allowed",
+      "noPets": "No pets",
+      "skiRack": "Ski rack",
+      "luggage": "Large suitcase",
+      "handLuggage": "Hand luggage",
+      "insurance": "Insured ride",
+      "bikeRack": "Bike rack",
+      "cardPayment": "Card payment"
+    },
+    "filters": {
+      "from": "Departure city",
+      "to": "Arrival city",
+      "date": "Date",
+      "time": "Time",
+      "more": "Filters",
+      "seats": "Number of seats",
+      "maxPrice": "Maximum price",
+      "amenitiesLegend": "Ride options",
+      "direct": "No intermediate stop",
+      "withStops": "With an intermediate stop",
+      "submit": "Search"
+    },
+    "comfort": {
+      "legend": "Comfort",
+      "standard": "Standard",
+      "confort": "Comfort",
+      "premium": "Premium"
+    },
+    "detail": {
+      "departureAt": "Departs at {time}",
+      "arrivalAt": "Arrives around {time}",
+      "driverTitle": "Driver profile",
+      "driverName": "Full name",
+      "licenceYears": "Licence held for",
+      "licenceYearsValue": "{count, plural, one {# year} other {# years}}",
+      "vehicle": "Make and model",
+      "carSeats": "Seats in the car",
+      "carSeatsValue": "{count, plural, one {# seat} other {# seats}}",
+      "carPhoto": "Photo",
+      "comfort": "Comfort",
+      "baggage": "Baggage"
+    },
+    "booking": {
+      "title": "Book this ride",
+      "lastName": "Last name",
+      "firstName": "First name",
+      "email": "Email",
+      "phone": "Phone",
+      "message": "Important message:",
+      "submit": "Book",
+      "submitting": "Booking…",
+      "back": "Back",
+      "success": "Your request has been sent. The driver will get back to you.",
+      "failed": "The booking failed. Please try again later.",
+      "invalid": "Please check your details before booking.",
+      "full": "This ride is full."
+    },
+    "create": {
+      "cta": "Offer a ride",
+      "title": "Offer a ride",
+      "subtitle": "Fill in this form to publish your free seats.",
+      "departure": "Departure",
+      "departurePlace": "Pick-up point",
+      "arrival": "Arrival",
+      "arrivalPlace": "Drop-off point",
+      "when": "Date and times",
+      "departureTime": "Departure time",
+      "arrivalTime": "Arrival time (approximate)",
+      "timesHint": "If the arrival time is before the departure time, arrival is the next day.",
+      "seatsAndPrice": "Seats and price",
+      "seatsTotal": "Number of seats",
+      "pricePerSeat": "Price per seat (€)",
+      "options": "Options",
+      "intermediateStop": "I accept an intermediate stop",
+      "description": "Message for passengers",
+      "descriptionPlaceholder": "Meeting point, luggage, music…",
+      "submit": "Publish the ride",
+      "submitting": "Publishing…",
+      "failed": "Publishing failed. Please try again later.",
+      "invalid": "Please check the form fields.",
+      "baggage": "Baggage",
+      "baggagePlaceholder": "E.g. one cabin bag per person"
     }
   }
 }

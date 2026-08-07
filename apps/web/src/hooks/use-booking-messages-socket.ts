@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { WsServerFrameSchema, type Message } from '@carpool/schemas';
 import { env } from '@/lib/env';
 
+/** Must match apps/api/src/realtime/messages-ws.ts — auth failed, do not reconnect. */
+const WS_CLOSE_UNAUTHORIZED = 4001;
+
 export type BookingMessagesSocketStatus =
   | 'disabled'
   | 'connecting'
@@ -45,8 +48,11 @@ export function resolveMessagesWsUrl(): string | undefined {
  * Live fan-out for one booking thread against `GET /ws/messages`.
  * Contract (see `@carpool/schemas` WsClientFrame / WsServerFrame):
  * - Client → `{ type: "subscribe", bookingId }`
- * - Server → `{ type: "message.created", message }`
- * When the socket is unavailable, status becomes `fallback` so the UI can poll REST.
+ * - Server → `{ type: "subscribed", bookingId }` then `{ type: "message.created", message }`
+ *
+ * Status is `connected` only after a matching `subscribed` ack — until then
+ * (and on error) the UI should keep REST polling. When the socket is
+ * unavailable, status becomes `fallback`.
  */
 export function useBookingMessagesSocket({
   bookingId,
@@ -73,6 +79,7 @@ export function useBookingMessagesSocket({
     let pingTimer: ReturnType<typeof setInterval> | undefined;
     let backoffMs = INITIAL_BACKOFF_MS;
     let attempt = 0;
+    let subscribed = false;
 
     const clearTimers = () => {
       if (reconnectTimer) {
@@ -88,6 +95,7 @@ export function useBookingMessagesSocket({
     const scheduleReconnect = () => {
       if (cancelled) return;
       clearTimers();
+      subscribed = false;
       setStatus(attempt === 0 ? 'connecting' : 'reconnecting');
       reconnectTimer = setTimeout(connect, backoffMs);
       backoffMs = Math.min(MAX_BACKOFF_MS, backoffMs * 2);
@@ -98,6 +106,7 @@ export function useBookingMessagesSocket({
     const connect = () => {
       if (cancelled) return;
       clearTimers();
+      subscribed = false;
       setStatus(attempt === 0 ? 'connecting' : 'reconnecting');
 
       try {
@@ -111,9 +120,8 @@ export function useBookingMessagesSocket({
 
       socket.addEventListener('open', () => {
         if (cancelled) return;
-        backoffMs = INITIAL_BACKOFF_MS;
-        attempt = 0;
-        setStatus('connected');
+        // Stay in connecting until `subscribed` — open alone is not live.
+        setStatus('connecting');
         socket?.send(JSON.stringify({ type: 'subscribe', bookingId }));
         pingTimer = setInterval(() => {
           if (socket?.readyState === WebSocket.OPEN) {
@@ -132,13 +140,34 @@ export function useBookingMessagesSocket({
         }
         const frame = WsServerFrameSchema.safeParse(parsed);
         if (!frame.success) return;
+
+        if (frame.data.type === 'subscribed' && frame.data.bookingId === bookingId) {
+          backoffMs = INITIAL_BACKOFF_MS;
+          attempt = 0;
+          subscribed = true;
+          setStatus('connected');
+          return;
+        }
+
+        if (frame.data.type === 'error') {
+          // Auth/access failures: fall back to REST; do not claim live.
+          subscribed = false;
+          setStatus('fallback');
+          return;
+        }
+
         if (frame.data.type !== 'message.created') return;
         if (frame.data.message.bookingId !== bookingId) return;
         onMessageRef.current(frame.data.message);
       });
 
-      socket.addEventListener('close', () => {
+      socket.addEventListener('close', (event) => {
         if (cancelled) return;
+        subscribed = false;
+        if (event.code === WS_CLOSE_UNAUTHORIZED) {
+          setStatus('fallback');
+          return;
+        }
         scheduleReconnect();
       });
 
@@ -153,7 +182,9 @@ export function useBookingMessagesSocket({
       cancelled = true;
       clearTimers();
       if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: 'unsubscribe', bookingId }));
+        if (subscribed) {
+          socket.send(JSON.stringify({ type: 'unsubscribe', bookingId }));
+        }
       }
       socket?.close();
     };

@@ -5,6 +5,8 @@ import { logger } from 'hono/logger';
 import { healthRoute, pingRoute } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
 import { trajetModule } from './modules/trajet';
+import { documentModule } from './modules/document';
+import { adminModule } from './modules/admin';
 import { reviewModule } from './modules/review';
 import { messageModule } from './modules/message';
 import { contactModule } from './modules/contact';
@@ -69,6 +71,10 @@ const routes = app
   })
   // --- TRAJET domain routes ---
   .route('/', trajetModule)
+  // --- DOCUMENT domain routes (a driver's own submissions) ---
+  .route('/', documentModule)
+  // --- ADMIN backoffice routes (review queue, stats, accounts) ---
+  .route('/', adminModule)
   // --- REVIEW domain routes ---
   .route('/', reviewModule)
   // --- MESSAGE domain routes ---
@@ -120,7 +126,9 @@ app.get('/docs', swaggerUI({ url: '/openapi.json' }));
 // ---------------------------------------------------------------------------
 // WebSocket — live booking threads. Mounted on `app` (not the `routes` chain)
 // so it does not pollute the typed RPC client; history stays on REST.
-// Clients: `GET /ws/messages?token=<bearer>` then `{ type: "subscribe", bookingId }`.
+// Prefer cookie session (same-site / credentialed). Optional `?token=` bearer
+// is for native/cross-origin clients that cannot send cookies on upgrade.
+// After connect: `{ type: "subscribe", bookingId }`.
 // ---------------------------------------------------------------------------
 app.get('/ws/messages', messagesWebSocketHandler);
 

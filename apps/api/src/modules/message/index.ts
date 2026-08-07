@@ -202,21 +202,26 @@ export const messageModule = app
     const serialized = serialize(created);
     const recipientId = user.id === access.passengerId ? access.driverId : access.passengerId;
 
-    // Persist is done; email + WS fan-out are async via BullMQ so this
-    // handler stays fast and horizontally scalable.
-    await enqueueMessageNotify({
-      message: serialized,
-      recipientId,
-      trajetId: access.trajetId,
-      trip: {
-        departureCity: access.trip.departureCity,
-        arrivalCity: access.trip.arrivalCity,
-        departureAt: access.trip.departureAt.toISOString(),
-      },
-    });
+    // Persist first, then enqueue best-effort. A Redis blip must not turn a
+    // successful insert into a non-201 (clients would retry and duplicate).
+    try {
+      await enqueueMessageNotify({
+        message: serialized,
+        recipientId,
+        trajetId: access.trajetId,
+        trip: {
+          departureCity: access.trip.departureCity,
+          arrivalCity: access.trip.arrivalCity,
+          departureAt: access.trip.departureAt.toISOString(),
+        },
+      });
+    } catch (err) {
+      console.error('[message] failed to enqueue notify job', err);
+    }
 
     return c.json(serialized, 201);
   });
+
 
 /** Map a DB row (Date columns) to the Zod contract shape (ISO strings). */
 function serialize(row: typeof message.$inferSelect): Message {

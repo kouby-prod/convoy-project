@@ -88,7 +88,7 @@ export function ConversationView({ bookingId }: { bookingId: string }) {
                 </span>
               ) : null}
               <Link
-                href={`/trajets/${conversation.trajetId}`}
+                href={`/trajet/${conversation.trajetId}`}
                 className="text-primary underline-offset-4 hover:underline"
               >
                 {t('viewTrajet')}

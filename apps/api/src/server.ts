@@ -3,7 +3,9 @@ import { serve } from '@hono/node-server';
 import { app } from './app';
 import { env } from './env';
 import { messageHub } from './realtime/hub';
-import { startMessageWorker } from './queue/message-worker';
+import { closeMessageQueue } from './queue/message-jobs';
+import { startMessageWorker, stopMessageWorker } from './queue/message-worker';
+import { ensureBucket } from './storage/s3';
 
 // `ws` is CJS; Node ESM rejects `import { WebSocketServer } from 'ws'` at
 // runtime in the Docker image. Require + `Server` fallback covers both the
@@ -15,13 +17,21 @@ const wsModule = require('ws') as typeof import('ws') & {
 };
 const WebSocketServerCtor = wsModule.WebSocketServer ?? wsModule.Server;
 
+// Create the documents bucket if it is missing, so a fresh `docker compose up`
+// with an empty MinIO volume is usable without a manual step in the console.
+// Non-fatal: everything except document upload works without object storage,
+// and failing to boot the whole API over it would be the wrong trade.
+await ensureBucket().catch((error: unknown) => {
+  console.error('[storage] bucket unavailable — document upload will fail:', error);
+});
+
 // Boot. `env` is validated at import time and will exit(1) on bad config.
 messageHub.start();
 startMessageWorker();
 
 const wss = new WebSocketServerCtor({ noServer: true });
 
-serve(
+const server = serve(
   {
     fetch: app.fetch,
     port: env.PORT,
@@ -34,3 +44,40 @@ serve(
     console.log(`[api] Messages WS: ws://localhost:${info.port}/ws/messages`);
   },
 );
+
+let shuttingDown = false;
+
+async function shutdown(signal: string): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[api] ${signal} received — shutting down`);
+
+  try {
+    await stopMessageWorker();
+    await closeMessageQueue();
+    await messageHub.stop();
+  } catch (err) {
+    console.error('[api] error while stopping messaging infra', err);
+  }
+
+  try {
+    wss.close();
+  } catch (err) {
+    console.error('[api] error while closing WebSocket server', err);
+  }
+
+  await new Promise<void>((resolve) => {
+    server.close(() => resolve());
+    // Force-exit if the HTTP server hangs on open connections.
+    setTimeout(resolve, 8_000).unref();
+  });
+
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
+});
