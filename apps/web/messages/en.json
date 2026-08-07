@@ -7,6 +7,7 @@
     "post": "Offer a ride",
     "myTrajets": "My rides",
     "myBookings": "My bookings",
+    "messages": "Messages",
     "contact": "Contact",
     "signIn": "Sign in",
     "signOut": "Sign out",
@@ -450,15 +451,36 @@
     }
   },
   "Messages": {
+    "title": "Messages",
+    "subtitle": "Chat with your drivers and passengers about your trips.",
+    "threadTitle": "Conversation",
+    "threadSubtitle": "Coordinate safely around your booking.",
+    "loading": "Loading messages...",
+    "empty": "No conversations yet. Chats linked to your bookings and rides will show up here.",
+    "error": "Unable to load messages.",
     "show": "Messages",
     "hide": "Hide messages",
-    "loading": "Loading messages...",
-    "empty": "No messages yet.",
-    "error": "Unable to load messages.",
     "placeholder": "Write a message...",
     "send": "Send",
     "sending": "Sending...",
-    "sendError": "Unable to send the message. Please try again."
+    "sendError": "Unable to send the message. Please try again.",
+    "validationError": "Messages must be between 1 and 2000 characters.",
+    "openFull": "Open conversation",
+    "backToInbox": "Back to messages",
+    "route": "{from} → {to}",
+    "departureAt": "Departure",
+    "status": "Status",
+    "viewTrajet": "View ride",
+    "counterpartUnknown": "Contact",
+    "contextMissing": "Trip context unavailable — you can still chat here.",
+    "threadEmpty": "Start the conversation to coordinate this trip.",
+    "live": "Live",
+    "reconnecting": "Reconnecting…",
+    "offline": "Periodic refresh",
+    "role": {
+      "passenger": "Driver",
+      "driver": "Passenger"
+    }
   },
   "Trajets": {
     "title": "Find your next ride",

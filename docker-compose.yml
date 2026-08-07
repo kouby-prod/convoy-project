@@ -23,6 +23,8 @@ services:
       PORT: ${API_PORT}
       # Container-side URL (host = the 'postgres' service). Defined in root .env.
       DATABASE_URL: ${DOCKER_DATABASE_URL}
+      # BullMQ + WS fan-out — container reaches the `redis` service by name.
+      REDIS_URL: ${DOCKER_REDIS_URL:-redis://redis:6379}
       # Required; compose fails fast with this message if it is unset in .env.
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?missing in root .env — copy .env.example to .env and set a 32+ char secret}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
@@ -60,6 +62,8 @@ services:
       - '${API_PORT}:${API_PORT}'
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       minio:
         condition: service_healthy

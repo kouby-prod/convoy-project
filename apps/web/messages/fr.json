@@ -7,6 +7,7 @@
     "post": "Annoncer",
     "myTrajets": "Mes trajets",
     "myBookings": "Mes réservations",
+    "messages": "Messages",
     "contact": "Contact",
     "signIn": "Connexion",
     "signOut": "Déconnexion",
@@ -450,15 +451,36 @@
     }
   },
   "Messages": {
+    "title": "Messages",
+    "subtitle": "Échangez avec vos conducteurs et passagers à propos de vos trajets.",
+    "threadTitle": "Conversation",
+    "threadSubtitle": "Coordonnez-vous en toute confiance autour de votre réservation.",
+    "loading": "Chargement des messages...",
+    "empty": "Aucune conversation pour le moment. Les échanges liés à vos réservations et trajets apparaîtront ici.",
+    "error": "Impossible de charger les messages.",
     "show": "Messages",
     "hide": "Masquer les messages",
-    "loading": "Chargement des messages...",
-    "empty": "Aucun message pour le moment.",
-    "error": "Impossible de charger les messages.",
     "placeholder": "Écrire un message...",
     "send": "Envoyer",
     "sending": "Envoi en cours...",
-    "sendError": "Impossible d'envoyer le message. Veuillez réessayer."
+    "sendError": "Impossible d'envoyer le message. Veuillez réessayer.",
+    "validationError": "Le message doit contenir entre 1 et 2000 caractères.",
+    "openFull": "Ouvrir la conversation",
+    "backToInbox": "Retour aux messages",
+    "route": "{from} → {to}",
+    "departureAt": "Départ",
+    "status": "Statut",
+    "viewTrajet": "Voir le trajet",
+    "counterpartUnknown": "Correspondant",
+    "contextMissing": "Contexte du trajet indisponible — vous pouvez toujours échanger ici.",
+    "threadEmpty": "Commencez la conversation pour vous coordonner sur ce trajet.",
+    "live": "En direct",
+    "reconnecting": "Reconnexion…",
+    "offline": "Actualisation périodique",
+    "role": {
+      "passenger": "Conducteur",
+      "driver": "Passager"
+    }
   },
   "Trajets": {
     "title": "Trouvez votre prochain trajet",
