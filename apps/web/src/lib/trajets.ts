@@ -64,14 +64,18 @@ function toListing(row: Trajet): TrajetListing {
 /**
  * Drop empty filters so the request carries only what the user actually chose —
  * a missing param and an empty one are not the same to the query contract.
+ *
+ * The UI holds filters as `from`/`to`/`seats` (see `TrajetSearchQuery`); the
+ * API's `GET /trajets` speaks `departureCity`/`destinationCity`/`minSeats`
+ * (see `TrajetApiSearchQuerySchema`) — this is the seam between the two.
  */
 function toQueryParams(query: TrajetSearchQuery): Record<string, string> {
   const params: Record<string, string> = {};
-  if (query.from) params.from = query.from;
-  if (query.to) params.to = query.to;
+  if (query.from) params.departureCity = query.from;
+  if (query.to) params.destinationCity = query.to;
   if (query.date) params.date = query.date;
   if (query.time) params.time = query.time;
-  if (query.seats !== undefined) params.seats = String(query.seats);
+  if (query.seats !== undefined) params.minSeats = String(query.seats);
   if (query.maxPrice !== undefined) params.maxPrice = String(query.maxPrice);
   if (query.amenities.length > 0) params.amenities = query.amenities.join(',');
   if (query.stopPolicy && query.stopPolicy !== 'any') params.stopPolicy = query.stopPolicy;
@@ -82,8 +86,8 @@ function toQueryParams(query: TrajetSearchQuery): Record<string, string> {
 export async function fetchTrajets(query: TrajetSearchQuery): Promise<TrajetListing[]> {
   const res = await api.trajets.$get({ query: toQueryParams(query) });
   if (!res.ok) throw new Error(`Failed to load trajets (${res.status})`);
-  const rows = await res.json();
-  return rows.map(toListing);
+  const page = await res.json();
+  return page.items.map(toListing);
 }
 
 /** GET /trajets/:id — the ride detail page. Resolves to null when unknown. */
