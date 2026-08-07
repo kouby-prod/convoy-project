@@ -70,6 +70,24 @@ const EnvSchema = z.object({
   SMS_GATEWAY_URL: z.string().optional(),
   SMS_GATEWAY_USER: z.string().optional(),
   SMS_GATEWAY_PASSWORD: z.string().optional(),
+
+  // --- Object storage (MinIO, or any S3-compatible service) ---
+  // Driver identity documents live here, never in Postgres. The API only ever
+  // signs URLs; the browser/mobile client transfers the bytes.
+  //
+  // Two endpoints on purpose: S3_ENDPOINT is how THIS process reaches the
+  // bucket (a compose service name in Docker), while S3_PUBLIC_ENDPOINT is the
+  // host embedded in presigned URLs, which the CLIENT has to resolve. They are
+  // the same value when everything runs on the host.
+  S3_ENDPOINT: z.url().default('http://localhost:9000'),
+  S3_PUBLIC_ENDPOINT: z.url().default('http://localhost:9000'),
+  S3_REGION: z.string().default('us-east-1'),
+  S3_ACCESS_KEY: z.string().min(1, 'S3_ACCESS_KEY is required (MinIO root user)'),
+  S3_SECRET_KEY: z.string().min(1, 'S3_SECRET_KEY is required (MinIO root password)'),
+  S3_BUCKET: z.string().min(1).default('carpool-documents'),
+  // Lifetime of a presigned upload/view URL, in seconds. Short by design: the
+  // link is handed out per action, not stored.
+  S3_URL_TTL: z.coerce.number().int().positive().default(300),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

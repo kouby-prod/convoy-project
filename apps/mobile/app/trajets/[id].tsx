@@ -9,6 +9,9 @@ import { Card } from '@/components/ui/Card';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { LoadingState, ErrorState } from '@/components/ui/StateMessage';
+import { PaginationBar } from '@/components/ui/PaginationBar';
+import { BookingMessages } from '@/components/trajets/BookingMessages';
+import { ReviewForm } from '@/components/trajets/ReviewForm';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -46,6 +49,167 @@ function DriverRating({ driverId }: { driverId: string }) {
     <Text style={styles.value}>
       ★ {data.averageRating.toFixed(1)} ({data.reviewCount} avis)
     </Text>
+  );
+}
+
+/**
+ * Driver-only cancel control for a published trajet — the mobile counterpart
+ * of `apps/web/src/components/trajets/trajet-owner-actions.tsx`'s cancel
+ * half. Editing (`PATCH /trajets/:id`) is not ported to mobile this pass;
+ * only cancellation (`DELETE /trajets/:id`, a soft delete that cascades to
+ * active bookings).
+ */
+function OwnerActions({ trajetId, cancelled }: { trajetId: string; cancelled: boolean }) {
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+
+  const cancelTrajetMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.trajets[':id'].$delete({ param: { id: trajetId } });
+      if (!res.ok) throw new Error('Failed to cancel trajet');
+      return res.json();
+    },
+    onSuccess: () => {
+      setConfirming(false);
+      queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
+      queryClient.invalidateQueries({ queryKey: ['me', 'trajets'] });
+    },
+  });
+
+  if (cancelled) return null;
+
+  return (
+    <Card>
+      <Text style={styles.cardTitle}>Gestion du trajet</Text>
+      {confirming ? (
+        <>
+          <Text style={styles.value}>Confirmer l'annulation de ce trajet ?</Text>
+          <View style={styles.row}>
+            <Button
+              label={cancelTrajetMutation.isPending ? 'Annulation…' : 'Oui, annuler'}
+              variant="destructive"
+              size="sm"
+              disabled={cancelTrajetMutation.isPending}
+              onPress={() => cancelTrajetMutation.mutate()}
+            />
+            <Button label="Retour" variant="outline" size="sm" onPress={() => setConfirming(false)} />
+          </View>
+        </>
+      ) : (
+        <Button label="Annuler ce trajet" variant="outline" size="sm" onPress={() => setConfirming(true)} />
+      )}
+      {cancelTrajetMutation.isError ? <Text style={styles.error}>Échec de l'annulation.</Text> : null}
+    </Card>
+  );
+}
+
+/**
+ * Driver-only booking requests for a trajet — the mobile counterpart of
+ * `apps/web/src/components/trajets/trajet-bookings.tsx`.
+ */
+function TrajetBookingsList({ trajetId, departureDateTime }: { trajetId: string; departureDateTime: string }) {
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [openReviewId, setOpenReviewId] = useState<string | null>(null);
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
+  const hasDeparted = new Date(departureDateTime) < new Date();
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['trajets', trajetId, 'bookings', page],
+    queryFn: async () => {
+      const res = await api.trajets[':id'].bookings.$get({
+        param: { id: trajetId },
+        query: { page: String(page) },
+      });
+      if (!res.ok) throw new Error('Failed to load bookings');
+      return res.json();
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ bookingId, status }: { bookingId: string; status: 'confirmed' | 'rejected' }) => {
+      const res = await api.trajets[':id'].bookings[':bookingId'].$patch({
+        param: { id: trajetId, bookingId },
+        json: { status },
+      });
+      if (!res.ok) throw new Error('Failed to update booking');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trajets', trajetId, 'bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
+    },
+  });
+
+  return (
+    <Card>
+      <Text style={styles.cardTitle}>Réservations reçues</Text>
+      {isLoading ? <LoadingState label="Chargement…" /> : null}
+      {isError ? <ErrorState label="Impossible de charger les réservations." /> : null}
+      {!isLoading && !isError && !data?.items.length ? (
+        <Text style={styles.value}>Aucune réservation pour ce trajet.</Text>
+      ) : null}
+
+      {data?.items.map((booking) => (
+        <View key={booking.id} style={styles.bookingItem}>
+          <View style={styles.bookingRow}>
+            <View>
+              <Text style={styles.value}>{booking.seats} place(s)</Text>
+              <Text style={styles.label}>{STATUS_LABELS[booking.status] ?? booking.status}</Text>
+            </View>
+            {booking.status === 'pending' ? (
+              <View style={styles.row}>
+                <Button
+                  label="Accepter"
+                  size="sm"
+                  disabled={statusMutation.isPending}
+                  onPress={() => statusMutation.mutate({ bookingId: booking.id, status: 'confirmed' })}
+                />
+                <Button
+                  label="Refuser"
+                  size="sm"
+                  variant="outline"
+                  disabled={statusMutation.isPending}
+                  onPress={() => statusMutation.mutate({ bookingId: booking.id, status: 'rejected' })}
+                />
+              </View>
+            ) : null}
+          </View>
+          <BookingMessages bookingId={booking.id} />
+          {booking.status === 'confirmed' && hasDeparted ? (
+            reviewedIds.has(booking.id) ? (
+              <Text style={styles.value}>Avis envoyé pour ce passager.</Text>
+            ) : openReviewId === booking.id ? (
+              <ReviewForm
+                bookingId={booking.id}
+                onSubmitted={() => {
+                  setReviewedIds((prev) => new Set(prev).add(booking.id));
+                  setOpenReviewId(null);
+                }}
+              />
+            ) : (
+              <Button
+                label="Noter ce passager"
+                variant="outline"
+                size="sm"
+                onPress={() => setOpenReviewId(booking.id)}
+              />
+            )
+          ) : null}
+        </View>
+      ))}
+
+      {statusMutation.isError ? <Text style={styles.error}>Échec de la mise à jour.</Text> : null}
+
+      {data?.items.length ? (
+        <PaginationBar
+          page={page}
+          hasMore={data.hasMore}
+          onPrev={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => p + 1)}
+        />
+      ) : null}
+    </Card>
   );
 }
 
@@ -119,6 +283,7 @@ function BookingSection({ trajetId, seatsAvailable, cancelled }: { trajetId: str
             />
           ) : null}
           {cancelMutation.isError ? <Text style={styles.error}>Échec de l'annulation.</Text> : null}
+          <BookingMessages bookingId={myBooking.id} />
         </>
       ) : (
         <>
@@ -218,9 +383,10 @@ export default function TrajetDetailScreen() {
         </Card>
 
         {isOwner ? (
-          <Card>
-            <Text style={styles.value}>Vous êtes le conducteur de ce trajet.</Text>
-          </Card>
+          <>
+            <OwnerActions trajetId={id} cancelled={!!data.cancelledAt} />
+            <TrajetBookingsList trajetId={id} departureDateTime={data.departureDateTime} />
+          </>
         ) : (
           <BookingSection trajetId={id} seatsAvailable={data.seatsAvailable} cancelled={!!data.cancelledAt} />
         )}
@@ -233,6 +399,19 @@ const styles = StyleSheet.create({
   content: { gap: spacing.lg, paddingVertical: spacing.md, paddingBottom: spacing.xxl },
   title: { fontSize: fontSize.lg, fontWeight: '800', color: colors.foreground },
   cardTitle: { fontSize: fontSize.md, fontWeight: '700', color: colors.foreground },
+  row: { flexDirection: 'row', gap: spacing.sm },
+  bookingItem: {
+    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.sm,
+  },
+  bookingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
   label: { fontSize: fontSize.xs, color: colors.mutedForeground },
   value: { fontSize: fontSize.sm, color: colors.foreground },
   error: { fontSize: fontSize.sm, color: colors.destructive },

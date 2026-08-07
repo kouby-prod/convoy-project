@@ -21,6 +21,8 @@
     "better-auth": "1.6.26",
     "expo": "~56.0.12",
     "expo-constants": "~56.0.18",
+    "expo-document-picker": "~56.0.4",
+    "expo-file-system": "~56.0.9",
     "expo-linking": "~56.0.14",
     "expo-network": "~56.0.5",
     "expo-router": "~56.2.11",

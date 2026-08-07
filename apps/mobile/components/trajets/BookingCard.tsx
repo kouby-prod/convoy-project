@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { BookingWithTrajet, BookingStatus } from '@carpool/schemas';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { BookingMessages } from '@/components/trajets/BookingMessages';
+import { ReviewForm } from '@/components/trajets/ReviewForm';
 import { colors, spacing, fontSize } from '@/lib/theme';
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
@@ -26,6 +29,9 @@ export function BookingCard({
   cancelling: boolean;
 }) {
   const canCancel = booking.status === 'pending' || booking.status === 'confirmed';
+  const canReview = booking.status === 'confirmed' && new Date(booking.trajet.departureDateTime) < new Date();
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewed, setReviewed] = useState(false);
 
   return (
     <Card>
@@ -40,6 +46,16 @@ export function BookingCard({
           <Button label={cancelling ? 'Annulation…' : 'Annuler'} variant="outline" size="sm" disabled={cancelling} onPress={onCancel} />
         ) : null}
       </View>
+      <BookingMessages bookingId={booking.id} />
+      {canReview ? (
+        reviewed ? (
+          <Text style={styles.line}>Merci, votre avis a été envoyé.</Text>
+        ) : reviewOpen ? (
+          <ReviewForm bookingId={booking.id} onSubmitted={() => setReviewed(true)} />
+        ) : (
+          <Button label="Laisser un avis sur le conducteur" variant="outline" size="sm" onPress={() => setReviewOpen(true)} />
+        )
+      ) : null}
     </Card>
   );
 }
