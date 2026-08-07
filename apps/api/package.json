@@ -18,7 +18,8 @@
     "auth:generate": "better-auth generate --config src/auth/auth.ts --output src/db/auth-schema.ts -y",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
-    "seed:admin": "tsx src/seed-admin.ts"
+    "seed:admin": "tsx src/seed-admin.ts",
+    "seed:trajets": "tsx src/seed-trajets.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1097.0",
