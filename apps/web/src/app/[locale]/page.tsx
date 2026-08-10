@@ -5,11 +5,11 @@ import { FeaturesSection } from '@/components/landing/features-section';
 
 export default function HomePage() {
   return (
-    <>
+    <div className="flex flex-col gap-4 pb-4 sm:gap-6">
       <HeroSection />
       <TestimonialsSection />
       <GuaranteesSection />
       <FeaturesSection />
-    </>
+    </div>
   );
 }

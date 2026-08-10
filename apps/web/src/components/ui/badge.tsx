@@ -2,20 +2,20 @@ import { type HTMLAttributes, forwardRef } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-/* Status pill on-system: heavy radius, tinted fill over the semantic token
-   rather than a saturated block, so a row of them stays readable next to body
-   text. Colour carries meaning, never decoration — see `documentStatusVariant`
-   in components/documents/document-status-badge.tsx. */
+/* Status pill: colour carries meaning. `success` uses the dedicated success
+   token so it stays green after secondary became a neutral Dream fill. */
 export const badgeVariants = cva(
-  'inline-flex w-fit shrink-0 items-center justify-center gap-1.5 rounded-3xl px-3 py-1 text-xs font-semibold whitespace-nowrap transition-all duration-200 [&>svg]:size-3.5',
+  'inline-flex h-6 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border border-transparent px-2.5 py-0.5 text-xs font-medium whitespace-nowrap transition-all [&>svg]:size-3',
   {
     variants: {
       variant: {
-        neutral: 'bg-muted text-muted-foreground ring-1 ring-foreground/5',
-        primary: 'bg-primary/10 text-primary ring-1 ring-primary/20',
-        success: 'bg-secondary/15 text-secondary ring-1 ring-secondary/25',
-        warning: 'bg-accent/25 text-accent-foreground ring-1 ring-accent-foreground/10',
+        neutral: 'bg-muted text-muted-foreground',
+        primary: 'bg-primary text-primary-foreground',
+        success: 'bg-success/15 text-success ring-1 ring-success/25',
+        warning: 'bg-warning/25 text-warning-foreground ring-1 ring-warning-foreground/10',
         destructive: 'bg-destructive/10 text-destructive ring-1 ring-destructive/20',
+        secondary: 'bg-secondary text-secondary-foreground',
+        outline: 'border-border text-foreground',
       },
     },
     defaultVariants: { variant: 'neutral' },

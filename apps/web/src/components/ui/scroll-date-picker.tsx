@@ -100,7 +100,7 @@ export function ScrollDatePicker({ value, onChange, placeholder, className }: Sc
   return (
     <div
       className={cn(
-        'flex h-12 w-full items-center gap-2 rounded-full bg-card px-5 text-sm text-foreground shadow-sm ring-1 ring-border flex-col',
+        'flex h-12 w-full items-center gap-2 rounded-md bg-card px-5 text-sm text-foreground shadow-sm ring-1 ring-border flex-col',
         className,
       )}
     >

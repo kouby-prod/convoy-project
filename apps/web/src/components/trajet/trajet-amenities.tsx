@@ -90,7 +90,7 @@ export function AmenityToggleGroup({ selected, onToggle, label, legend }: Amenit
               title={label(amenity)}
               onClick={() => onToggle(amenity)}
               className={cn(
-                'flex size-11 items-center justify-center rounded-2xl outline-none transition-all duration-200 ease-smooth active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/30',
+                'flex size-11 items-center justify-center rounded-md outline-none transition-all duration-200 ease-smooth active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/30',
                 isSelected
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'bg-card text-muted-foreground ring-1 ring-border hover:bg-muted',

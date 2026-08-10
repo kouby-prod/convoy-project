@@ -143,7 +143,7 @@ export function DocumentSlotCard({ type, latest }: DocumentSlotCardProps) {
         {/* ── What this slot is, and why we ask ─────────────────────────── */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
               <Icon className="size-5" strokeWidth={2.25} aria-hidden />
             </span>
             <div className="min-w-0 space-y-0.5">
@@ -154,14 +154,14 @@ export function DocumentSlotCard({ type, latest }: DocumentSlotCardProps) {
           <DocumentStatusBadge status={status} />
         </div>
 
-        <p className="flex items-start gap-2 rounded-2xl bg-muted px-3 py-2 text-xs text-muted-foreground">
+        <p className="flex items-start gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
           <Info className="mt-px size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
           {t(`slot.${type}.why`)}
         </p>
 
         {/* ── What is already on file ───────────────────────────────────── */}
         {latest ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-muted px-3 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted px-3 py-2">
             <p className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
               <FileText className="size-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
               <span className="truncate">
@@ -179,7 +179,7 @@ export function DocumentSlotCard({ type, latest }: DocumentSlotCardProps) {
 
         {/* The reason is the only thing that makes a refusal actionable. */}
         {status === 'rejected' && latest?.reviewNote ? (
-          <p className="rounded-2xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
             {t('history.reason', { reason: latest.reviewNote })}
           </p>
         ) : null}
@@ -225,7 +225,7 @@ export function DocumentSlotCard({ type, latest }: DocumentSlotCardProps) {
                 <label
                   htmlFor={`file-${fieldId}`}
                   className={cn(
-                    'flex min-h-[7.5rem] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-6 text-center transition-all duration-200',
+                    'flex min-h-[7.5rem] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border-2 border-dashed px-4 py-6 text-center transition-all duration-200',
                     'peer-focus-visible:border-primary peer-focus-visible:ring-3 peer-focus-visible:ring-ring/30',
                     isDragging
                       ? 'border-primary bg-primary/5'
@@ -265,7 +265,7 @@ export function DocumentSlotCard({ type, latest }: DocumentSlotCardProps) {
             {error ? (
               <p
                 role="alert"
-                className="rounded-2xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive"
               >
                 {error}
               </p>
@@ -338,7 +338,7 @@ function SelectedFile({
   }, [file]);
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-muted p-3">
+    <div className="flex items-center gap-3 rounded-md bg-muted p-3">
       <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-card ring-1 ring-border">
         {previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -349,7 +349,7 @@ function SelectedFile({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-secondary">{readyLabel}</p>
+        <p className="text-xs font-semibold text-success">{readyLabel}</p>
         <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
         <p className="text-xs text-muted-foreground">{formatSize(file.size)}</p>
       </div>

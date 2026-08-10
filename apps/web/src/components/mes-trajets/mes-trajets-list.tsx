@@ -54,7 +54,7 @@ export function MesTrajetsList() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Link href={`/trajets/${item.id}`} className="hover:underline">
+                  <Link href={`/trajet/${item.id}`} className="hover:underline">
                     {item.departureCity} - {item.destinationCity}
                   </Link>
                   {item.cancelledAt ? (

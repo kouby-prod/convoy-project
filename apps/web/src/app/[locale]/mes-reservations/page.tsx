@@ -1,7 +1,7 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { MesReservationsList } from '@/components/mes-reservations/mes-reservations-list';
+import { PageHeader } from '@/components/ui/page-header';
 
-/** "Mes réservations" — the passenger's own bookings, with a cancel action. */
 export default async function MesReservationsPage({
   params,
 }: {
@@ -12,12 +12,8 @@ export default async function MesReservationsPage({
   const t = await getTranslations('MesReservations');
 
   return (
-    <section className="flex flex-col gap-8 py-12">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('title')}</h1>
-        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
-      </div>
-
+    <section className="flex flex-col gap-8">
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
       <MesReservationsList />
     </section>
   );

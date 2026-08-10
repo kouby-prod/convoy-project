@@ -34,3 +34,79 @@ export const CreateMessageSchema = z
 export type CreateMessage = z.infer<typeof CreateMessageSchema>;
 
 export const MessagePageSchema = paginatedSchema(MessageSchema).describe('MessagePage');
+
+/**
+ * One inbox row for `GET /messages/conversations` — a booking thread the
+ * caller can access, with enough trip/counterpart context to render a list
+ * without a second round-trip.
+ */
+export const ConversationSchema = z
+  .object({
+    bookingId: z.string(),
+    trajetId: z.string(),
+    role: z.enum(['driver', 'passenger']),
+    bookingStatus: z.string(),
+    counterpart: z.object({
+      id: z.string(),
+      name: z.string(),
+    }),
+    trip: z.object({
+      departureCity: z.string(),
+      arrivalCity: z.string(),
+      departureAt: z.string().describe('ISO-8601 timestamp'),
+    }),
+    lastMessage: MessageSchema.nullable(),
+  })
+  .describe('Conversation');
+export type Conversation = z.infer<typeof ConversationSchema>;
+
+export const ConversationPageSchema = paginatedSchema(ConversationSchema).describe('ConversationPage');
+
+/**
+ * Client → server frames on `GET /ws/messages`. Auth is established at
+ * upgrade time (Bearer token query/header or session cookie); these frames
+ * only manage which booking threads the socket listens to.
+ */
+export const WsClientFrameSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('subscribe'),
+    bookingId: z.string().uuid(),
+  }),
+  z.object({
+    type: z.literal('unsubscribe'),
+    bookingId: z.string().uuid(),
+  }),
+  z.object({
+    type: z.literal('ping'),
+  }),
+]);
+export type WsClientFrame = z.infer<typeof WsClientFrameSchema>;
+
+/**
+ * Server → client frames on `GET /ws/messages`. History stays on REST;
+ * sockets only push live `message.created` events after a successful
+ * subscribe.
+ */
+export const WsServerFrameSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('subscribed'),
+    bookingId: z.string(),
+  }),
+  z.object({
+    type: z.literal('unsubscribed'),
+    bookingId: z.string(),
+  }),
+  z.object({
+    type: z.literal('message.created'),
+    message: MessageSchema,
+  }),
+  z.object({
+    type: z.literal('pong'),
+  }),
+  z.object({
+    type: z.literal('error'),
+    error: z.string(),
+    bookingId: z.string().optional(),
+  }),
+]);
+export type WsServerFrame = z.infer<typeof WsServerFrameSchema>;

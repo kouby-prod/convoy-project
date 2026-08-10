@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CityCombobox } from '@/components/ui/city-combobox';
 import {
   Select,
   SelectContent,
@@ -38,13 +39,16 @@ export function TrajetCreateForm() {
   // Radix Select is controlled, so comfort lives in state rather than FormData
   // — same as the amenity toggles and the stop checkbox above.
   const [comfort, setComfort] = useState<'standard' | 'confort' | 'premium'>('standard');
+  const [departureCity, setDepartureCity] = useState('');
+  const [arrivalCity, setArrivalCity] = useState('');
   const [error, setError] = useState('');
 
   const mutation = useMutation({
     mutationFn: createTrajet,
-    onSuccess: () => {
+    onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['trajet'] });
-      router.push('/trajet');
+      queryClient.invalidateQueries({ queryKey: ['trajets', created.id] });
+      router.push(`/trajet/${created.id}`);
     },
     onError: () => setError(t('create.failed')),
   });
@@ -78,9 +82,9 @@ export function TrajetCreateForm() {
     if (arrivalAt < departureAt) arrivalAt.setDate(arrivalAt.getDate() + 1);
 
     const parsed = CreateTrajetRequestSchema.safeParse({
-      departureCity: formData.get('departureCity')?.toString() ?? '',
+      departureCity: departureCity.trim(),
       departurePlace: formData.get('departurePlace')?.toString() ?? '',
-      arrivalCity: formData.get('arrivalCity')?.toString() ?? '',
+      arrivalCity: arrivalCity.trim(),
       arrivalPlace: formData.get('arrivalPlace')?.toString() ?? '',
       departureAt: departureAt.toISOString(),
       arrivalAt: arrivalAt.toISOString(),
@@ -119,12 +123,26 @@ export function TrajetCreateForm() {
       <CardContent className="p-6 pt-6 sm:p-8 sm:pt-8">
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <Field label={t('create.departure')}>
-            <Input name="departureCity" placeholder={t('filters.from')} required />
+            <CityCombobox
+              name="departureCity"
+              value={departureCity}
+              onChange={setDepartureCity}
+              placeholder={t('filters.from')}
+              aria-label={t('filters.from')}
+              required
+            />
             <Input name="departurePlace" placeholder={t('create.departurePlace')} required />
           </Field>
 
           <Field label={t('create.arrival')}>
-            <Input name="arrivalCity" placeholder={t('filters.to')} required />
+            <CityCombobox
+              name="arrivalCity"
+              value={arrivalCity}
+              onChange={setArrivalCity}
+              placeholder={t('filters.to')}
+              aria-label={t('filters.to')}
+              required
+            />
             <Input name="arrivalPlace" placeholder={t('create.arrivalPlace')} required />
           </Field>
 
@@ -214,7 +232,7 @@ export function TrajetCreateForm() {
           </Field>
 
           {error ? (
-            <p className="rounded-3xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            <p className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               {error}
             </p>
           ) : null}
@@ -222,7 +240,7 @@ export function TrajetCreateForm() {
           <div className="flex flex-col items-center gap-3">
             <Button
               type="submit"
-              variant="accent"
+              variant="primary"
               size="lg"
               className="px-10"
               disabled={mutation.isPending}

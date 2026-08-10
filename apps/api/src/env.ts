@@ -13,6 +13,11 @@ const EnvSchema = z.object({
     .string()
     .min(1, 'DATABASE_URL is required (e.g. postgres://user:pass@localhost:5432/carpool)'),
 
+  // --- Redis (BullMQ queues + WebSocket pub/sub fan-out) ---
+  // Host default matches the infra redis service published on REDIS_PORT.
+  // In Docker Compose the api service overrides this to redis://redis:6379.
+  REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
+
   // --- BetterAuth ---
   // A strong secret is required: it signs sessions, tokens and cookies.
   // Generate one with: `openssl rand -base64 32`.

@@ -1,119 +1,171 @@
 @import 'tailwindcss';
 
-@theme {
-  /* Brand ramp — rebrand the whole system by changing --brand-500 */
-  --color-brand-500: #2563eb;
+@custom-variant dark (&:is(.dark *));
 
-  /* ── A note on `muted` ───────────────────────────────────────────────────
-     `muted` / `muted-foreground` are the NEUTRAL pair: card wells, secondary
-     text, disabled states, the "nothing here yet" badge. They must stay
-     colourless.
+/* Kouby / Convoy brand — sampled from the K logo + Figma Accueil chrome.
+   Yellow = primary CTA (dark ink for contrast)
+   Green  = brand chrome / success
+   Blue   = focus ring, links, trust accents
+   Radius stays blocky: small corner round only (not pills / soft blobs). */
 
-     They used to be green-50 / green-800, which quietly broke the status
-     vocabulary: every hint, every e-mail address and every "to send" badge
-     rendered green, so green stopped meaning anything and an "a document is
-     missing" banner read as success. Status colour has to carry meaning rather
-     than decoration, which only works if the neutral base is actually neutral.
-     Green now belongs to `secondary` (approved) alone.
-     ─────────────────────────────────────────────────────────────────────── */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-geist-sans);
+  --font-heading: var(--font-sans);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-brand: var(--brand);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-brand-green: var(--brand-green);
+  --color-brand-blue: var(--brand-blue);
 
-  /* Radius scale (base 0.625rem) */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
-  --radius-2xl: 18px;
-  --radius-3xl: 22px;
-  --radius-4xl: 26px;
+  /* Tight scale: even rounded-4xl stays a slight edge round (~10px). */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.3125rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.5rem;
+  --radius-4xl: 0.625rem;
 
-  /* Semantic tokens (light) */
-  --color-background: #fafafa;
-  --color-foreground: #0a0a0a;
-  --color-card: #ffffff;
-  --color-card-foreground: #0a0a0a;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #0a0a0a;
-  --color-primary: #1d4ed8;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #16a34a;
-  --color-secondary-foreground: #ffffff;
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #52525b;
-  --color-accent: #facc15;
-  --color-accent-foreground: #111827;
-  --color-destructive: oklch(0.55 0.2 27);
-  --color-destructive-foreground: #ffffff;
-  --color-border: #d9e5f8;
-  --color-input: #dbeafe;
-  --color-ring: #1d4ed8;
-
-  /* Signature easing + durations */
   --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 :root {
-  --color-background: #fafafa;
-  --color-foreground: #0a0a0a;
-  --color-card: #ffffff;
-  --color-card-foreground: #0a0a0a;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #0a0a0a;
-  --color-primary: #1d4ed8;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #16a34a;
-  --color-secondary-foreground: #ffffff;
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #52525b;
-  --color-accent: #facc15;
-  --color-accent-foreground: #111827;
-  --color-destructive: oklch(0.55 0.2 27);
-  --color-destructive-foreground: #ffffff;
-  --color-border: #d9e5f8;
-  --color-input: #dbeafe;
-  --color-ring: #1d4ed8;
+  /* Logo averages: yellow / green / blue — surfaces kept soft (less pure white glare). */
+  --brand-yellow: #e2d200;
+  --brand-yellow-soft: #f3efc8;
+  --brand-green: #26b053;
+  --brand-green-dark: #1e8f43;
+  --brand-blue: #187eb3;
+  --brand-blue-dark: #0d70c1;
+
+  --brand: var(--brand-green);
+  --ink: #1c1c1c;
+  /* Cool sage canvas — dimmer than #fafafa so pages aren't eye-searing */
+  --canvas: #e8ece9;
+  --background: var(--canvas);
+  --foreground: #1c1c1c;
+  --card: #f3f5f3;
+  --card-foreground: #1c1c1c;
+  --popover: #f3f5f3;
+  --popover-foreground: #1c1c1c;
+  /* Primary CTA = muted brand yellow; dark ink for contrast */
+  --primary: var(--brand-yellow);
+  --primary-foreground: #1c1c1c;
+  /* Secondary actions use brand green */
+  --secondary: var(--brand-green);
+  --secondary-foreground: #f3f5f3;
+  --muted: #dde3df;
+  --muted-foreground: #4a524c;
+  --accent: var(--brand-yellow-soft);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(0.55 0.2 27);
+  --destructive-foreground: #f3f5f3;
+  --border: #c5d4cb;
+  --input: #e4e9e5;
+  /* Blue focus ring reads on yellow and green surfaces */
+  --ring: var(--brand-blue);
+  --success: var(--brand-green);
+  --success-foreground: #f3f5f3;
+  --warning: var(--brand-yellow);
+  --warning-foreground: #1c1c1c;
+  --radius: 0.375rem;
 }
 
 .dark {
-  --color-background: #09090b;
-  --color-foreground: #fafafa;
-  --color-card: #18181b;
-  --color-card-foreground: #fafafa;
-  --color-popover: #18181b;
-  --color-popover-foreground: #fafafa;
-  --color-primary: #60a5fa;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #22c55e;
-  --color-secondary-foreground: #ffffff;
-  --color-muted: #27272a;
-  --color-muted-foreground: #a1a1aa;
-  --color-accent: #facc15;
-  --color-accent-foreground: #111827;
-  --color-destructive: oklch(0.6 0.19 25);
-  --color-destructive-foreground: #ffffff;
-  --color-border: #0f172a;
-  --color-input: #0f172a;
-  --color-ring: #60a5fa;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --primary: var(--brand-yellow);
+  --primary-foreground: #0a0a0a;
+  --secondary: #1e8f43;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #1a2e22;
+  --accent-foreground: #fafafa;
+  --destructive: oklch(0.6 0.19 25);
+  --destructive-foreground: #ffffff;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: color-mix(in srgb, var(--brand-blue) 70%, #09090b);
+  --success: #2fc466;
+  --success-foreground: #052e16;
+  --warning: var(--brand-yellow);
+  --warning-foreground: #171717;
 }
 
 @layer base {
   * {
-    border-color: var(--color-border);
-  }
-  body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    border-color: var(--border);
   }
 
-  /* Browser autofill paints its own pale-blue fill, which fights the design
-     system. Repaint it with the card token via the inset box-shadow trick and
-     keep the text on-token. */
+  html {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  ::selection {
+    background: var(--brand-yellow);
+    color: var(--ink);
+  }
+
+  a {
+    color: inherit;
+  }
+
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus {
-    -webkit-text-fill-color: var(--color-foreground);
-    -webkit-box-shadow: 0 0 0 1000px var(--color-card) inset;
-    caret-color: var(--color-foreground);
+    -webkit-text-fill-color: var(--foreground);
+    -webkit-box-shadow: 0 0 0 1000px var(--card) inset;
+    caret-color: var(--foreground);
     transition: background-color 9999s ease-out 0s;
   }
+}
+
+@utility bg-canvas-glow {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse 70% 45% at 8% -8%, color-mix(in srgb, var(--brand-yellow) 16%, transparent), transparent),
+    radial-gradient(ellipse 55% 40% at 92% 0%, color-mix(in srgb, var(--brand-blue) 12%, transparent), transparent),
+    linear-gradient(180deg, color-mix(in srgb, var(--brand-green) 12%, var(--canvas)), var(--background) 52%);
+}
+
+@utility bg-brand-green {
+  background-color: var(--brand-green);
+}
+
+@utility text-brand-blue {
+  color: var(--brand-blue);
 }

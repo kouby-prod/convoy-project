@@ -1,8 +1,6 @@
 import { type HTMLAttributes, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
-/* Surface on-system: heavy radius, soft shadow over a hairline ring (never a
-   plain border). */
 export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function Card(
   { className, ...cardProps },
   ref,
@@ -10,8 +8,9 @@ export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(f
   return (
     <div
       ref={ref}
+      data-slot="card"
       className={cn(
-        'rounded-4xl bg-card text-card-foreground shadow-md ring-1 ring-foreground/5 dark:ring-foreground/10',
+        'group/card flex flex-col gap-6 overflow-hidden rounded-lg bg-card py-6 text-sm text-card-foreground shadow-md ring-1 ring-foreground/5 dark:ring-foreground/10',
         className,
       )}
       {...cardProps}
@@ -21,7 +20,14 @@ export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(f
 
 export const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   function CardHeader({ className, ...headerProps }, ref) {
-    return <div ref={ref} className={cn('flex flex-col gap-1.5 p-6', className)} {...headerProps} />;
+    return (
+      <div
+        ref={ref}
+        data-slot="card-header"
+        className={cn('grid auto-rows-min items-start gap-1.5 px-6', className)}
+        {...headerProps}
+      />
+    );
   },
 );
 
@@ -30,7 +36,8 @@ export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadi
     return (
       <h3
         ref={ref}
-        className={cn('text-xl font-semibold tracking-tight', className)}
+        data-slot="card-title"
+        className={cn('font-heading text-base font-medium tracking-tight', className)}
         {...titleProps}
       />
     );
@@ -39,7 +46,35 @@ export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadi
 
 export const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   function CardContent({ className, ...contentProps }, ref) {
-    return <div ref={ref} className={cn('p-6 pt-0', className)} {...contentProps} />;
+    return (
+      <div ref={ref} data-slot="card-content" className={cn('px-6', className)} {...contentProps} />
+    );
+  },
+);
+
+export const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLParagraphElement>>(
+  function CardDescription({ className, ...descriptionProps }, ref) {
+    return (
+      <p
+        ref={ref}
+        data-slot="card-description"
+        className={cn('text-sm text-muted-foreground', className)}
+        {...descriptionProps}
+      />
+    );
+  },
+);
+
+export const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+  function CardFooter({ className, ...footerProps }, ref) {
+    return (
+      <div
+        ref={ref}
+        data-slot="card-footer"
+        className={cn('flex items-center px-6', className)}
+        {...footerProps}
+      />
+    );
   },
 );
 

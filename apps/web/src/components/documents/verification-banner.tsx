@@ -29,9 +29,9 @@ const BANNER_STYLES: Record<
   },
   pending: {
     Icon: Clock,
-    wrapper: 'bg-accent/15 ring-accent-foreground/10',
-    icon: 'text-accent-foreground',
-    fill: 'bg-accent',
+    wrapper: 'bg-warning/20 ring-warning-foreground/10',
+    icon: 'text-warning-foreground',
+    fill: 'bg-warning',
   },
   rejected: {
     Icon: ShieldAlert,
@@ -41,17 +41,17 @@ const BANNER_STYLES: Record<
   },
   approved: {
     Icon: BadgeCheck,
-    wrapper: 'bg-secondary/10 ring-secondary/25',
-    icon: 'text-secondary',
-    fill: 'bg-secondary',
+    wrapper: 'bg-success/10 ring-success/25',
+    icon: 'text-success',
+    fill: 'bg-success',
   },
 };
 
 /** Per-segment tint, so the bar says WHICH document is where. */
 const SEGMENT_FILL = {
   missing: 'bg-border',
-  pending: 'bg-accent',
-  approved: 'bg-secondary',
+  pending: 'bg-warning',
+  approved: 'bg-success',
   rejected: 'bg-destructive',
 } as const;
 
@@ -64,7 +64,7 @@ export function VerificationBanner({ verification }: { verification: DriverVerif
     <section
       aria-label={t('verification.label')}
       className={cn(
-        'flex flex-col gap-4 rounded-3xl px-5 py-4 shadow-sm ring-1 transition-all duration-500 ease-smooth sm:flex-row sm:items-center sm:gap-5',
+        'flex flex-col gap-4 rounded-md px-5 py-4 shadow-sm ring-1 transition-all duration-500 ease-smooth sm:flex-row sm:items-center sm:gap-5',
         wrapper,
       )}
     >

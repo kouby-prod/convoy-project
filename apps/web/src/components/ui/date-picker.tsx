@@ -34,7 +34,7 @@ export function DatePicker({ value, onChange, placeholder, className }: DatePick
           aria-label={placeholder}
           onClick={() => setIsOpen((previous) => !previous)}
           className={cn(
-            'flex h-12 w-full items-center justify-between gap-2 rounded-full bg-card px-5 text-sm shadow-sm ring-1 ring-border outline-none transition-all duration-200 hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30',
+            'flex h-12 w-full items-center justify-between gap-2 rounded-md bg-card px-5 text-sm shadow-sm ring-1 ring-border outline-none transition-all duration-200 hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30',
             className,
           )}
         >

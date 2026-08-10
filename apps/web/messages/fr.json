@@ -4,9 +4,11 @@
     "searchPlaceholder": "Rechercher un trajet, une ville…",
     "search": "Rechercher",
     "trajets": "Trajets",
+    "trajetsHint": "Voir tous les trajets disponibles",
     "post": "Annoncer",
     "myTrajets": "Mes trajets",
     "myBookings": "Mes réservations",
+    "messages": "Messages",
     "contact": "Contact",
     "signIn": "Connexion",
     "signOut": "Déconnexion",
@@ -14,7 +16,12 @@
     "account": "Mon compte",
     "menu": "Menu",
     "documents": "Mes documents",
-    "admin": "Back-office"
+    "admin": "Back-office",
+    "sections": {
+      "search": "Recherche",
+      "actions": "Actions",
+      "account": "Compte"
+    }
   },
   "LocaleSwitcher": {
     "label": "Langue",
@@ -34,7 +41,46 @@
     "becomePassenger": "Comment devenir passager ?",
     "passengerTips": "Conseils passagers",
     "driverTips": "Conseils conducteurs",
-    "copyright": "© {year} covoiturage Kouby Drive tous droits réservés"
+    "copyright": "© {year} Convoy — covoiturage. Tous droits réservés."
+  },
+  "Auth": {
+    "signIn": {
+      "title": "Connectez-vous et commencez à covoiturer",
+      "subtitle": "Accédez à vos trajets, réservations et messages.",
+      "submit": "Se connecter",
+      "pending": "Connexion…",
+      "noAccount": "Pas encore de compte ?",
+      "createAccount": "Créer un compte"
+    },
+    "signUp": {
+      "title": "Créer un compte Convoy",
+      "subtitle": "Rejoignez la communauté et voyagez autrement.",
+      "submit": "S'inscrire",
+      "pending": "Création…",
+      "hasAccount": "Déjà inscrit ?",
+      "signIn": "Se connecter"
+    },
+    "fields": {
+      "email": "Adresse e-mail",
+      "emailPlaceholder": "vous@exemple.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Votre mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "confirmPasswordPlaceholder": "Répétez le mot de passe",
+      "firstName": "Prénom",
+      "firstNamePlaceholder": "Votre prénom",
+      "lastName": "Nom",
+      "lastNamePlaceholder": "Votre nom"
+    },
+    "errors": {
+      "missingCredentials": "Veuillez renseigner votre e-mail et votre mot de passe.",
+      "signInFailed": "Échec de la connexion. Vérifiez vos identifiants.",
+      "signInUnavailable": "Impossible de se connecter. Réessayez ultérieurement.",
+      "missingFields": "Veuillez remplir tous les champs.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
+      "signUpFailed": "Échec de l'inscription. Réessayez.",
+      "signUpUnavailable": "Impossible de créer le compte. Réessayez plus tard."
+    }
   },
   "Terms": {
     "title": "Conditions Générales d'Utilisation",
@@ -353,8 +399,10 @@
     ]
   },
   "Hero": {
+    "brand": "Convoy",
     "title": "Plus qu'un trajet, une rencontre !",
-    "illustrationPlaceholder": "Illustration",
+    "subtitle": "Recherchez un trajet, réservez en quelques clics et voyagez l'esprit tranquille.",
+    "imageAlt": "Voyageurs partageant un trajet en voiture",
     "departurePlaceholder": "Ville de départ",
     "arrivalPlaceholder": "Ville d'arrivée",
     "dateLabel": "Date",
@@ -362,31 +410,32 @@
     "search": "Rechercher"
   },
   "Testimonials": {
+    "eyebrow": "Communauté",
     "title": "Témoignages",
-    "seeMore": "Voir plus de témoignages",
     "items": [
       {
         "quote": "Une sécurité garantie",
-        "author": "Membre Kouby Drive",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "author": "Camille, membre Convoy",
+        "body": "Les documents des conducteurs sont vérifiés avant chaque trajet. Je me sens en confiance dès la réservation."
       },
       {
         "quote": "Un service au top",
-        "author": "Membre Kouby Drive",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "author": "Karim, membre Convoy",
+        "body": "Réserver une place prend deux minutes, et le suivi des trajets est clair du départ à l'arrivée."
       },
       {
-        "quote": "La communauté = une famille",
-        "author": "Membre Kouby Drive",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "quote": "La communauté, une famille",
+        "author": "Léa, membre Convoy",
+        "body": "J'ai rencontré des personnes formidables sur la route. Convoy rend le partage simple et agréable."
       }
     ]
   },
   "Guarantees": {
+    "eyebrow": "Confiance",
     "title": "Nos garanties",
     "columns": [
       {
-        "title": "Un cadre de travail encadré et professionnalisant",
+        "title": "Un cadre clair et sécurisé",
         "points": [
           "Contrôle des documents obligatoires (permis, assurance, carte grise).",
           "Sécurisation des paiements et des transactions.",
@@ -396,10 +445,10 @@
         ]
       },
       {
-        "title": "On est là pour vous, à tout moment.",
+        "title": "On est là pour vous, à tout moment",
         "points": [
-          "Support téléphonique assuré 7j/7, sans interruption tout au long de l'année.",
-          "KoubyDrive évolue avec vous. Vos suggestions nous inspirent."
+          "Support disponible 7j/7 pour vous accompagner sur vos trajets.",
+          "Convoy évolue avec vous — vos retours guident nos améliorations."
         ]
       }
     ]
@@ -450,15 +499,36 @@
     }
   },
   "Messages": {
+    "title": "Messages",
+    "subtitle": "Échangez avec vos conducteurs et passagers à propos de vos trajets.",
+    "threadTitle": "Conversation",
+    "threadSubtitle": "Coordonnez-vous en toute confiance autour de votre réservation.",
+    "loading": "Chargement des messages...",
+    "empty": "Aucune conversation pour le moment. Les échanges liés à vos réservations et trajets apparaîtront ici.",
+    "error": "Impossible de charger les messages.",
     "show": "Messages",
     "hide": "Masquer les messages",
-    "loading": "Chargement des messages...",
-    "empty": "Aucun message pour le moment.",
-    "error": "Impossible de charger les messages.",
     "placeholder": "Écrire un message...",
     "send": "Envoyer",
     "sending": "Envoi en cours...",
-    "sendError": "Impossible d'envoyer le message. Veuillez réessayer."
+    "sendError": "Impossible d'envoyer le message. Veuillez réessayer.",
+    "validationError": "Le message doit contenir entre 1 et 2000 caractères.",
+    "openFull": "Ouvrir la conversation",
+    "backToInbox": "Retour aux messages",
+    "route": "{from} → {to}",
+    "departureAt": "Départ",
+    "status": "Statut",
+    "viewTrajet": "Voir le trajet",
+    "counterpartUnknown": "Correspondant",
+    "contextMissing": "Contexte du trajet indisponible — vous pouvez toujours échanger ici.",
+    "threadEmpty": "Commencez la conversation pour vous coordonner sur ce trajet.",
+    "live": "En direct",
+    "reconnecting": "Reconnexion…",
+    "offline": "Actualisation périodique",
+    "role": {
+      "passenger": "Conducteur",
+      "driver": "Passager"
+    }
   },
   "Trajets": {
     "title": "Trouvez votre prochain trajet",
@@ -472,7 +542,10 @@
       "page": "Page {page}"
     },
     "departureAt": "Départ",
+    "arrivalAt": "Arrivée",
     "seats": "Places",
+    "seatsAvailable": "{available}/{total} places",
+    "perSeat": "par place",
     "price": "Prix",
     "description": "Description",
     "detailTitle": "Détail du trajet",
@@ -481,6 +554,20 @@
     "comfort": "Confort",
     "baggageAllowance": "Bagages",
     "cancelledBanner": "Ce trajet a été annulé par le conducteur.",
+    "driverTitle": "Conducteur",
+    "vehicle": "Véhicule",
+    "carSeats": "Places dans la voiture",
+    "carSeatsValue": "{count, plural, one {# place} other {# places}}",
+    "licenceYears": "Permis depuis {count, plural, one {# an} other {# ans}}",
+    "rideOptions": "Options du trajet",
+    "itinerary": {
+      "arrivalApprox": "—"
+    },
+    "seatsLeft": "{count, plural, =0 {Complet} one {# place restante} other {# places restantes}}",
+    "ownerAside": {
+      "title": "Vous êtes le conducteur",
+      "body": "Gérez votre annonce et les demandes de réservation ci-dessous."
+    },
     "driverRating": {
       "label": "Note du conducteur",
       "none": "Pas encore d'avis",
@@ -531,6 +618,7 @@
     "booking": {
       "title": "Réserver une place",
       "seatsLabel": "Nombre de places",
+      "estimatedTotal": "Total estimé : {amount}",
       "submit": "Réserver",
       "submitting": "Réservation en cours...",
       "success": "Votre demande de réservation a été envoyée au conducteur.",
@@ -573,17 +661,30 @@
     }
   },
   "Features": {
-    "title": "Les fonctionnalités possibles du site",
-    "howItWorks": "Comment ça marche ?",
-    "videoPlaceholder": "Vidéo",
+    "eyebrow": "Pour chacun",
+    "title": "Comment ça marche ?",
     "cards": [
       {
         "title": "Voyagez sans conduire",
-        "description": "Choisissez votre trajet, réservez en ligne et partez l'esprit tranquille."
+        "description": "Choisissez votre trajet, réservez en ligne et partez l'esprit tranquille.",
+        "steps": [
+          "Indiquez départ, arrivée et date.",
+          "Comparez les trajets et réservez une place.",
+          "Échangez avec le conducteur et voyagez."
+        ],
+        "ctaHref": "/trajet",
+        "ctaLabel": "Trouver un trajet"
       },
       {
         "title": "Roulez et partagez",
-        "description": "Votre voiture a des places libres ? Faites-en une opportunité."
+        "description": "Votre voiture a des places libres ? Faites-en une opportunité.",
+        "steps": [
+          "Publiez votre trajet en quelques minutes.",
+          "Validez les demandes de réservation.",
+          "Partagez les frais et la route."
+        ],
+        "ctaHref": "/trajet/nouveau",
+        "ctaLabel": "Annoncer un trajet"
       }
     ]
   },
@@ -595,9 +696,9 @@
     "error": "Erreur lors du chargement du formulaire.",
     "form": {
       "departureCity": "Ville de départ",
-      "departureCityPlaceholder": "ex. Paris",
+      "departureCityPlaceholder": "ex. Montréal",
       "destinationCity": "Ville d'arrivée",
-      "destinationCityPlaceholder": "ex. Lyon",
+      "destinationCityPlaceholder": "ex. Québec",
       "departureDateTime": "Date et heure de départ",
       "seatsTotal": "Nombre de places",
       "seatsTotalPlaceholder": "ex. 4",
@@ -834,9 +935,14 @@
     "subtitle": "Choisissez un trajet, puis réservez votre place en ligne.",
     "loading": "Chargement des trajets…",
     "empty": "Aucun trajet ne correspond à votre recherche.",
+    "emptyHint": "Élargissez vos critères ou effacez les filtres pour voir tous les trajets.",
+    "emptyClear": "Voir tous les trajets",
+    "resultsCount": "{count, plural, =0 {Aucun trajet} one {# trajet} other {# trajets}}",
     "error": "Impossible de charger les trajets. Réessayez plus tard.",
     "ratingLabel": "{rating} sur 5 — {count} avis",
-    "seatsAvailable": "{count, plural, =0 {complet} one {# place libre} other {# places libres}}",
+    "seatsAvailable": "{count, plural, =0 {Complet} one {# place} other {# places}}",
+    "perSeat": "par place",
+    "driverBy": "avec {name}",
     "authRequired": "Connectez-vous pour continuer.",
     "authCta": "Se connecter",
     "amenities": {
@@ -852,13 +958,18 @@
       "cardPayment": "Paiement par carte"
     },
     "filters": {
+      "title": "Recherche",
       "from": "Ville de départ",
       "to": "Ville d'arrivée",
       "date": "Date",
       "time": "Heure",
-      "more": "Filtre",
-      "seats": "Nombre de places",
-      "maxPrice": "Prix maximum",
+      "more": "Plus de filtres",
+      "less": "Moins de filtres",
+      "clear": "Effacer",
+      "swap": "Inverser départ et arrivée",
+      "swapShort": "Inverser",
+      "seats": "Places",
+      "maxPrice": "Prix max.",
       "amenitiesLegend": "Options du trajet",
       "direct": "Sans arrêt intermédiaire",
       "withStops": "Avec arrêt intermédiaire",

@@ -24,7 +24,7 @@ export type DocumentDisplayStatus = DocumentSlotStatus;
 export const DOCUMENT_STATUS_STYLES = {
   missing: { variant: 'neutral', Icon: CircleDashed, tone: 'text-muted-foreground' },
   pending: { variant: 'warning', Icon: Clock, tone: 'text-accent-foreground' },
-  approved: { variant: 'success', Icon: CheckCircle2, tone: 'text-secondary' },
+  approved: { variant: 'success', Icon: CheckCircle2, tone: 'text-success' },
   rejected: { variant: 'destructive', Icon: XCircle, tone: 'text-destructive' },
 } as const;
 

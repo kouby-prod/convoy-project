@@ -1,10 +1,38 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { MessageSchema, MessagePageSchema, CreateMessageSchema, PaginationQuerySchema } from '@carpool/schemas';
+import {
+  MessageSchema,
+  MessagePageSchema,
+  CreateMessageSchema,
+  ConversationPageSchema,
+  PaginationQuerySchema,
+} from '@carpool/schemas';
 
 // Bearer scheme for the authed routes (cookie sessions work too). Mirrors
 // apps/api/src/routes/auth-proofs.ts.
 const bearerAuth = [{ Bearer: [] }];
 const errorSchema = z.object({ error: z.string() });
+
+export const listConversationsRoute = createRoute({
+  method: 'get',
+  path: '/messages/conversations',
+  tags: ['message'],
+  summary:
+    'List booking threads the current user can access (as passenger or driver), newest last-message first',
+  security: bearerAuth,
+  request: {
+    query: PaginationQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'A page of conversations',
+      content: { 'application/json': { schema: ConversationPageSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
 
 export const listBookingMessagesRoute = createRoute({
   method: 'get',
