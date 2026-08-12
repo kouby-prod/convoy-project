@@ -10,6 +10,7 @@ import { adminModule } from './modules/admin';
 import { reviewModule } from './modules/review';
 import { messageModule } from './modules/message';
 import { contactModule } from './modules/contact';
+import { notificationModule } from './modules/notification';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
 import { messagesWebSocketHandler } from './realtime/messages-ws';
@@ -79,6 +80,8 @@ const routes = app
   .route('/', reviewModule)
   // --- MESSAGE domain routes ---
   .route('/', messageModule)
+  // --- NOTIFICATION domain routes ---
+  .route('/', notificationModule)
   // --- CONTACT domain routes ---
   .route('/', contactModule)
   // --- PROOF routes (not domain logic) ---

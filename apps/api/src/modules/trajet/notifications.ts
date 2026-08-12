@@ -1,5 +1,7 @@
 import { eq } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 import { db } from '../../db/client';
+import { notification } from '../../db/notification';
 import { user } from '../../db/auth-schema';
 import { sendEmail } from '../../auth/email';
 import { env } from '../../env';
@@ -31,9 +33,30 @@ export function describeTrip(trip: {
  * are logged, not thrown — there's no retry queue in this codebase, so a dead
  * SMTP server must never fail the booking action that triggered the email.
  */
-export async function notifyUser(userId: string, subject: string, text: string): Promise<void> {
+export async function notifyUser(
+  userId: string,
+  subject: string,
+  text: string,
+  link: string | null = null,
+): Promise<void> {
   const [recipient] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId));
   if (!recipient) return;
+
+  try {
+    await db
+      .insert(notification)
+      .values({
+        id: randomUUID(),
+        userId,
+        title: subject,
+        body: text,
+        channel: 'email',
+        link,
+      })
+      .returning();
+  } catch (err) {
+    console.error(`Failed to store notification for ${recipient.email}`, err);
+  }
 
   try {
     await sendEmail({ to: recipient.email, subject, text });

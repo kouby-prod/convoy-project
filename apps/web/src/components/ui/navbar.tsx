@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { useQuery } from '@tanstack/react-query';
 import {
   Search,
   UserRound,
@@ -15,10 +16,14 @@ import {
   FileText,
   Shield,
   Headphones,
+  Bell,
 } from 'lucide-react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { authClient, isAdminRole } from '@/lib/auth-client';
+import { createApiClient } from '@carpool/api-client';
+import { env } from '@/lib/env';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 /**
@@ -43,6 +48,18 @@ export function Navbar({ className }: NavbarProps) {
   const accountRef = useRef<HTMLDivElement>(null);
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const user = session?.user;
+  const api = createApiClient(env.NEXT_PUBLIC_API_URL);
+  const { data: unreadCountData } = useQuery({
+    queryKey: ['notifications', 'unreadCount'],
+    enabled: !!user,
+    queryFn: async () => {
+      const res = await api.notifications.$get({ query: { page: 1, limit: 1 } });
+      if (!res.ok) throw new Error('Failed to load notification count');
+      return (await res.json()).unreadCount as number;
+    },
+    staleTime: 1000 * 60,
+  });
+  const unreadCount = unreadCountData ?? 0;
   const isAdmin = isAdminRole(user?.role);
   // List page only — not /trajet/nouveau or /trajet/:id.
   const isTrajetsActive = pathname === '/trajet';
@@ -89,6 +106,7 @@ export function Navbar({ className }: NavbarProps) {
     { href: '/parametres', label: translateNavbar('account'), Icon: UserRound },
     ...(user
       ? [
+          { href: '/notifications', label: translateNavbar('notifications'), Icon: Bell },
           { href: '/mes-trajets', label: translateNavbar('myTrajets'), Icon: Route },
           { href: '/mes-reservations', label: translateNavbar('myBookings'), Icon: FileText },
           { href: '/messages', label: translateNavbar('messages'), Icon: MessageSquare },
@@ -179,6 +197,23 @@ export function Navbar({ className }: NavbarProps) {
             <Headphones className="size-4" strokeWidth={2.25} />
             {translateNavbar('contact')}
           </Link>
+          {user ? (
+            <Link
+              href="/notifications"
+              title={translateNavbar('notifications')}
+              className="relative inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-white/90 outline-none transition-all duration-200 hover:bg-white/15 hover:text-white focus-visible:ring-3 focus-visible:ring-white/40"
+            >
+              <Bell className="size-4" strokeWidth={2.25} />
+              {unreadCount > 0 ? (
+                <Badge
+                  variant="destructive"
+                  className="absolute -right-2 -top-2 rounded-full px-1.5 text-[10px] font-semibold"
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Badge>
+              ) : null}
+            </Link>
+          ) : null}
         </nav>
 
         <div className="hidden h-8 w-px shrink-0 bg-white/25 lg:block" aria-hidden />

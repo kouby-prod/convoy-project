@@ -12,13 +12,26 @@ vi.mock('../../src/auth/email', () => ({
   sendEmail: (...args: unknown[]) => sendEmail(...args),
 }));
 
-const dbState = vi.hoisted(() => ({ selectResult: [] as unknown[] }));
+const dbState = vi.hoisted(() => ({
+  selectResult: [] as unknown[],
+  insertResult: [] as unknown[],
+}));
+
+function createChain(result: unknown) {
+  return {
+    values: () => ({
+      returning: () => Promise.resolve(result),
+    }),
+  };
+}
+
 const db = vi.hoisted(() => ({
   select: vi.fn(() => ({
     from: () => ({
       where: () => Promise.resolve(dbState.selectResult),
     }),
   })),
+  insert: vi.fn(() => createChain(dbState.insertResult)),
 }));
 vi.mock('../../src/db/client', () => ({ db }));
 
@@ -28,14 +41,18 @@ describe('notifyUser', () => {
   beforeEach(() => {
     sendEmail.mockReset();
     db.select.mockClear();
+    db.insert.mockClear();
     dbState.selectResult = [];
+    dbState.insertResult = [];
   });
 
   it('sends an email to the looked-up user', async () => {
     dbState.selectResult = [{ email: 'driver@example.com' }];
+    dbState.insertResult = [{ id: 'notif-1' }];
 
     await notifyUser('u_1', 'Subject', 'Body');
 
+    expect(db.insert).toHaveBeenCalled();
     expect(sendEmail).toHaveBeenCalledWith({
       to: 'driver@example.com',
       subject: 'Subject',

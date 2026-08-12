@@ -16,6 +16,7 @@
     "account": "Mon compte",
     "menu": "Menu",
     "documents": "Mes documents",
+    "notifications": "Notifications",
     "admin": "Back-office",
     "sections": {
       "search": "Recherche",
@@ -1036,5 +1037,20 @@
       "baggage": "Bagages",
       "baggagePlaceholder": "Ex. : un bagage cabine par personne"
     }
+  },
+  "Notifications": {
+    "title": "Mes notifications",
+    "subtitle": "Restez informé de vos réservations et messages.",
+    "loading": "Chargement...",
+    "error": "Impossible de charger les notifications. Réessayez plus tard.",
+    "empty": "Aucune notification pour le moment. Vous verrez les mises à jour ici lorsque les conducteurs répondront à vos demandes.",
+    "unread": "Nouveau",
+    "unreadCount": "Vous avez {count} notification non lue",
+    "markRead": "Marquer comme lu",
+    "marking": "Marquage en cours...",
+    "loadMore": "Charger plus",
+    "filterUnread": "Afficher les non lues",
+    "filterUnreadActive": "Afficher toutes",
+    "noUnread": "Toutes les notifications ont été lues."
   }
 }

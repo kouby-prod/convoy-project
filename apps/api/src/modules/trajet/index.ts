@@ -270,7 +270,9 @@ export const trajetModule = app
     }
 
     const offset = (query.page - 1) * query.limit;
-    const orderExprs = near ? [asc(departureDistanceKmSql(near.lat, near.lng))] : [];
+    const orderExprs = near
+      ? [asc(departureDistanceKmSql(near.lat, near.lng)), asc(trajet.departureAt)]
+      : [asc(trajet.departureAt)];
     const rows = await db
       .select()
       .from(trajet)

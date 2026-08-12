@@ -16,6 +16,7 @@
     "account": "My account",
     "menu": "Menu",
     "documents": "My documents",
+    "notifications": "Notifications",
     "admin": "Backoffice",
     "sections": {
       "search": "Search",
@@ -1036,5 +1037,20 @@
       "baggage": "Baggage",
       "baggagePlaceholder": "E.g. one cabin bag per person"
     }
+  },
+  "Notifications": {
+    "title": "My notifications",
+    "subtitle": "Stay updated with your bookings and messages.",
+    "loading": "Loading...",
+    "error": "Unable to load notifications. Please try again later.",
+    "empty": "No notifications yet. You'll see updates here when drivers respond to your requests.",
+    "noUnread": "All notifications have been read.",
+    "unread": "New",
+    "unreadCount": "You have {count} unread notification",
+    "markRead": "Mark as read",
+    "marking": "Marking...",
+    "loadMore": "Load more",
+    "filterUnread": "Show unread",
+    "filterUnreadActive": "Show all"
   }
 }
