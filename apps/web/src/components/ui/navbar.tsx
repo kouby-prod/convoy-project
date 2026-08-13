@@ -3,7 +3,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNotificationsSocket } from '@/hooks/use-notifications-socket';
 import {
   Search,
   UserRound,
@@ -49,15 +50,33 @@ export function Navbar({ className }: NavbarProps) {
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const user = session?.user;
   const api = createApiClient(env.NEXT_PUBLIC_API_URL);
+  const queryClient = useQueryClient();
+  const [bellPulse, setBellPulse] = useState(false);
+  const { status: socketStatus } = useNotificationsSocket({
+    enabled: !!user,
+    onNotification: () => {
+      queryClient.setQueryData<number>(['notifications', 'unreadCount'], (count) => (count ?? 0) + 1);
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'list'] });
+      setBellPulse(true);
+    },
+  });
+  useEffect(() => {
+    if (!bellPulse) return;
+    const timer = setTimeout(() => setBellPulse(false), 1200);
+    return () => clearTimeout(timer);
+  }, [bellPulse]);
   const { data: unreadCountData } = useQuery({
     queryKey: ['notifications', 'unreadCount'],
     enabled: !!user,
     queryFn: async () => {
-      const res = await api.notifications.$get({ query: { page: 1, limit: 1 } });
+      const res = await api.notifications['unread-count'].$get();
       if (!res.ok) throw new Error('Failed to load notification count');
-      return (await res.json()).unreadCount as number;
+      return (await res.json()).unreadCount;
     },
     staleTime: 1000 * 60,
+    // The socket above keeps this fresh in real time; only poll as a
+    // fallback while it isn't connected yet.
+    refetchInterval: socketStatus === 'connected' ? false : 1000 * 60,
   });
   const unreadCount = unreadCountData ?? 0;
   const isAdmin = isAdminRole(user?.role);
@@ -203,11 +222,14 @@ export function Navbar({ className }: NavbarProps) {
               title={translateNavbar('notifications')}
               className="relative inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-white/90 outline-none transition-all duration-200 hover:bg-white/15 hover:text-white focus-visible:ring-3 focus-visible:ring-white/40"
             >
-              <Bell className="size-4" strokeWidth={2.25} />
+              <Bell className={cn('size-4', bellPulse && 'animate-bell-ring')} strokeWidth={2.25} />
               {unreadCount > 0 ? (
                 <Badge
                   variant="destructive"
-                  className="absolute -right-2 -top-2 rounded-full px-1.5 text-[10px] font-semibold"
+                  className={cn(
+                    'absolute -right-2 -top-2 rounded-full px-1.5 text-[10px] font-semibold transition-transform',
+                    bellPulse && 'scale-125',
+                  )}
                 >
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </Badge>

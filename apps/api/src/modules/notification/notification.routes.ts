@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { NotificationPageSchema, NotificationSchema } from '@carpool/schemas';
+import { NotificationPageSchema, NotificationSchema, UnreadCountSchema } from '@carpool/schemas';
 
 const bearerAuth = [{ Bearer: [] }];
 const errorSchema = z.object({ error: z.string() });
@@ -10,11 +10,35 @@ export const listNotificationsRoute = createRoute({
   tags: ['notification'],
   summary: "List the authenticated user's notifications",
   security: bearerAuth,
-  request: { query: z.object({ page: z.number().int().min(1).default(1), limit: z.number().int().min(1).max(50).default(20) }) },
+  request: {
+    query: z.object({
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(50).default(20),
+      unreadOnly: z.enum(['true', 'false']).optional(),
+    }),
+  },
   responses: {
     200: {
       description: 'A page of notifications',
       content: { 'application/json': { schema: NotificationPageSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const unreadNotificationCountRoute = createRoute({
+  method: 'get',
+  path: '/notifications/unread-count',
+  tags: ['notification'],
+  summary: "Count the authenticated user's unread notifications",
+  security: bearerAuth,
+  responses: {
+    200: {
+      description: 'Unread notification count',
+      content: { 'application/json': { schema: UnreadCountSchema } },
     },
     401: {
       description: 'Not authenticated',

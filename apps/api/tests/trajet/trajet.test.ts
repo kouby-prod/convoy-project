@@ -623,11 +623,13 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        { type: 'trip_cancelled', link: expect.any(String) },
       );
       expect(notifyUser).toHaveBeenCalledWith(
         'u_3',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        { type: 'trip_cancelled', link: expect.any(String) },
       );
     });
   });
@@ -673,6 +675,7 @@ describe('trajet module', () => {
       'someone-else',
       expect.stringContaining('New booking request'),
       expect.any(String),
+      { type: 'booking_request', link: expect.any(String) },
     );
   });
 
@@ -726,11 +729,13 @@ describe('trajet module', () => {
       'u_3',
       expect.stringContaining('expired'),
       expect.any(String),
+      { type: 'booking_status', link: expect.any(String) },
     );
     expect(notifyUser).toHaveBeenCalledWith(
       'someone-else',
       expect.stringContaining('New booking request'),
       expect.any(String),
+      { type: 'booking_request', link: expect.any(String) },
     );
   });
 
@@ -889,6 +894,7 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('confirmed'),
         expect.any(String),
+        { type: 'booking_status', link: expect.any(String) },
       );
     });
 
@@ -917,6 +923,7 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('rejected'),
         expect.any(String),
+        { type: 'booking_status', link: expect.any(String) },
       );
     });
 
@@ -942,6 +949,7 @@ describe('trajet module', () => {
         'u_3',
         expect.stringContaining('expired'),
         expect.any(String),
+        { type: 'booking_status', link: expect.any(String) },
       );
     });
   });
@@ -1011,6 +1019,7 @@ describe('trajet module', () => {
         'u_1',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        { type: 'booking_status', link: expect.any(String) },
       );
     });
 
@@ -1035,6 +1044,7 @@ describe('trajet module', () => {
         'u_1',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        { type: 'booking_status', link: expect.any(String) },
       );
     });
 
@@ -1056,6 +1066,7 @@ describe('trajet module', () => {
         'u_3',
         expect.stringContaining('expired'),
         expect.any(String),
+        { type: 'booking_status', link: expect.any(String) },
       );
     });
   });

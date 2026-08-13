@@ -12,6 +12,11 @@ vi.mock('../../src/auth/email', () => ({
   sendEmail: (...args: unknown[]) => sendEmail(...args),
 }));
 
+const publishNotificationCreated = vi.hoisted(() => vi.fn());
+vi.mock('../../src/modules/notification/events', () => ({
+  publishNotificationCreated: (...args: unknown[]) => publishNotificationCreated(...args),
+}));
+
 const dbState = vi.hoisted(() => ({
   selectResult: [] as unknown[],
   insertResult: [] as unknown[],
@@ -40,6 +45,8 @@ import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip } from '../../src/
 describe('notifyUser', () => {
   beforeEach(() => {
     sendEmail.mockReset();
+    publishNotificationCreated.mockReset();
+    publishNotificationCreated.mockResolvedValue(undefined);
     db.select.mockClear();
     db.insert.mockClear();
     dbState.selectResult = [];
@@ -48,9 +55,22 @@ describe('notifyUser', () => {
 
   it('sends an email to the looked-up user', async () => {
     dbState.selectResult = [{ email: 'driver@example.com' }];
-    dbState.insertResult = [{ id: 'notif-1' }];
+    dbState.insertResult = [
+      {
+        id: 'notif-1',
+        userId: 'u_1',
+        title: 'Subject',
+        body: 'Body',
+        channel: 'email',
+        type: 'system',
+        link: null,
+        readAt: null,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      },
+    ];
 
-    await notifyUser('u_1', 'Subject', 'Body');
+    await notifyUser('u_1', 'Subject', 'Body', { type: 'system' });
 
     expect(db.insert).toHaveBeenCalled();
     expect(sendEmail).toHaveBeenCalledWith({
@@ -60,20 +80,66 @@ describe('notifyUser', () => {
     });
   });
 
+  it('stores the type and link, and publishes the created notification', async () => {
+    dbState.selectResult = [{ email: 'driver@example.com' }];
+    const row = {
+      id: 'notif-1',
+      userId: 'u_1',
+      title: 'Subject',
+      body: 'Body',
+      channel: 'email',
+      type: 'booking_request',
+      link: 'https://example.test/trajets/abc',
+      readAt: null,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    };
+    dbState.insertResult = [row];
+
+    await notifyUser('u_1', 'Subject', 'Body', {
+      type: 'booking_request',
+      link: 'https://example.test/trajets/abc',
+    });
+
+    expect(publishNotificationCreated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'notif-1',
+        type: 'booking_request',
+        link: 'https://example.test/trajets/abc',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      }),
+    );
+  });
+
   it('does nothing when the user cannot be found', async () => {
     dbState.selectResult = [];
 
-    await notifyUser('missing', 'Subject', 'Body');
+    await notifyUser('missing', 'Subject', 'Body', { type: 'system' });
 
     expect(sendEmail).not.toHaveBeenCalled();
+    expect(publishNotificationCreated).not.toHaveBeenCalled();
   });
 
   it('logs and swallows an error from sendEmail instead of throwing', async () => {
     dbState.selectResult = [{ email: 'driver@example.com' }];
+    dbState.insertResult = [
+      {
+        id: 'notif-1',
+        userId: 'u_1',
+        title: 'Subject',
+        body: 'Body',
+        channel: 'email',
+        type: 'system',
+        link: null,
+        readAt: null,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      },
+    ];
     sendEmail.mockRejectedValue(new Error('SMTP down'));
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    await expect(notifyUser('u_1', 'Subject', 'Body')).resolves.toBeUndefined();
+    await expect(notifyUser('u_1', 'Subject', 'Body', { type: 'system' })).resolves.toBeUndefined();
 
     expect(consoleError).toHaveBeenCalled();
     consoleError.mockRestore();

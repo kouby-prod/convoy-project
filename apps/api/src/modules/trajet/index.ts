@@ -101,6 +101,7 @@ async function notifyExpiredBookings(
       passengerId,
       'Your Carpool booking request expired',
       `Your request for the trip from ${describeTrip(trip)} expired because the driver didn't respond in time. Seats may still be available: ${trajetSearchUrl()}`,
+      { type: 'booking_status', link: trajetSearchUrl() },
     );
   }
 }
@@ -440,6 +441,7 @@ export const trajetModule = app
           passengerId,
           'Your Carpool trip was cancelled',
           `The driver cancelled the trip from ${describeTrip(result.trajet)} you had booked. Search for another ride: ${trajetSearchUrl()}`,
+          { type: 'trip_cancelled', link: trajetSearchUrl() },
         ),
       ),
     );
@@ -515,6 +517,7 @@ export const trajetModule = app
       'New booking request on your Carpool trip',
       `A passenger requested ${seats} seat(s) on your trip from ${describeTrip(result)}. ` +
         `Sign in to accept or reject it: ${trajetUrl(id)}`,
+      { type: 'booking_request', link: trajetUrl(id) },
     );
     return c.json(serializeBooking(result.booking), 201);
   })
@@ -606,6 +609,7 @@ export const trajetModule = app
       status === 'confirmed'
         ? `Your booking request for the trip from ${describeTrip(result)} was confirmed by the driver. View the trip: ${trajetUrl(id)}`
         : `Your booking request for the trip from ${describeTrip(result)} was rejected by the driver. Search for another ride: ${trajetSearchUrl()}`,
+      { type: 'booking_status', link: status === 'confirmed' ? trajetUrl(id) : trajetSearchUrl() },
     );
     return c.json(serializeBooking(result.booking), 200);
   })
@@ -670,6 +674,7 @@ export const trajetModule = app
       result.driverId,
       'A passenger cancelled their Carpool booking',
       `A passenger cancelled their booking of ${result.seats} seat(s) on your trip from ${describeTrip(result)}. The seat(s) are available again.`,
+      { type: 'booking_status', link: trajetUrl(id) },
     );
     return c.json(serializeBooking(result.booking), 200);
   })

@@ -1,10 +1,12 @@
 import { eq } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
+import type { NotificationType } from '@carpool/schemas';
 import { db } from '../../db/client';
 import { notification } from '../../db/notification';
 import { user } from '../../db/auth-schema';
 import { sendEmail } from '../../auth/email';
 import { env } from '../../env';
+import { serializeNotification } from '../notification/serialize';
+import { publishNotificationCreated } from '../notification/events';
 
 /** The web app's own origin — first of TRUSTED_ORIGINS, which is where it runs. */
 function webOrigin(): string {
@@ -29,33 +31,44 @@ export function describeTrip(trip: {
 }
 
 /**
- * Looks up `userId`'s email and sends it a plain-text notification. Failures
- * are logged, not thrown — there's no retry queue in this codebase, so a dead
- * SMTP server must never fail the booking action that triggered the email.
+ * Looks up `userId`'s email, stores an in-app notification, publishes it for
+ * live WebSocket fan-out, and sends a plain-text email. Storage/publish/email
+ * failures are all logged, not thrown — there's no retry queue in this
+ * codebase, so a dead SMTP server (or Redis) must never fail the booking
+ * action that triggered the notification.
  */
 export async function notifyUser(
   userId: string,
   subject: string,
   text: string,
-  link: string | null = null,
+  options: { type: NotificationType; link?: string | null },
 ): Promise<void> {
   const [recipient] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId));
   if (!recipient) return;
 
+  let row: typeof notification.$inferSelect | undefined;
   try {
-    await db
+    [row] = await db
       .insert(notification)
       .values({
-        id: randomUUID(),
         userId,
         title: subject,
         body: text,
         channel: 'email',
-        link,
+        type: options.type,
+        link: options.link ?? null,
       })
       .returning();
   } catch (err) {
     console.error(`Failed to store notification for ${recipient.email}`, err);
+  }
+
+  if (row) {
+    try {
+      await publishNotificationCreated(serializeNotification(row));
+    } catch (err) {
+      console.error(`Failed to publish notification event for ${recipient.email}`, err);
+    }
   }
 
   try {

@@ -62,6 +62,7 @@ describe('processMessageNotifyJob', () => {
       'driver_1',
       expect.stringContaining('New message'),
       expect.stringContaining('On my way'),
+      { type: 'message', link: `https://example.test/trajets/${TRAJET_ID}` },
     );
   });
 });

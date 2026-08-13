@@ -40,6 +40,7 @@ export async function processMessageNotifyJob(job: Job<MessageNotifyJob>): Promi
     'New message on your Carpool trip',
     `You have a new message about the trip from ${describeTrip(trip)}: "${message.body}". ` +
       `Reply here: ${trajetUrl(data.trajetId)}`,
+    { type: 'message', link: trajetUrl(data.trajetId) },
   );
 }
 

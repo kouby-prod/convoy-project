@@ -1046,11 +1046,23 @@
     "empty": "No notifications yet. You'll see updates here when drivers respond to your requests.",
     "noUnread": "All notifications have been read.",
     "unread": "New",
-    "unreadCount": "You have {count} unread notification",
+    "unreadCount": "{count, plural, one {You have # unread notification} other {You have # unread notifications}}",
     "markRead": "Mark as read",
     "marking": "Marking...",
     "loadMore": "Load more",
     "filterUnread": "Show unread",
-    "filterUnreadActive": "Show all"
+    "filterUnreadActive": "Show all",
+    "viewDetails": "View",
+    "typeBookingRequest": "Booking request",
+    "typeBookingStatus": "Booking update",
+    "typeTripCancelled": "Trip cancelled",
+    "typeMessage": "Message",
+    "typeSystem": "System",
+    "group": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This week",
+      "earlier": "Earlier"
+    }
   }
 }
