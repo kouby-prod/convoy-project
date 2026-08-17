@@ -20,13 +20,15 @@ vi.mock('../../src/modules/notification/events', () => ({
 const dbState = vi.hoisted(() => ({
   selectResult: [] as unknown[],
   insertResult: [] as unknown[],
+  insertValues: [] as unknown[],
 }));
 
 function createChain(result: unknown) {
   return {
-    values: () => ({
-      returning: () => Promise.resolve(result),
-    }),
+    values: (values: unknown) => {
+      dbState.insertValues.push(values);
+      return { returning: () => Promise.resolve(result) };
+    },
   };
 }
 
@@ -40,7 +42,15 @@ const db = vi.hoisted(() => ({
 }));
 vi.mock('../../src/db/client', () => ({ db }));
 
-import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip } from '../../src/modules/trajet/notifications';
+import {
+  notifyUser,
+  trajetUrl,
+  trajetSearchUrl,
+  messagesUrl,
+  describeTrip,
+  describeTripShort,
+  truncateForPreview,
+} from '../../src/modules/trajet/notifications';
 
 describe('notifyUser', () => {
   beforeEach(() => {
@@ -51,6 +61,7 @@ describe('notifyUser', () => {
     db.insert.mockClear();
     dbState.selectResult = [];
     dbState.insertResult = [];
+    dbState.insertValues = [];
   });
 
   it('sends an email to the looked-up user', async () => {
@@ -111,6 +122,36 @@ describe('notifyUser', () => {
     );
   });
 
+  it('stores `text` as the notification body when no `inAppBody` is given', async () => {
+    dbState.selectResult = [{ email: 'driver@example.com' }];
+    dbState.insertResult = [{ id: 'notif-1' }];
+
+    await notifyUser('u_1', 'Subject', 'Full email body with a URL: https://example.test/x', {
+      type: 'system',
+    });
+
+    expect(dbState.insertValues[0]).toMatchObject({
+      body: 'Full email body with a URL: https://example.test/x',
+    });
+  });
+
+  it('stores the shorter `inAppBody` instead of `text` when given, but still emails the full `text`', async () => {
+    dbState.selectResult = [{ email: 'driver@example.com' }];
+    dbState.insertResult = [{ id: 'notif-1' }];
+
+    await notifyUser('u_1', 'Subject', 'Full email body with a URL: https://example.test/x', {
+      type: 'system',
+      inAppBody: 'Short in-app version',
+    });
+
+    expect(dbState.insertValues[0]).toMatchObject({ body: 'Short in-app version' });
+    expect(sendEmail).toHaveBeenCalledWith({
+      to: 'driver@example.com',
+      subject: 'Subject',
+      text: 'Full email body with a URL: https://example.test/x',
+    });
+  });
+
   it('does nothing when the user cannot be found', async () => {
     dbState.selectResult = [];
 
@@ -146,10 +187,11 @@ describe('notifyUser', () => {
   });
 });
 
-describe('trajetUrl / trajetSearchUrl / describeTrip', () => {
+describe('trajetUrl / trajetSearchUrl / messagesUrl / describeTrip', () => {
   it('builds links from the web app origin', () => {
-    expect(trajetUrl('abc-123')).toBe('https://example.test/trajets/abc-123');
+    expect(trajetUrl('abc-123')).toBe('https://example.test/trajet/abc-123');
     expect(trajetSearchUrl()).toBe('https://example.test/trajets');
+    expect(messagesUrl('booking-1')).toBe('https://example.test/messages/booking-1');
   });
 
   it('describes a trip', () => {
@@ -157,5 +199,26 @@ describe('trajetUrl / trajetSearchUrl / describeTrip', () => {
     expect(
       describeTrip({ departureCity: 'Montreal', arrivalCity: 'Quebec', departureAt }),
     ).toBe(`Montreal to Quebec (departing ${departureAt.toUTCString()})`);
+  });
+
+  it('describes a trip briefly, without a technical GMT/UTC timestamp', () => {
+    const departureAt = new Date('2026-08-11T16:10:00.000Z');
+    const short = describeTripShort({ departureCity: 'Montreal', arrivalCity: 'Quebec', departureAt });
+    expect(short).toContain('Montreal → Quebec');
+    expect(short).not.toContain('GMT');
+    expect(short).not.toContain('UTC');
+  });
+});
+
+describe('truncateForPreview', () => {
+  it('returns short text unchanged', () => {
+    expect(truncateForPreview('Hi there')).toBe('Hi there');
+  });
+
+  it('truncates long text with an ellipsis', () => {
+    const long = 'a'.repeat(100);
+    const result = truncateForPreview(long, 80);
+    expect(result).toHaveLength(81);
+    expect(result.endsWith('…')).toBe(true);
   });
 });

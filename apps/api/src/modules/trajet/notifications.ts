@@ -13,15 +13,21 @@ function webOrigin(): string {
   return env.TRUSTED_ORIGINS[0] ?? '';
 }
 
+/** The trajet detail page is `/trajet/:id` (singular) — `/trajets/:id` (plural) does not exist. */
 export function trajetUrl(trajetId: string): string {
-  return `${webOrigin()}/trajets/${trajetId}`;
+  return `${webOrigin()}/trajet/${trajetId}`;
 }
 
 export function trajetSearchUrl(): string {
   return `${webOrigin()}/trajets`;
 }
 
-/** Shared "from X to Y (departing ...)" fragment used by every notification below. */
+/** The booking's chat thread — where a "new message" notification should land. */
+export function messagesUrl(bookingId: string): string {
+  return `${webOrigin()}/messages/${bookingId}`;
+}
+
+/** Shared "from X to Y (departing ...)" fragment used by the emailed version of every notification below. */
 export function describeTrip(trip: {
   departureCity: string;
   arrivalCity: string;
@@ -31,17 +37,50 @@ export function describeTrip(trip: {
 }
 
 /**
+ * Short "City → City (Aug 11, 4:10 PM)" fragment for the in-app notification
+ * body — unlike {@link describeTrip} (used for the standalone email, which
+ * needs the full picture), the app already shows the notification's own
+ * relative time and a "View" link, so this stays terse and skips the
+ * technical GMT/UTC timestamp.
+ */
+export function describeTripShort(trip: {
+  departureCity: string;
+  arrivalCity: string;
+  departureAt: Date;
+}): string {
+  const shortDate = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(trip.departureAt);
+  return `${trip.departureCity} → ${trip.arrivalCity} (${shortDate})`;
+}
+
+/** Truncates a quoted message preview so the in-app notification stays scannable. */
+export function truncateForPreview(text: string, maxLength = 80): string {
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trimEnd()}…`;
+}
+
+/**
  * Looks up `userId`'s email, stores an in-app notification, publishes it for
  * live WebSocket fan-out, and sends a plain-text email. Storage/publish/email
  * failures are all logged, not thrown — there's no retry queue in this
  * codebase, so a dead SMTP server (or Redis) must never fail the booking
  * action that triggered the notification.
+ *
+ * `text` is the email body — it can be as detailed as it needs to be, since
+ * the recipient reads it standalone outside the app. `inAppBody` is what's
+ * stored/shown in the notification list, which already has its own "View"
+ * link and relative timestamp, so it should stay short and skip the raw URL.
+ * Defaults to `text` if omitted.
  */
 export async function notifyUser(
   userId: string,
   subject: string,
   text: string,
-  options: { type: NotificationType; link?: string | null },
+  options: { type: NotificationType; link?: string | null; inAppBody?: string },
 ): Promise<void> {
   const [recipient] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId));
   if (!recipient) return;
@@ -53,7 +92,7 @@ export async function notifyUser(
       .values({
         userId,
         title: subject,
-        body: text,
+        body: options.inAppBody ?? text,
         channel: 'email',
         type: options.type,
         link: options.link ?? null,

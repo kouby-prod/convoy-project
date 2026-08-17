@@ -37,7 +37,7 @@ import {
   myTrajetsRoute,
   myBookingsRoute,
 } from './trajet.routes';
-import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip } from './notifications';
+import { notifyUser, trajetUrl, describeTrip, describeTripShort } from './notifications';
 import { geocodeAndStoreTrajetLocation } from './geocoding';
 
 /**
@@ -95,13 +95,18 @@ async function expireStalePendingBookings(
 async function notifyExpiredBookings(
   expired: ExpiredBooking[],
   trip: { departureCity: string; arrivalCity: string; departureAt: Date },
+  trajetId: string,
 ): Promise<void> {
   for (const { passengerId } of expired) {
     await notifyUser(
       passengerId,
       'Your Carpool booking request expired',
-      `Your request for the trip from ${describeTrip(trip)} expired because the driver didn't respond in time. Seats may still be available: ${trajetSearchUrl()}`,
-      { type: 'booking_status', link: trajetSearchUrl() },
+      `Your request for the trip from ${describeTrip(trip)} expired because the driver didn't respond in time. Seats may still be available: ${trajetUrl(trajetId)}`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(trajetId),
+        inAppBody: `Your request for ${describeTripShort(trip)} expired. Seats may still be available.`,
+      },
     );
   }
 }
@@ -440,8 +445,12 @@ export const trajetModule = app
         notifyUser(
           passengerId,
           'Your Carpool trip was cancelled',
-          `The driver cancelled the trip from ${describeTrip(result.trajet)} you had booked. Search for another ride: ${trajetSearchUrl()}`,
-          { type: 'trip_cancelled', link: trajetSearchUrl() },
+          `The driver cancelled the trip from ${describeTrip(result.trajet)} you had booked. View the trip: ${trajetUrl(id)}`,
+          {
+            type: 'trip_cancelled',
+            link: trajetUrl(id),
+            inAppBody: `The driver cancelled your trip ${describeTripShort(result.trajet)}.`,
+          },
         ),
       ),
     );
@@ -509,7 +518,7 @@ export const trajetModule = app
 
     // The sweep's writes commit whether or not the booking itself ultimately
     // succeeds, so its passengers must be notified either way.
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     await notifyUser(
@@ -517,7 +526,11 @@ export const trajetModule = app
       'New booking request on your Carpool trip',
       `A passenger requested ${seats} seat(s) on your trip from ${describeTrip(result)}. ` +
         `Sign in to accept or reject it: ${trajetUrl(id)}`,
-      { type: 'booking_request', link: trajetUrl(id) },
+      {
+        type: 'booking_request',
+        link: trajetUrl(id),
+        inAppBody: `A passenger requested ${seats} seat(s) on your trip ${describeTripShort(result)}.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 201);
   })
@@ -600,7 +613,7 @@ export const trajetModule = app
       };
     });
 
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     await notifyUser(
@@ -608,8 +621,15 @@ export const trajetModule = app
       status === 'confirmed' ? 'Your Carpool booking was confirmed' : 'Your Carpool booking was rejected',
       status === 'confirmed'
         ? `Your booking request for the trip from ${describeTrip(result)} was confirmed by the driver. View the trip: ${trajetUrl(id)}`
-        : `Your booking request for the trip from ${describeTrip(result)} was rejected by the driver. Search for another ride: ${trajetSearchUrl()}`,
-      { type: 'booking_status', link: status === 'confirmed' ? trajetUrl(id) : trajetSearchUrl() },
+        : `Your booking request for the trip from ${describeTrip(result)} was rejected by the driver. View the trip: ${trajetUrl(id)}`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(id),
+        inAppBody:
+          status === 'confirmed'
+            ? `Your booking for ${describeTripShort(result)} was confirmed by the driver.`
+            : `Your booking for ${describeTripShort(result)} was rejected by the driver.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 200);
   })
@@ -667,14 +687,18 @@ export const trajetModule = app
       };
     });
 
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     await notifyUser(
       result.driverId,
       'A passenger cancelled their Carpool booking',
       `A passenger cancelled their booking of ${result.seats} seat(s) on your trip from ${describeTrip(result)}. The seat(s) are available again.`,
-      { type: 'booking_status', link: trajetUrl(id) },
+      {
+        type: 'booking_status',
+        link: trajetUrl(id),
+        inAppBody: `A passenger cancelled their booking of ${result.seats} seat(s) on your trip ${describeTripShort(result)}. The seat(s) are available again.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 200);
   })

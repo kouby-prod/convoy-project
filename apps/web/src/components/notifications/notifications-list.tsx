@@ -8,13 +8,14 @@ import { useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
-  Filter,
-  ExternalLink,
   Check,
+  CheckCheck,
+  ChevronRight,
   BellOff,
+  AlertCircle,
   CalendarClock,
   CheckCircle2,
   XCircle,
@@ -107,6 +108,24 @@ function formatRelativeTime(value: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 }
 
+function NotificationsSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-lg bg-card shadow-sm ring-1 ring-foreground/5">
+      <ul className="divide-y divide-border">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <li key={i} className="flex items-center gap-4 px-5 py-4">
+            <Skeleton className="size-10 shrink-0 rounded-full" />
+            <div className="grid flex-1 gap-2">
+              <Skeleton className="h-4 w-2/5" />
+              <Skeleton className="h-3.5 w-4/5" />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function NotificationsList() {
   const t = useTranslations('Notifications');
   const locale = useLocale();
@@ -148,10 +167,25 @@ export function NotificationsList() {
     },
   });
 
-  if (isSessionPending || !session?.user)
-    return <p className="text-muted-foreground">{t('loading')}</p>;
-  if (isLoading) return <p className="text-muted-foreground">{t('loading')}</p>;
-  if (isError) return <p className="text-destructive">{t('error')}</p>;
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.notifications['read-all'].$patch();
+      if (!res.ok) throw new Error('Failed to mark all as read');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  if (isSessionPending || (isLoading && !isError)) return <NotificationsSkeleton />;
+  if (isError)
+    return (
+      <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <AlertCircle className="size-4 shrink-0" strokeWidth={2.25} />
+        {t('error')}
+      </div>
+    );
 
   const items = data?.pages.flatMap((page) => page.items) ?? [];
   const unreadCount = data?.pages[0]?.unreadCount ?? 0;
@@ -159,18 +193,46 @@ export function NotificationsList() {
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-center justify-between">
-        <Button
-          variant={showUnreadOnly ? 'secondary' : 'outline'}
-          size="sm"
-          onClick={() => setShowUnreadOnly((prev) => !prev)}
-          className="gap-2"
-        >
-          <Filter className="size-4" strokeWidth={2.25} />
-          {showUnreadOnly ? t('filterUnreadActive') : t('filterUnread')}
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex items-center gap-1 rounded-lg bg-muted p-1">
+          <button
+            type="button"
+            onClick={() => setShowUnreadOnly(false)}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/40',
+              !showUnreadOnly
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {t('tabAll')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowUnreadOnly(true)}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/40',
+              showUnreadOnly
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {t('tabUnread')}
+            {unreadCount > 0 ? ` (${unreadCount})` : ''}
+          </button>
+        </div>
+
         {unreadCount > 0 && (
-          <p className="text-xs text-muted-foreground">{t('unreadCount', { count: unreadCount })}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={markAllReadMutation.isPending}
+            onClick={() => markAllReadMutation.mutate()}
+            className="gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <CheckCheck className="size-4" strokeWidth={2.25} />
+            {markAllReadMutation.isPending ? t('markingAll') : t('markAllRead')}
+          </Button>
         )}
       </div>
 
@@ -193,85 +255,101 @@ export function NotificationsList() {
                 </h2>
                 <div className="h-px flex-1 bg-border" />
               </div>
-              <ul className="grid gap-3">
-                {group.items.map((notification) => {
-                  const config = TYPE_CONFIG[notification.type];
-                  const Icon = config.icon;
-                  const unread = !notification.readAt;
-                  return (
-                    <li key={notification.id}>
-                      <Card
-                        className={cn(
-                          'relative overflow-hidden py-0 transition-colors',
-                          unread && 'bg-accent/40 ring-1 ring-brand-yellow/40',
-                        )}
-                      >
-                        {unread && (
-                          <span className={cn('absolute inset-y-0 left-0 w-1', config.accent)} aria-hidden />
-                        )}
-                        <CardContent className="flex gap-4 py-4 pl-6">
-                          <span
-                            className={cn(
-                              'flex size-10 shrink-0 items-center justify-center rounded-full',
-                              config.iconWrap,
-                            )}
-                            aria-label={t(config.labelKey)}
-                            title={t(config.labelKey)}
-                          >
-                            <Icon className="size-5" strokeWidth={2.25} />
-                          </span>
-                          <div className="grid min-w-0 flex-1 gap-1">
-                            <div className="flex items-start justify-between gap-3">
-                              <p
-                                className={cn(
-                                  'text-sm',
-                                  unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90',
-                                )}
-                              >
-                                {notification.title}
-                              </p>
-                              {unread && (
-                                <span
-                                  className="mt-1.5 size-2 shrink-0 rounded-full bg-brand-blue"
-                                  aria-label={t('unread')}
-                                />
+              <div className="overflow-hidden rounded-lg bg-card shadow-sm ring-1 ring-foreground/5">
+                <ul className="divide-y divide-border">
+                  {group.items.map((notification) => {
+                    const config = TYPE_CONFIG[notification.type];
+                    const Icon = config.icon;
+                    const unread = !notification.readAt;
+                    const rowContent = (
+                      <>
+                        <span
+                          className={cn(
+                            'flex size-10 shrink-0 items-center justify-center rounded-full',
+                            config.iconWrap,
+                          )}
+                          aria-label={t(config.labelKey)}
+                          title={t(config.labelKey)}
+                        >
+                          <Icon className="size-5" strokeWidth={2.25} />
+                        </span>
+                        <div className="grid min-w-0 flex-1 gap-0.5">
+                          <div className="flex items-start justify-between gap-3">
+                            <p
+                              className={cn(
+                                'text-sm',
+                                unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90',
                               )}
-                            </div>
-                            <p className="line-clamp-2 text-sm text-muted-foreground">{notification.body}</p>
-                            <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-                              <span className="text-xs text-muted-foreground">
-                                {formatRelativeTime(notification.createdAt, locale)}
-                              </span>
-                              <div className="flex items-center gap-4">
-                                {notification.link && (
-                                  <a
-                                    href={notification.link}
-                                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue hover:underline"
-                                  >
-                                    {t('viewDetails')}
-                                    <ExternalLink className="size-3.5" strokeWidth={2.25} />
-                                  </a>
-                                )}
-                                {unread && (
-                                  <button
-                                    type="button"
-                                    disabled={markReadMutation.isPending}
-                                    onClick={() => markReadMutation.mutate(notification.id)}
-                                    className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground disabled:opacity-50"
-                                  >
-                                    <Check className="size-3.5" strokeWidth={2.25} />
-                                    {t('markRead')}
-                                  </button>
-                                )}
-                              </div>
-                            </div>
+                            >
+                              {notification.title}
+                            </p>
+                            {unread && (
+                              <span
+                                className="mt-1.5 size-2 shrink-0 rounded-full bg-brand-blue"
+                                aria-label={t('unread')}
+                              />
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    </li>
-                  );
-                })}
-              </ul>
+                          <p className="line-clamp-2 text-sm text-muted-foreground">{notification.body}</p>
+                          <span className="mt-0.5 text-xs text-muted-foreground">
+                            {formatRelativeTime(notification.createdAt, locale)}
+                          </span>
+                        </div>
+                      </>
+                    );
+
+                    return (
+                      <li key={notification.id} className="group relative">
+                        {unread && (
+                          <span
+                            className={cn('absolute inset-y-0 left-0 w-1', config.accent)}
+                            aria-hidden
+                          />
+                        )}
+                        <div
+                          className={cn(
+                            'flex items-center gap-4 py-4 pl-6 pr-4 transition-colors',
+                            unread && 'bg-accent/30',
+                          )}
+                        >
+                          {notification.link ? (
+                            <a
+                              href={notification.link}
+                              onClick={() => unread && markReadMutation.mutate(notification.id)}
+                              className="flex min-w-0 flex-1 items-center gap-4 outline-none"
+                            >
+                              {rowContent}
+                            </a>
+                          ) : (
+                            <div className="flex min-w-0 flex-1 items-center gap-4">{rowContent}</div>
+                          )}
+                          <div className="flex shrink-0 items-center gap-1">
+                            {unread && (
+                              <button
+                                type="button"
+                                disabled={markReadMutation.isPending}
+                                onClick={() => markReadMutation.mutate(notification.id)}
+                                title={t('markRead')}
+                                aria-label={t('markRead')}
+                                className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                              >
+                                <Check className="size-4" strokeWidth={2.25} />
+                              </button>
+                            )}
+                            {notification.link && (
+                              <ChevronRight
+                                className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                                strokeWidth={2.25}
+                                aria-hidden
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             </div>
           ))}
         </div>

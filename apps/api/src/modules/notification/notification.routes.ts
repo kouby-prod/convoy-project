@@ -1,5 +1,10 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { NotificationPageSchema, NotificationSchema, UnreadCountSchema } from '@carpool/schemas';
+import {
+  NotificationPageSchema,
+  NotificationSchema,
+  UnreadCountSchema,
+  MarkAllReadResponseSchema,
+} from '@carpool/schemas';
 
 const bearerAuth = [{ Bearer: [] }];
 const errorSchema = z.object({ error: z.string() });
@@ -39,6 +44,24 @@ export const unreadNotificationCountRoute = createRoute({
     200: {
       description: 'Unread notification count',
       content: { 'application/json': { schema: UnreadCountSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const markAllNotificationsReadRoute = createRoute({
+  method: 'patch',
+  path: '/notifications/read-all',
+  tags: ['notification'],
+  summary: "Mark all of the authenticated user's unread notifications as read",
+  security: bearerAuth,
+  responses: {
+    200: {
+      description: 'Number of notifications marked as read',
+      content: { 'application/json': { schema: MarkAllReadResponseSchema } },
     },
     401: {
       description: 'Not authenticated',

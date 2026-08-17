@@ -7,12 +7,14 @@ import { serializeNotification } from './serialize';
 import {
   listNotificationsRoute,
   markNotificationReadRoute,
+  markAllNotificationsReadRoute,
   unreadNotificationCountRoute,
 } from './notification.routes';
 
 const app = new OpenAPIHono<AuthEnv>();
 app.use('/notifications', requireAuth);
 app.use('/notifications/unread-count', requireAuth);
+app.use('/notifications/read-all', requireAuth);
 app.use('/notifications/:id/read', requireAuth);
 
 async function unreadCountFor(userId: string): Promise<number> {
@@ -48,6 +50,15 @@ export const notificationModule = app
     const { user } = getAuth(c);
     const unreadCount = await unreadCountFor(user.id);
     return c.json({ unreadCount }, 200);
+  })
+  .openapi(markAllNotificationsReadRoute, async (c) => {
+    const { user } = getAuth(c);
+    const rows = await db
+      .update(notification)
+      .set({ readAt: new Date() })
+      .where(and(eq(notification.userId, user.id), isNull(notification.readAt)))
+      .returning({ id: notification.id });
+    return c.json({ updated: rows.length }, 200);
   })
   .openapi(markNotificationReadRoute, async (c) => {
     const { user } = getAuth(c);

@@ -159,6 +159,32 @@ describe('notification module', () => {
     });
   });
 
+  describe('PATCH /notifications/read-all', () => {
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await notificationModule.request('/notifications/read-all', { method: 'PATCH' });
+      expect(res.status).toBe(401);
+    });
+
+    it('marks every unread notification owned by the caller as read and reports how many', async () => {
+      getSession.mockResolvedValue(sessionFor('u_1'));
+      dbState.updateResult = [{ id: 'n_1' }, { id: 'n_2' }, { id: 'n_3' }];
+
+      const res = await notificationModule.request('/notifications/read-all', { method: 'PATCH' });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ updated: 3 });
+    });
+
+    it('reports zero when nothing was unread', async () => {
+      getSession.mockResolvedValue(sessionFor('u_1'));
+      dbState.updateResult = [];
+
+      const res = await notificationModule.request('/notifications/read-all', { method: 'PATCH' });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ updated: 0 });
+    });
+  });
+
   describe('PATCH /notifications/:id/read', () => {
     const id = '11111111-1111-4111-8111-111111111111';
 

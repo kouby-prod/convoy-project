@@ -82,10 +82,12 @@ vi.mock('../../src/auth/auth', () => ({
 const notifyUser = vi.fn();
 vi.mock('../../src/modules/trajet/notifications', () => ({
   notifyUser: (...a: unknown[]) => notifyUser(...a),
-  trajetUrl: (id: string) => `https://example.test/trajets/${id}`,
+  trajetUrl: (id: string) => `https://example.test/trajet/${id}`,
   trajetSearchUrl: () => 'https://example.test/trajets',
   describeTrip: (trip: { departureCity: string; arrivalCity: string; departureAt: Date }) =>
     `${trip.departureCity} to ${trip.arrivalCity} (departing ${trip.departureAt.toUTCString()})`,
+  describeTripShort: (trip: { departureCity: string; arrivalCity: string }) =>
+    `${trip.departureCity} → ${trip.arrivalCity}`,
 }));
 
 // Mock the rate limiter entirely: its buckets persist for the lifetime of
@@ -623,13 +625,13 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('cancelled'),
         expect.any(String),
-        { type: 'trip_cancelled', link: expect.any(String) },
+        expect.objectContaining({ type: 'trip_cancelled', link: expect.any(String) }),
       );
       expect(notifyUser).toHaveBeenCalledWith(
         'u_3',
         expect.stringContaining('cancelled'),
         expect.any(String),
-        { type: 'trip_cancelled', link: expect.any(String) },
+        expect.objectContaining({ type: 'trip_cancelled', link: expect.any(String) }),
       );
     });
   });
@@ -675,7 +677,7 @@ describe('trajet module', () => {
       'someone-else',
       expect.stringContaining('New booking request'),
       expect.any(String),
-      { type: 'booking_request', link: expect.any(String) },
+      expect.objectContaining({ type: 'booking_request', link: expect.any(String) }),
     );
   });
 
@@ -729,13 +731,13 @@ describe('trajet module', () => {
       'u_3',
       expect.stringContaining('expired'),
       expect.any(String),
-      { type: 'booking_status', link: expect.any(String) },
+      expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
     );
     expect(notifyUser).toHaveBeenCalledWith(
       'someone-else',
       expect.stringContaining('New booking request'),
       expect.any(String),
-      { type: 'booking_request', link: expect.any(String) },
+      expect.objectContaining({ type: 'booking_request', link: expect.any(String) }),
     );
   });
 
@@ -894,7 +896,7 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('confirmed'),
         expect.any(String),
-        { type: 'booking_status', link: expect.any(String) },
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -923,7 +925,7 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('rejected'),
         expect.any(String),
-        { type: 'booking_status', link: expect.any(String) },
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -949,7 +951,7 @@ describe('trajet module', () => {
         'u_3',
         expect.stringContaining('expired'),
         expect.any(String),
-        { type: 'booking_status', link: expect.any(String) },
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
   });
@@ -1019,7 +1021,7 @@ describe('trajet module', () => {
         'u_1',
         expect.stringContaining('cancelled'),
         expect.any(String),
-        { type: 'booking_status', link: expect.any(String) },
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -1044,7 +1046,7 @@ describe('trajet module', () => {
         'u_1',
         expect.stringContaining('cancelled'),
         expect.any(String),
-        { type: 'booking_status', link: expect.any(String) },
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -1066,7 +1068,7 @@ describe('trajet module', () => {
         'u_3',
         expect.stringContaining('expired'),
         expect.any(String),
-        { type: 'booking_status', link: expect.any(String) },
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
   });

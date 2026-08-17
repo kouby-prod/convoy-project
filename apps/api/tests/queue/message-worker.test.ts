@@ -15,9 +15,12 @@ vi.mock('../../src/queue/redis', () => ({
 
 vi.mock('../../src/modules/trajet/notifications', () => ({
   notifyUser: (...a: unknown[]) => notifyUser(...a),
-  trajetUrl: (id: string) => `https://example.test/trajets/${id}`,
+  messagesUrl: (bookingId: string) => `https://example.test/messages/${bookingId}`,
   describeTrip: (trip: { departureCity: string; arrivalCity: string; departureAt: Date }) =>
     `${trip.departureCity} to ${trip.arrivalCity} (departing ${trip.departureAt.toUTCString()})`,
+  describeTripShort: (trip: { departureCity: string; arrivalCity: string }) =>
+    `${trip.departureCity} → ${trip.arrivalCity}`,
+  truncateForPreview: (text: string) => text,
 }));
 
 import { processMessageNotifyJob } from '../../src/queue/message-worker';
@@ -62,7 +65,7 @@ describe('processMessageNotifyJob', () => {
       'driver_1',
       expect.stringContaining('New message'),
       expect.stringContaining('On my way'),
-      { type: 'message', link: `https://example.test/trajets/${TRAJET_ID}` },
+      expect.objectContaining({ type: 'message', link: `https://example.test/messages/${BOOKING_ID}` }),
     );
   });
 });

@@ -34,6 +34,10 @@ export const UnreadCountSchema = z.object({
   unreadCount: z.number().int().min(0),
 });
 
+export const MarkAllReadResponseSchema = z.object({
+  updated: z.number().int().min(0),
+});
+
 export type Notification = z.infer<typeof NotificationSchema>;
 export type NotificationPage = z.infer<typeof NotificationPageSchema>;
 
