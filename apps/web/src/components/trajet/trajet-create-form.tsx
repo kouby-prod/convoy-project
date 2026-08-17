@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { Send } from 'lucide-react';
-import { CreateTrajetRequestSchema, type TrajetAmenity } from '@carpool/schemas';
+import { ArrowRight, Send } from 'lucide-react';
+import { CreateTrajetRequestSchema, type CreateTrajetRequest, type TrajetAmenity } from '@carpool/schemas';
 import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,10 +22,23 @@ import {
 } from '@/components/ui/select';
 import { LabelledField } from '@/components/ui/labelled-field';
 import { AmenityToggleGroup } from '@/components/trajet/trajet-amenities';
+import { RideVerificationStep } from '@/components/trajet/ride-verification-step';
+import { VehicleForm } from '@/components/trajet/vehicle-form';
 import { createTrajet } from '@/lib/trajets';
+import { cn } from '@/lib/utils';
 
-/* Publish-a-ride form. Deliberately one screen: route, when, seats/price, then
-   the options a passenger filters on. */
+/**
+ * Publish-a-ride form, two steps: ride details, then licence verification +
+ * vehicle description + registration. Both steps stay mounted (toggled with
+ * `hidden`, not conditional rendering) so Step 1's uncontrolled inputs keep
+ * their values if the driver goes back from Step 2. Step 1 is its own
+ * `<form>` — its "Suivant" button is a real submit, which gets native
+ * required-field validation for free; Step 2 is a plain wrapper (not a
+ * `<form>`) because it hosts the document/vehicle cards, which are each their
+ * own `<form>` and would be invalid HTML nested inside another one. Step 2's
+ * "Publier" therefore isn't a submit button — it fires the mutation directly
+ * with the payload Step 1 already validated.
+ */
 export function TrajetCreateForm() {
   const t = useTranslations('Trajet');
   const router = useRouter();
@@ -34,6 +47,8 @@ export function TrajetCreateForm() {
   // ever 401, so prompt for sign-in instead of showing a form that fails.
   const { data: session, isPending: isSessionPending } = authClient.useSession();
 
+  const [step, setStep] = useState<'ride' | 'verification'>('ride');
+  const [ridePayload, setRidePayload] = useState<CreateTrajetRequest | null>(null);
   const [amenities, setAmenities] = useState<TrajetAmenity[]>([]);
   const [hasIntermediateStop, setHasIntermediateStop] = useState(false);
   // Radix Select is controlled, so comfort lives in state rather than FormData
@@ -61,7 +76,8 @@ export function TrajetCreateForm() {
     );
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  /** Step 1's submit: validate the ride fields, then move to Step 2 without posting anything yet. */
+  function handleStep1Submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
 
@@ -102,7 +118,24 @@ export function TrajetCreateForm() {
       return;
     }
 
-    mutation.mutate(parsed.data);
+    setRidePayload(parsed.data);
+    setStep('verification');
+  }
+
+  /**
+   * Step 2's "Publier": creates the ride regardless of the driver's
+   * verification status — the ride is never blocked on it. An unverified (or
+   * no-longer-fresh) driver's ride just stays out of public search until
+   * their verification is approved (enforced server-side); it is created and
+   * visible to them on "mes trajets" either way.
+   */
+  function handlePublish() {
+    if (!ridePayload) {
+      setStep('ride');
+      return;
+    }
+    setError('');
+    mutation.mutate(ridePayload);
   }
 
   if (!isSessionPending && !session?.user) {
@@ -121,7 +154,18 @@ export function TrajetCreateForm() {
   return (
     <Card className="mx-auto w-full max-w-2xl">
       <CardContent className="p-6 pt-6 sm:p-8 sm:pt-8">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <div className="mb-6 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          <span className={step === 'ride' ? 'text-primary' : undefined}>{t('create.step1.label')}</span>
+          <ArrowRight className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
+          <span className={step === 'verification' ? 'text-primary' : undefined}>
+            {t('create.step2.label')}
+          </span>
+        </div>
+
+        <form
+          onSubmit={handleStep1Submit}
+          className={cn('flex flex-col gap-6', step !== 'ride' && 'hidden')}
+        >
           <Field label={t('create.departure')}>
             <CityCombobox
               name="departureCity"
@@ -231,28 +275,50 @@ export function TrajetCreateForm() {
             />
           </Field>
 
-          {error ? (
+          {step === 'ride' && error ? (
             <p className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               {error}
             </p>
           ) : null}
 
           <div className="flex flex-col items-center gap-3">
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              className="px-10"
-              disabled={mutation.isPending}
-            >
-              <Send className="size-5" strokeWidth={2.25} />
-              {mutation.isPending ? t('create.submitting') : t('create.submit')}
+            <Button type="submit" variant="primary" size="lg" className="px-10">
+              {t('create.step1.next')}
+              <ArrowRight className="size-5" strokeWidth={2.25} />
             </Button>
             <Link href="/trajet" className="text-sm font-semibold text-primary hover:underline">
               {t('booking.back')}
             </Link>
           </div>
         </form>
+
+        <div className={cn('flex flex-col gap-6', step !== 'verification' && 'hidden')}>
+          <RideVerificationStep />
+          <VehicleForm />
+
+          {step === 'verification' && error ? (
+            <p className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+
+          <div className="flex flex-col-reverse items-center gap-3 sm:flex-row sm:justify-center">
+            <Button type="button" variant="outline" size="lg" onClick={() => setStep('ride')}>
+              {t('create.step2.back')}
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              className="px-10"
+              disabled={mutation.isPending}
+              onClick={handlePublish}
+            >
+              <Send className="size-5" strokeWidth={2.25} />
+              {mutation.isPending ? t('create.submitting') : t('create.submit')}
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

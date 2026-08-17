@@ -736,6 +736,7 @@
     "seats": "Places",
     "price": "Prix",
     "cancelledBadge": "Annulé",
+    "pendingVerificationBadge": "En attente de vérification",
     "pagination": {
       "previous": "Précédent",
       "next": "Suivant",
@@ -844,7 +845,8 @@
       "missing": "À envoyer",
       "pending": "En attente",
       "approved": "Validé",
-      "rejected": "Refusé"
+      "rejected": "Refusé",
+      "expired": "À renouveler"
     },
     "type": {
       "permis": "Permis de conduire",
@@ -903,6 +905,11 @@
         "chip": "Refusé",
         "title": "Un document a été refusé",
         "body": "Corrigez le document refusé, puis envoyez-le à nouveau."
+      },
+      "expired": {
+        "chip": "À renouveler",
+        "title": "Votre permis doit être vérifié à nouveau",
+        "body": "Votre permis a été validé il y a plus d'un an. Envoyez-le à nouveau pour continuer à publier des trajets."
       },
       "approved": {
         "chip": "Vérifié",
@@ -1034,7 +1041,36 @@
       "failed": "La publication a échoué. Réessayez plus tard.",
       "invalid": "Vérifiez les champs du formulaire.",
       "baggage": "Bagages",
-      "baggagePlaceholder": "Ex. : un bagage cabine par personne"
+      "baggagePlaceholder": "Ex. : un bagage cabine par personne",
+      "step1": {
+        "label": "Étape 1 : Détails du trajet",
+        "next": "Suivant"
+      },
+      "step2": {
+        "label": "Étape 2 : Vérification permis, description du véhicule et immatriculation",
+        "back": "Retour",
+        "verification": {
+          "loading": "Chargement de votre vérification…",
+          "loadError": "Impossible de charger votre vérification.",
+          "alreadyVerifiedTitle": "Permis déjà vérifié",
+          "alreadyVerifiedBody": "Votre permis est vérifié jusqu'au {date}. Aucun nouvel envoi n'est nécessaire.",
+          "alreadyVerifiedBodyNoDate": "Votre permis est vérifié. Aucun nouvel envoi n'est nécessaire."
+        },
+        "vehicle": {
+          "title": "Votre véhicule",
+          "subtitle": "Ces informations sont affichées aux passagers.",
+          "make": "Marque",
+          "model": "Modèle",
+          "color": "Couleur",
+          "seats": "Places",
+          "plate": "Plaque d'immatriculation",
+          "save": "Enregistrer le véhicule",
+          "update": "Mettre à jour le véhicule",
+          "saving": "Enregistrement…",
+          "saveFailed": "L'enregistrement a échoué. Réessayez.",
+          "required": "Remplissez tous les champs du véhicule."
+        }
+      }
     }
   }
 }

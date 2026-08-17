@@ -78,6 +78,7 @@ export function MesDocumentsPanel() {
   const verification = deriveDriverVerification(documents, {
     dateOfBirth: eligibilityQuery.data?.dateOfBirth ?? null,
   });
+  const slotStatusByType = new Map(verification.slots.map((slot) => [slot.type, slot.status]));
 
   return (
     <div className="flex flex-col gap-6">
@@ -93,7 +94,12 @@ export function MesDocumentsPanel() {
           panel under its button. Each card should end where its content does. */}
       <div className="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
         {REQUIRED_DRIVER_DOCUMENT_TYPES.map((type) => (
-          <DocumentSlotCard key={type} type={type} latest={latestByType.get(type) ?? null} />
+          <DocumentSlotCard
+            key={type}
+            type={type}
+            latest={latestByType.get(type) ?? null}
+            slotStatus={slotStatusByType.get(type) ?? 'missing'}
+          />
         ))}
       </div>
 
@@ -122,9 +128,10 @@ function StatusCard({ children, tone }: { children: string; tone?: 'error' }) {
  * Newest submission per required type. The API returns newest first, so the
  * first row seen for a type wins and the older ones are skipped — the same rule
  * `deriveDriverVerification` applies, which is why the badge on a slot always
- * matches the banner above it.
+ * matches the banner above it. Exported: also used by the ride-creation
+ * "Étape 2" step (`ride-verification-step.tsx`).
  */
-function toLatestByType(
+export function toLatestByType(
   documents: DriverDocument[],
 ): Map<RequiredDriverDocumentType, DriverDocument> {
   const latest = new Map<RequiredDriverDocumentType, DriverDocument>();

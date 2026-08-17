@@ -77,11 +77,13 @@ export type DocumentStatus = z.infer<typeof DocumentStatusSchema>;
 
 /**
  * A required document's state as a slot on screen — the three stored statuses
- * plus `missing`, which is not a `DocumentStatus` because nothing is stored for
- * a document that was never sent. Both the driver's slots and the reviewer's
- * progress chip need that fourth case, so it is named once here.
+ * plus `missing` (nothing was ever sent) and `expired` (an approved licence
+ * has gone past its re-verification window, see `PERMIS_REVERIFICATION_DAYS`
+ * below). Neither is a `DocumentStatus` because nothing new is stored when a
+ * slot ages out — it is derived at read time. Both the driver's slots and the
+ * reviewer's progress chip need these cases, so they are named once here.
  */
-export const DOCUMENT_SLOT_STATUSES = ['missing', ...DOCUMENT_STATUSES] as const;
+export const DOCUMENT_SLOT_STATUSES = ['missing', ...DOCUMENT_STATUSES, 'expired'] as const;
 
 export const DocumentSlotStatusSchema = z
   .enum(DOCUMENT_SLOT_STATUSES)
@@ -212,17 +214,30 @@ export type DriverAgeCheck = z.infer<typeof DriverAgeCheckSchema>;
 /* ────────────────────────── Overall verification ───────────────────────── */
 
 /**
- * Where a driver stands, rolled up from the two required documents.
+ * How long an approved licence stays trusted before a driver is asked to
+ * re-verify it, counted from the reviewer's approval instant (`reviewedAt`),
+ * not from submission. Applies only to `permis` — insurance and registration
+ * have no re-verification window today.
+ */
+export const PERMIS_REVERIFICATION_DAYS = 365;
+const PERMIS_REVERIFICATION_MS = PERMIS_REVERIFICATION_DAYS * 24 * 60 * 60 * 1000;
+
+/**
+ * Where a driver stands, rolled up from the three required documents.
  *
  *   incomplete — at least one has never been sent
  *   pending    — everything sent, at least one still awaiting a decision
  *   rejected   — at least one came back refused; the driver has to resend it
- *   approved   — both accepted. This is the only state that means "verified".
+ *   expired    — the licence was approved once but has passed its one-year
+ *                re-verification window; the driver has to resend it
+ *   approved   — all three accepted and fresh. The only state that means
+ *                "verified" — this is what gates a ride's public visibility.
  */
 export const DRIVER_VERIFICATION_STATUSES = [
   'incomplete',
   'pending',
   'rejected',
+  'expired',
   'approved',
 ] as const;
 
@@ -264,6 +279,8 @@ export interface VerifiableDocument {
   submittedAt: string | Date;
   /** Set on a licence when a reviewer confirmed the date of birth on it. */
   ageConfirmed?: boolean | null;
+  /** Admin's approval instant. Drives the `permis` re-verification window. */
+  reviewedAt?: string | Date | null;
 }
 
 /**
@@ -290,10 +307,17 @@ export function deriveDriverVerification(
     }
   }
 
-  const slots: DocumentSlot[] = REQUIRED_DRIVER_DOCUMENT_TYPES.map((type) => ({
-    type,
-    status: toSlotStatus(latest.get(type)?.status),
-  }));
+  const slots: DocumentSlot[] = REQUIRED_DRIVER_DOCUMENT_TYPES.map((type) => {
+    const document = latest.get(type);
+    const status = toSlotStatus(document?.status);
+    // The one-year window applies only to `permis`, and only once it was
+    // actually approved — a slot that is pending/rejected/missing has no
+    // approval instant to measure from.
+    if (type === 'permis' && status === 'approved' && isPermisStale(document, now)) {
+      return { type, status: 'expired' as const };
+    }
+    return { type, status };
+  });
 
   const approvedCount = slots.filter((slot) => slot.status === 'approved').length;
 
@@ -311,19 +335,38 @@ export function deriveDriverVerification(
   const ageSettled = age.isAdult && age.confirmedByReviewer;
 
   // Ordered by what has to happen next: a refusal is actionable and names its
-  // reason, so it outranks something merely absent, and both outrank waiting.
-  // The age condition rides along with the documents — all three approved but
-  // no confirmed birth date is still an unfinished driver, not a verified one.
+  // reason, so it outranks something merely absent; an expired licence is
+  // equally actionable (resend the same document) so it ranks alongside it,
+  // and both outrank waiting. The age condition rides along with the
+  // documents — all three approved but no confirmed birth date is still an
+  // unfinished driver, not a verified one.
   const status: DriverVerificationStatus =
     approvedCount === slots.length && ageSettled
       ? 'approved'
       : slots.some((slot) => slot.status === 'rejected')
         ? 'rejected'
-        : slots.some((slot) => slot.status === 'missing') || dateOfBirth === null
-          ? 'incomplete'
-          : 'pending';
+        : slots.some((slot) => slot.status === 'expired')
+          ? 'expired'
+          : slots.some((slot) => slot.status === 'missing') || dateOfBirth === null
+            ? 'incomplete'
+            : 'pending';
 
   return { status, slots, approvedCount, requiredCount: slots.length, age };
+}
+
+/** Whether an approved `permis` document has gone past its one-year window. */
+function isPermisStale(document: VerifiableDocument | undefined, now: Date): boolean {
+  if (!document?.reviewedAt) return false;
+  return now.getTime() - toTime(document.reviewedAt) > PERMIS_REVERIFICATION_MS;
+}
+
+/**
+ * The instant an approved `permis` stops counting as fresh, for display
+ * ("valid until…"). Null when the licence was never approved.
+ */
+export function permisFreshUntil(reviewedAt: string | Date | null | undefined): string | null {
+  if (!reviewedAt) return null;
+  return new Date(toTime(reviewedAt) + PERMIS_REVERIFICATION_MS).toISOString();
 }
 
 function toTime(value: string | Date): number {

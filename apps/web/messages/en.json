@@ -736,6 +736,7 @@
     "seats": "Seats",
     "price": "Price",
     "cancelledBadge": "Cancelled",
+    "pendingVerificationBadge": "Pending verification",
     "pagination": {
       "previous": "Previous",
       "next": "Next",
@@ -844,7 +845,8 @@
       "missing": "To send",
       "pending": "Pending",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "expired": "Needs renewal"
     },
     "type": {
       "permis": "Driver's licence",
@@ -903,6 +905,11 @@
         "chip": "Rejected",
         "title": "A document was rejected",
         "body": "Fix the rejected document, then send it again."
+      },
+      "expired": {
+        "chip": "Needs renewal",
+        "title": "Your licence needs to be re-verified",
+        "body": "Your licence was approved over a year ago. Send it again to keep publishing rides."
       },
       "approved": {
         "chip": "Verified",
@@ -1034,7 +1041,36 @@
       "failed": "Publishing failed. Please try again later.",
       "invalid": "Please check the form fields.",
       "baggage": "Baggage",
-      "baggagePlaceholder": "E.g. one cabin bag per person"
+      "baggagePlaceholder": "E.g. one cabin bag per person",
+      "step1": {
+        "label": "Step 1: Ride details",
+        "next": "Next"
+      },
+      "step2": {
+        "label": "Step 2: Licence verification, vehicle description and registration",
+        "back": "Back",
+        "verification": {
+          "loading": "Loading your verification…",
+          "loadError": "Failed to load your verification.",
+          "alreadyVerifiedTitle": "Licence already verified",
+          "alreadyVerifiedBody": "Your licence is verified until {date}. No new submission is needed.",
+          "alreadyVerifiedBodyNoDate": "Your licence is verified. No new submission is needed."
+        },
+        "vehicle": {
+          "title": "Your vehicle",
+          "subtitle": "This information is shown to passengers.",
+          "make": "Make",
+          "model": "Model",
+          "color": "Colour",
+          "seats": "Seats",
+          "plate": "Licence plate",
+          "save": "Save vehicle",
+          "update": "Update vehicle",
+          "saving": "Saving…",
+          "saveFailed": "Saving failed. Please try again.",
+          "required": "Fill in every vehicle field."
+        }
+      }
     }
   }
 }

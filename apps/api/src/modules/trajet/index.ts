@@ -23,6 +23,7 @@ import { db } from '../../db/client';
 import { trajet, booking } from '../../db/trajet-schema';
 import { review } from '../../db/review';
 import { user } from '../../db/auth-schema';
+import { vehicle } from '../../db/vehicle';
 import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet, DriverProfile } from '@carpool/schemas';
 import {
   listTrajetsRoute,
@@ -39,6 +40,7 @@ import {
 } from './trajet.routes';
 import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip } from './notifications';
 import { geocodeAndStoreTrajetLocation } from './geocoding';
+import { getApprovedDriverIds } from './verification-visibility';
 
 /**
  * Trajet module — an `OpenAPIHono` sub-app mounted by app.ts (see
@@ -143,16 +145,26 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/** The subset of a declared vehicle a ride's driver profile shows. */
+interface DriverVehicle {
+  make: string;
+  model: string;
+  seats: number;
+}
+
 /**
  * Builds the `DriverProfile` embedded in every `Trajet`/`TrajetSearchResult`.
- * The platform has no vehicle table yet, so licence/vehicle fields are always
- * null — the UI hides them rather than showing invented data.
+ * `licenceYears` still has no source and stays null; `carMake`/`carModel`/
+ * `carSeats` come from the `vehicle` table when the driver declared one, and
+ * are null otherwise — the UI hides the block rather than showing invented
+ * data.
  */
 function buildDriverProfile(
   driverId: string,
   name: string,
   rating: number | null,
   reviewCount: number,
+  vehicle: DriverVehicle | null,
 ): DriverProfile {
   const [firstName, ...rest] = name.split(' ').filter(Boolean);
   return {
@@ -160,9 +172,9 @@ function buildDriverProfile(
     firstName: firstName ?? '',
     lastName: rest.join(' '),
     licenceYears: null,
-    carMake: null,
-    carModel: null,
-    carSeats: null,
+    carMake: vehicle?.make ?? null,
+    carModel: vehicle?.model ?? null,
+    carSeats: vehicle?.seats ?? null,
     rating,
     reviewCount,
   };
@@ -175,11 +187,16 @@ async function getDriverProfile(driverId: string): Promise<DriverProfile> {
     .select({ averageRating: avg(review.rating), reviewCount: count(review.rating) })
     .from(review)
     .where(and(eq(review.driverId, driverId), eq(review.direction, 'passenger_to_driver')));
+  const [vehicleRow] = await db
+    .select({ make: vehicle.make, model: vehicle.model, seats: vehicle.seats })
+    .from(vehicle)
+    .where(eq(vehicle.ownerId, driverId));
   return buildDriverProfile(
     driverId,
     driverRow?.name ?? '',
     ratingRow?.averageRating ? Number(ratingRow.averageRating) : null,
     ratingRow?.reviewCount ?? 0,
+    vehicleRow ?? null,
   );
 }
 
@@ -253,6 +270,15 @@ export const trajetModule = app
       // qualifies, instead of special-casing an empty array.
       conditions.push(inArray(trajet.driverId, qualifyingDriverIds.length ? qualifyingDriverIds : ['__none__']));
     }
+
+    // A ride only shows up in public search once its driver's verification
+    // (permis + assurance + immatriculation, all approved and fresh) is
+    // `approved` — the ride itself is created regardless (see
+    // createTrajetRoute) and stays visible to its driver on `/me/trajets`,
+    // but a rider searching publicly should not land on a driver who isn't
+    // cleared to drive yet.
+    const approvedDriverIds = await getApprovedDriverIds();
+    conditions.push(inArray(trajet.driverId, approvedDriverIds.length ? approvedDriverIds : ['__none__']));
 
     // `nearLat`/`nearLng` are validated together (see TrajetSearchQuerySchema's
     // refine) — either both are present or neither is.
@@ -732,7 +758,7 @@ async function attachSearchMetadata(
   near: { lat: number; lng: number } | undefined,
 ): Promise<TrajetSearchResult[]> {
   const driverIds = [...new Set(rows.map((row) => row.driverId))];
-  const [ratingRows, nameRows] = await Promise.all([
+  const [ratingRows, nameRows, vehicleRows] = await Promise.all([
     driverIds.length
       ? db
           .select({
@@ -747,6 +773,12 @@ async function attachSearchMetadata(
     driverIds.length
       ? db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, driverIds))
       : Promise.resolve([]),
+    driverIds.length
+      ? db
+          .select({ ownerId: vehicle.ownerId, make: vehicle.make, model: vehicle.model, seats: vehicle.seats })
+          .from(vehicle)
+          .where(inArray(vehicle.ownerId, driverIds))
+      : Promise.resolve([]),
   ]);
   const ratingByDriver = new Map(
     ratingRows.map((r) => [
@@ -755,6 +787,7 @@ async function attachSearchMetadata(
     ]),
   );
   const nameByDriver = new Map(nameRows.map((r) => [r.id, r.name]));
+  const vehicleByDriver = new Map(vehicleRows.map((v) => [v.ownerId, v]));
 
   return rows.map((row) => {
     const rating = ratingByDriver.get(row.driverId);
@@ -767,6 +800,7 @@ async function attachSearchMetadata(
       nameByDriver.get(row.driverId) ?? '',
       rating?.averageRating ?? null,
       rating?.reviewCount ?? 0,
+      vehicleByDriver.get(row.driverId) ?? null,
     );
     return {
       ...serialize(row, driver),

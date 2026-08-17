@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { createApiClient } from '@carpool/api-client';
+import { deriveDriverVerification } from '@carpool/schemas';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
+import { fetchMyDocuments, fetchMyEligibility } from '@/lib/documents';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -41,6 +43,28 @@ export function MesTrajetsList() {
     },
   });
 
+  // Same query keys as the ride-creation "Étape 2" step and `/mes-documents`
+  // — reuses whichever of those the driver already loaded this session —
+  // used only to show a "pending verification" badge; a ride isn't gated on
+  // this, just hidden from public search server-side until it's `approved`.
+  const documentsQuery = useQuery({
+    queryKey: ['my-documents'],
+    queryFn: fetchMyDocuments,
+    enabled: !!session?.user,
+  });
+  const eligibilityQuery = useQuery({
+    queryKey: ['my-eligibility'],
+    queryFn: fetchMyEligibility,
+    enabled: !!session?.user,
+  });
+  const verification =
+    documentsQuery.data && eligibilityQuery.data
+      ? deriveDriverVerification(documentsQuery.data, {
+          dateOfBirth: eligibilityQuery.data.dateOfBirth,
+        })
+      : null;
+  const isPendingVerification = verification !== null && verification.status !== 'approved';
+
   if (isSessionPending || !session?.user) return <p className="text-muted-foreground">{t('loading')}</p>;
   if (isLoading) return <p className="text-muted-foreground">{t('loading')}</p>;
   if (isError) return <p className="text-destructive">{t('error')}</p>;
@@ -60,6 +84,10 @@ export function MesTrajetsList() {
                   {item.cancelledAt ? (
                     <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
                       {t('cancelledBadge')}
+                    </span>
+                  ) : isPendingVerification ? (
+                    <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning-foreground">
+                      {t('pendingVerificationBadge')}
                     </span>
                   ) : null}
                 </CardTitle>

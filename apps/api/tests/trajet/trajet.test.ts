@@ -104,6 +104,18 @@ vi.mock('../../src/modules/trajet/geocoding', () => ({
   geocodeAndStoreTrajetLocation: (...a: unknown[]) => geocodeAndStoreTrajetLocation(...a),
 }));
 
+// Mock the public-search visibility gate entirely: it is exercised on its own
+// (real db calls, real deriveDriverVerification) in
+// verification-visibility.test.ts. Mocked out here so it doesn't consume from
+// `dbState.selectQueue` and shift the ordering every other test in this file
+// relies on. Its return value is harmless either way: like `minDriverRating`
+// below, the fake query builder's `.where()` ignores whatever condition gets
+// built from it and returns the canned rows regardless.
+const getApprovedDriverIds = vi.fn(() => Promise.resolve<string[]>([]));
+vi.mock('../../src/modules/trajet/verification-visibility', () => ({
+  getApprovedDriverIds: () => getApprovedDriverIds(),
+}));
+
 import { trajetModule } from '../../src/modules/trajet';
 
 function sessionFor(role: string | null) {

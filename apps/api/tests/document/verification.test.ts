@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   MIN_DRIVER_AGE,
+  PERMIS_REVERIFICATION_DAYS,
   REQUIRED_DRIVER_DOCUMENT_TYPES,
   ageOn,
   deriveDriverVerification,
   isOldEnoughToDrive,
+  permisFreshUntil,
   type VerifiableDocument,
 } from '@carpool/schemas';
 
@@ -231,5 +233,78 @@ describe('deriveDriverVerification', () => {
 
     expect(verification.slots[0]).toEqual({ type: 'permis', status: 'missing' });
     expect(verification.status).toBe('incomplete');
+  });
+
+  /* ── Permis freshness: an approval is only trusted for one year ─────────── */
+
+  describe('permis re-verification window', () => {
+    const REVIEWED_RECENT = '2026-06-01T10:00:00.000Z'; // ~2 months before NOW
+    const REVIEWED_STALE = '2024-01-01T10:00:00.000Z'; // ~2.5 years before NOW
+
+    function approvedDocs(permisReviewedAt: string): VerifiableDocument[] {
+      return [
+        doc('permis', 'approved', { ageConfirmed: true, reviewedAt: permisReviewedAt }),
+        doc('assurance', 'approved'),
+        doc('immatriculation', 'approved'),
+      ];
+    }
+
+    it('still counts a recently-approved permis as approved', () => {
+      const verification = deriveDriverVerification(approvedDocs(REVIEWED_RECENT), adult, NOW);
+
+      expect(verification.slots[0]).toEqual({ type: 'permis', status: 'approved' });
+      expect(verification.status).toBe('approved');
+    });
+
+    it('downgrades a permis approved more than a year ago to expired', () => {
+      const verification = deriveDriverVerification(approvedDocs(REVIEWED_STALE), adult, NOW);
+
+      expect(verification.slots[0]).toEqual({ type: 'permis', status: 'expired' });
+      expect(verification.status).toBe('expired');
+      // The other two slots and the age check are unaffected — only the
+      // licence's own approval ages out.
+      expect(verification.approvedCount).toBe(2);
+    });
+
+    it('does not expire a permis with no reviewedAt (never actually approved through the review flow)', () => {
+      // Guards against treating "no data" as "expired": a document without a
+      // reviewedAt has nothing to measure staleness from.
+      const verification = deriveDriverVerification(
+        [doc('permis', 'approved', { ageConfirmed: true }), doc('assurance', 'approved'), doc('immatriculation', 'approved')],
+        adult,
+        NOW,
+      );
+
+      expect(verification.slots[0]).toEqual({ type: 'permis', status: 'approved' });
+    });
+
+    it('leaves assurance/immatriculation unaffected by the one-year window', () => {
+      // The rule is specific to permis; the other two document types have no
+      // re-verification window today.
+      const veryOld = '2010-01-01T00:00:00.000Z';
+      const verification = deriveDriverVerification(
+        [
+          doc('permis', 'approved', { ageConfirmed: true, reviewedAt: REVIEWED_RECENT }),
+          doc('assurance', 'approved', { reviewedAt: veryOld }),
+          doc('immatriculation', 'approved', { reviewedAt: veryOld }),
+        ],
+        adult,
+        NOW,
+      );
+
+      expect(verification.status).toBe('approved');
+    });
+
+    it('permisFreshUntil is exactly PERMIS_REVERIFICATION_DAYS after the approval', () => {
+      const until = permisFreshUntil(REVIEWED_RECENT);
+      const expectedMs = new Date(REVIEWED_RECENT).getTime() + PERMIS_REVERIFICATION_DAYS * 24 * 60 * 60 * 1000;
+
+      expect(until).toBe(new Date(expectedMs).toISOString());
+    });
+
+    it('permisFreshUntil is null when the licence was never approved', () => {
+      expect(permisFreshUntil(null)).toBeNull();
+      expect(permisFreshUntil(undefined)).toBeNull();
+    });
   });
 });
