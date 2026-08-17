@@ -37,8 +37,19 @@ import {
   myTrajetsRoute,
   myBookingsRoute,
 } from './trajet.routes';
-import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip } from './notifications';
+import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip, paymentUrl } from './notifications';
 import { geocodeAndStoreTrajetLocation } from './geocoding';
+import {
+  issueInvoiceForBooking,
+  voidIssuedInvoiceForBooking,
+  refundPaidBooking,
+  expireUnpaidBookings,
+  cancelOpenPaymentsForBooking,
+} from '../payment/booking-hooks';
+import { cancelStripePaymentIntent } from '../payment/stripe';
+import { renderInvoicePdf } from '../payment/pdf';
+import { smtpEmailSender } from '../../auth/email';
+import type { DbTx } from '../payment/ledger';
 
 /**
  * Trajet module — an `OpenAPIHono` sub-app mounted by app.ts (see
@@ -72,7 +83,7 @@ interface ExpiredBooking {
  * passengers once the transaction has committed.
  */
 async function expireStalePendingBookings(
-  tx: Pick<typeof db, 'update'>,
+  tx: DbTx,
   trajetId: string,
   seatsAvailable: number,
 ): Promise<{ seatsAvailable: number; expired: ExpiredBooking[] }> {
@@ -89,6 +100,19 @@ async function expireStalePendingBookings(
   const updatedSeatsAvailable = seatsAvailable + freedSeats;
   await tx.update(trajet).set({ seatsAvailable: updatedSeatsAvailable }).where(eq(trajet.id, trajetId));
   return { seatsAvailable: updatedSeatsAvailable, expired };
+}
+
+async function sweepBookingHolds(
+  tx: DbTx,
+  trajetId: string,
+  seatsAvailable: number,
+): Promise<{ seatsAvailable: number; expired: ExpiredBooking[] }> {
+  const pending = await expireStalePendingBookings(tx, trajetId, seatsAvailable);
+  const unpaid = await expireUnpaidBookings(tx, trajetId, pending.seatsAvailable);
+  return {
+    seatsAvailable: unpaid.seatsAvailable,
+    expired: [...pending.expired, ...unpaid.expired],
+  };
 }
 
 /** Notifies every expired booking's passenger — best-effort, after the transaction has committed. */
@@ -422,16 +446,44 @@ export const trajetModule = app
 
       // Only active holds need cancelling — `rejected`/`cancelled`/`expired`
       // bookings are already terminal and shouldn't be touched.
+      const active = await tx
+        .select()
+        .from(booking)
+        .where(
+          and(
+            eq(booking.trajetId, id),
+            inArray(booking.status, ['pending', 'awaiting_payment', 'confirmed']),
+          ),
+        );
+      const paidIds = active.filter((row) => row.status === 'confirmed').map((row) => row.id);
+      const unpaidIds = active.filter((row) => row.status === 'awaiting_payment').map((row) => row.id);
+
       const cancelledBookings = await tx
         .update(booking)
         .set({ status: 'cancelled' })
-        .where(and(eq(booking.trajetId, id), inArray(booking.status, ['pending', 'confirmed'])))
-        .returning({ passengerId: booking.passengerId });
+        .where(
+          and(
+            eq(booking.trajetId, id),
+            inArray(booking.status, ['pending', 'awaiting_payment', 'confirmed']),
+          ),
+        )
+        .returning({ passengerId: booking.passengerId, id: booking.id });
 
-      return { ok: true as const, trajet: updated, cancelledBookings };
+      for (const unpaidId of unpaidIds) {
+        await voidIssuedInvoiceForBooking(tx, unpaidId);
+      }
+
+      return { ok: true as const, trajet: updated, cancelledBookings, paidIds };
     });
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
+    await Promise.all(
+      result.paidIds.map((bookingId) =>
+        refundPaidBooking(bookingId, 'Driver cancelled the trip').catch((err: unknown) => {
+          console.error(`Failed to refund booking ${bookingId}`, err);
+        }),
+      ),
+    );
     await Promise.all(
       result.cancelledBookings.map(({ passengerId }) =>
         notifyUser(
@@ -463,7 +515,7 @@ export const trajetModule = app
         return { ok: false as const, status: 403 as const, error: 'Cannot book your own trajet' };
       }
 
-      const sweep = await expireStalePendingBookings(tx, id, row.seatsAvailable);
+      const sweep = await sweepBookingHolds(tx, id, row.seatsAvailable);
       expiredBookings = sweep.expired;
       if (sweep.seatsAvailable < seats) {
         return { ok: false as const, status: 400 as const, error: 'Not enough seats available' };
@@ -558,7 +610,7 @@ export const trajetModule = app
       // below (caught by the `!== 'pending'` check just like any other
       // non-pending status), and its seats are freed regardless of whether
       // the driver ever calls this endpoint again.
-      const sweep = await expireStalePendingBookings(tx, id, trajetRow.seatsAvailable);
+      const sweep = await sweepBookingHolds(tx, id, trajetRow.seatsAvailable);
       expiredBookings = sweep.expired;
 
       const [bookingRow] = await tx.select().from(booking).where(eq(booking.id, bookingId));
@@ -569,20 +621,24 @@ export const trajetModule = app
         return { ok: false as const, status: 400 as const, error: 'Booking is not pending' };
       }
 
+      const nextStatus = status === 'confirmed' ? 'awaiting_payment' : status;
       const [updated] = await tx
         .update(booking)
-        .set({ status })
+        .set({ status: nextStatus })
         .where(eq(booking.id, bookingId))
         .returning();
       if (!updated) throw new Error('Update returned no row');
 
+      let issuedInvoice: Awaited<ReturnType<typeof issueInvoiceForBooking>> | undefined;
       // Rejecting frees the seats held when the booking was created; accepting
-      // keeps them held (they were never released).
+      // keeps them held (they were never released) and issues the commission invoice.
       if (status === 'rejected') {
         await tx
           .update(trajet)
           .set({ seatsAvailable: sweep.seatsAvailable + bookingRow.seats })
           .where(eq(trajet.id, id));
+      } else {
+        issuedInvoice = await issueInvoiceForBooking(tx, bookingRow);
       }
 
       return {
@@ -592,19 +648,39 @@ export const trajetModule = app
         departureCity: trajetRow.departureCity,
         arrivalCity: trajetRow.arrivalCity,
         departureAt: trajetRow.departureAt,
+        issuedInvoice,
       };
     });
 
     if (trip) await notifyExpiredBookings(expiredBookings, trip);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
-    await notifyUser(
-      result.passengerId,
-      status === 'confirmed' ? 'Your Carpool booking was confirmed' : 'Your Carpool booking was rejected',
-      status === 'confirmed'
-        ? `Your booking request for the trip from ${describeTrip(result)} was confirmed by the driver. View the trip: ${trajetUrl(id)}`
-        : `Your booking request for the trip from ${describeTrip(result)} was rejected by the driver. Search for another ride: ${trajetSearchUrl()}`,
-    );
+    if (status === 'confirmed') {
+      const invoiceNumber = result.issuedInvoice?.number;
+      let attachments: Parameters<typeof notifyUser>[3];
+      if (smtpEmailSender && result.issuedInvoice) {
+        try {
+          const pdf = await renderInvoicePdf(result.issuedInvoice);
+          attachments = [
+            { filename: `${result.issuedInvoice.number}.pdf`, content: pdf, contentType: 'application/pdf' },
+          ];
+        } catch (err) {
+          console.error('[payment] failed to attach invoice PDF', err);
+        }
+      }
+      await notifyUser(
+        result.passengerId,
+        'Pay the 5 CAD Kouby commission to confirm your booking',
+        `The driver accepted your request for the trip from ${describeTrip(result)}. Pay invoice ${invoiceNumber ?? ''} to confirm: ${paymentUrl(result.booking.id)}`,
+        attachments,
+      );
+    } else {
+      await notifyUser(
+        result.passengerId,
+        'Your Carpool booking was rejected',
+        `Your booking request for the trip from ${describeTrip(result)} was rejected by the driver. Search for another ride: ${trajetSearchUrl()}`,
+      );
+    }
     return c.json(serializeBooking(result.booking), 200);
   })
   .openapi(cancelBookingRoute, async (c) => {
@@ -622,7 +698,7 @@ export const trajetModule = app
       // See updateBookingStatusRoute above: expiring stale requests here too
       // means a passenger cancelling one no longer double-frees seats the
       // sweep already gave back.
-      const sweep = await expireStalePendingBookings(tx, id, trajetRow.seatsAvailable);
+      const sweep = await sweepBookingHolds(tx, id, trajetRow.seatsAvailable);
       expiredBookings = sweep.expired;
 
       const [bookingRow] = await tx.select().from(booking).where(eq(booking.id, bookingId));
@@ -632,7 +708,11 @@ export const trajetModule = app
       if (bookingRow.passengerId !== user.id) {
         return { ok: false as const, status: 403 as const, error: 'Not your booking' };
       }
-      if (bookingRow.status !== 'pending' && bookingRow.status !== 'confirmed') {
+      if (
+        bookingRow.status !== 'pending' &&
+        bookingRow.status !== 'awaiting_payment' &&
+        bookingRow.status !== 'confirmed'
+      ) {
         return { ok: false as const, status: 400 as const, error: 'Booking cannot be cancelled' };
       }
 
@@ -643,8 +723,13 @@ export const trajetModule = app
         .returning();
       if (!updated) throw new Error('Update returned no row');
 
-      // Both `pending` and `confirmed` hold seats (see bookTrajetRoute above),
-      // so cancelling either always frees them back to the trajet.
+      let openAttempts: Array<{ provider: 'stripe' | 'paypal'; providerPaymentId: string }> = [];
+      if (bookingRow.status === 'awaiting_payment') {
+        await voidIssuedInvoiceForBooking(tx, bookingRow.id);
+        openAttempts = await cancelOpenPaymentsForBooking(tx, bookingRow.id);
+      }
+
+      // Pending, awaiting_payment and confirmed all hold seats.
       await tx
         .update(trajet)
         .set({ seatsAvailable: sweep.seatsAvailable + bookingRow.seats })
@@ -658,12 +743,18 @@ export const trajetModule = app
         departureCity: trajetRow.departureCity,
         arrivalCity: trajetRow.arrivalCity,
         departureAt: trajetRow.departureAt,
+        openAttempts,
       };
     });
 
     if (trip) await notifyExpiredBookings(expiredBookings, trip);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
+    for (const attempt of result.openAttempts) {
+      if (attempt.provider === 'stripe') {
+        void cancelStripePaymentIntent(attempt.providerPaymentId);
+      }
+    }
     await notifyUser(
       result.driverId,
       'A passenger cancelled their Carpool booking',

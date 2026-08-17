@@ -23,6 +23,9 @@ web-build/
 .env.local
 .env.*.local
 
+# local antivirus / TLS-inspection CA dumps
+infra/certs/
+
 # logs
 *.log
 npm-debug.log*

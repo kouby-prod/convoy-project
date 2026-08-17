@@ -1,10 +1,17 @@
 import nodemailer from 'nodemailer';
 import { env } from '../env';
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+}
+
 export interface EmailMessage {
   to: string;
   subject: string;
   text: string;
+  attachments?: EmailAttachment[];
 }
 
 /**
@@ -50,6 +57,11 @@ function createSmtpSender(host: string): EmailSender {
       to: message.to,
       subject: message.subject,
       text: message.text,
+      attachments: message.attachments?.map((file) => ({
+        filename: file.filename,
+        content: file.content,
+        contentType: file.contentType,
+      })),
     });
   };
 }

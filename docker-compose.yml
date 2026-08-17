@@ -58,6 +58,17 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY}
       S3_BUCKET: ${S3_BUCKET}
       S3_URL_TTL: ${S3_URL_TTL}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
+      PAYPAL_WEBHOOK_ID: ${PAYPAL_WEBHOOK_ID:-}
+      PAYPAL_MODE: ${PAYPAL_MODE:-sandbox}
+      INVOICE_LEGAL_NAME: ${INVOICE_LEGAL_NAME:-Kouby}
+      INVOICE_ADDRESS: ${INVOICE_ADDRESS:-}
+      INVOICE_GST_NUMBER: ${INVOICE_GST_NUMBER:-}
+      INVOICE_QST_NUMBER: ${INVOICE_QST_NUMBER:-}
+      TAX_MODE: ${TAX_MODE:-none}
     ports:
       - '${API_PORT}:${API_PORT}'
     depends_on:
@@ -75,6 +86,8 @@ services:
       args:
         # Inlined into the browser bundle at build time (from root .env).
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
+        NEXT_PUBLIC_PAYPAL_CLIENT_ID: ${NEXT_PUBLIC_PAYPAL_CLIENT_ID:-}
     restart: unless-stopped
     environment:
       # Read at runtime by server components; the browser bundle keeps using the

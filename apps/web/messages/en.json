@@ -176,7 +176,7 @@
   "Cgv": {
     "title": "Terms of Sale",
     "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Only the last-updated date still needs to be filled in before publishing (see \"[to be completed]\" above). This page describes a commission model that isn't yet built into the app (no payment is currently processed).",
+    "disclaimer": "Kouby charges a 5 CAD booking commission, payable online by card (Stripe) or PayPal after the driver accepts. The ride fare is settled off-platform, directly with the driver.",
     "sections": [
       {
         "heading": "1. Purpose",
@@ -631,6 +631,8 @@
       "cancel": "Cancel my booking",
       "cancelling": "Cancelling...",
       "cancelledNotice": "Your booking has been cancelled.",
+      "pay": "Pay the 5 CAD commission",
+      "invoice": "View invoice",
       "errors": {
         "generic": "Unable to complete the booking. Please try again.",
         "cancelGeneric": "Unable to cancel this booking. Please try again."
@@ -647,6 +649,7 @@
       "actionError": "Unable to update this booking.",
       "status": {
         "pending": "Pending",
+        "awaiting_payment": "Awaiting payment",
         "confirmed": "Confirmed",
         "rejected": "Rejected",
         "cancelled": "Cancelled",
@@ -757,6 +760,8 @@
     "cancel": "Cancel my booking",
     "cancelling": "Cancelling...",
     "cancelError": "Unable to cancel this booking. Please try again.",
+    "pay": "Pay the commission",
+    "invoice": "View invoice",
     "review": {
       "cta": "Rate this ride",
       "ratingLabel": "Rating",
@@ -1038,6 +1043,53 @@
       "invalid": "Please check the form fields.",
       "baggage": "Baggage",
       "baggagePlaceholder": "E.g. one cabin bag per person"
+    }
+  },
+  "Paiement": {
+    "title": "Commission payment",
+    "subtitle": "Pay the Kouby booking commission (5 CAD) to confirm your seat. The ride fare is paid directly to the driver.",
+    "loading": "Loading payment…",
+    "empty": "No invoice is attached to this booking.",
+    "error": "Unable to load payment. Please try again later.",
+    "payTitle": "Pay now",
+    "paidTitle": "Payment received",
+    "paidBody": "Your booking is confirmed. Keep your invoice.",
+    "amountLabel": "Amount due",
+    "statusLabel": "Status",
+    "payCta": "Pay by card",
+    "paying": "Paying…",
+    "stripeTitle": "Card (Stripe)",
+    "stripeLoading": "Preparing card payment…",
+    "stripeError": "Card payment could not start.",
+    "paypalTitle": "PayPal",
+    "paypalMissingOrder": "The PayPal order could not be created.",
+    "paypalError": "PayPal payment failed.",
+    "captureError": "PayPal capture failed.",
+    "unavailable": "No payment method is configured yet.",
+    "disclaimer": "By paying, you accept the terms of sale. The commission is not refundable once the booking is confirmed, except if the driver cancels the trip.",
+    "cgvLink": "Read the terms of sale"
+  },
+  "Facture": {
+    "title": "Invoice",
+    "subtitle": "Kouby document — the ride fare is not included.",
+    "loading": "Loading invoice…",
+    "empty": "No invoice.",
+    "error": "Unable to load the invoice.",
+    "number": "Number",
+    "buyer": "Bill to",
+    "line": "Line",
+    "commissionLine": "Kouby booking commission",
+    "total": "Total",
+    "fareNote": "The ride fare is paid directly to the driver and is not on this invoice.",
+    "downloadPdf": "Download PDF",
+    "downloading": "Downloading…",
+    "viewHtml": "Printable version",
+    "downloadError": "The PDF could not be downloaded.",
+    "status": {
+      "draft": "Draft",
+      "issued": "Issued",
+      "paid": "Paid",
+      "voided": "Voided"
     }
   }
 }

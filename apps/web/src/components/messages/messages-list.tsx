@@ -17,7 +17,7 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
-const BOOKING_STATUSES = new Set(['pending', 'confirmed', 'rejected', 'cancelled', 'expired']);
+const BOOKING_STATUSES = new Set(['pending', 'awaiting_payment', 'confirmed', 'rejected', 'cancelled', 'expired']);
 
 /**
  * Messages inbox — `GET /messages/conversations` with trip context,

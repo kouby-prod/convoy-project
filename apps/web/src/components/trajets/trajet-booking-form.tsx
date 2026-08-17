@@ -139,7 +139,7 @@ export function TrajetBookingForm({
               <p className="text-xs text-muted-foreground">{t(`bookings.status.${myBooking.status}`)}</p>
             </div>
           </div>
-          {myBooking.status === 'pending' || myBooking.status === 'confirmed' ? (
+          {myBooking.status === 'pending' || myBooking.status === 'awaiting_payment' || myBooking.status === 'confirmed' ? (
             <Button
               size="sm"
               variant="outline"
@@ -149,6 +149,22 @@ export function TrajetBookingForm({
             >
               {cancelMutation.isPending ? t('booking.cancelling') : t('booking.cancel')}
             </Button>
+          ) : null}
+          {myBooking.status === 'awaiting_payment' ? (
+            <Link
+              href={`/paiement/${myBooking.id}`}
+              className={cn(buttonVariants({ variant: 'primary', size: 'sm' }), 'w-full font-semibold')}
+            >
+              {t('booking.pay')}
+            </Link>
+          ) : null}
+          {myBooking.status === 'awaiting_payment' || myBooking.status === 'confirmed' ? (
+            <Link
+              href={`/paiement/${myBooking.id}`}
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}
+            >
+              {t('booking.invoice')}
+            </Link>
           ) : null}
           {cancelMutation.isError ? (
             <p className="text-sm text-destructive">{t('booking.errors.cancelGeneric')}</p>

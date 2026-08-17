@@ -7,10 +7,11 @@ import { createApiClient } from '@carpool/api-client';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookingMessages } from '@/components/trajets/booking-messages';
+import { cn } from '@/lib/utils';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -161,7 +162,7 @@ export function MesReservationsList() {
                   <strong className="text-foreground">{t('status')}:</strong>{' '}
                   {tStatus(`bookings.status.${item.status}`)}
                 </div>
-                {item.status === 'pending' || item.status === 'confirmed' ? (
+                {item.status === 'pending' || item.status === 'awaiting_payment' || item.status === 'confirmed' ? (
                   <Button
                     size="sm"
                     variant="outline"
@@ -171,6 +172,19 @@ export function MesReservationsList() {
                   >
                     {cancelMutation.isPending ? t('cancelling') : t('cancel')}
                   </Button>
+                ) : null}
+                {item.status === 'awaiting_payment' ? (
+                  <Link href={`/paiement/${item.id}`} className={cn(buttonVariants({ size: 'sm' }), 'w-fit')}>
+                    {t('pay')}
+                  </Link>
+                ) : null}
+                {item.status === 'awaiting_payment' || item.status === 'confirmed' ? (
+                  <Link
+                    href={`/paiement/${item.id}`}
+                    className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-fit')}
+                  >
+                    {t('invoice')}
+                  </Link>
                 ) : null}
                 {item.status === 'confirmed' && new Date(item.trajet.departureDateTime) < new Date() ? (
                   reviewedIds.has(item.id) ? (

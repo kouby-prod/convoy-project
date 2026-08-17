@@ -176,7 +176,7 @@
   "Cgv": {
     "title": "Conditions Générales de Vente (CGV)",
     "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication (voir « [à compléter] » ci-dessus). Cette page décrit un modèle de commission qui n'est pas encore intégré dans l'application (aucun paiement n'y est actuellement traité).",
+    "disclaimer": "Kouby facture une commission de réservation de 5 CAD, payable en ligne par carte (Stripe) ou PayPal après acceptation du conducteur. Le prix du trajet est réglé hors plateforme, directement auprès du conducteur.",
     "sections": [
       {
         "heading": "1. Objet",
@@ -631,6 +631,8 @@
       "cancel": "Annuler ma réservation",
       "cancelling": "Annulation en cours...",
       "cancelledNotice": "Votre réservation a été annulée.",
+      "pay": "Payer la commission de 5 CAD",
+      "invoice": "Voir la facture",
       "errors": {
         "generic": "Impossible d'effectuer la réservation. Veuillez réessayer.",
         "cancelGeneric": "Impossible d'annuler cette réservation. Veuillez réessayer."
@@ -647,6 +649,7 @@
       "actionError": "Impossible de mettre à jour cette réservation.",
       "status": {
         "pending": "En attente",
+        "awaiting_payment": "En attente de paiement",
         "confirmed": "Confirmée",
         "rejected": "Refusée",
         "cancelled": "Annulée",
@@ -757,6 +760,8 @@
     "cancel": "Annuler ma réservation",
     "cancelling": "Annulation en cours...",
     "cancelError": "Impossible d'annuler cette réservation. Veuillez réessayer.",
+    "pay": "Payer la commission",
+    "invoice": "Voir la facture",
     "review": {
       "cta": "Noter ce trajet",
       "ratingLabel": "Note",
@@ -1038,6 +1043,53 @@
       "invalid": "Vérifiez les champs du formulaire.",
       "baggage": "Bagages",
       "baggagePlaceholder": "Ex. : un bagage cabine par personne"
+    }
+  },
+  "Paiement": {
+    "title": "Paiement de la commission",
+    "subtitle": "Réglez la commission de réservation Kouby (5 CAD) pour confirmer votre place. Le prix du trajet se paie directement au conducteur.",
+    "loading": "Chargement du paiement…",
+    "empty": "Aucune facture n'est associée à cette réservation.",
+    "error": "Impossible de charger le paiement. Réessayez plus tard.",
+    "payTitle": "Payer maintenant",
+    "paidTitle": "Paiement reçu",
+    "paidBody": "Votre réservation est confirmée. Conservez votre facture.",
+    "amountLabel": "Montant à payer",
+    "statusLabel": "Statut",
+    "payCta": "Payer par carte",
+    "paying": "Paiement en cours…",
+    "stripeTitle": "Carte bancaire (Stripe)",
+    "stripeLoading": "Préparation du paiement par carte…",
+    "stripeError": "Le paiement par carte n'a pas pu démarrer.",
+    "paypalTitle": "PayPal",
+    "paypalMissingOrder": "La commande PayPal n'a pas pu être créée.",
+    "paypalError": "Le paiement PayPal a échoué.",
+    "captureError": "La capture PayPal a échoué.",
+    "unavailable": "Aucun moyen de paiement n'est configuré pour le moment.",
+    "disclaimer": "En payant, vous acceptez les conditions générales de vente. La commission n'est pas remboursable une fois la réservation confirmée, sauf annulation du trajet par le conducteur.",
+    "cgvLink": "Lire les CGV"
+  },
+  "Facture": {
+    "title": "Facture",
+    "subtitle": "Document Kouby — le trajet n'y figure pas.",
+    "loading": "Chargement de la facture…",
+    "empty": "Aucune facture.",
+    "error": "Impossible de charger la facture.",
+    "number": "Numéro",
+    "buyer": "Destinataire",
+    "line": "Ligne",
+    "commissionLine": "Commission de réservation Kouby",
+    "total": "Total",
+    "fareNote": "Le prix du trajet est payé directement au conducteur et n'apparaît pas sur cette facture.",
+    "downloadPdf": "Télécharger le PDF",
+    "downloading": "Téléchargement…",
+    "viewHtml": "Version imprimable",
+    "downloadError": "Le PDF n'a pas pu être téléchargé.",
+    "status": {
+      "draft": "Brouillon",
+      "issued": "Émise",
+      "paid": "Payée",
+      "voided": "Annulée"
     }
   }
 }

@@ -67,7 +67,7 @@ export const booking = pgTable(
     index('booking_passenger_idx').on(t.passengerId),
     check(
       'booking_status_check',
-      sql`${t.status} in ('pending', 'confirmed', 'rejected', 'cancelled', 'expired')`,
+      sql`${t.status} in ('pending', 'awaiting_payment', 'confirmed', 'rejected', 'cancelled', 'expired')`,
     ),
   ],
 );

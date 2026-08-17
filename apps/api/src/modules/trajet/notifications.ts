@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../../db/client';
 import { user } from '../../db/auth-schema';
-import { sendEmail } from '../../auth/email';
+import { sendEmail, type EmailAttachment } from '../../auth/email';
 import { env } from '../../env';
 
 /** The web app's own origin — first of TRUSTED_ORIGINS, which is where it runs. */
@@ -15,6 +15,10 @@ export function trajetUrl(trajetId: string): string {
 
 export function trajetSearchUrl(): string {
   return `${webOrigin()}/trajets`;
+}
+
+export function paymentUrl(bookingId: string): string {
+  return `${webOrigin()}/paiement/${bookingId}`;
 }
 
 /** Shared "from X to Y (departing ...)" fragment used by every notification below. */
@@ -31,12 +35,17 @@ export function describeTrip(trip: {
  * are logged, not thrown — there's no retry queue in this codebase, so a dead
  * SMTP server must never fail the booking action that triggered the email.
  */
-export async function notifyUser(userId: string, subject: string, text: string): Promise<void> {
+export async function notifyUser(
+  userId: string,
+  subject: string,
+  text: string,
+  attachments?: EmailAttachment[],
+): Promise<void> {
   const [recipient] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId));
   if (!recipient) return;
 
   try {
-    await sendEmail({ to: recipient.email, subject, text });
+    await sendEmail({ to: recipient.email, subject, text, attachments });
   } catch (err) {
     console.error(`Failed to send "${subject}" notification to ${recipient.email}`, err);
   }

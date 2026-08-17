@@ -80,6 +80,7 @@ vi.mock('../../src/modules/trajet/notifications', () => ({
   notifyUser: (...a: unknown[]) => notifyUser(...a),
   trajetUrl: (id: string) => `https://example.test/trajets/${id}`,
   trajetSearchUrl: () => 'https://example.test/trajets',
+  paymentUrl: (id: string) => `https://example.test/paiement/${id}`,
   describeTrip: (trip: { departureCity: string; arrivalCity: string; departureAt: Date }) =>
     `${trip.departureCity} to ${trip.arrivalCity} (departing ${trip.departureAt.toUTCString()})`,
 }));
@@ -102,6 +103,27 @@ vi.mock('../../src/middleware/rate-limit', () => ({
 const geocodeAndStoreTrajetLocation = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../src/modules/trajet/geocoding', () => ({
   geocodeAndStoreTrajetLocation: (...a: unknown[]) => geocodeAndStoreTrajetLocation(...a),
+}));
+
+const paymentHooks = vi.hoisted(() => ({
+  issueInvoiceForBooking: vi.fn().mockResolvedValue({ number: 'KOU-2026-000001' }),
+  voidIssuedInvoiceForBooking: vi.fn().mockResolvedValue(undefined),
+  refundPaidBooking: vi.fn().mockResolvedValue(undefined),
+  expireUnpaidBookings: vi.fn(async (_tx: unknown, _id: string, seats: number) => ({
+    seatsAvailable: seats,
+    expired: [],
+  })),
+  cancelOpenPaymentsForBooking: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('../../src/modules/payment/booking-hooks', () => paymentHooks);
+vi.mock('../../src/modules/payment/stripe', () => ({
+  cancelStripePaymentIntent: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../../src/modules/payment/pdf', () => ({
+  renderInvoicePdf: vi.fn().mockResolvedValue(Buffer.from('pdf')),
+}));
+vi.mock('../../src/auth/email', () => ({
+  smtpEmailSender: null,
 }));
 
 import { trajetModule } from '../../src/modules/trajet';
@@ -171,6 +193,16 @@ describe('trajet module', () => {
     getSession.mockReset();
     notifyUser.mockClear();
     geocodeAndStoreTrajetLocation.mockClear();
+    paymentHooks.issueInvoiceForBooking.mockClear();
+    paymentHooks.voidIssuedInvoiceForBooking.mockClear();
+    paymentHooks.refundPaidBooking.mockClear();
+    paymentHooks.expireUnpaidBookings.mockClear();
+    paymentHooks.cancelOpenPaymentsForBooking.mockClear();
+    paymentHooks.issueInvoiceForBooking.mockResolvedValue({ number: 'KOU-2026-000001' });
+    paymentHooks.expireUnpaidBookings.mockImplementation(
+      async (_tx: unknown, _id: string, seats: number) => ({ seatsAvailable: seats, expired: [] }),
+    );
+    paymentHooks.cancelOpenPaymentsForBooking.mockResolvedValue([]);
     dbState.selectResult = [];
     dbState.selectQueue = [];
     dbState.insertResult = [];
@@ -852,7 +884,7 @@ describe('trajet module', () => {
       expect(res.status).toBe(400);
     });
 
-    it('confirms a pending booking without restocking seats', async () => {
+    it('maps driver accept to awaiting_payment and issues an invoice', async () => {
       getSession.mockResolvedValue(sessionFor('user'));
       dbState.selectQueue = [
         [makeTrajetRow({ driverId: 'u_1', seatsAvailable: 1 })],
@@ -860,7 +892,7 @@ describe('trajet module', () => {
       ];
       // First frame: the stale-pending sweep finds nothing to expire.
       dbState.updateQueue = [[]];
-      dbState.updateResult = [makeBookingRow({ status: 'confirmed', seats: 2 })];
+      dbState.updateResult = [makeBookingRow({ status: 'awaiting_payment', seats: 2 })];
 
       const res = await trajetModule.request(url, {
         method: 'PATCH',
@@ -870,13 +902,15 @@ describe('trajet module', () => {
 
       expect(res.status).toBe(200);
       const body = await res.json();
-      expect(body).toMatchObject({ id: BOOKING_ID, status: 'confirmed' });
+      expect(body).toMatchObject({ id: BOOKING_ID, status: 'awaiting_payment' });
       // Sweep (no-op) + the booking update — seats stay held, no trajet update.
       expect(db.update).toHaveBeenCalledTimes(2);
+      expect(paymentHooks.issueInvoiceForBooking).toHaveBeenCalled();
       expect(notifyUser).toHaveBeenCalledWith(
         'u_2',
-        expect.stringContaining('confirmed'),
-        expect.any(String),
+        expect.stringContaining('commission'),
+        expect.stringContaining('paiement'),
+        undefined,
       );
     });
 

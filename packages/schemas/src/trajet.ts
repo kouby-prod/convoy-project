@@ -285,10 +285,13 @@ export type TrajetApiSearchQuery = z.infer<typeof TrajetApiSearchQuerySchema>;
  * the authenticated user; the contact fields are what they typed on the ride
  * detail form and are stored alongside the reservation for the driver to see.
  * A booking starts `pending` (seats are provisionally held) and either:
- * - the driver moves it to `confirmed` or `rejected` via UpdateBookingStatusSchema,
+ * - the driver rejects it, or accepts it (`UpdateBookingStatusSchema` still
+ *   sends `confirmed` meaning "I accept") which the API persists as
+ *   `awaiting_payment` and issues a 5 CAD invoice,
+ * - a Stripe/PayPal settlement moves `awaiting_payment` → `confirmed`,
  * - the passenger moves it to `cancelled` (POST .../cancel), or
- * - the system moves it to `expired` once it has sat `pending` past the TTL
- *   (see PENDING_BOOKING_TTL_MS in the trajet module) without a driver response.
+ * - the system moves it to `expired` (pending TTL without a driver response,
+ *   or unpaid TTL after accept).
  */
 export const CreateBookingSchema = z
   .object({
@@ -302,7 +305,14 @@ export const CreateBookingSchema = z
   .describe('CreateBooking');
 export type CreateBooking = z.infer<typeof CreateBookingSchema>;
 
-export const BookingStatusSchema = z.enum(['pending', 'confirmed', 'rejected', 'cancelled', 'expired']);
+export const BookingStatusSchema = z.enum([
+  'pending',
+  'awaiting_payment',
+  'confirmed',
+  'rejected',
+  'cancelled',
+  'expired',
+]);
 export type BookingStatus = z.infer<typeof BookingStatusSchema>;
 
 export const BookingSchema = z

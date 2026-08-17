@@ -1,0 +1,201 @@
+import { relations, sql } from 'drizzle-orm';
+import {
+  pgTable,
+  pgSequence,
+  text,
+  timestamp,
+  integer,
+  jsonb,
+  index,
+  unique,
+  uniqueIndex,
+  check,
+} from 'drizzle-orm/pg-core';
+import { booking } from './trajet-schema';
+import type { TaxLine } from '@carpool/schemas';
+
+export const invoiceNumberSeq = pgSequence('invoice_number_seq');
+export const creditNoteNumberSeq = pgSequence('credit_note_number_seq');
+
+/**
+ * Kouby-owned invoice — the document of record. Stripe/PayPal only collect.
+ * Numbers come from `invoice_number_seq` (KOU-YYYY-000001). Never delete a
+ * row: void an unpaid invoice or issue a credit note against a paid one.
+ */
+export const invoice = pgTable(
+  'invoice',
+  {
+    id: text('id').primaryKey(),
+    bookingId: text('booking_id')
+      .notNull()
+      .references(() => booking.id, { onDelete: 'cascade' }),
+    number: text('number').notNull(),
+    status: text('status').notNull(),
+    currency: text('currency').notNull(),
+    subtotalCents: integer('subtotal_cents').notNull(),
+    taxCents: integer('tax_cents').notNull(),
+    totalCents: integer('total_cents').notNull(),
+    taxLines: jsonb('tax_lines').$type<TaxLine[]>().notNull(),
+    buyerName: text('buyer_name').notNull(),
+    buyerEmail: text('buyer_email').notNull(),
+    pdfStorageKey: text('pdf_storage_key'),
+    issuedAt: timestamp('issued_at').notNull(),
+    dueAt: timestamp('due_at').notNull(),
+    paidAt: timestamp('paid_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    unique('invoice_booking_id_unique').on(t.bookingId),
+    unique('invoice_number_unique').on(t.number),
+    index('invoice_status_idx').on(t.status),
+    check(
+      'invoice_status_check',
+      sql`${t.status} in ('draft', 'issued', 'paid', 'voided')`,
+    ),
+  ],
+);
+
+export const creditNote = pgTable(
+  'credit_note',
+  {
+    id: text('id').primaryKey(),
+    invoiceId: text('invoice_id')
+      .notNull()
+      .references(() => invoice.id, { onDelete: 'cascade' }),
+    number: text('number').notNull(),
+    amountCents: integer('amount_cents').notNull(),
+    currency: text('currency').notNull(),
+    reason: text('reason').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => [
+    unique('credit_note_invoice_id_unique').on(t.invoiceId),
+    unique('credit_note_number_unique').on(t.number),
+  ],
+);
+
+/**
+ * One collection attempt against an invoice. Many rows per invoice are
+ * allowed (passenger can try Stripe then PayPal) but at most one may be
+ * `succeeded` — enforced by a partial unique index.
+ */
+export const payment = pgTable(
+  'payment',
+  {
+    id: text('id').primaryKey(),
+    invoiceId: text('invoice_id')
+      .notNull()
+      .references(() => invoice.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    providerPaymentId: text('provider_payment_id').notNull(),
+    amountCents: integer('amount_cents').notNull(),
+    currency: text('currency').notNull(),
+    status: text('status').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    unique('payment_provider_payment_id_unique').on(t.provider, t.providerPaymentId),
+    uniqueIndex('payment_one_succeeded_per_invoice')
+      .on(t.invoiceId)
+      .where(sql`${t.status} = 'succeeded'`),
+    index('payment_invoice_idx').on(t.invoiceId),
+    check('payment_provider_check', sql`${t.provider} in ('stripe', 'paypal')`),
+    check(
+      'payment_status_check',
+      sql`${t.status} in ('created', 'processing', 'succeeded', 'failed', 'cancelled', 'refunded')`,
+    ),
+  ],
+);
+
+export const ledgerEntry = pgTable(
+  'ledger_entry',
+  {
+    id: text('id').primaryKey(),
+    txnId: text('txn_id').notNull(),
+    invoiceId: text('invoice_id')
+      .notNull()
+      .references(() => invoice.id, { onDelete: 'cascade' }),
+    account: text('account').notNull(),
+    direction: text('direction').notNull(),
+    amountCents: integer('amount_cents').notNull(),
+    currency: text('currency').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => [
+    index('ledger_entry_txn_idx').on(t.txnId),
+    index('ledger_entry_invoice_idx').on(t.invoiceId),
+    check(
+      'ledger_entry_account_check',
+      sql`${t.account} in ('accounts_receivable', 'processor_clearing', 'revenue', 'tax_payable', 'refunds')`,
+    ),
+    check('ledger_entry_direction_check', sql`${t.direction} in ('debit', 'credit')`),
+    check('ledger_entry_amount_check', sql`${t.amountCents} > 0`),
+  ],
+);
+
+export const processedEvent = pgTable(
+  'processed_event',
+  {
+    id: text('id').primaryKey(),
+    provider: text('provider').notNull(),
+    eventId: text('event_id').notNull(),
+    status: text('status').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    processedAt: timestamp('processed_at'),
+  },
+  (t) => [
+    unique('processed_event_provider_event_unique').on(t.provider, t.eventId),
+    check('processed_event_provider_check', sql`${t.provider} in ('stripe', 'paypal')`),
+    check('processed_event_status_check', sql`${t.status} in ('received', 'processed')`),
+  ],
+);
+
+export const idempotencyKey = pgTable(
+  'idempotency_key',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    key: text('key').notNull(),
+    requestHash: text('request_hash').notNull(),
+    responseJson: jsonb('response_json').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => [unique('idempotency_key_user_key_unique').on(t.userId, t.key)],
+);
+
+export const reconciliationMismatch = pgTable('reconciliation_mismatch', {
+  id: text('id').primaryKey(),
+  kind: text('kind').notNull(),
+  provider: text('provider'),
+  providerPaymentId: text('provider_payment_id'),
+  invoiceId: text('invoice_id'),
+  detail: jsonb('detail').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const invoiceRelations = relations(invoice, ({ one, many }) => ({
+  booking: one(booking, { fields: [invoice.bookingId], references: [booking.id] }),
+  payments: many(payment),
+  creditNote: one(creditNote),
+  ledgerEntries: many(ledgerEntry),
+}));
+
+export const paymentRelations = relations(payment, ({ one }) => ({
+  invoice: one(invoice, { fields: [payment.invoiceId], references: [invoice.id] }),
+}));
+
+export const creditNoteRelations = relations(creditNote, ({ one }) => ({
+  invoice: one(invoice, { fields: [creditNote.invoiceId], references: [invoice.id] }),
+}));
+
+export const ledgerEntryRelations = relations(ledgerEntry, ({ one }) => ({
+  invoice: one(invoice, { fields: [ledgerEntry.invoiceId], references: [invoice.id] }),
+}));

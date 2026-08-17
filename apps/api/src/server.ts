@@ -5,6 +5,8 @@ import { env } from './env';
 import { messageHub } from './realtime/hub';
 import { closeMessageQueue } from './queue/message-jobs';
 import { startMessageWorker, stopMessageWorker } from './queue/message-worker';
+import { closePaymentQueues, schedulePaymentReconcile } from './queue/payment-jobs';
+import { startPaymentWorkers, stopPaymentWorkers } from './queue/payment-worker';
 import { ensureBucket } from './storage/s3';
 
 // `ws` is CJS; Node ESM rejects `import { WebSocketServer } from 'ws'` at
@@ -28,6 +30,10 @@ await ensureBucket().catch((error: unknown) => {
 // Boot. `env` is validated at import time and will exit(1) on bad config.
 messageHub.start();
 startMessageWorker();
+startPaymentWorkers();
+void schedulePaymentReconcile().catch((err: unknown) => {
+  console.error('[payment] failed to schedule reconcile job', err);
+});
 
 const wss = new WebSocketServerCtor({ noServer: true });
 
@@ -55,6 +61,8 @@ async function shutdown(signal: string): Promise<void> {
   try {
     await stopMessageWorker();
     await closeMessageQueue();
+    await stopPaymentWorkers();
+    await closePaymentQueues();
     await messageHub.stop();
   } catch (err) {
     console.error('[api] error while stopping messaging infra', err);
