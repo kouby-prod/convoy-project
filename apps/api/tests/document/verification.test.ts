@@ -17,11 +17,12 @@ import {
  * *compute* rather than merely read: the driver's banner and the backoffice chip
  * must never disagree about whether someone may drive.
  *
- * The four conditions under test are:
- *   1. a valid Canadian driver's licence   → `permis`
- *   2. valid auto insurance                → `assurance`
- *   3. a compliant, roadworthy vehicle     → `immatriculation`
- *   4. at least 18 years old               → declared birth date + reviewer confirmation
+ * The two conditions under test are:
+ *   1. a valid Canadian driver's licence   → `permis` (the only reviewed document)
+ *   2. at least 18 years old               → declared birth date + reviewer confirmation
+ *
+ * Insurance and vehicle registration are self-certified (`Vehicle.hasInsurance`,
+ * `Vehicle.plate` in @carpool/schemas `vehicle.ts`) and no longer feed this rollup.
  */
 
 const EARLIER = '2026-01-01T10:00:00.000Z';
@@ -41,11 +42,9 @@ function doc(
   return { type, status, submittedAt: EARLIER, ...extra };
 }
 
-/** All three documents approved, with the licence's age confirmation settled. */
-function allApproved(): VerifiableDocument[] {
-  return REQUIRED_DRIVER_DOCUMENT_TYPES.map((type) =>
-    doc(type, 'approved', type === 'permis' ? { ageConfirmed: true } : {}),
-  );
+/** The permis approved, with its age confirmation settled. */
+function approvedPermis(extra: Partial<VerifiableDocument> = {}): VerifiableDocument[] {
+  return [doc('permis', 'approved', { ageConfirmed: true, ...extra })];
 }
 
 const adult = { dateOfBirth: ADULT };
@@ -73,9 +72,9 @@ describe('age helpers', () => {
 });
 
 describe('deriveDriverVerification', () => {
-  it('asks for exactly the three documentary conditions', () => {
-    expect(REQUIRED_DRIVER_DOCUMENT_TYPES).toEqual(['permis', 'assurance', 'immatriculation']);
-    expect(deriveDriverVerification([], {}, NOW).requiredCount).toBe(3);
+  it('asks for exactly the one documentary condition', () => {
+    expect(REQUIRED_DRIVER_DOCUMENT_TYPES).toEqual(['permis']);
+    expect(deriveDriverVerification([], {}, NOW).requiredCount).toBe(1);
   });
 
   it('reports a driver with nothing on file as incomplete', () => {
@@ -83,12 +82,7 @@ describe('deriveDriverVerification', () => {
 
     expect(verification.status).toBe('incomplete');
     expect(verification.approvedCount).toBe(0);
-    // Every required type still gets a slot, so the UI can render all three cards.
-    expect(verification.slots).toEqual([
-      { type: 'permis', status: 'missing' },
-      { type: 'assurance', status: 'missing' },
-      { type: 'immatriculation', status: 'missing' },
-    ]);
+    expect(verification.slots).toEqual([{ type: 'permis', status: 'missing' }]);
     expect(verification.age).toEqual({
       dateOfBirth: null,
       age: null,
@@ -97,35 +91,24 @@ describe('deriveDriverVerification', () => {
     });
   });
 
-  it('stays incomplete while only some documents are in', () => {
-    const verification = deriveDriverVerification([doc('permis', 'approved')], adult, NOW);
-
-    expect(verification.status).toBe('incomplete');
-    expect(verification.approvedCount).toBe(1);
-  });
-
-  it('is pending once all three are sent and awaiting a decision', () => {
-    const verification = deriveDriverVerification(
-      [doc('permis', 'pending'), doc('assurance', 'approved'), doc('immatriculation', 'pending')],
-      adult,
-      NOW,
-    );
+  it('is pending once the permis is sent and awaiting a decision', () => {
+    const verification = deriveDriverVerification([doc('permis', 'pending')], adult, NOW);
 
     expect(verification.status).toBe('pending');
   });
 
-  it('is approved when all three are approved and the age is settled', () => {
-    const verification = deriveDriverVerification(allApproved(), adult, NOW);
+  it('is approved when the permis is approved and the age is settled', () => {
+    const verification = deriveDriverVerification(approvedPermis(), adult, NOW);
 
     expect(verification.status).toBe('approved');
-    expect(verification.approvedCount).toBe(3);
+    expect(verification.approvedCount).toBe(1);
     expect(verification.age).toMatchObject({ age: 32, isAdult: true, confirmedByReviewer: true });
   });
 
-  /* ── The fourth condition is not optional ──────────────────────────────── */
+  /* ── The second condition is not optional ──────────────────────────────── */
 
-  it('is NOT approved when every document passes but no birth date was declared', () => {
-    const verification = deriveDriverVerification(allApproved(), {}, NOW);
+  it('is NOT approved when the permis passes but no birth date was declared', () => {
+    const verification = deriveDriverVerification(approvedPermis(), {}, NOW);
 
     expect(verification.status).not.toBe('approved');
     expect(verification.status).toBe('incomplete');
@@ -133,7 +116,7 @@ describe('deriveDriverVerification', () => {
 
   it('is NOT approved when the driver is under the minimum age', () => {
     const verification = deriveDriverVerification(
-      allApproved(),
+      approvedPermis(),
       { dateOfBirth: TURNS_18_TOMORROW },
       NOW,
     );
@@ -144,9 +127,7 @@ describe('deriveDriverVerification', () => {
 
   it('is NOT approved when no reviewer confirmed the birth date on the licence', () => {
     // A declaration nobody checked is a claim, not a verification.
-    const documents = allApproved().map((entry) =>
-      entry.type === 'permis' ? { ...entry, ageConfirmed: false } : entry,
-    );
+    const documents = [doc('permis', 'approved', { ageConfirmed: false })];
 
     const verification = deriveDriverVerification(documents, adult, NOW);
 
@@ -166,10 +147,8 @@ describe('deriveDriverVerification', () => {
 
   /* ── Refusals and history ──────────────────────────────────────────────── */
 
-  it('surfaces a rejection ahead of a document that is merely missing', () => {
-    // Both need action, but only the refusal carries a reason the driver can
-    // act on, so it is the one the banner leads with.
-    const verification = deriveDriverVerification([doc('assurance', 'rejected')], adult, NOW);
+  it('reports a rejected permis as rejected overall', () => {
+    const verification = deriveDriverVerification([doc('permis', 'rejected')], adult, NOW);
 
     expect(verification.status).toBe('rejected');
   });
@@ -179,10 +158,8 @@ describe('deriveDriverVerification', () => {
     // the old one; the rollup has to move on while the history keeps both.
     const verification = deriveDriverVerification(
       [
-        doc('assurance', 'rejected', { submittedAt: EARLIER }),
-        doc('assurance', 'approved', { submittedAt: LATER }),
-        doc('permis', 'approved', { ageConfirmed: true }),
-        doc('immatriculation', 'approved'),
+        doc('permis', 'rejected', { submittedAt: EARLIER }),
+        doc('permis', 'approved', { submittedAt: LATER, ageConfirmed: true }),
       ],
       adult,
       NOW,
@@ -198,8 +175,6 @@ describe('deriveDriverVerification', () => {
       [
         doc('permis', 'rejected', { submittedAt: EARLIER }),
         doc('permis', 'approved', { submittedAt: new Date(LATER), ageConfirmed: true }),
-        doc('assurance', 'approved', { submittedAt: new Date(LATER) }),
-        doc('immatriculation', 'approved', { submittedAt: new Date(LATER) }),
       ],
       adult,
       NOW,
@@ -209,27 +184,26 @@ describe('deriveDriverVerification', () => {
   });
 
   it('ignores documents outside the required set', () => {
-    // Legacy types are renderable but must not count towards eligibility.
+    // Legacy types — including assurance/immatriculation, now self-certified
+    // instead of reviewed — are renderable but must not count towards eligibility.
     const verification = deriveDriverVerification(
       [
         doc('carteIdentite', 'approved'),
         doc('carteGrise', 'approved'),
+        doc('assurance', 'approved'),
+        doc('immatriculation', 'approved'),
         doc('permis', 'approved', { ageConfirmed: true }),
       ],
       adult,
       NOW,
     );
 
-    expect(verification.status).toBe('incomplete');
+    expect(verification.status).toBe('approved');
     expect(verification.approvedCount).toBe(1);
   });
 
   it('treats an unrecognised status as missing rather than as a pass', () => {
-    const verification = deriveDriverVerification(
-      [doc('permis', 'definitely-fine'), doc('assurance', 'approved')],
-      adult,
-      NOW,
-    );
+    const verification = deriveDriverVerification([doc('permis', 'definitely-fine')], adult, NOW);
 
     expect(verification.slots[0]).toEqual({ type: 'permis', status: 'missing' });
     expect(verification.status).toBe('incomplete');
@@ -241,58 +215,35 @@ describe('deriveDriverVerification', () => {
     const REVIEWED_RECENT = '2026-06-01T10:00:00.000Z'; // ~2 months before NOW
     const REVIEWED_STALE = '2024-01-01T10:00:00.000Z'; // ~2.5 years before NOW
 
-    function approvedDocs(permisReviewedAt: string): VerifiableDocument[] {
-      return [
-        doc('permis', 'approved', { ageConfirmed: true, reviewedAt: permisReviewedAt }),
-        doc('assurance', 'approved'),
-        doc('immatriculation', 'approved'),
-      ];
-    }
-
     it('still counts a recently-approved permis as approved', () => {
-      const verification = deriveDriverVerification(approvedDocs(REVIEWED_RECENT), adult, NOW);
+      const verification = deriveDriverVerification(
+        approvedPermis({ reviewedAt: REVIEWED_RECENT }),
+        adult,
+        NOW,
+      );
 
       expect(verification.slots[0]).toEqual({ type: 'permis', status: 'approved' });
       expect(verification.status).toBe('approved');
     });
 
     it('downgrades a permis approved more than a year ago to expired', () => {
-      const verification = deriveDriverVerification(approvedDocs(REVIEWED_STALE), adult, NOW);
+      const verification = deriveDriverVerification(
+        approvedPermis({ reviewedAt: REVIEWED_STALE }),
+        adult,
+        NOW,
+      );
 
       expect(verification.slots[0]).toEqual({ type: 'permis', status: 'expired' });
       expect(verification.status).toBe('expired');
-      // The other two slots and the age check are unaffected — only the
-      // licence's own approval ages out.
-      expect(verification.approvedCount).toBe(2);
+      expect(verification.approvedCount).toBe(0);
     });
 
     it('does not expire a permis with no reviewedAt (never actually approved through the review flow)', () => {
       // Guards against treating "no data" as "expired": a document without a
       // reviewedAt has nothing to measure staleness from.
-      const verification = deriveDriverVerification(
-        [doc('permis', 'approved', { ageConfirmed: true }), doc('assurance', 'approved'), doc('immatriculation', 'approved')],
-        adult,
-        NOW,
-      );
+      const verification = deriveDriverVerification(approvedPermis(), adult, NOW);
 
       expect(verification.slots[0]).toEqual({ type: 'permis', status: 'approved' });
-    });
-
-    it('leaves assurance/immatriculation unaffected by the one-year window', () => {
-      // The rule is specific to permis; the other two document types have no
-      // re-verification window today.
-      const veryOld = '2010-01-01T00:00:00.000Z';
-      const verification = deriveDriverVerification(
-        [
-          doc('permis', 'approved', { ageConfirmed: true, reviewedAt: REVIEWED_RECENT }),
-          doc('assurance', 'approved', { reviewedAt: veryOld }),
-          doc('immatriculation', 'approved', { reviewedAt: veryOld }),
-        ],
-        adult,
-        NOW,
-      );
-
-      expect(verification.status).toBe('approved');
     });
 
     it('permisFreshUntil is exactly PERMIS_REVERIFICATION_DAYS after the approval', () => {

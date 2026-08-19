@@ -7,7 +7,9 @@ import {
   DriverDocumentListSchema,
   DriverDocumentSchema,
   DriverEligibilitySchema,
+  DriverNameDeclarationSchema,
   EligibilityDeclarationSchema,
+  LicenseNumberDeclarationSchema,
 } from '@carpool/schemas';
 
 // Bearer scheme for the authed routes (cookie sessions work too). Mirrors
@@ -171,6 +173,60 @@ export const putMyEligibilityRoute = createRoute({
     400: {
       description: 'Below the minimum driving age, or not a real past date',
       content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+/**
+ * Upsert the licence number — declared independently of `dateOfBirth`
+ * (separate route, separate schema) so a driver can save one without having
+ * given the other yet. Mandatory on the ride-creation licence step, unlike
+ * the scanned `permis` upload itself, which stays optional there.
+ */
+export const putMyLicenseNumberRoute = createRoute({
+  method: 'put',
+  path: '/eligibility/license-number',
+  tags: ['document'],
+  summary: "Declare the number printed on the driver's licence",
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: LicenseNumberDeclarationSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Declaration saved',
+      content: { 'application/json': { schema: DriverEligibilitySchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+/**
+ * Upsert the driver's legal first/last name — declared independently of
+ * `dateOfBirth`/`licenseNumber` (own route, own schema), shown next to the
+ * licence number on `/mes-documents` since that's the pair a reviewer
+ * cross-checks against the scanned document.
+ */
+export const putMyNameRoute = createRoute({
+  method: 'put',
+  path: '/eligibility/name',
+  tags: ['document'],
+  summary: "Declare the driver's legal first/last name",
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: DriverNameDeclarationSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Declaration saved',
+      content: { 'application/json': { schema: DriverEligibilitySchema } },
     },
     401: {
       description: 'Not authenticated',

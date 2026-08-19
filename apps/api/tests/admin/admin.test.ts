@@ -196,19 +196,15 @@ describe('admin module', () => {
     expect(rows[0]).not.toHaveProperty('storageKey');
   });
 
-  it("GET /admin/documents reports the submitter's progress across BOTH required documents", async () => {
+  it("GET /admin/documents reports the submitter's progress on their required document", async () => {
     getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
-    // Two selects: the queue join, then the per-owner verification read. The
-    // second deliberately looks past the current filter — this driver's ID card
-    // was refused, and approving their licence must not read as "done".
-    // Documents and eligibility declarations are read in parallel; the mock
-    // shifts one queue entry per `db.select()`, in call order.
+    // Two selects: the queue join, then the per-owner verification read — read
+    // independently of the current filter (documents and eligibility
+    // declarations are read in parallel; the mock shifts one queue entry per
+    // `db.select()`, in call order).
     dbState.selectQueue = [
       [makeJoinedRow()],
-      [
-        { ownerId: 'u_1', type: 'permis', status: 'pending', submittedAt: now },
-        { ownerId: 'u_1', type: 'assurance', status: 'rejected', submittedAt: now },
-      ],
+      [{ ownerId: 'u_1', type: 'permis', status: 'pending', submittedAt: now }],
       [{ userId: 'u_1', dateOfBirth: '1994-03-12' }],
     ];
 
@@ -217,14 +213,10 @@ describe('admin module', () => {
     expect(res.status).toBe(200);
     const rows = (await res.json()) as { owner: { verification: Record<string, unknown> } }[];
     expect(rows[0]?.owner.verification).toMatchObject({
-      status: 'rejected',
+      status: 'pending',
       approvedCount: 0,
-      requiredCount: 3,
-      slots: [
-        { type: 'permis', status: 'pending' },
-        { type: 'assurance', status: 'rejected' },
-        { type: 'immatriculation', status: 'missing' },
-      ],
+      requiredCount: 1,
+      slots: [{ type: 'permis', status: 'pending' }],
     });
   });
 

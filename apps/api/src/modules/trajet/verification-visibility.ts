@@ -1,29 +1,30 @@
-import { inArray } from 'drizzle-orm';
+import { and, inArray } from 'drizzle-orm';
 import { deriveDriverVerification, REQUIRED_DRIVER_DOCUMENT_TYPES } from '@carpool/schemas';
 import { db } from '../../db/client';
 import { driverDocument } from '../../db/document';
 import { driverEligibility } from '../../db/eligibility';
 
 /**
- * Every driver whose verification (`permis` + `assurance` + `immatriculation`,
- * all approved and — for `permis` — still within its one-year re-verification
- * window) currently rolls up to `approved`. Used to keep an unverified, or
- * no-longer-fresh, driver's rides out of *public* search: the ride itself is
- * created regardless (see `createTrajetRoute`) and stays visible to its own
- * driver on `/me/trajets`, but a rider searching publicly should not land on
- * a driver who isn't cleared to drive.
+ * Which of the given driver ids currently roll up to a fully `approved`
+ * verification (`permis` + `assurance` + `immatriculation`, all approved and
+ * — for `permis` — still within its one-year re-verification window).
+ *
+ * Drives the "Vérifié"/"Non vérifié" badge on a driver's profile. It does NOT
+ * gate whether a ride is publicly listed — an unverified driver's trajets are
+ * still shown in search, just badged as unverified — so, unlike an admin
+ * queue, this is always scoped to the driver ids the caller already needs
+ * (a search results page, or a single ride's driver) rather than scanning
+ * every submission on file.
  *
  * Mirrors `loadVerifications` in `../admin/index.ts`: same two tables, same
  * rollup function (`deriveDriverVerification`), so the backoffice queue, the
- * driver's own `/mes-documents` page, and public search can never disagree
- * about who counts as verified.
- *
- * Scans every submitted document/declaration rather than scoping to drivers
- * with an active trajet — simpler and, at this project's scale, cheap; worth
- * revisiting (scope to candidate driver ids passed by the caller) if the
- * driver base grows large enough for that full scan to matter.
+ * driver's own `/mes-documents` page, and this badge can never disagree about
+ * who counts as verified.
  */
-export async function getApprovedDriverIds(): Promise<string[]> {
+export async function getVerifiedDriverIds(driverIds: string[]): Promise<Set<string>> {
+  const unique = [...new Set(driverIds)];
+  if (unique.length === 0) return new Set();
+
   const [documentRows, eligibilityRows] = await Promise.all([
     db
       .select({
@@ -35,8 +36,16 @@ export async function getApprovedDriverIds(): Promise<string[]> {
         reviewedAt: driverDocument.reviewedAt,
       })
       .from(driverDocument)
-      .where(inArray(driverDocument.type, [...REQUIRED_DRIVER_DOCUMENT_TYPES])),
-    db.select({ userId: driverEligibility.userId, dateOfBirth: driverEligibility.dateOfBirth }).from(driverEligibility),
+      .where(
+        and(
+          inArray(driverDocument.ownerId, unique),
+          inArray(driverDocument.type, [...REQUIRED_DRIVER_DOCUMENT_TYPES]),
+        ),
+      ),
+    db
+      .select({ userId: driverEligibility.userId, dateOfBirth: driverEligibility.dateOfBirth })
+      .from(driverEligibility)
+      .where(inArray(driverEligibility.userId, unique)),
   ]);
 
   const documentsByOwner = new Map<string, typeof documentRows>();
@@ -47,10 +56,12 @@ export async function getApprovedDriverIds(): Promise<string[]> {
   }
   const dateOfBirthByOwner = new Map(eligibilityRows.map((row) => [row.userId, row.dateOfBirth]));
 
-  return [...documentsByOwner.keys()].filter((driverId) => {
+  const verified = new Set<string>();
+  for (const driverId of unique) {
     const verification = deriveDriverVerification(documentsByOwner.get(driverId) ?? [], {
       dateOfBirth: dateOfBirthByOwner.get(driverId) ?? null,
     });
-    return verification.status === 'approved';
-  });
+    if (verification.status === 'approved') verified.add(driverId);
+  }
+  return verified;
 }

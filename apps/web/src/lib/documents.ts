@@ -5,6 +5,7 @@ import {
   type DriverDocument,
   type DriverDocumentType,
   type DriverEligibility,
+  type DriverNameDeclaration,
 } from '@carpool/schemas';
 import { createApiClient } from '@carpool/api-client';
 import { env } from './env';
@@ -43,6 +44,29 @@ export async function fetchMyEligibility(): Promise<DriverEligibility> {
 export async function saveMyEligibility(dateOfBirth: string): Promise<DriverEligibility> {
   const res = await api.eligibility.$put({ json: { dateOfBirth } });
   if (!res.ok) throw new ApiError(res.status, 'Failed to save your date of birth');
+  return res.json();
+}
+
+/**
+ * PUT /eligibility/license-number — declare the number printed on the
+ * driver's licence. Saved independently of `dateOfBirth` (separate route), so
+ * this never wipes out a birth date already on file, or vice versa.
+ */
+export async function saveMyLicenseNumber(licenseNumber: string): Promise<DriverEligibility> {
+  const res = await api.eligibility['license-number'].$put({ json: { licenseNumber } });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to save your licence number');
+  return res.json();
+}
+
+/**
+ * PUT /eligibility/name — declare the driver's legal first/last name, shown
+ * next to the licence number on `/mes-documents`. Saved independently of
+ * `dateOfBirth`/`licenseNumber` (separate route), so it never wipes out
+ * either of those.
+ */
+export async function saveMyName(name: DriverNameDeclaration): Promise<DriverEligibility> {
+  const res = await api.eligibility.name.$put({ json: name });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to save your name');
   return res.json();
 }
 

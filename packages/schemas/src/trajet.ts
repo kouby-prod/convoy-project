@@ -37,10 +37,20 @@ export const TRAJET_AMENITIES = [
   'insurance',
   'bikeRack',
   'cardPayment',
+  'cashOrInterac',
 ] as const;
 
 export const TrajetAmenitySchema = z.enum(TRAJET_AMENITIES).describe('TrajetAmenity');
 export type TrajetAmenity = z.infer<typeof TrajetAmenitySchema>;
+
+/**
+ * The two payment-method amenities, shown in their own "Moyens de paiement"
+ * group on ride creation — separate from the general amenities toggle group,
+ * since how a rider pays is a different kind of choice than what the ride
+ * offers (pets, luggage, …).
+ */
+export const PAYMENT_AMENITIES = ['cardPayment', 'cashOrInterac'] as const satisfies readonly TrajetAmenity[];
+export type PaymentAmenity = (typeof PAYMENT_AMENITIES)[number];
 
 /** Whether the ride runs straight through or picks up along the way. */
 export const StopPolicySchema = z.enum(['any', 'direct', 'withStops']).describe('StopPolicy');
@@ -67,6 +77,15 @@ export const DriverProfileSchema = z
     /** Average review score, 0–5. Rendered as the "Avis" stars. */
     rating: z.number().min(0).max(5).nullable(),
     reviewCount: z.number().int().nonnegative().nullable(),
+    /**
+     * Whether the driver's permis/assurance/immatriculation are all
+     * `approved` (and, for permis, still within its one-year re-verification
+     * window) — same rollup as `deriveDriverVerification(...).status ===
+     * 'approved'`. Drives the "Vérifié"/"Non vérifié" badge; it does NOT gate
+     * whether the ride shows up in search — an unverified driver's rides are
+     * still publicly listed, just badged accordingly.
+     */
+    verified: z.boolean(),
   })
   .describe('DriverProfile');
 
@@ -421,7 +440,8 @@ export const CreateTrajetRequestSchema = z
     arrivalCity: z.string().trim().min(1),
     arrivalPlace: z.string().trim().min(1),
     departureAt: z.iso.datetime(),
-    arrivalAt: z.iso.datetime(),
+    /** Optional — not every driver knows or wants to commit to an arrival time. */
+    arrivalAt: z.iso.datetime().nullable().optional(),
     pricePerSeat: z.number().nonnegative(),
     seatsTotal: z.number().int().min(1).max(8),
     amenities: z.array(TrajetAmenitySchema).default([]),

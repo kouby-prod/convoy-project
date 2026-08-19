@@ -11,9 +11,11 @@ import { adminModule } from './modules/admin';
 import { reviewModule } from './modules/review';
 import { messageModule } from './modules/message';
 import { contactModule } from './modules/contact';
+import { notificationModule } from './modules/notification';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
 import { messagesWebSocketHandler } from './realtime/messages-ws';
+import { notificationsWebSocketHandler } from './realtime/notifications-ws';
 // TODO: domain modules — mount feature routers from ./modules here.
 // import { rideRoutes } from './modules/rides';
 
@@ -82,6 +84,8 @@ const routes = app
   .route('/', reviewModule)
   // --- MESSAGE domain routes ---
   .route('/', messageModule)
+  // --- NOTIFICATION domain routes ---
+  .route('/', notificationModule)
   // --- CONTACT domain routes ---
   .route('/', contactModule)
   // --- PROOF routes (not domain logic) ---
@@ -134,6 +138,14 @@ app.get('/docs', swaggerUI({ url: '/openapi.json' }));
 // After connect: `{ type: "subscribe", bookingId }`.
 // ---------------------------------------------------------------------------
 app.get('/ws/messages', messagesWebSocketHandler);
+
+// ---------------------------------------------------------------------------
+// WebSocket — live notification delivery. Same rationale as `/ws/messages`
+// above: kept off the `routes` chain so it doesn't pollute the typed RPC
+// client. No subscribe frame — a user's socket receives all of their own
+// notifications once the `ready` frame arrives.
+// ---------------------------------------------------------------------------
+app.get('/ws/notifications', notificationsWebSocketHandler);
 
 // ---------------------------------------------------------------------------
 // PROOF helper (dev only): one-click "Continue with Google" page to exercise

@@ -3,17 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
-import {
-  Car,
-  CarFront,
-  FileText,
-  IdCard,
-  Info,
-  RotateCcw,
-  ShieldCheck,
-  UploadCloud,
-  X,
-} from 'lucide-react';
+import { FileText, IdCard, Info, RotateCcw, UploadCloud, X } from 'lucide-react';
 import {
   DOCUMENT_MAX_BYTES,
   DOCUMENT_MIME_TYPES,
@@ -30,11 +20,9 @@ import { isApiError } from '@/lib/api-error';
 import { cn } from '@/lib/utils';
 import { ViewDocumentLink } from './view-document-link';
 
-/** One recognisable icon per required document, so the three cards read apart. */
-const SLOT_ICONS: Record<RequiredDriverDocumentType, typeof Car> = {
+/** One recognisable icon per required document — just the licence today. */
+const SLOT_ICONS: Record<RequiredDriverDocumentType, typeof IdCard> = {
   permis: IdCard,
-  assurance: ShieldCheck,
-  immatriculation: CarFront,
 };
 
 export interface DocumentSlotCardProps {

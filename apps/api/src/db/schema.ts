@@ -14,3 +14,4 @@ export * from './eligibility';
 export * from './trajet-schema';
 export * from './review';
 export * from './message';
+export * from './notification';

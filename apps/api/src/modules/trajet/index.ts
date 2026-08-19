@@ -38,9 +38,9 @@ import {
   myTrajetsRoute,
   myBookingsRoute,
 } from './trajet.routes';
-import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip } from './notifications';
+import { notifyUser, trajetUrl, describeTrip, describeTripShort } from './notifications';
 import { geocodeAndStoreTrajetLocation } from './geocoding';
-import { getApprovedDriverIds } from './verification-visibility';
+import { getVerifiedDriverIds } from './verification-visibility';
 
 /**
  * Trajet module — an `OpenAPIHono` sub-app mounted by app.ts (see
@@ -97,12 +97,18 @@ async function expireStalePendingBookings(
 async function notifyExpiredBookings(
   expired: ExpiredBooking[],
   trip: { departureCity: string; arrivalCity: string; departureAt: Date },
+  trajetId: string,
 ): Promise<void> {
   for (const { passengerId } of expired) {
     await notifyUser(
       passengerId,
       'Your Carpool booking request expired',
-      `Your request for the trip from ${describeTrip(trip)} expired because the driver didn't respond in time. Seats may still be available: ${trajetSearchUrl()}`,
+      `Your request for the trip from ${describeTrip(trip)} expired because the driver didn't respond in time. Seats may still be available: ${trajetUrl(trajetId)}`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(trajetId),
+        inAppBody: `Your request for ${describeTripShort(trip)} expired. Seats may still be available.`,
+      },
     );
   }
 }
@@ -147,9 +153,9 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 
 /** The subset of a declared vehicle a ride's driver profile shows. */
 interface DriverVehicle {
-  make: string;
-  model: string;
-  seats: number;
+  make: string | null;
+  model: string | null;
+  seats: number | null;
 }
 
 /**
@@ -165,6 +171,7 @@ function buildDriverProfile(
   rating: number | null,
   reviewCount: number,
   vehicle: DriverVehicle | null,
+  verified: boolean,
 ): DriverProfile {
   const [firstName, ...rest] = name.split(' ').filter(Boolean);
   return {
@@ -177,6 +184,7 @@ function buildDriverProfile(
     carSeats: vehicle?.seats ?? null,
     rating,
     reviewCount,
+    verified,
   };
 }
 
@@ -191,12 +199,14 @@ async function getDriverProfile(driverId: string): Promise<DriverProfile> {
     .select({ make: vehicle.make, model: vehicle.model, seats: vehicle.seats })
     .from(vehicle)
     .where(eq(vehicle.ownerId, driverId));
+  const verifiedIds = await getVerifiedDriverIds([driverId]);
   return buildDriverProfile(
     driverId,
     driverRow?.name ?? '',
     ratingRow?.averageRating ? Number(ratingRow.averageRating) : null,
     ratingRow?.reviewCount ?? 0,
     vehicleRow ?? null,
+    verifiedIds.has(driverId),
   );
 }
 
@@ -271,15 +281,6 @@ export const trajetModule = app
       conditions.push(inArray(trajet.driverId, qualifyingDriverIds.length ? qualifyingDriverIds : ['__none__']));
     }
 
-    // A ride only shows up in public search once its driver's verification
-    // (permis + assurance + immatriculation, all approved and fresh) is
-    // `approved` — the ride itself is created regardless (see
-    // createTrajetRoute) and stays visible to its driver on `/me/trajets`,
-    // but a rider searching publicly should not land on a driver who isn't
-    // cleared to drive yet.
-    const approvedDriverIds = await getApprovedDriverIds();
-    conditions.push(inArray(trajet.driverId, approvedDriverIds.length ? approvedDriverIds : ['__none__']));
-
     // `nearLat`/`nearLng` are validated together (see TrajetSearchQuerySchema's
     // refine) — either both are present or neither is.
     const near =
@@ -296,7 +297,9 @@ export const trajetModule = app
     }
 
     const offset = (query.page - 1) * query.limit;
-    const orderExprs = near ? [asc(departureDistanceKmSql(near.lat, near.lng))] : [];
+    const orderExprs = near
+      ? [asc(departureDistanceKmSql(near.lat, near.lng)), asc(trajet.departureAt)]
+      : [asc(trajet.departureAt)];
     const rows = await db
       .select()
       .from(trajet)
@@ -463,7 +466,12 @@ export const trajetModule = app
         notifyUser(
           passengerId,
           'Your Carpool trip was cancelled',
-          `The driver cancelled the trip from ${describeTrip(result.trajet)} you had booked. Search for another ride: ${trajetSearchUrl()}`,
+          `The driver cancelled the trip from ${describeTrip(result.trajet)} you had booked. View the trip: ${trajetUrl(id)}`,
+          {
+            type: 'trip_cancelled',
+            link: trajetUrl(id),
+            inAppBody: `The driver cancelled your trip ${describeTripShort(result.trajet)}.`,
+          },
         ),
       ),
     );
@@ -531,7 +539,7 @@ export const trajetModule = app
 
     // The sweep's writes commit whether or not the booking itself ultimately
     // succeeds, so its passengers must be notified either way.
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     await notifyUser(
@@ -539,6 +547,11 @@ export const trajetModule = app
       'New booking request on your Carpool trip',
       `A passenger requested ${seats} seat(s) on your trip from ${describeTrip(result)}. ` +
         `Sign in to accept or reject it: ${trajetUrl(id)}`,
+      {
+        type: 'booking_request',
+        link: trajetUrl(id),
+        inAppBody: `A passenger requested ${seats} seat(s) on your trip ${describeTripShort(result)}.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 201);
   })
@@ -621,7 +634,7 @@ export const trajetModule = app
       };
     });
 
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     await notifyUser(
@@ -629,7 +642,15 @@ export const trajetModule = app
       status === 'confirmed' ? 'Your Carpool booking was confirmed' : 'Your Carpool booking was rejected',
       status === 'confirmed'
         ? `Your booking request for the trip from ${describeTrip(result)} was confirmed by the driver. View the trip: ${trajetUrl(id)}`
-        : `Your booking request for the trip from ${describeTrip(result)} was rejected by the driver. Search for another ride: ${trajetSearchUrl()}`,
+        : `Your booking request for the trip from ${describeTrip(result)} was rejected by the driver. View the trip: ${trajetUrl(id)}`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(id),
+        inAppBody:
+          status === 'confirmed'
+            ? `Your booking for ${describeTripShort(result)} was confirmed by the driver.`
+            : `Your booking for ${describeTripShort(result)} was rejected by the driver.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 200);
   })
@@ -687,13 +708,18 @@ export const trajetModule = app
       };
     });
 
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     await notifyUser(
       result.driverId,
       'A passenger cancelled their Carpool booking',
       `A passenger cancelled their booking of ${result.seats} seat(s) on your trip from ${describeTrip(result)}. The seat(s) are available again.`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(id),
+        inAppBody: `A passenger cancelled their booking of ${result.seats} seat(s) on your trip ${describeTripShort(result)}. The seat(s) are available again.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 200);
   })
@@ -758,7 +784,7 @@ async function attachSearchMetadata(
   near: { lat: number; lng: number } | undefined,
 ): Promise<TrajetSearchResult[]> {
   const driverIds = [...new Set(rows.map((row) => row.driverId))];
-  const [ratingRows, nameRows, vehicleRows] = await Promise.all([
+  const [ratingRows, nameRows, vehicleRows, verifiedIds] = await Promise.all([
     driverIds.length
       ? db
           .select({
@@ -779,6 +805,7 @@ async function attachSearchMetadata(
           .from(vehicle)
           .where(inArray(vehicle.ownerId, driverIds))
       : Promise.resolve([]),
+    getVerifiedDriverIds(driverIds),
   ]);
   const ratingByDriver = new Map(
     ratingRows.map((r) => [
@@ -801,6 +828,7 @@ async function attachSearchMetadata(
       rating?.averageRating ?? null,
       rating?.reviewCount ?? 0,
       vehicleByDriver.get(row.driverId) ?? null,
+      verifiedIds.has(row.driverId),
     );
     return {
       ...serialize(row, driver),

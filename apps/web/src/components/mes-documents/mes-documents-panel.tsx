@@ -15,6 +15,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBanner } from '@/components/documents/verification-banner';
 import { EligibilityPanel } from '@/components/documents/eligibility-panel';
+import { DriverIdentityCard } from '@/components/documents/driver-identity-card';
 import { fetchMyDocuments, fetchMyEligibility } from '@/lib/documents';
 import { DocumentSlotCard } from './document-slot-card';
 import { MesDocumentsHistory } from './mes-documents-list';
@@ -84,10 +85,12 @@ export function MesDocumentsPanel() {
     <div className="flex flex-col gap-6">
       <VerificationBanner verification={verification} />
 
+      <DriverIdentityCard />
+
       <EligibilityPanel verification={verification} />
 
-      {/* The three required documents, side by side — the whole ask, visible at
-          once, rather than one form the driver has to submit three times.
+      {/* The required document(s) — today, just the licence — side by side, the
+          whole ask visible at once rather than one form to submit repeatedly.
 
           `items-start` matters: grid items stretch to the tallest row by
           default, so a collapsed card next to an open one grew a large empty
@@ -128,8 +131,7 @@ function StatusCard({ children, tone }: { children: string; tone?: 'error' }) {
  * Newest submission per required type. The API returns newest first, so the
  * first row seen for a type wins and the older ones are skipped — the same rule
  * `deriveDriverVerification` applies, which is why the badge on a slot always
- * matches the banner above it. Exported: also used by the ride-creation
- * "Étape 2" step (`ride-verification-step.tsx`).
+ * matches the banner above it.
  */
 export function toLatestByType(
   documents: DriverDocument[],

@@ -19,7 +19,10 @@ function createChain(result: unknown) {
     innerJoin: () => chain,
     groupBy: () => chain,
     having: () => chain,
-    orderBy: () => chain,
+    orderBy: (...args: unknown[]) => {
+      dbState.orderByCalls.push(args);
+      return chain;
+    },
     limit: () => chain,
     offset: () => chain,
     returning: () => Promise.resolve(result),
@@ -46,6 +49,7 @@ const dbState = vi.hoisted(() => ({
   // Every `.update(...).set(values)` call, in order — lets a test assert
   // exactly what was written (e.g. a recalculated `seatsAvailable`).
   setCalls: [] as unknown[],
+  orderByCalls: [] as unknown[][],
 }));
 
 const db = vi.hoisted(() => {
@@ -78,10 +82,12 @@ vi.mock('../../src/auth/auth', () => ({
 const notifyUser = vi.fn();
 vi.mock('../../src/modules/trajet/notifications', () => ({
   notifyUser: (...a: unknown[]) => notifyUser(...a),
-  trajetUrl: (id: string) => `https://example.test/trajets/${id}`,
+  trajetUrl: (id: string) => `https://example.test/trajet/${id}`,
   trajetSearchUrl: () => 'https://example.test/trajets',
   describeTrip: (trip: { departureCity: string; arrivalCity: string; departureAt: Date }) =>
     `${trip.departureCity} to ${trip.arrivalCity} (departing ${trip.departureAt.toUTCString()})`,
+  describeTripShort: (trip: { departureCity: string; arrivalCity: string }) =>
+    `${trip.departureCity} → ${trip.arrivalCity}`,
 }));
 
 // Mock the rate limiter entirely: its buckets persist for the lifetime of
@@ -104,16 +110,15 @@ vi.mock('../../src/modules/trajet/geocoding', () => ({
   geocodeAndStoreTrajetLocation: (...a: unknown[]) => geocodeAndStoreTrajetLocation(...a),
 }));
 
-// Mock the public-search visibility gate entirely: it is exercised on its own
-// (real db calls, real deriveDriverVerification) in
-// verification-visibility.test.ts. Mocked out here so it doesn't consume from
-// `dbState.selectQueue` and shift the ordering every other test in this file
-// relies on. Its return value is harmless either way: like `minDriverRating`
-// below, the fake query builder's `.where()` ignores whatever condition gets
-// built from it and returns the canned rows regardless.
-const getApprovedDriverIds = vi.fn(() => Promise.resolve<string[]>([]));
+// Mock the driver-verified lookup entirely: it is exercised on its own (real
+// db calls, real deriveDriverVerification) in verification-visibility.test.ts.
+// Mocked out here so it doesn't consume from `dbState.selectQueue` and shift
+// the ordering every other test in this file relies on. Defaults to "nobody
+// verified" — tests that care about the resulting `driver.verified` flag set
+// this explicitly.
+const getVerifiedDriverIds = vi.fn((_driverIds: string[]) => Promise.resolve<Set<string>>(new Set()));
 vi.mock('../../src/modules/trajet/verification-visibility', () => ({
-  getApprovedDriverIds: () => getApprovedDriverIds(),
+  getVerifiedDriverIds: (driverIds: string[]) => getVerifiedDriverIds(driverIds),
 }));
 
 import { trajetModule } from '../../src/modules/trajet';
@@ -189,6 +194,7 @@ describe('trajet module', () => {
     dbState.updateResult = [];
     dbState.updateQueue = [];
     dbState.setCalls = [];
+    dbState.orderByCalls = [];
   });
 
   it('GET /trajets returns a paginated, empty page by default', async () => {
@@ -196,6 +202,13 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets');
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ items: [], page: 1, limit: 20, hasMore: false });
+  });
+
+  it('GET /trajets defaults to sorting by departure time when no near filter is provided', async () => {
+    dbState.selectResult = [makeTrajetRow()];
+    const res = await trajetModule.request('/trajets');
+    expect(res.status).toBe(200);
+    expect(dbState.orderByCalls).toHaveLength(1);
   });
 
   describe('GET /trajets search/filter query', () => {
@@ -623,11 +636,13 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        expect.objectContaining({ type: 'trip_cancelled', link: expect.any(String) }),
       );
       expect(notifyUser).toHaveBeenCalledWith(
         'u_3',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        expect.objectContaining({ type: 'trip_cancelled', link: expect.any(String) }),
       );
     });
   });
@@ -673,6 +688,7 @@ describe('trajet module', () => {
       'someone-else',
       expect.stringContaining('New booking request'),
       expect.any(String),
+      expect.objectContaining({ type: 'booking_request', link: expect.any(String) }),
     );
   });
 
@@ -726,11 +742,13 @@ describe('trajet module', () => {
       'u_3',
       expect.stringContaining('expired'),
       expect.any(String),
+      expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
     );
     expect(notifyUser).toHaveBeenCalledWith(
       'someone-else',
       expect.stringContaining('New booking request'),
       expect.any(String),
+      expect.objectContaining({ type: 'booking_request', link: expect.any(String) }),
     );
   });
 
@@ -889,6 +907,7 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('confirmed'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -917,6 +936,7 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('rejected'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -942,6 +962,7 @@ describe('trajet module', () => {
         'u_3',
         expect.stringContaining('expired'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
   });
@@ -1011,6 +1032,7 @@ describe('trajet module', () => {
         'u_1',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -1035,6 +1057,7 @@ describe('trajet module', () => {
         'u_1',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -1056,6 +1079,7 @@ describe('trajet module', () => {
         'u_3',
         expect.stringContaining('expired'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
   });

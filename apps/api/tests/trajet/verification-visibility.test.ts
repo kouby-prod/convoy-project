@@ -26,11 +26,14 @@ const db = vi.hoisted(() => ({
 
 vi.mock('../../src/db/client', () => ({ db }));
 
-import { getApprovedDriverIds } from '../../src/modules/trajet/verification-visibility';
+import { getVerifiedDriverIds } from '../../src/modules/trajet/verification-visibility';
 
 const NOW_ISO = '2026-07-31T12:00:00.000Z';
 const ADULT_DOB = '1994-03-12';
 
+// permis is the only required document today — assurance/immatriculation are
+// self-certified (see @carpool/schemas document.ts) and no longer count
+// towards verification, so they don't appear in these fixtures.
 function permisDoc(ownerId: string, overrides: Partial<Record<string, unknown>> = {}) {
   return {
     ownerId,
@@ -43,64 +46,56 @@ function permisDoc(ownerId: string, overrides: Partial<Record<string, unknown>> 
   };
 }
 
-function otherDocs(ownerId: string) {
-  return [
-    { ownerId, type: 'assurance', status: 'approved', submittedAt: NOW_ISO, ageConfirmed: false, reviewedAt: NOW_ISO },
-    {
-      ownerId,
-      type: 'immatriculation',
-      status: 'approved',
-      submittedAt: NOW_ISO,
-      ageConfirmed: false,
-      reviewedAt: NOW_ISO,
-    },
-  ];
-}
-
-describe('getApprovedDriverIds', () => {
+describe('getVerifiedDriverIds', () => {
   beforeEach(() => {
     dbState.documentRows = [];
     dbState.eligibilityRows = [];
     db.select.mockClear();
   });
 
+  it('returns an empty set for an empty driver id list, without querying the db', async () => {
+    await expect(getVerifiedDriverIds([])).resolves.toEqual(new Set());
+    expect(db.select).not.toHaveBeenCalled();
+  });
+
   it('returns nothing when no documents were ever submitted', async () => {
-    await expect(getApprovedDriverIds()).resolves.toEqual([]);
+    await expect(getVerifiedDriverIds(['driver_1'])).resolves.toEqual(new Set());
   });
 
-  it('includes a driver whose three documents are all approved and declared as adult', async () => {
-    dbState.documentRows = [permisDoc('driver_1'), ...otherDocs('driver_1')];
-    dbState.eligibilityRows = [{ userId: 'driver_1', dateOfBirth: ADULT_DOB }];
-
-    await expect(getApprovedDriverIds()).resolves.toEqual(['driver_1']);
-  });
-
-  it('excludes a driver still missing a document', async () => {
+  it('includes a driver whose permis is approved and declared as adult', async () => {
     dbState.documentRows = [permisDoc('driver_1')];
     dbState.eligibilityRows = [{ userId: 'driver_1', dateOfBirth: ADULT_DOB }];
 
-    await expect(getApprovedDriverIds()).resolves.toEqual([]);
+    await expect(getVerifiedDriverIds(['driver_1'])).resolves.toEqual(new Set(['driver_1']));
+  });
+
+  it('excludes a driver whose permis is still pending review', async () => {
+    dbState.documentRows = [permisDoc('driver_1', { status: 'pending', reviewedAt: null })];
+    dbState.eligibilityRows = [{ userId: 'driver_1', dateOfBirth: ADULT_DOB }];
+
+    await expect(getVerifiedDriverIds(['driver_1'])).resolves.toEqual(new Set());
   });
 
   it('excludes a driver whose permis was approved more than a year ago', async () => {
     const staleReviewedAt = '2024-01-01T00:00:00.000Z';
-    dbState.documentRows = [permisDoc('driver_1', { reviewedAt: staleReviewedAt }), ...otherDocs('driver_1')];
+    dbState.documentRows = [permisDoc('driver_1', { reviewedAt: staleReviewedAt })];
     dbState.eligibilityRows = [{ userId: 'driver_1', dateOfBirth: ADULT_DOB }];
 
-    await expect(getApprovedDriverIds()).resolves.toEqual([]);
+    await expect(getVerifiedDriverIds(['driver_1'])).resolves.toEqual(new Set());
   });
 
-  it('only returns the drivers who qualify out of several candidates', async () => {
+  it('only returns the drivers who qualify out of several requested candidates', async () => {
     dbState.documentRows = [
       permisDoc('driver_ok'),
-      ...otherDocs('driver_ok'),
-      permisDoc('driver_incomplete'),
+      permisDoc('driver_pending', { status: 'pending', reviewedAt: null }),
     ];
     dbState.eligibilityRows = [
       { userId: 'driver_ok', dateOfBirth: ADULT_DOB },
-      { userId: 'driver_incomplete', dateOfBirth: ADULT_DOB },
+      { userId: 'driver_pending', dateOfBirth: ADULT_DOB },
     ];
 
-    await expect(getApprovedDriverIds()).resolves.toEqual(['driver_ok']);
+    await expect(getVerifiedDriverIds(['driver_ok', 'driver_pending'])).resolves.toEqual(
+      new Set(['driver_ok']),
+    );
   });
 });

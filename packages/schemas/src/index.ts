@@ -8,5 +8,6 @@ export * from './admin';
 export * from './document';
 export * from './contact';
 export * from './message';
+export * from './notification';
 export * from './review';
 export * from './trajet';

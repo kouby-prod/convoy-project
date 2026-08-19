@@ -15,6 +15,8 @@ import {
   getDocumentFileRoute,
   getMyEligibilityRoute,
   putMyEligibilityRoute,
+  putMyLicenseNumberRoute,
+  putMyNameRoute,
 } from './document.routes';
 
 /**
@@ -34,6 +36,8 @@ app.use('/documents/upload-url', requireAuth);
 app.use('/documents/me', requireAuth);
 app.use('/documents/:id/file', requireAuth);
 app.use('/eligibility', requireAuth);
+app.use('/eligibility/license-number', requireAuth);
+app.use('/eligibility/name', requireAuth);
 
 export const documentModule = app
   .openapi(createUploadUrlRoute, async (c) => {
@@ -124,7 +128,7 @@ export const documentModule = app
       .from(driverEligibility)
       .where(eq(driverEligibility.userId, authUser.id));
 
-    return c.json(toEligibility(row?.dateOfBirth ?? null), 200);
+    return c.json(toEligibility(row), 200);
   })
   .openapi(putMyEligibilityRoute, async (c) => {
     const { user: authUser } = getAuth(c);
@@ -139,23 +143,74 @@ export const documentModule = app
     }
 
     // One row per driver: a corrected birth date replaces the old one instead of
-    // stacking up, because a birth date is a fact rather than a submission.
-    await db
+    // stacking up, because a birth date is a fact rather than a submission. Only
+    // `dateOfBirth`/`updatedAt` are in `set` — an existing `licenseNumber`/name
+    // (saved independently, see `putMyLicenseNumberRoute`/`putMyNameRoute`) is
+    // left untouched.
+    const [row] = await db
       .insert(driverEligibility)
       .values({ userId: authUser.id, dateOfBirth })
       .onConflictDoUpdate({
         target: driverEligibility.userId,
         set: { dateOfBirth, updatedAt: new Date() },
-      });
+      })
+      .returning();
 
-    return c.json(toEligibility(dateOfBirth), 200);
+    return c.json(toEligibility(row), 200);
+  })
+  .openapi(putMyLicenseNumberRoute, async (c) => {
+    const { user: authUser } = getAuth(c);
+    const { licenseNumber } = c.req.valid('json');
+
+    // Same upsert shape as putMyEligibilityRoute, mirrored: only `licenseNumber`/
+    // `updatedAt` are in `set`, so an existing `dateOfBirth`/name survives untouched.
+    const [row] = await db
+      .insert(driverEligibility)
+      .values({ userId: authUser.id, licenseNumber })
+      .onConflictDoUpdate({
+        target: driverEligibility.userId,
+        set: { licenseNumber, updatedAt: new Date() },
+      })
+      .returning();
+
+    return c.json(toEligibility(row), 200);
+  })
+  .openapi(putMyNameRoute, async (c) => {
+    const { user: authUser } = getAuth(c);
+    const { firstName, lastName } = c.req.valid('json');
+
+    // Same upsert shape again: only `firstName`/`lastName`/`updatedAt` are in
+    // `set`, so an existing `dateOfBirth`/`licenseNumber` survives untouched.
+    const [row] = await db
+      .insert(driverEligibility)
+      .values({ userId: authUser.id, firstName, lastName })
+      .onConflictDoUpdate({
+        target: driverEligibility.userId,
+        set: { firstName, lastName, updatedAt: new Date() },
+      })
+      .returning();
+
+    return c.json(toEligibility(row), 200);
   });
 
-/** Shape a stored (or absent) birth date into the contract, age included. */
-function toEligibility(dateOfBirth: string | null): DriverEligibility {
+/** Shape a stored (or absent) eligibility row into the contract, age derived. */
+function toEligibility(
+  row:
+    | {
+        dateOfBirth: string | null;
+        licenseNumber: string | null;
+        firstName: string | null;
+        lastName: string | null;
+      }
+    | undefined,
+): DriverEligibility {
+  const dateOfBirth = row?.dateOfBirth ?? null;
   return {
     dateOfBirth,
     age: dateOfBirth ? ageOn(dateOfBirth) : null,
     isAdult: dateOfBirth !== null && ageOn(dateOfBirth) >= MIN_DRIVER_AGE,
+    licenseNumber: row?.licenseNumber ?? null,
+    firstName: row?.firstName ?? null,
+    lastName: row?.lastName ?? null,
   };
 }

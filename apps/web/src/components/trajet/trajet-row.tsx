@@ -62,6 +62,9 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
                 })}
               />
             ) : null}
+            <Badge variant={trajet.driver.verified ? 'success' : 'neutral'}>
+              {t(trajet.driver.verified ? 'driverVerified.verified' : 'driverVerified.unverified')}
+            </Badge>
           </div>
         </div>
 

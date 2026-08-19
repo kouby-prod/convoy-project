@@ -2,6 +2,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { ArrowRight, BadgeCheck, Briefcase, Car, Image as ImageIcon, Sparkles, Users } from 'lucide-react';
 import type { TrajetListing, TrajetAmenity } from '@carpool/schemas';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { RatingStars } from '@/components/trajet/rating-stars';
 import { TrajetAmenities } from '@/components/trajet/trajet-amenities';
 
@@ -117,8 +118,11 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-muted-foreground">{t('detail.driverName')}</dt>
-                <dd className="font-medium text-foreground">
+                <dd className="flex items-center gap-2 font-medium text-foreground">
                   {trajet.driver.firstName} {trajet.driver.lastName}
+                  <Badge variant={trajet.driver.verified ? 'success' : 'neutral'}>
+                    {t(trajet.driver.verified ? 'driverVerified.verified' : 'driverVerified.unverified')}
+                  </Badge>
                 </dd>
               </div>
               {trajet.driver.licenceYears !== null ? (

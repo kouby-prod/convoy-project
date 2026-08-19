@@ -16,6 +16,7 @@
     "account": "Mon compte",
     "menu": "Menu",
     "documents": "Mes documents",
+    "notifications": "Notifications",
     "admin": "Back-office",
     "sections": {
       "search": "Recherche",
@@ -935,6 +936,20 @@
       "required": "Indiquez votre date de naissance.",
       "tooYoung": "Vous devez avoir {min} ans ou plus pour conduire.",
       "saveFailed": "L'enregistrement a échoué. Réessayez."
+    },
+    "identity": {
+      "title": "Identité du conducteur",
+      "subtitle": "Ces informations sont comparées au numéro de permis lors de la vérification.",
+      "nameLabel": "Nom et prénom",
+      "firstNameLabel": "Prénom",
+      "lastNameLabel": "Nom",
+      "changeName": "Modifier mon nom",
+      "nameRequired": "Indiquez votre prénom et votre nom.",
+      "nameSaveFailed": "L'enregistrement a échoué. Réessayez.",
+      "licenseNumberLabel": "Numéro de permis",
+      "changeLicenseNumber": "Modifier mon numéro de permis",
+      "licenseNumberRequired": "Indiquez votre numéro de permis.",
+      "licenseNumberSaveFailed": "L'enregistrement a échoué. Réessayez."
     }
   },
   "Trajet": {
@@ -952,6 +967,10 @@
     "driverBy": "avec {name}",
     "authRequired": "Connectez-vous pour continuer.",
     "authCta": "Se connecter",
+    "driverVerified": {
+      "verified": "Vérifié",
+      "unverified": "Non vérifié"
+    },
     "amenities": {
       "smoking": "Fumeur accepté",
       "nonSmoking": "Non-fumeur",
@@ -962,7 +981,8 @@
       "handLuggage": "Bagage à main",
       "insurance": "Trajet assuré",
       "bikeRack": "Porte-vélos",
-      "cardPayment": "Paiement par carte"
+      "cardPayment": "Paiement par carte",
+      "cashOrInterac": "Cash / Interac"
     },
     "filters": {
       "title": "Recherche",
@@ -1032,6 +1052,7 @@
       "seatsAndPrice": "Places et prix",
       "seatsTotal": "Nombre de places",
       "pricePerSeat": "Prix par place (€)",
+      "paymentMethods": "Moyens de paiement",
       "options": "Options",
       "intermediateStop": "J'accepte un arrêt intermédiaire",
       "description": "Message pour les passagers",
@@ -1042,20 +1063,38 @@
       "invalid": "Vérifiez les champs du formulaire.",
       "baggage": "Bagages",
       "baggagePlaceholder": "Ex. : un bagage cabine par personne",
+      "yes": "Oui",
+      "no": "Non",
       "step1": {
-        "label": "Étape 1 : Détails du trajet",
-        "next": "Suivant"
+        "label": "Étape 1 : Trajet et véhicule",
+        "next": "Suivant",
+        "vehicleRequired": "Enregistrez votre véhicule avant de continuer."
       },
       "step2": {
-        "label": "Étape 2 : Vérification permis, description du véhicule et immatriculation",
+        "label": "Étape 2 : Permis et assurance",
         "back": "Retour",
         "verification": {
-          "loading": "Chargement de votre vérification…",
-          "loadError": "Impossible de charger votre vérification.",
-          "alreadyVerifiedTitle": "Permis déjà vérifié",
-          "alreadyVerifiedBody": "Votre permis est vérifié jusqu'au {date}. Aucun nouvel envoi n'est nécessaire.",
-          "alreadyVerifiedBodyNoDate": "Votre permis est vérifié. Aucun nouvel envoi n'est nécessaire."
+          "loading": "Chargement…",
+          "loadError": "Impossible de charger vos informations."
         },
+        "licenseNumber": {
+          "label": "Numéro de permis de conduire",
+          "save": "Enregistrer",
+          "saving": "Enregistrement…",
+          "saveFailed": "L'enregistrement a échoué. Réessayez.",
+          "required": "Saisissez votre numéro de permis."
+        },
+        "checklist": {
+          "licenseTitle": "Numéro de permis",
+          "licenseDone": "Numéro de permis renseigné.",
+          "licenseHint": "La photo de votre permis reste facultative ici — vous pouvez l'ajouter à tout moment depuis",
+          "licenseHintLink": "Mes documents",
+          "incomplete": "Complétez les deux éléments ci-dessus avant de publier votre trajet."
+        }
+      },
+      "step3": {
+        "label": "Étape 3 : Description du véhicule",
+        "saveHint": "Enregistrez votre véhicule pour continuer.",
         "vehicle": {
           "title": "Votre véhicule",
           "subtitle": "Ces informations sont affichées aux passagers.",
@@ -1068,9 +1107,50 @@
           "update": "Mettre à jour le véhicule",
           "saving": "Enregistrement…",
           "saveFailed": "L'enregistrement a échoué. Réessayez.",
-          "required": "Remplissez tous les champs du véhicule."
+          "required": "Saisissez la plaque d'immatriculation.",
+          "photoLabel": "Photo du véhicule (facultatif)",
+          "photoAdd": "Ajouter une photo",
+          "photoReplace": "Remplacer la photo",
+          "photoUploading": "Envoi…",
+          "photoNeedsVehicle": "Enregistrez d'abord votre véhicule pour ajouter une photo.",
+          "photoTooLarge": "Le fichier est trop volumineux.",
+          "photoUnsupported": "Ce type de fichier n'est pas pris en charge.",
+          "photoFailed": "L'envoi de la photo a échoué. Réessayez."
         }
+      },
+      "step4": {
+        "title": "Assurance",
+        "question": "Disposez-vous d'une assurance valide ?",
+        "blockedBody": "Une assurance valide est nécessaire pour proposer un trajet en tant que conducteur.",
+        "saveFailed": "L'enregistrement a échoué. Réessayez.",
+        "missingVehicle": "Retournez à l'étape précédente pour enregistrer votre véhicule."
       }
+    }
+  },
+  "Notifications": {
+    "title": "Mes notifications",
+    "subtitle": "Restez informé de vos réservations et messages.",
+    "loading": "Chargement...",
+    "error": "Impossible de charger les notifications. Réessayez plus tard.",
+    "empty": "Aucune notification pour le moment. Vous verrez les mises à jour ici lorsque les conducteurs répondront à vos demandes.",
+    "unread": "Nouveau",
+    "markRead": "Marquer comme lu",
+    "markAllRead": "Tout marquer comme lu",
+    "markingAll": "Marquage en cours...",
+    "loadMore": "Charger plus",
+    "tabAll": "Toutes",
+    "tabUnread": "Non lues",
+    "noUnread": "Toutes les notifications ont été lues.",
+    "typeBookingRequest": "Demande de réservation",
+    "typeBookingStatus": "Mise à jour de réservation",
+    "typeTripCancelled": "Trajet annulé",
+    "typeMessage": "Message",
+    "typeSystem": "Système",
+    "group": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "thisWeek": "Cette semaine",
+      "earlier": "Plus ancien"
     }
   }
 }
