@@ -374,6 +374,10 @@ export const BookingTrajetSummarySchema = z
 
 export const BookingWithTrajetSchema = BookingSchema.extend({
   trajet: BookingTrajetSummarySchema,
+  invoiceDueAt: z
+    .string()
+    .nullable()
+    .describe('ISO-8601 due date of the issued invoice, if any'),
 }).describe('BookingWithTrajet');
 export type BookingWithTrajet = z.infer<typeof BookingWithTrajetSchema>;
 

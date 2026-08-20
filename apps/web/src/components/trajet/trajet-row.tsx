@@ -1,6 +1,7 @@
 import { useFormatter, useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import type { TrajetListing, TrajetAmenity } from '@carpool/schemas';
+import { COMMISSION_AMOUNT_CENTS } from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
 import { RatingStars } from '@/components/trajet/rating-stars';
 import { TrajetAmenities } from '@/components/trajet/trajet-amenities';
@@ -72,6 +73,11 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
               {format.number(trajet.pricePerSeat, { style: 'currency', currency: 'CAD' })}
             </p>
             <p className="text-[11px] text-muted-foreground">{t('perSeat')}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {t('plusKoubyFee', {
+                amount: format.number(COMMISSION_AMOUNT_CENTS / 100, { style: 'currency', currency: 'CAD' }),
+              })}
+            </p>
           </div>
           <Badge
             variant={trajet.seatsAvailable === 0 ? 'destructive' : 'secondary'}

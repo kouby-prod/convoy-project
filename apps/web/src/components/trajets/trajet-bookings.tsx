@@ -1,10 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { createApiClient } from '@carpool/api-client';
+import type { DriverBooking } from '@carpool/schemas';
 import { env } from '@/lib/env';
+import {
+  COMMISSION_AMOUNT_CENTS,
+  formatCad,
+  isPastDue,
+  koubyDueCents,
+  remainingDueLabel,
+} from '@/lib/booking-money';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -95,11 +103,12 @@ export function TrajetBookings({
   departureDateTime: string;
 }) {
   const t = useTranslations('Trajets');
-  const tRide = useTranslations('Trajet');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [openReviewId, setOpenReviewId] = useState<string | null>(null);
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const hasDeparted = new Date(departureDateTime) < new Date();
 
   const { data, isLoading, isError } = useQuery({
@@ -130,6 +139,7 @@ export function TrajetBookings({
       return res.json();
     },
     onSuccess: () => {
+      setConfirmingId(null);
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId, 'bookings'] });
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
     },
@@ -148,69 +158,25 @@ export function TrajetBookings({
           <p className="text-sm text-muted-foreground">{t('bookings.empty')}</p>
         ) : (
           data.items.map((booking) => (
-            <div key={booking.id} className="grid gap-3 rounded-md border border-border bg-background/60 p-3 text-sm">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="grid gap-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-foreground">
-                      {[booking.firstName, booking.lastName].filter(Boolean).join(' ') || t('bookings.passenger')}
-                    </span>
-                    <BookingStatusBadge status={booking.status} />
-                  </div>
-                  <div className="text-muted-foreground">
-                    <strong className="text-foreground">{t('bookings.seats')}:</strong> {booking.seats}
-                    {' · '}
-                    <strong className="text-foreground">{t('bookings.method')}:</strong>{' '}
-                    {tRide(`paymentMethods.${booking.paymentMethod}`)}
-                  </div>
-                </div>
-
-                {booking.status === 'pending' ? (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      disabled={mutation.isPending}
-                      onClick={() => mutation.mutate({ bookingId: booking.id, status: 'confirmed' })}
-                    >
-                      {t('bookings.accept')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={mutation.isPending}
-                      onClick={() => mutation.mutate({ bookingId: booking.id, status: 'rejected' })}
-                    >
-                      {t('bookings.reject')}
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-
-              <BookingMessages bookingId={booking.id} />
-
-              {booking.status === 'confirmed' && hasDeparted ? (
-                reviewedIds.has(booking.id) ? (
-                  <p className="text-sm text-muted-foreground">{t('bookings.review.success')}</p>
-                ) : openReviewId === booking.id ? (
-                  <RatePassengerForm
-                    bookingId={booking.id}
-                    onSubmitted={() => {
-                      setReviewedIds((prev) => new Set(prev).add(booking.id));
-                      setOpenReviewId(null);
-                    }}
-                  />
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-fit"
-                    onClick={() => setOpenReviewId(booking.id)}
-                  >
-                    {t('bookings.review.cta')}
-                  </Button>
-                )
-              ) : null}
-            </div>
+            <DriverBookingCard
+              key={booking.id}
+              booking={booking}
+              locale={locale}
+              confirming={confirmingId === booking.id}
+              pendingAction={mutation.isPending}
+              hasDeparted={hasDeparted}
+              reviewed={reviewedIds.has(booking.id)}
+              reviewOpen={openReviewId === booking.id}
+              onAccept={() => setConfirmingId(booking.id)}
+              onConfirmAccept={() => mutation.mutate({ bookingId: booking.id, status: 'confirmed' })}
+              onCancelConfirm={() => setConfirmingId(null)}
+              onReject={() => mutation.mutate({ bookingId: booking.id, status: 'rejected' })}
+              onOpenReview={() => setOpenReviewId(booking.id)}
+              onReviewed={() => {
+                setReviewedIds((prev) => new Set(prev).add(booking.id));
+                setOpenReviewId(null);
+              }}
+            />
           ))
         )}
         {mutation.isError ? (
@@ -240,4 +206,180 @@ export function TrajetBookings({
       </CardContent>
     </Card>
   );
+}
+
+function DriverBookingCard({
+  booking,
+  locale,
+  confirming,
+  pendingAction,
+  hasDeparted,
+  reviewed,
+  reviewOpen,
+  onAccept,
+  onConfirmAccept,
+  onCancelConfirm,
+  onReject,
+  onOpenReview,
+  onReviewed,
+}: {
+  booking: DriverBooking;
+  locale: string;
+  confirming: boolean;
+  pendingAction: boolean;
+  hasDeparted: boolean;
+  reviewed: boolean;
+  reviewOpen: boolean;
+  onAccept: () => void;
+  onConfirmAccept: () => void;
+  onCancelConfirm: () => void;
+  onReject: () => void;
+  onOpenReview: () => void;
+  onReviewed: () => void;
+}) {
+  const t = useTranslations('Trajets');
+  const tRide = useTranslations('Trajet');
+  const passengerPays = formatCad(koubyDueCents(booking.paymentMethod, booking.fareCents), locale);
+  const driverGets = formatCad(booking.fareCents, locale);
+  const commission = formatCad(COMMISSION_AMOUNT_CENTS, locale);
+  const methodLabel = tRide(`paymentMethods.${booking.paymentMethod}`);
+  const offPlatform = booking.paymentMethod !== 'card';
+  const payWindowExpired =
+    booking.status === 'awaiting_payment' && isPastDue(booking.invoiceDueAt);
+
+  return (
+    <div className="grid gap-3 rounded-md border border-border bg-background/60 p-3 text-sm">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="grid gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium text-foreground">
+              {[booking.firstName, booking.lastName].filter(Boolean).join(' ') || t('bookings.passenger')}
+            </span>
+            <BookingStatusBadge status={booking.status} />
+          </div>
+          <div className="text-muted-foreground">
+            <strong className="text-foreground">{t('bookings.seats')}:</strong> {booking.seats}
+            {' · '}
+            <strong className="text-foreground">{t('bookings.method')}:</strong> {methodLabel}
+          </div>
+          {booking.status === 'pending' ? (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {offPlatform
+                ? t('bookings.settleOffPlatform', {
+                    commission,
+                    driver: driverGets,
+                    method: methodLabel,
+                  })
+                : t('bookings.settleCard', { passenger: passengerPays, driver: driverGets })}
+            </p>
+          ) : null}
+          {booking.status === 'awaiting_payment' && booking.invoiceDueAt ? (
+            <PayWindow dueAt={booking.invoiceDueAt} expired={payWindowExpired} />
+          ) : null}
+          {booking.status === 'confirmed' ? (
+            <ConfirmedSettlement booking={booking} locale={locale} />
+          ) : null}
+        </div>
+
+        {booking.status === 'pending' ? (
+          confirming ? (
+            <div className="grid max-w-xs gap-2">
+              <p className="text-xs text-foreground">
+                {offPlatform
+                  ? t('bookings.confirmOffPlatform', { commission, driver: driverGets })
+                  : t('bookings.confirmCard', { passenger: passengerPays, driver: driverGets })}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" disabled={pendingAction} onClick={onConfirmAccept}>
+                  {t('bookings.confirmAccept')}
+                </Button>
+                <Button size="sm" variant="outline" disabled={pendingAction} onClick={onCancelConfirm}>
+                  {t('bookings.back')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Button size="sm" disabled={pendingAction} onClick={onAccept}>
+                {t('bookings.accept')}
+              </Button>
+              <Button size="sm" variant="outline" disabled={pendingAction} onClick={onReject}>
+                {t('bookings.reject')}
+              </Button>
+            </div>
+          )
+        ) : null}
+      </div>
+
+      <BookingMessages bookingId={booking.id} />
+
+      {booking.status === 'confirmed' && hasDeparted ? (
+        reviewed ? (
+          <p className="text-sm text-muted-foreground">{t('bookings.review.success')}</p>
+        ) : reviewOpen ? (
+          <RatePassengerForm bookingId={booking.id} onSubmitted={onReviewed} />
+        ) : (
+          <Button size="sm" variant="outline" className="w-fit" onClick={onOpenReview}>
+            {t('bookings.review.cta')}
+          </Button>
+        )
+      ) : null}
+    </div>
+  );
+}
+
+function ConfirmedSettlement({ booking, locale }: { booking: DriverBooking; locale: string }) {
+  const t = useTranslations('Trajets');
+  const tRide = useTranslations('Trajet');
+  const methodLabel = tRide(`paymentMethods.${booking.paymentMethod}`);
+  const driverGets = formatCad(booking.fareCents, locale);
+
+  if (booking.payout) {
+    const amount = formatCad(booking.payout.amountCents, locale);
+    const copy =
+      booking.payout.status === 'held'
+        ? t('bookings.payoutHeld', { amount })
+        : booking.payout.status === 'due'
+          ? t('bookings.payoutDue', { amount })
+          : booking.payout.status === 'paid'
+            ? t('bookings.payoutPaid', { amount })
+            : t('bookings.payoutCancelled');
+    return <p className="text-xs leading-relaxed text-muted-foreground">{copy}</p>;
+  }
+
+  if (booking.paymentMethod !== 'card' && booking.fareCents > 0) {
+    return (
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        {t('bookings.collectYourself', { amount: driverGets, method: methodLabel })}
+      </p>
+    );
+  }
+
+  if (booking.paymentMethod === 'card' && booking.fareCents > 0) {
+    return (
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        {t('bookings.payoutHeld', { amount: driverGets })}
+      </p>
+    );
+  }
+
+  return null;
+}
+
+function PayWindow({ dueAt, expired }: { dueAt: string; expired: boolean }) {
+  const t = useTranslations('Trajets');
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (expired) return;
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, [expired]);
+
+  if (expired || isPastDue(dueAt)) {
+    return <p className="text-xs text-destructive">{t('bookings.payWindowExpired')}</p>;
+  }
+  const remaining = remainingDueLabel(dueAt, now);
+  if (!remaining) return null;
+  return <p className="text-xs text-muted-foreground">{t('bookings.payWindow', { remaining })}</p>;
 }

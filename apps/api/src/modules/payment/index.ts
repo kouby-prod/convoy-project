@@ -58,6 +58,7 @@ async function serializeCheckoutBooking(
     status: bookingRow.status,
     paymentMethod: bookingRow.paymentMethod ?? 'cash',
     seats: bookingRow.seats,
+    fareCents: bookingRow.fareCents ?? 0,
     trajet: {
       departureCity: trip.departureCity,
       destinationCity: trip.arrivalCity,

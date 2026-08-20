@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import {
+  BookingSchema,
   BookingStatusSchema,
   BookingTrajetSummarySchema,
+  paginatedSchema,
   RidePaymentMethodSchema,
 } from './trajet';
 
@@ -128,6 +130,7 @@ export const CheckoutBookingSummarySchema = z
     status: BookingStatusSchema,
     paymentMethod: RidePaymentMethodSchema,
     seats: z.number().int().min(1),
+    fareCents: z.number().int().nonnegative(),
     trajet: BookingTrajetSummarySchema,
   })
   .describe('CheckoutBookingSummary');
@@ -168,3 +171,12 @@ export const MarkDriverPayoutPaidSchema = z
   })
   .describe('MarkDriverPayoutPaid');
 export type MarkDriverPayoutPaid = z.infer<typeof MarkDriverPayoutPaidSchema>;
+
+/** Driver-facing booking row: invoice due window + payout, if any. */
+export const DriverBookingSchema = BookingSchema.extend({
+  invoiceDueAt: z.string().nullable().describe('ISO-8601 invoice due date, if issued'),
+  payout: DriverPayoutSchema.nullable(),
+}).describe('DriverBooking');
+export type DriverBooking = z.infer<typeof DriverBookingSchema>;
+
+export const DriverBookingPageSchema = paginatedSchema(DriverBookingSchema).describe('DriverBookingPage');

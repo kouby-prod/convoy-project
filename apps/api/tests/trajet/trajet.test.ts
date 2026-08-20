@@ -17,6 +17,7 @@ function createChain(result: unknown) {
       return chain;
     },
     innerJoin: () => chain,
+    leftJoin: () => chain,
     groupBy: () => chain,
     having: () => chain,
     orderBy: () => chain,
@@ -106,7 +107,12 @@ vi.mock('../../src/modules/trajet/geocoding', () => ({
 }));
 
 const paymentHooks = vi.hoisted(() => ({
-  issueInvoiceForBooking: vi.fn().mockResolvedValue({ number: 'KOU-2026-000001' }),
+  issueInvoiceForBooking: vi.fn().mockResolvedValue({
+    number: 'KOU-2026-000001',
+    totalCents: 500,
+    fareCents: 0,
+    dueAt: '2026-08-21T12:00:00.000Z',
+  }),
   voidIssuedInvoiceForBooking: vi.fn().mockResolvedValue(undefined),
   refundPaidBooking: vi.fn().mockResolvedValue(undefined),
   expireUnpaidBookings: vi.fn(async (_tx: unknown, _id: string, seats: number) => ({
@@ -202,7 +208,12 @@ describe('trajet module', () => {
     paymentHooks.refundPaidBooking.mockClear();
     paymentHooks.expireUnpaidBookings.mockClear();
     paymentHooks.cancelOpenPaymentsForBooking.mockClear();
-    paymentHooks.issueInvoiceForBooking.mockResolvedValue({ number: 'KOU-2026-000001' });
+    paymentHooks.issueInvoiceForBooking.mockResolvedValue({
+      number: 'KOU-2026-000001',
+      totalCents: 500,
+      fareCents: 0,
+      dueAt: '2026-08-21T12:00:00.000Z',
+    });
     paymentHooks.expireUnpaidBookings.mockImplementation(
       async (_tx: unknown, _id: string, seats: number) => ({ seatsAvailable: seats, expired: [] }),
     );
@@ -830,7 +841,7 @@ describe('trajet module', () => {
       };
       expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
       expect(body.items).toHaveLength(2);
-      expect(body.items[0]).toMatchObject({ id: BOOKING_ID, status: 'pending' });
+      expect(body.items[0]).toMatchObject({ id: BOOKING_ID, status: 'pending', invoiceDueAt: null, payout: null });
       expect(body.items[1]).toMatchObject({ id: 'b_2', status: 'confirmed' });
     });
 
@@ -930,7 +941,7 @@ describe('trajet module', () => {
       expect(notifyUser).toHaveBeenCalledWith(
         'u_2',
         expect.stringContaining('Pay Kouby'),
-        expect.stringContaining('paiement'),
+        expect.stringContaining('5.00 CAD'),
         undefined,
       );
     });

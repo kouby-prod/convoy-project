@@ -8,8 +8,8 @@ import {
   CreateTrajetSchema,
   UpdateTrajetSchema,
   BookingSchema,
-  BookingPageSchema,
   BookingWithTrajetPageSchema,
+  DriverBookingPageSchema,
   CreateBookingSchema,
   UpdateBookingStatusSchema,
 } from '@carpool/schemas';
@@ -197,7 +197,7 @@ export const listTrajetBookingsRoute = createRoute({
   responses: {
     200: {
       description: 'A page of bookings',
-      content: { 'application/json': { schema: BookingPageSchema } },
+      content: { 'application/json': { schema: DriverBookingPageSchema } },
     },
     401: {
       description: 'Not authenticated',

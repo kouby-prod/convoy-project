@@ -21,9 +21,10 @@ import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { rateLimit } from '../../middleware/rate-limit';
 import { db } from '../../db/client';
 import { trajet, booking } from '../../db/trajet-schema';
+import { invoice, driverPayout } from '../../db/payment';
 import { review } from '../../db/review';
 import { user } from '../../db/auth-schema';
-import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet, DriverProfile } from '@carpool/schemas';
+import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet, DriverBooking, DriverProfile } from '@carpool/schemas';
 import {
   listTrajetsRoute,
   getTrajetRoute,
@@ -603,14 +604,41 @@ export const trajetModule = app
     }
 
     const rows = await db
-      .select()
+      .select({
+        id: booking.id,
+        trajetId: booking.trajetId,
+        passengerId: booking.passengerId,
+        seats: booking.seats,
+        status: booking.status,
+        paymentMethod: booking.paymentMethod,
+        fareCents: booking.fareCents,
+        firstName: booking.firstName,
+        lastName: booking.lastName,
+        email: booking.email,
+        phone: booking.phone,
+        message: booking.message,
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
+        invoiceDueAt: invoice.dueAt,
+        payoutId: driverPayout.id,
+        payoutDriverId: driverPayout.driverId,
+        payoutAmountCents: driverPayout.amountCents,
+        payoutCurrency: driverPayout.currency,
+        payoutStatus: driverPayout.status,
+        payoutDueAt: driverPayout.dueAt,
+        payoutPaidAt: driverPayout.paidAt,
+        payoutPaidRef: driverPayout.paidRef,
+        payoutCreatedAt: driverPayout.createdAt,
+      })
       .from(booking)
+      .leftJoin(invoice, eq(invoice.bookingId, booking.id))
+      .leftJoin(driverPayout, eq(driverPayout.bookingId, booking.id))
       .where(eq(booking.trajetId, id))
       .limit(limit + 1)
       .offset((page - 1) * limit);
 
     const { items, hasMore } = paginate(rows, limit);
-    return c.json({ items: items.map(serializeBooking), page, limit, hasMore }, 200);
+    return c.json({ items: items.map(serializeDriverBooking), page, limit, hasMore }, 200);
   })
   .openapi(updateBookingStatusRoute, async (c) => {
     const { user } = getAuth(c);
@@ -679,22 +707,27 @@ export const trajetModule = app
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     if (status === 'confirmed') {
-      const invoiceNumber = result.issuedInvoice?.number;
+      const issued = result.issuedInvoice;
       let attachments: Parameters<typeof notifyUser>[3];
-      if (smtpEmailSender && result.issuedInvoice) {
+      if (smtpEmailSender && issued) {
         try {
-          const pdf = await renderInvoicePdf(result.issuedInvoice);
-          attachments = [
-            { filename: `${result.issuedInvoice.number}.pdf`, content: pdf, contentType: 'application/pdf' },
-          ];
+          const pdf = await renderInvoicePdf(issued);
+          attachments = [{ filename: `${issued.number}.pdf`, content: pdf, contentType: 'application/pdf' }];
         } catch (err) {
           console.error('[payment] failed to attach invoice PDF', err);
         }
       }
+      const amountLabel =
+        typeof issued?.totalCents === 'number' ? `${(issued.totalCents / 100).toFixed(2)} CAD` : `invoice ${issued?.number ?? ''}`.trim();
+      const dueLabel = issued?.dueAt ? ` before ${issued.dueAt}` : '';
+      const fareNote =
+        (issued?.fareCents ?? 0) > 0
+          ? 'This amount includes the ride fare and the Kouby fee. The driver is paid after the trip.'
+          : 'This amount is the 5.00 CAD Kouby fee only. Pay the ride fare directly to the driver.';
       await notifyUser(
         result.passengerId,
         'Pay Kouby to confirm your booking',
-        `The driver accepted your request for the trip from ${describeTrip(result)}. Pay invoice ${invoiceNumber ?? ''} to confirm: ${paymentUrl(result.booking.id)}`,
+        `The driver accepted your request for the trip from ${describeTrip(result)}. Pay ${amountLabel}${dueLabel} to confirm your seat: ${paymentUrl(result.booking.id)}\n\n${fareNote}`,
         attachments,
       );
     } else {
@@ -832,9 +865,11 @@ export const trajetModule = app
         arrivalCity: trajet.arrivalCity,
         departureAt: trajet.departureAt,
         pricePerSeat: trajet.pricePerSeat,
+        invoiceDueAt: invoice.dueAt,
       })
       .from(booking)
       .innerJoin(trajet, eq(booking.trajetId, trajet.id))
+      .leftJoin(invoice, eq(invoice.bookingId, booking.id))
       .where(eq(booking.passengerId, user.id))
       .limit(limit + 1)
       .offset((page - 1) * limit);
@@ -952,6 +987,74 @@ function serializeBooking(row: typeof booking.$inferSelect): Booking {
   };
 }
 
+function serializeDriverBooking(row: {
+  id: string;
+  trajetId: string;
+  passengerId: string;
+  seats: number;
+  status: string;
+  paymentMethod: string | null;
+  fareCents: number | null;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  message: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  invoiceDueAt: Date | null;
+  payoutId: string | null;
+  payoutDriverId: string | null;
+  payoutAmountCents: number | null;
+  payoutCurrency: string | null;
+  payoutStatus: string | null;
+  payoutDueAt: Date | null;
+  payoutPaidAt: Date | null;
+  payoutPaidRef: string | null;
+  payoutCreatedAt: Date | null;
+}): DriverBooking {
+  return {
+    ...serializeBooking({
+      id: row.id,
+      trajetId: row.trajetId,
+      passengerId: row.passengerId,
+      seats: row.seats,
+      status: row.status,
+      paymentMethod: row.paymentMethod ?? 'cash',
+      fareCents: row.fareCents ?? 0,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      email: row.email,
+      phone: row.phone,
+      message: row.message,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    }),
+    invoiceDueAt: row.invoiceDueAt ? row.invoiceDueAt.toISOString() : null,
+    payout:
+      row.payoutId &&
+      row.payoutDriverId &&
+      row.payoutAmountCents != null &&
+      row.payoutCurrency &&
+      row.payoutStatus &&
+      row.payoutDueAt &&
+      row.payoutCreatedAt
+        ? {
+            id: row.payoutId,
+            bookingId: row.id,
+            driverId: row.payoutDriverId,
+            amountCents: row.payoutAmountCents,
+            currency: row.payoutCurrency,
+            status: row.payoutStatus as NonNullable<DriverBooking['payout']>['status'],
+            dueAt: row.payoutDueAt.toISOString(),
+            paidAt: row.payoutPaidAt ? row.payoutPaidAt.toISOString() : null,
+            paidRef: row.payoutPaidRef,
+            createdAt: row.payoutCreatedAt.toISOString(),
+          }
+        : null,
+  };
+}
+
 /** Map a `booking` INNER JOIN `trajet` row to the Zod contract shape. */
 function serializeBookingWithTrajet(row: {
   id: string;
@@ -972,6 +1075,7 @@ function serializeBookingWithTrajet(row: {
   arrivalCity: string;
   departureAt: Date;
   pricePerSeat: string;
+  invoiceDueAt: Date | null;
 }): BookingWithTrajet {
   return {
     id: row.id,
@@ -988,6 +1092,7 @@ function serializeBookingWithTrajet(row: {
     message: row.message,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    invoiceDueAt: row.invoiceDueAt ? row.invoiceDueAt.toISOString() : null,
     trajet: {
       departureCity: row.departureCity,
       destinationCity: row.arrivalCity,

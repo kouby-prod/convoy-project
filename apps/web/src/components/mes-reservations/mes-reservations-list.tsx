@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { createApiClient } from '@carpool/api-client';
-import { COMMISSION_AMOUNT_CENTS, type RidePaymentMethod } from '@carpool/schemas';
+import { DueCountdown } from '@/components/paiement/due-countdown';
+import { driverFareCents, formatCad, isPastDue, koubyDueCents } from '@/lib/booking-money';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
@@ -92,10 +93,6 @@ function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSubmitted
   );
 }
 
-function amountDueCents(paymentMethod: RidePaymentMethod, fareCents: number) {
-  return paymentMethod === 'card' ? fareCents + COMMISSION_AMOUNT_CENTS : COMMISSION_AMOUNT_CENTS;
-}
-
 /**
  * Passenger's own bookings (`GET /me/bookings`), with a cancel action for
  * `pending`/`confirmed` bookings. This is what makes cancellation usable
@@ -104,7 +101,7 @@ function amountDueCents(paymentMethod: RidePaymentMethod, fareCents: number) {
 export function MesReservationsList() {
   const t = useTranslations('MesReservations');
   const tRide = useTranslations('Trajet');
-  const format = useFormatter();
+  const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
@@ -171,13 +168,27 @@ export function MesReservationsList() {
                   {tRide(`paymentMethods.${item.paymentMethod}`)}
                 </div>
                 {item.status === 'awaiting_payment' ? (
-                  <div>
-                    <strong className="text-foreground">{t('amountDue')}:</strong>{' '}
-                    {format.number(amountDueCents(item.paymentMethod, item.fareCents) / 100, {
-                      style: 'currency',
-                      currency: 'CAD',
-                    })}
+                  <div className="grid gap-1">
+                    <div>
+                      <strong className="text-foreground">{t('amountDue')}:</strong>{' '}
+                      {formatCad(koubyDueCents(item.paymentMethod, item.fareCents), locale)}
+                    </div>
+                    {item.invoiceDueAt ? (
+                      isPastDue(item.invoiceDueAt) ? (
+                        <p className="text-destructive">{t('dueExpired')}</p>
+                      ) : (
+                        <DueCountdown dueAt={item.invoiceDueAt} />
+                      )
+                    ) : null}
                   </div>
+                ) : null}
+                {item.status === 'confirmed' && driverFareCents(item.paymentMethod, item.fareCents) > 0 ? (
+                  <p>
+                    {t('stillOweDriver', {
+                      amount: formatCad(driverFareCents(item.paymentMethod, item.fareCents), locale),
+                      method: tRide(`paymentMethods.${item.paymentMethod}`),
+                    })}
+                  </p>
                 ) : null}
                 <div className="flex flex-wrap gap-2 pt-1">
                 {item.status === 'pending' || item.status === 'awaiting_payment' || item.status === 'confirmed' ? (
@@ -191,12 +202,12 @@ export function MesReservationsList() {
                     {cancelMutation.isPending ? t('cancelling') : t('cancel')}
                   </Button>
                 ) : null}
-                {item.status === 'awaiting_payment' ? (
+                {item.status === 'awaiting_payment' && !isPastDue(item.invoiceDueAt) ? (
                   <Link href={`/paiement/${item.id}`} className={cn(buttonVariants({ size: 'sm' }), 'w-fit')}>
-                    {item.paymentMethod === 'card' ? t('payCard') : t('pay')}
+                    {t('pay', { amount: formatCad(koubyDueCents(item.paymentMethod, item.fareCents), locale) })}
                   </Link>
                 ) : null}
-                {item.status === 'awaiting_payment' || item.status === 'confirmed' ? (
+                {item.status === 'confirmed' ? (
                   <Link
                     href={`/paiement/${item.id}`}
                     className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-fit')}
