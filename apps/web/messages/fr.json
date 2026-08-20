@@ -567,9 +567,10 @@
       "durationFull": "{hours} h {minutes}"
     },
     "seatsLeft": "{count, plural, =0 {Complet} one {# place restante} other {# places restantes}}",
-    "ownerAside": {
-      "title": "Vous êtes le conducteur",
-      "body": "Gérez votre annonce et les demandes de réservation ci-dessous."
+    "ownerWorkspace": {
+      "backToRides": "Mes trajets",
+      "tabRequests": "Demandes",
+      "tabTrip": "Trajet"
     },
     "driverRating": {
       "label": "Note du conducteur",
@@ -660,28 +661,35 @@
     },
     "bookings": {
       "title": "Demandes de réservation",
+      "subtitle": "Acceptez une demande pour envoyer une facture au passager.",
+      "queueLabel": "Demandes",
+      "selectPrompt": "Choisissez une demande pour accepter, refuser ou écrire au passager.",
+      "backToQueue": "Toutes les demandes",
       "loading": "Chargement des réservations...",
       "empty": "Aucune demande de réservation pour ce trajet.",
       "error": "Impossible de charger les réservations.",
       "seats": "Places demandées",
+      "seatsCount": "{count, plural, one {# place} other {# places}}",
       "passenger": "Passager",
       "method": "Paiement",
+      "passengerPaysLabel": "Le passager paie",
+      "youReceiveLabel": "Vous recevez",
       "accept": "Accepter",
       "reject": "Refuser",
       "confirmAccept": "Confirmer l'acceptation",
       "back": "Retour",
       "actionError": "Impossible de mettre à jour cette réservation.",
-      "settleCard": "Si vous acceptez, le passager paie {passenger} maintenant. Vous recevez {driver} après le trajet.",
-      "settleOffPlatform": "Si vous acceptez, le passager paie {commission} à Kouby maintenant et vous doit encore {driver} ({method}).",
+      "settleCard": "Si vous acceptez, le passager paie maintenant. Vous recevez le tarif après le trajet.",
+      "settleOffPlatform": "Si vous acceptez, le passager paie Kouby maintenant et vous doit encore le tarif ({method}).",
       "confirmCard": "Le passager devra payer {passenger}. Kouby conserve {driver} et vous verse après le départ.",
       "confirmOffPlatform": "Kouby prend {commission}. Vous encaissez {driver} auprès du passager.",
       "payWindow": "Le passager a {remaining} pour payer",
       "payWindowExpired": "Le délai de paiement est passé. Cette place va être libérée.",
-      "payoutHeld": "{amount} conservé par Kouby · versé après le trajet",
-      "payoutDue": "{amount} est prêt à vous être versé",
-      "payoutPaid": "{amount} vous a été versé",
+      "payoutHeld": "Conservé par Kouby · versé après le trajet",
+      "payoutDue": "Prêt à vous être versé",
+      "payoutPaid": "Versé sur votre compte",
       "payoutCancelled": "Ce versement a été annulé",
-      "collectYourself": "Encaissez {amount} auprès du passager ({method}). Kouby n'envoie pas ce montant.",
+      "collectYourself": "Encaissez ce tarif auprès du passager ({method}). Kouby n'envoie pas ce montant.",
       "status": {
         "pending": "En attente",
         "awaiting_payment": "En attente de paiement",
@@ -803,6 +811,7 @@
     "due": "Payer avant",
     "dueExpired": "Le délai de paiement est passé. Cette place va être libérée.",
     "stillOweDriver": "Il reste {amount} à payer au conducteur ({method}).",
+    "stillOweDriverHint": "Payez ce tarif directement au conducteur ({method}).",
     "messages": "Messages",
     "review": {
       "cta": "Noter ce trajet",

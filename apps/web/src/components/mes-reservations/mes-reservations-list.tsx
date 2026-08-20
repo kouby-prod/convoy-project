@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
+import { ArrowRight, Banknote, Clock } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
 import { DueCountdown } from '@/components/paiement/due-countdown';
 import { driverFareCents, formatCad, isPastDue, koubyDueCents } from '@/lib/booking-money';
@@ -12,6 +13,14 @@ import { env } from '@/lib/env';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LabelledField } from '@/components/ui/labelled-field';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { BookingMessages } from '@/components/trajets/booking-messages';
 import { BookingStatusBadge } from '@/components/trajets/booking-status-badge';
 import { cn } from '@/lib/utils';
@@ -56,34 +65,37 @@ function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSubmitted
     },
   });
 
+  const ratingId = `rating-${bookingId}`;
+  const commentId = `comment-${bookingId}`;
+
   return (
-    <div className="grid gap-3 rounded-md border p-3">
-      <div className="flex items-center gap-2">
-        <label htmlFor={`rating-${bookingId}`} className="text-sm font-medium text-foreground">
-          {t('review.ratingLabel')}
-        </label>
-        <select
-          id={`rating-${bookingId}`}
-          value={rating}
-          onChange={(e) => setRating(Number(e.target.value))}
-          className="rounded-md border bg-background px-2 py-1 text-sm"
-        >
-          {[5, 4, 3, 2, 1].map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
-      </div>
-      <Textarea
-        placeholder={t('review.commentLabel')}
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-      />
+    <div className="grid gap-3 rounded-lg bg-muted/40 p-4 ring-1 ring-foreground/5">
+      <LabelledField label={t('review.ratingLabel')} htmlFor={ratingId}>
+        <Select value={String(rating)} onValueChange={(value) => setRating(Number(value))}>
+          <SelectTrigger id={ratingId} className="w-24">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[5, 4, 3, 2, 1].map((value) => (
+              <SelectItem key={value} value={String(value)}>
+                {value}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </LabelledField>
+      <LabelledField label={t('review.commentLabel')} htmlFor={commentId}>
+        <Textarea
+          id={commentId}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          disabled={mutation.isPending}
+        />
+      </LabelledField>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <Button
         size="sm"
-        className="w-fit"
+        className="w-fit font-semibold"
         disabled={mutation.isPending}
         onClick={() => mutation.mutate()}
       >
@@ -136,10 +148,42 @@ export function MesReservationsList() {
     },
   });
 
-  if (isSessionPending || !session?.user) return <p className="text-muted-foreground">{t('loading')}</p>;
-  if (isLoading) return <p className="text-muted-foreground">{t('loading')}</p>;
-  if (isError) return <p className="text-destructive">{t('error')}</p>;
-  if (!data?.items.length) return <p className="text-muted-foreground">{t('empty')}</p>;
+  if (isSessionPending || !session?.user) {
+    return (
+      <Card>
+        <CardContent>
+          <p className="text-muted-foreground">{t('loading')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent>
+          <p className="text-muted-foreground">{t('loading')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  if (isError) {
+    return (
+      <Card>
+        <CardContent>
+          <p className="text-destructive">{t('error')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  if (!data?.items.length) {
+    return (
+      <Card>
+        <CardContent>
+          <p className="py-4 text-muted-foreground">{t('empty')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="grid gap-4">
@@ -148,49 +192,76 @@ export function MesReservationsList() {
           <li key={item.id}>
             <Card>
               <CardHeader>
-                <CardTitle className="flex flex-wrap items-center gap-2">
-                  <Link href={`/trajet/${item.trajetId}`} className="hover:underline">
-                    {item.trajet.departureCity} - {item.trajet.destinationCity}
-                  </Link>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <CardTitle className="font-display text-lg">
+                      <Link
+                        href={`/trajet/${item.trajetId}`}
+                        className="inline-flex min-w-0 flex-wrap items-center gap-x-2 hover:underline"
+                      >
+                        <span className="truncate">{item.trajet.departureCity}</span>
+                        <ArrowRight className="size-4 shrink-0 text-brand-blue" strokeWidth={2.25} aria-hidden />
+                        <span className="truncate">{item.trajet.destinationCity}</span>
+                      </Link>
+                    </CardTitle>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {formatDateTime(item.trajet.departureDateTime)}
+                      {' · '}
+                      {t('seats')}: {item.seats}
+                      {' · '}
+                      {tRide(`paymentMethods.${item.paymentMethod}`)}
+                    </p>
+                  </div>
                   <BookingStatusBadge status={item.status} />
-                </CardTitle>
+                </div>
               </CardHeader>
-              <CardContent className="grid gap-2 px-6 pb-6 pt-0 text-sm text-muted-foreground">
-                <div>
-                  <strong className="text-foreground">{t('departureAt')}:</strong>{' '}
-                  {formatDateTime(item.trajet.departureDateTime)}
-                </div>
-                <div>
-                  <strong className="text-foreground">{t('seats')}:</strong> {item.seats}
-                </div>
-                <div>
-                  <strong className="text-foreground">{t('method')}:</strong>{' '}
-                  {tRide(`paymentMethods.${item.paymentMethod}`)}
-                </div>
+              <CardContent className="grid gap-4 px-6 pb-6 pt-0">
                 {item.status === 'awaiting_payment' ? (
-                  <div className="grid gap-1">
-                    <div>
-                      <strong className="text-foreground">{t('amountDue')}:</strong>{' '}
+                  <div className="grid gap-2 rounded-lg bg-primary/10 px-3 py-3 ring-1 ring-primary/20">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t('amountDue')}
+                    </p>
+                    <p className="font-display text-2xl font-semibold tabular-nums tracking-tight text-foreground">
                       {formatCad(koubyDueCents(item.paymentMethod, item.fareCents), locale)}
-                    </div>
+                    </p>
                     {item.invoiceDueAt ? (
                       isPastDue(item.invoiceDueAt) ? (
-                        <p className="text-destructive">{t('dueExpired')}</p>
+                        <p className="flex items-start gap-2 text-sm text-destructive">
+                          <Clock className="mt-0.5 size-4 shrink-0" strokeWidth={2} aria-hidden />
+                          {t('dueExpired')}
+                        </p>
                       ) : (
                         <DueCountdown dueAt={item.invoiceDueAt} />
                       )
                     ) : null}
+                    {!isPastDue(item.invoiceDueAt) ? (
+                      <Link
+                        href={`/paiement/${item.id}`}
+                        className={cn(buttonVariants({ size: 'default' }), 'mt-1 w-full font-semibold')}
+                      >
+                        {t('pay', {
+                          amount: formatCad(koubyDueCents(item.paymentMethod, item.fareCents), locale),
+                        })}
+                      </Link>
+                    ) : null}
                   </div>
                 ) : null}
                 {item.status === 'confirmed' && driverFareCents(item.paymentMethod, item.fareCents) > 0 ? (
-                  <p>
-                    {t('stillOweDriver', {
-                      amount: formatCad(driverFareCents(item.paymentMethod, item.fareCents), locale),
-                      method: tRide(`paymentMethods.${item.paymentMethod}`),
-                    })}
-                  </p>
+                  <div className="flex items-start gap-3 rounded-lg bg-muted px-3 py-3 ring-1 ring-foreground/5">
+                    <Banknote className="mt-0.5 size-4 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden />
+                    <div>
+                      <p className="font-display text-lg font-semibold tabular-nums tracking-tight text-foreground">
+                        {formatCad(driverFareCents(item.paymentMethod, item.fareCents), locale)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('stillOweDriverHint', {
+                          method: tRide(`paymentMethods.${item.paymentMethod}`),
+                        })}
+                      </p>
+                    </div>
+                  </div>
                 ) : null}
-                <div className="flex flex-wrap gap-2 pt-1">
+                <div className="flex flex-wrap gap-2">
                 {item.status === 'pending' || item.status === 'awaiting_payment' || item.status === 'confirmed' ? (
                   <Button
                     size="sm"
@@ -201,11 +272,6 @@ export function MesReservationsList() {
                   >
                     {cancelMutation.isPending ? t('cancelling') : t('cancel')}
                   </Button>
-                ) : null}
-                {item.status === 'awaiting_payment' && !isPastDue(item.invoiceDueAt) ? (
-                  <Link href={`/paiement/${item.id}`} className={cn(buttonVariants({ size: 'sm' }), 'w-fit')}>
-                    {t('pay', { amount: formatCad(koubyDueCents(item.paymentMethod, item.fareCents), locale) })}
-                  </Link>
                 ) : null}
                 {item.status === 'confirmed' ? (
                   <Link

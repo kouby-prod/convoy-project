@@ -286,7 +286,7 @@ function PaidState({
         {invoice.fareCents > 0 ? t('paidBodyCard') : t('paidBodyOffPlatform')}
       </p>
       {remainingLabel && booking ? (
-        <div className="grid gap-2 rounded-md border border-border bg-muted/40 px-3 py-3">
+        <div className="grid gap-2 rounded-lg bg-muted/40 px-3 py-3 ring-1 ring-foreground/5">
           <p className="text-sm font-medium text-foreground">{t('remainingFareTitle')}</p>
           <p className="text-xs text-muted-foreground">
             {t('remainingFareBody', {

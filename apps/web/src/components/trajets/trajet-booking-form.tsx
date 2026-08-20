@@ -92,7 +92,8 @@ export function TrajetBookingForm({
     },
   });
 
-  const shell = 'rounded-md border border-border bg-card p-4 sm:p-5';
+  const shell =
+    'rounded-lg bg-card p-4 shadow-md ring-1 ring-foreground/5 sm:p-5 dark:ring-foreground/10';
 
   if (isSessionPending) {
     return <div className={cn(shell, 'text-sm text-muted-foreground')}>{t('loading')}</div>;
@@ -161,11 +162,11 @@ export function TrajetBookingForm({
       {myBooking ? (
         <div className="mt-4 space-y-3">
           {myBooking.status === 'pending' ? (
-            <div className="flex gap-2 rounded-md bg-muted px-3 py-2.5 ring-1 ring-foreground/5">
+            <div className="flex gap-2.5 rounded-lg bg-muted px-3 py-3 ring-1 ring-foreground/5">
               <Clock className="mt-0.5 size-4 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden />
               <div>
                 <p className="text-sm font-medium text-foreground">{t('booking.pendingTitle')}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
                   {driverDue > 0 && koubyDue !== null && estimatedFare !== null
                     ? t('booking.pendingBodyOffPlatform', {
                         commission: formatCad(koubyDue, locale),
@@ -178,10 +179,12 @@ export function TrajetBookingForm({
               </div>
             </div>
           ) : myBooking.status === 'awaiting_payment' ? (
-            <div className="rounded-md bg-primary/10 px-3 py-2.5 ring-1 ring-primary/20">
+            <div className="rounded-lg bg-primary/10 px-3 py-3 ring-1 ring-primary/20">
               <p className="text-sm font-medium text-foreground">{t('booking.awaitingTitle')}</p>
               {koubyDue !== null ? (
-                <p className="mt-1 text-xs text-muted-foreground">{formatCad(koubyDue, locale)}</p>
+                <p className="mt-1 font-display text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+                  {formatCad(koubyDue, locale)}
+                </p>
               ) : null}
             </div>
           ) : (
@@ -258,8 +261,10 @@ export function TrajetBookingForm({
                 <label
                   key={methodOption}
                   className={cn(
-                    'flex cursor-pointer flex-col gap-1 rounded-md border px-3 py-2.5',
-                    selected ? 'border-primary bg-primary/10 ring-1 ring-primary/30' : 'border-border bg-background',
+                    'flex cursor-pointer flex-col gap-1 rounded-lg px-3 py-3 transition-all',
+                    selected
+                      ? 'bg-primary/10 shadow-sm ring-2 ring-primary/40'
+                      : 'bg-muted/50 ring-1 ring-foreground/5 hover:bg-muted',
                   )}
                 >
                   <input
@@ -272,10 +277,10 @@ export function TrajetBookingForm({
                   <span className="text-sm font-medium text-foreground">
                     {t(`booking.methodCard.${methodOption}Title`)}
                   </span>
-                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                  <span className="font-display text-lg font-semibold tabular-nums tracking-tight text-foreground">
                     {t(`booking.methodCard.${methodOption}Pay`, { amount: payNow })}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     {methodOption === 'card'
                       ? t('booking.methodCard.cardBody')
                       : t(`booking.methodCard.${methodOption}Body`, { fare })}
@@ -320,7 +325,7 @@ function PriceBlock({
 }) {
   return (
     <div>
-      <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+      <p className="font-display text-2xl font-semibold tabular-nums tracking-tight text-foreground">
         {format.number(pricePerSeat, { style: 'currency', currency: 'CAD' })}
       </p>
       <p className="mt-0.5 text-xs text-muted-foreground">{t('perSeat')}</p>

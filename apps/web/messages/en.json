@@ -567,9 +567,10 @@
       "durationFull": "{hours} h {minutes}"
     },
     "seatsLeft": "{count, plural, =0 {Full} one {# seat left} other {# seats left}}",
-    "ownerAside": {
-      "title": "You are the driver",
-      "body": "Manage your listing and booking requests below."
+    "ownerWorkspace": {
+      "backToRides": "My rides",
+      "tabRequests": "Requests",
+      "tabTrip": "Ride"
     },
     "driverRating": {
       "label": "Driver rating",
@@ -660,28 +661,35 @@
     },
     "bookings": {
       "title": "Booking requests",
+      "subtitle": "Accept a request to send the passenger an invoice.",
+      "queueLabel": "Requests",
+      "selectPrompt": "Choose a request to accept, refuse, or message the passenger.",
+      "backToQueue": "All requests",
       "loading": "Loading bookings...",
       "empty": "No booking requests for this ride.",
       "error": "Unable to load bookings.",
       "seats": "Seats requested",
+      "seatsCount": "{count, plural, one {# seat} other {# seats}}",
       "passenger": "Passenger",
       "method": "Payment",
+      "passengerPaysLabel": "Passenger pays",
+      "youReceiveLabel": "You receive",
       "accept": "Accept",
       "reject": "Reject",
       "confirmAccept": "Confirm accept",
       "back": "Back",
       "actionError": "Unable to update this booking.",
-      "settleCard": "If you accept, the passenger pays {passenger} now. You receive {driver} after the trip.",
-      "settleOffPlatform": "If you accept, the passenger pays Kouby {commission} now and still owes you {driver} ({method}).",
+      "settleCard": "If you accept, they pay now. You receive the fare after the trip.",
+      "settleOffPlatform": "If you accept, they pay Kouby now and still owe you the fare ({method}).",
       "confirmCard": "They will be asked to pay {passenger}. Kouby holds {driver} and pays you after departure.",
       "confirmOffPlatform": "Kouby takes {commission}. You collect {driver} from the passenger yourself.",
       "payWindow": "Passenger has {remaining} to pay",
       "payWindowExpired": "Payment window ended. This seat will be released.",
-      "payoutHeld": "{amount} held by Kouby · paid out after the trip",
-      "payoutDue": "{amount} is ready to pay out",
-      "payoutPaid": "{amount} paid to you",
+      "payoutHeld": "Held by Kouby · paid out after the trip",
+      "payoutDue": "Ready to pay out",
+      "payoutPaid": "Paid to you",
       "payoutCancelled": "This payout was cancelled",
-      "collectYourself": "Collect {amount} from the passenger ({method}). Kouby does not send this fare.",
+      "collectYourself": "Collect this fare from the passenger yourself ({method}). Kouby does not send it.",
       "status": {
         "pending": "Pending",
         "awaiting_payment": "Awaiting payment",
@@ -803,6 +811,7 @@
     "due": "Pay by",
     "dueExpired": "The payment window has ended. This seat will be released.",
     "stillOweDriver": "Still pay the driver {amount} ({method}).",
+    "stillOweDriverHint": "Pay this fare to the driver yourself ({method}).",
     "messages": "Messages",
     "review": {
       "cta": "Rate this ride",
