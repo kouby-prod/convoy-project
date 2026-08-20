@@ -11,6 +11,32 @@ import { Button } from '@/components/ui/button';
 import { LabelledField } from '@/components/ui/labelled-field';
 import { fetchMyVehicle, fetchVehiclePhotoUrl, saveMyVehicle, uploadMyVehiclePhoto } from '@/lib/vehicles';
 import { isApiError } from '@/lib/api-error';
+import { useSessionDraft, clearSessionDraft } from '@/hooks/use-session-draft';
+
+/** Same reasoning as `RideDraft` in `trajet-create-form.tsx`: these fields
+ *  used to be plain `useState`, which a locale switch (remounts this whole
+ *  component) would silently wipe. `seeded` travels with the draft too — a
+ *  driver mid-edit shouldn't have their unsaved changes clobbered by the
+ *  server-seed effect below firing again after the remount. */
+interface VehicleDraft {
+  make: string;
+  model: string;
+  color: string;
+  seats: string;
+  plate: string;
+  seeded: boolean;
+}
+
+const EMPTY_VEHICLE_DRAFT: VehicleDraft = {
+  make: '',
+  model: '',
+  color: '',
+  seats: '',
+  plate: '',
+  seeded: false,
+};
+
+const VEHICLE_DRAFT_KEY = 'trajet-create-vehicle-draft';
 
 /**
  * The car description a passenger sees on a ride, filled in on the ride
@@ -35,35 +61,41 @@ export function VehicleForm() {
     enabled: !!vehicleQuery.data?.hasPhoto && !!ownerId,
   });
 
-  const [make, setMake] = useState('');
-  const [model, setModel] = useState('');
-  const [color, setColor] = useState('');
-  const [seats, setSeats] = useState('');
-  const [plate, setPlate] = useState('');
+  const [draft, setDraft] = useSessionDraft<VehicleDraft>(VEHICLE_DRAFT_KEY, EMPTY_VEHICLE_DRAFT);
+  const { make, model, color, seats, plate } = draft;
   const [error, setError] = useState('');
-  const [seeded, setSeeded] = useState(false);
+
+  function updateDraft(patch: Partial<VehicleDraft>) {
+    setDraft((current) => ({ ...current, ...patch }));
+  }
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoError, setPhotoError] = useState('');
 
-  // Seed the form once the driver's existing vehicle (if any) has loaded.
-  // Fields are controlled — needed to disable the button while saving — so
-  // `defaultValue` isn't an option.
+  // Seed the form once the driver's existing vehicle (if any) has loaded —
+  // but only the FIRST time (`seeded`), and never over a draft already in
+  // progress (persisted, so this stays false across a locale-switch remount
+  // once it's flipped true once for this browser tab).
   useEffect(() => {
-    if (seeded || !vehicleQuery.data) return;
-    setMake(vehicleQuery.data.make ?? '');
-    setModel(vehicleQuery.data.model ?? '');
-    setColor(vehicleQuery.data.color ?? '');
-    setSeats(vehicleQuery.data.seats !== null ? String(vehicleQuery.data.seats) : '');
-    setPlate(vehicleQuery.data.plate);
-    setSeeded(true);
-  }, [seeded, vehicleQuery.data]);
+    if (draft.seeded || !vehicleQuery.data) return;
+    setDraft({
+      make: vehicleQuery.data.make ?? '',
+      model: vehicleQuery.data.model ?? '',
+      color: vehicleQuery.data.color ?? '',
+      seats: vehicleQuery.data.seats !== null ? String(vehicleQuery.data.seats) : '',
+      plate: vehicleQuery.data.plate,
+      seeded: true,
+    });
+  }, [draft.seeded, vehicleQuery.data]);
 
   const mutation = useMutation({
     mutationFn: saveMyVehicle,
     onSuccess: (saved) => {
       queryClient.setQueryData(['my-vehicle'], saved);
       setError('');
+      // Saved for real — the next mount can re-seed from the server instead
+      // of carrying this draft forward indefinitely.
+      clearSessionDraft(VEHICLE_DRAFT_KEY);
     },
     onError: () => setError(t('create.step3.vehicle.saveFailed')),
   });
@@ -138,7 +170,7 @@ export function VehicleForm() {
               <Input
                 id="vehicle-make"
                 value={make}
-                onChange={(event) => setMake(event.target.value)}
+                onChange={(event) => updateDraft({ make: event.target.value })}
                 maxLength={100}
               />
             </LabelledField>
@@ -146,7 +178,7 @@ export function VehicleForm() {
               <Input
                 id="vehicle-model"
                 value={model}
-                onChange={(event) => setModel(event.target.value)}
+                onChange={(event) => updateDraft({ model: event.target.value })}
                 maxLength={100}
               />
             </LabelledField>
@@ -156,7 +188,7 @@ export function VehicleForm() {
               <Input
                 id="vehicle-color"
                 value={color}
-                onChange={(event) => setColor(event.target.value)}
+                onChange={(event) => updateDraft({ color: event.target.value })}
                 maxLength={50}
               />
             </LabelledField>
@@ -167,14 +199,14 @@ export function VehicleForm() {
                 min={1}
                 max={8}
                 value={seats}
-                onChange={(event) => setSeats(event.target.value)}
+                onChange={(event) => updateDraft({ seats: event.target.value })}
               />
             </LabelledField>
             <LabelledField label={t('create.step3.vehicle.plate')} htmlFor="vehicle-plate">
               <Input
                 id="vehicle-plate"
                 value={plate}
-                onChange={(event) => setPlate(event.target.value)}
+                onChange={(event) => updateDraft({ plate: event.target.value })}
                 maxLength={20}
                 required
               />
