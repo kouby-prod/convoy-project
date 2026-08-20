@@ -13,6 +13,7 @@ function createChain(result: unknown) {
     orderBy: () => chain,
     limit: () => chain,
     returning: () => Promise.resolve(result),
+    onConflictDoNothing: () => chain,
     then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
       Promise.resolve(result).then(resolve, reject),
   };
@@ -97,15 +98,16 @@ vi.mock('../../src/storage/s3', () => ({
 }));
 
 import { computeInvoiceAmounts } from '../../src/modules/payment/tax';
-import { issueLines, payLines, refundLines } from '../../src/modules/payment/ledger';
+import { fareRefundLines, issueLines, payLines, refundLines } from '../../src/modules/payment/ledger';
 import { formatInvoiceNumber } from '../../src/modules/payment/invoice';
-import { formatCreditNoteNumber } from '../../src/modules/payment/refund';
-import { settlePaidInvoice, markPaymentFailed } from '../../src/modules/payment/settle';
+import { formatCreditNoteNumber, refundFareOnlyForBooking } from '../../src/modules/payment/refund';
+import { settlePaidInvoice, markPaymentFailed, markPaymentProcessing } from '../../src/modules/payment/settle';
 import { withIdempotency } from '../../src/modules/payment/idempotency';
 import { stripeWebhookHandler } from '../../src/modules/payment/webhooks';
 import { handleStripeEvent } from '../../src/modules/payment/events';
 import { expireUnpaidBookings } from '../../src/modules/payment/ttl';
 import { refundPaidBooking } from '../../src/modules/payment/refund';
+import { releaseHeldDriverPayouts } from '../../src/modules/payment/payout';
 import { paymentModule } from '../../src/modules/payment';
 
 const now = new Date();
@@ -135,6 +137,8 @@ function makeInvoice(overrides: Record<string, unknown> = {}) {
     status: 'issued',
     currency: 'cad',
     subtotalCents: 500,
+    fareCents: 0,
+    commissionCents: 500,
     taxCents: 0,
     totalCents: 500,
     taxLines: [],
@@ -157,6 +161,8 @@ function makeBooking(overrides: Record<string, unknown> = {}) {
     passengerId: 'u_1',
     seats: 1,
     status: 'awaiting_payment',
+    paymentMethod: 'cash',
+    fareCents: 0,
     firstName: 'Ada',
     lastName: 'Lovelace',
     email: 'ada@example.com',
@@ -189,28 +195,40 @@ function balanced(lines: ReturnType<typeof issueLines>) {
 
 describe('invoice amounts and ledger', () => {
   it('issues 500 cents with no tax by default', () => {
-    const amounts = computeInvoiceAmounts('none');
+    const amounts = computeInvoiceAmounts(0, 'none');
     expect(amounts.subtotalCents).toBe(COMMISSION_AMOUNT_CENTS);
+    expect(amounts.commissionCents).toBe(500);
+    expect(amounts.fareCents).toBe(0);
     expect(amounts.taxCents).toBe(0);
     expect(amounts.totalCents).toBe(500);
     expect(amounts.taxLines).toEqual([]);
   });
 
+  it('adds the ride fare to the subtotal and taxes commission only', () => {
+    const amounts = computeInvoiceAmounts(2000, 'gst');
+    expect(amounts.fareCents).toBe(2000);
+    expect(amounts.commissionCents).toBe(500);
+    expect(amounts.subtotalCents).toBe(2500);
+    expect(amounts.taxCents).toBe(25);
+    expect(amounts.totalCents).toBe(2525);
+  });
+
   it('adds GST and QST when enabled', () => {
-    const gst = computeInvoiceAmounts('gst');
+    const gst = computeInvoiceAmounts(0, 'gst');
     expect(gst.taxCents).toBe(25);
     expect(gst.totalCents).toBe(525);
-    const both = computeInvoiceAmounts('gst_qst');
+    const both = computeInvoiceAmounts(0, 'gst_qst');
     expect(both.taxLines).toHaveLength(2);
     expect(both.totalCents).toBe(500 + 25 + 50);
   });
 
   it('keeps every ledger txn balanced', () => {
-    expect(balanced(issueLines(500, 0))).toBe(true);
-    expect(balanced(issueLines(500, 75))).toBe(true);
-    expect(balanced(payLines(500))).toBe(true);
-    expect(balanced(refundLines(500, 0))).toBe(true);
-    expect(balanced(refundLines(500, 75))).toBe(true);
+    expect(balanced(issueLines(500, 0, 0))).toBe(true);
+    expect(balanced(issueLines(500, 2000, 75))).toBe(true);
+    expect(balanced(payLines(2500))).toBe(true);
+    expect(balanced(refundLines(500, 2000, 0))).toBe(true);
+    expect(balanced(refundLines(500, 0, 75))).toBe(true);
+    expect(balanced(fareRefundLines(2000))).toBe(true);
   });
 
   it('formats sequential KOU and CN numbers', () => {
@@ -335,6 +353,88 @@ describe('monotonic payment status', () => {
 
     await handleStripeEvent('payment_intent.succeeded', { id: 'pi_1' });
     expect(stripeMocks.retrieveStripePaymentIntent).toHaveBeenCalledWith('pi_1');
+  });
+});
+
+/**
+ * Outcomes the Stripe test cards produce, mapped onto our webhook handlers.
+ * Card numbers are documentation — Stripe is mocked here.
+ */
+describe('Stripe test-card states', () => {
+  beforeEach(() => {
+    db.select.mockClear();
+    db.insert.mockClear();
+    db.update.mockClear();
+    dbState.selectResult = [];
+    dbState.selectQueue = [];
+    dbState.updateQueue = [];
+    dbState.setCalls = [];
+    stripeMocks.retrieveStripePaymentIntent.mockReset();
+  });
+
+  it('4242 success → payment_intent.succeeded pays the invoice and confirms the booking', async () => {
+    stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
+      id: 'pi_4242',
+      status: 'succeeded',
+      amount: 500,
+      currency: 'cad',
+      metadata: { invoiceId: INVOICE_ID },
+      clientSecret: 'sec',
+    });
+    const issued = makeInvoice();
+    const paid = makeInvoice({ status: 'paid', paidAt: now });
+    dbState.selectQueue = [[issued], []];
+    dbState.updateQueue = [[paid], [makeBooking({ status: 'confirmed' })]];
+
+    await handleStripeEvent('payment_intent.succeeded', { id: 'pi_4242' });
+
+    expect(dbState.setCalls).toContainEqual({ status: 'paid', paidAt: expect.any(Date) });
+    expect(dbState.setCalls).toContainEqual({ status: 'confirmed' });
+  });
+
+  it('4000 0025 0000 3155 (3DS, not yet authenticated) does not settle', async () => {
+    stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
+      id: 'pi_3ds',
+      status: 'requires_action',
+      amount: 500,
+      currency: 'cad',
+      metadata: { invoiceId: INVOICE_ID },
+      clientSecret: 'sec',
+    });
+
+    await handleStripeEvent('payment_intent.succeeded', { id: 'pi_3ds' });
+
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it('3DS in flight → payment_intent.processing marks the attempt processing', async () => {
+    dbState.selectResult = [makePayment({ status: 'created', providerPaymentId: 'pi_3ds' })];
+    await handleStripeEvent('payment_intent.processing', { id: 'pi_3ds' });
+    expect(dbState.setCalls).toContainEqual({ status: 'processing' });
+  });
+
+  it('4000 0000 0000 9995 insufficient funds → payment_intent.payment_failed', async () => {
+    dbState.selectResult = [makePayment({ status: 'created', providerPaymentId: 'pi_nsf' })];
+    await handleStripeEvent('payment_intent.payment_failed', { id: 'pi_nsf' });
+    expect(dbState.setCalls).toContainEqual({ status: 'failed' });
+  });
+
+  it('4000 0000 0000 0002 generic decline → payment_intent.payment_failed', async () => {
+    dbState.selectResult = [makePayment({ status: 'created', providerPaymentId: 'pi_declined' })];
+    await handleStripeEvent('payment_intent.payment_failed', { id: 'pi_declined' });
+    expect(dbState.setCalls).toContainEqual({ status: 'failed' });
+  });
+
+  it('a later payment_failed does not un-pay a succeeded 4242 attempt', async () => {
+    dbState.selectResult = [makePayment({ status: 'succeeded' })];
+    await markPaymentFailed({ provider: 'stripe', providerPaymentId: 'pi_1' });
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it('processing is ignored once the attempt already succeeded', async () => {
+    dbState.selectResult = [makePayment({ status: 'succeeded' })];
+    await markPaymentProcessing({ provider: 'stripe', providerPaymentId: 'pi_1' });
+    expect(db.update).not.toHaveBeenCalled();
   });
 });
 
@@ -556,5 +656,119 @@ describe('POST /payments', () => {
     );
     const body = await res.json();
     expect(body).toMatchObject({ provider: 'stripe', clientSecret: 'sec_1' });
+  });
+});
+
+describe('driver payouts', () => {
+  beforeEach(() => {
+    db.select.mockClear();
+    db.insert.mockClear();
+    db.update.mockClear();
+    dbState.selectQueue = [];
+    dbState.updateQueue = [];
+    dbState.updateResult = [];
+    dbState.insertResult = [];
+    dbState.setCalls = [];
+    notifyUser.mockReset();
+  });
+
+  it('creates a held payout when a card invoice with fare settles', async () => {
+    const issued = makeInvoice({ fareCents: 2000, commissionCents: 500, subtotalCents: 2500, totalCents: 2500 });
+    const paid = { ...issued, status: 'paid', paidAt: now };
+    dbState.selectQueue = [
+      [issued],
+      [],
+      [makeBooking({ paymentMethod: 'card', fareCents: 2000 })],
+      [{ id: 't_1', driverId: 'driver_1', departureAt: now }],
+    ];
+    dbState.updateQueue = [[paid], [makeBooking({ status: 'confirmed' })]];
+
+    const result = await settlePaidInvoice({
+      invoiceId: INVOICE_ID,
+      provider: 'stripe',
+      providerPaymentId: 'pi_1',
+      amountCents: 2500,
+      currency: 'cad',
+    });
+
+    expect(result).toBe('settled');
+    expect(db.insert).toHaveBeenCalled();
+  });
+
+  it('does not create a payout for a commission-only invoice', async () => {
+    const issued = makeInvoice();
+    const paid = makeInvoice({ status: 'paid', paidAt: now });
+    dbState.selectQueue = [[issued], []];
+    dbState.updateQueue = [[paid], [makeBooking({ status: 'confirmed' })]];
+    await settlePaidInvoice({
+      invoiceId: INVOICE_ID,
+      provider: 'stripe',
+      providerPaymentId: 'pi_1',
+      amountCents: 500,
+      currency: 'cad',
+    });
+    expect(db.insert.mock.calls.length).toBeGreaterThan(0);
+  });
+
+  it('sweeps held payouts to due after departure plus 24h', async () => {
+    const dueAt = new Date(now.getTime() - 1000);
+    dbState.selectQueue = [
+      [{ id: 'po_1', bookingId: BOOKING_ID, status: 'held', dueAt, amountCents: 2000, currency: 'cad', driverId: 'd_1', paidAt: null, paidRef: null, createdAt: now }],
+      [makeBooking({ status: 'confirmed' })],
+      [makeInvoice({ status: 'paid' })],
+      [],
+    ];
+    dbState.updateResult = [{ id: 'po_1', status: 'due' }];
+    const released = await releaseHeldDriverPayouts(now);
+    expect(released).toBe(1);
+    expect(dbState.setCalls).toContainEqual({ status: 'due' });
+  });
+
+  it('cancels a held payout when the booking is already cancelled', async () => {
+    const dueAt = new Date(now.getTime() - 1000);
+    dbState.selectQueue = [
+      [{ id: 'po_1', bookingId: BOOKING_ID, status: 'held', dueAt, amountCents: 2000, currency: 'cad', driverId: 'd_1', paidAt: null, paidRef: null, createdAt: now }],
+      [makeBooking({ status: 'cancelled' })],
+    ];
+    dbState.updateResult = [{ id: 'po_1', status: 'cancelled' }];
+    const released = await releaseHeldDriverPayouts(now);
+    expect(released).toBe(0);
+    expect(dbState.setCalls).toContainEqual({ status: 'cancelled' });
+  });
+
+  it('refunds fare only on a passenger cancel of a paid card booking', async () => {
+    dbState.selectQueue = [
+      [makeInvoice({ status: 'paid', fareCents: 2000, commissionCents: 500, subtotalCents: 2500, totalCents: 2500 })],
+      [makePayment({ status: 'succeeded', amountCents: 2500 })],
+    ];
+    db.transaction.mockImplementationOnce(async (cb: (tx: typeof db) => unknown) => {
+      const tx = {
+        ...db,
+        select: vi.fn(() => createChain([])),
+        execute: vi.fn(async () => ({ rows: [{ n: 1 }] })),
+        insert: vi.fn(() =>
+          createChain([
+            {
+              id: 'cn_fare',
+              invoiceId: INVOICE_ID,
+              number: 'CN-2026-000001',
+              amountCents: 2000,
+              currency: 'cad',
+              reason: 'Passenger cancelled — fare refunded, commission kept',
+              createdAt: now,
+            },
+          ]),
+        ),
+        update: vi.fn(() => createChain([])),
+      };
+      return cb(tx as never);
+    });
+
+    await refundFareOnlyForBooking(BOOKING_ID);
+    expect(stripeMocks.refundStripePaymentIntent).toHaveBeenCalledWith(
+      'pi_1',
+      expect.stringContaining('refund'),
+      2000,
+    );
   });
 });

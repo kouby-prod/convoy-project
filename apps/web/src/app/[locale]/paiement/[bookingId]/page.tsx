@@ -3,8 +3,8 @@ import { PaiementCheckout } from '@/components/paiement/paiement-checkout';
 import { PageHeader } from '@/components/ui/page-header';
 
 /**
- * Checkout for the 5 CAD Kouby commission. Server component wraps the
- * client Stripe / PayPal widgets; copy lives in the `Paiement` namespace.
+ * Checkout after the driver accepts. Card bookings collect fare + commission;
+ * Interac/cash collect the 5 CAD commission only.
  */
 export default async function PaiementPage({
   params,

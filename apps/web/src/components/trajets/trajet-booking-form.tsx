@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
 import { CheckCircle2 } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
+import type { RidePaymentMethod } from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
@@ -25,32 +26,41 @@ export function TrajetBookingForm({
   cancelled,
   pricePerSeat,
   seatsTotal,
+  paymentMethods,
 }: {
   trajetId: string;
   seatsAvailable: number;
   cancelled: boolean;
   pricePerSeat?: number;
   seatsTotal?: number;
+  paymentMethods: RidePaymentMethod[];
 }) {
   const t = useTranslations('Trajets');
+  const tRide = useTranslations('Trajet');
   const format = useFormatter();
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [seats, setSeats] = useState(1);
-  const [myBooking, setMyBooking] = useState<{ id: string; status: string } | null>(null);
+  const offered = paymentMethods.length > 0 ? paymentMethods : (['cash'] as RidePaymentMethod[]);
+  const [paymentMethod, setPaymentMethod] = useState<RidePaymentMethod>(offered[0] ?? 'cash');
+  const [myBooking, setMyBooking] = useState<{
+    id: string;
+    status: string;
+    paymentMethod: RidePaymentMethod;
+  } | null>(null);
   const [cancelledNotice, setCancelledNotice] = useState(false);
 
   const bookMutation = useMutation({
     mutationFn: async () => {
       const res = await api.trajets[':id'].book.$post({
         param: { id: trajetId },
-        json: { seats },
+        json: { seats, paymentMethod },
       });
       if (!res.ok) throw new Error(t('booking.errors.generic'));
       return res.json();
     },
     onSuccess: (data) => {
-      setMyBooking({ id: data.id, status: data.status });
+      setMyBooking({ id: data.id, status: data.status, paymentMethod: data.paymentMethod });
       setCancelledNotice(false);
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
       queryClient.invalidateQueries({ queryKey: ['trajet'] });
@@ -114,7 +124,8 @@ export function TrajetBookingForm({
     );
   }
 
-  const estimatedTotal = typeof pricePerSeat === 'number' ? pricePerSeat * seats : null;
+  const estimatedFare = typeof pricePerSeat === 'number' ? pricePerSeat * seats : null;
+  const commissionCad = 5;
 
   return (
     <div className={shell}>
@@ -155,7 +166,7 @@ export function TrajetBookingForm({
               href={`/paiement/${myBooking.id}`}
               className={cn(buttonVariants({ variant: 'primary', size: 'sm' }), 'w-full font-semibold')}
             >
-              {t('booking.pay')}
+              {myBooking.paymentMethod === 'card' ? t('booking.payCard') : t('booking.pay')}
             </Link>
           ) : null}
           {myBooking.status === 'awaiting_payment' || myBooking.status === 'confirmed' ? (
@@ -193,11 +204,32 @@ export function TrajetBookingForm({
               className="h-9 w-20"
             />
           </div>
-          {estimatedTotal !== null ? (
+          <fieldset className="space-y-2">
+            <legend className="text-sm text-muted-foreground">{t('booking.methodLabel')}</legend>
+            {offered.map((method) => (
+              <label key={method} className="flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  className="size-4 accent-primary"
+                  checked={paymentMethod === method}
+                  onChange={() => setPaymentMethod(method)}
+                />
+                {tRide(`paymentMethods.${method}`)}
+              </label>
+            ))}
+          </fieldset>
+          {estimatedFare !== null ? (
             <p className="text-xs text-muted-foreground">
-              {t('booking.estimatedTotal', {
-                amount: format.number(estimatedTotal, { style: 'currency', currency: 'CAD' }),
-              })}
+              {paymentMethod === 'card'
+                ? t('booking.estimatedCard', {
+                    fare: format.number(estimatedFare, { style: 'currency', currency: 'CAD' }),
+                    commission: format.number(commissionCad, { style: 'currency', currency: 'CAD' }),
+                  })
+                : t('booking.estimatedOffPlatform', {
+                    fare: format.number(estimatedFare, { style: 'currency', currency: 'CAD' }),
+                    commission: format.number(commissionCad, { style: 'currency', currency: 'CAD' }),
+                  })}
             </p>
           ) : null}
           <Button

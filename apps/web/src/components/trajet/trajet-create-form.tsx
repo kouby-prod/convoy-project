@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { Send } from 'lucide-react';
-import { CreateTrajetRequestSchema, type TrajetAmenity } from '@carpool/schemas';
+import { CreateTrajetRequestSchema, RIDE_PAYMENT_METHODS, type RidePaymentMethod, type TrajetAmenity } from '@carpool/schemas';
 import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,6 +35,7 @@ export function TrajetCreateForm() {
   const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   const [amenities, setAmenities] = useState<TrajetAmenity[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<RidePaymentMethod[]>(['card', 'interac', 'cash']);
   const [hasIntermediateStop, setHasIntermediateStop] = useState(false);
   // Radix Select is controlled, so comfort lives in state rather than FormData
   // — same as the amenity toggles and the stop checkbox above.
@@ -52,6 +53,12 @@ export function TrajetCreateForm() {
     },
     onError: () => setError(t('create.failed')),
   });
+
+  function togglePaymentMethod(method: RidePaymentMethod) {
+    setPaymentMethods((current) =>
+      current.includes(method) ? current.filter((entry) => entry !== method) : [...current, method],
+    );
+  }
 
   function toggleAmenity(amenity: TrajetAmenity) {
     setAmenities((current) =>
@@ -91,6 +98,7 @@ export function TrajetCreateForm() {
       pricePerSeat: Number(formData.get('pricePerSeat')),
       seatsTotal: Number(formData.get('seatsTotal')),
       amenities,
+      paymentMethods,
       hasIntermediateStop,
       description: formData.get('description')?.toString() ?? '',
       comfort,
@@ -206,6 +214,20 @@ export function TrajetCreateForm() {
                 placeholder={t('create.baggagePlaceholder')}
               />
             </LabelledField>
+          </Field>
+
+          <Field label={t('create.paymentMethods')}>
+            <p className="text-xs text-muted-foreground">{t('create.paymentMethodsHint')}</p>
+            <div className="flex flex-col gap-2">
+              {RIDE_PAYMENT_METHODS.map((method) => (
+                <Checkbox
+                  key={method}
+                  checked={paymentMethods.includes(method)}
+                  onChange={() => togglePaymentMethod(method)}
+                  label={t(`paymentMethods.${method}`)}
+                />
+              ))}
+            </div>
           </Field>
 
           <Field label={t('create.options')}>

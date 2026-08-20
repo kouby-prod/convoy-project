@@ -53,11 +53,12 @@ export function renderInvoiceHtml(doc: Invoice): string {
   <p>${escapeHtml(doc.buyerName)}</p>
   ${doc.buyerEmail ? `<p>${escapeHtml(doc.buyerEmail)}</p>` : ''}
   <table>
-    <tr><td>Kouby booking commission</td><td>${money(doc.subtotalCents, doc.currency)}</td></tr>
+    ${doc.fareCents > 0 ? `<tr><td>Ride fare</td><td>${money(doc.fareCents, doc.currency)}</td></tr>` : ''}
+    <tr><td>Kouby booking commission</td><td>${money(doc.commissionCents, doc.currency)}</td></tr>
     ${taxRows}
     <tr><td><strong>Total</strong></td><td><strong>${money(doc.totalCents, doc.currency)}</strong></td></tr>
   </table>
-  <p class="muted">Ride fare is paid directly to the driver and is not on this invoice.</p>
+  <p class="muted">${doc.fareCents > 0 ? 'The ride fare is collected by Kouby and paid out to the driver after the trip.' : 'Ride fare is paid directly to the driver and is not on this invoice.'}</p>
 </body>
 </html>`;
 }

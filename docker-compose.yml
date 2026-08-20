@@ -5,6 +5,7 @@
 #
 #   pnpm docker:up
 #   (= docker compose --env-file .env up --build)
+#   `api-migrate` applies Drizzle SQL before `api` starts.
 #
 # All configuration comes from the single root `.env` (copy from `.env.example`).
 # There are NO hard-coded config values here — every value is a ${VAR} reference.
@@ -14,10 +15,28 @@ include:
   - infra/docker-compose.infra.yml
 
 services:
+  # Apply pending Drizzle SQL, then exit. The API waits for this to succeed
+  # so a schema change ships with the image instead of a manual host command.
+  # Same image as `api`; only DATABASE_URL is required. Failed migrate fails
+  # `docker compose up` rather than serving against a stale schema.
+  api-migrate:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.api
+    image: carpool-api
+    command: ['node', 'dist/migrate.js']
+    restart: 'no'
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     build:
       context: .
       dockerfile: infra/Dockerfile.api
+    image: carpool-api
     restart: unless-stopped
     environment:
       PORT: ${API_PORT}
@@ -78,6 +97,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      api-migrate:
+        condition: service_completed_successfully
 
   web:
     build:

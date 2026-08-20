@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  BookingStatusSchema,
+  BookingTrajetSummarySchema,
+  RidePaymentMethodSchema,
+} from './trajet';
 
 /**
  * Platform booking commission — the only amount Kouby charges. Copied onto
@@ -47,6 +52,8 @@ export const InvoiceSchema = z
     status: InvoiceStatusSchema,
     currency: z.string(),
     subtotalCents: z.number().int().nonnegative(),
+    fareCents: z.number().int().nonnegative(),
+    commissionCents: z.number().int().nonnegative(),
     taxCents: z.number().int().nonnegative(),
     totalCents: z.number().int().nonnegative(),
     taxLines: z.array(TaxLineSchema),
@@ -114,11 +121,50 @@ export const CapturePayPalSchema = z
   .describe('CapturePayPal');
 export type CapturePayPal = z.infer<typeof CapturePayPalSchema>;
 
+export const CheckoutBookingSummarySchema = z
+  .object({
+    id: z.string(),
+    trajetId: z.string(),
+    status: BookingStatusSchema,
+    paymentMethod: RidePaymentMethodSchema,
+    seats: z.number().int().min(1),
+    trajet: BookingTrajetSummarySchema,
+  })
+  .describe('CheckoutBookingSummary');
+export type CheckoutBookingSummary = z.infer<typeof CheckoutBookingSummarySchema>;
+
 export const BookingPaymentStateSchema = z
   .object({
     invoice: InvoiceSchema.nullable(),
     payment: PaymentSchema.nullable(),
     creditNote: CreditNoteSchema.nullable(),
+    booking: CheckoutBookingSummarySchema.nullable(),
   })
   .describe('BookingPaymentState');
 export type BookingPaymentState = z.infer<typeof BookingPaymentStateSchema>;
+
+export const DriverPayoutStatusSchema = z.enum(['held', 'due', 'paid', 'cancelled']);
+export type DriverPayoutStatus = z.infer<typeof DriverPayoutStatusSchema>;
+
+export const DriverPayoutSchema = z
+  .object({
+    id: z.string(),
+    bookingId: z.string(),
+    driverId: z.string(),
+    amountCents: z.number().int().nonnegative(),
+    currency: z.string(),
+    status: DriverPayoutStatusSchema,
+    dueAt: z.string().describe('ISO-8601 timestamp'),
+    paidAt: z.string().nullable().describe('ISO-8601 timestamp'),
+    paidRef: z.string().nullable(),
+    createdAt: z.string().describe('ISO-8601 timestamp'),
+  })
+  .describe('DriverPayout');
+export type DriverPayout = z.infer<typeof DriverPayoutSchema>;
+
+export const MarkDriverPayoutPaidSchema = z
+  .object({
+    ref: z.string().trim().max(200).optional(),
+  })
+  .describe('MarkDriverPayoutPaid');
+export type MarkDriverPayoutPaid = z.infer<typeof MarkDriverPayoutPaidSchema>;

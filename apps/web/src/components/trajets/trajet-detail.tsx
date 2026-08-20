@@ -4,7 +4,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, BadgeCheck, Briefcase, Car, Sparkles, Users } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
-import type { TrajetAmenity } from '@carpool/schemas';
+import type { RidePaymentMethod, TrajetAmenity } from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
@@ -184,7 +184,7 @@ export function TrajetDetail({ id }: { id: string }) {
           </section>
 
           {/* Ride options — secondary */}
-          {(amenities.length > 0 || data.comfort || data.baggageAllowance) && (
+          {(amenities.length > 0 || data.comfort || data.baggageAllowance || (data.paymentMethods?.length ?? 0) > 0) && (
             <section aria-labelledby="options-heading" className="border-t border-border pt-8">
               <h2 id="options-heading" className="text-sm font-semibold text-foreground">
                 {t('rideOptions')}
@@ -206,6 +206,11 @@ export function TrajetDetail({ id }: { id: string }) {
                   <li key={amenity} className="flex items-center gap-2.5 text-sm text-foreground">
                     <AmenityIcon amenity={amenity as TrajetAmenity} className="size-4 shrink-0 text-muted-foreground" />
                     {tRide(`amenities.${amenity}`)}
+                  </li>
+                ))}
+                {(data.paymentMethods ?? []).map((method) => (
+                  <li key={method} className="flex items-center gap-2.5 text-sm text-foreground">
+                    {tRide(`paymentMethods.${method}`)}
                   </li>
                 ))}
               </ul>
@@ -245,6 +250,7 @@ export function TrajetDetail({ id }: { id: string }) {
               cancelled={!!data.cancelledAt}
               pricePerSeat={data.pricePerSeat}
               seatsTotal={data.seatsTotal}
+              paymentMethods={(data.paymentMethods ?? []) as RidePaymentMethod[]}
             />
           )}
         </aside>

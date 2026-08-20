@@ -80,7 +80,7 @@ export function AmenityToggleGroup({ selected, onToggle, label, legend }: Amenit
     <fieldset>
       <legend className="sr-only">{legend}</legend>
       <div className="flex flex-wrap justify-center gap-2">
-        {AMENITY_ORDER.map((amenity) => {
+        {AMENITY_ORDER.filter((amenity) => amenity !== 'cardPayment').map((amenity) => {
           const isSelected = selected.includes(amenity);
           return (
             <button

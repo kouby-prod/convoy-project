@@ -143,3 +143,10 @@ export const AdminUserSchema = z
 export type AdminUser = z.infer<typeof AdminUserSchema>;
 
 export const AdminUserListSchema = z.array(AdminUserSchema).describe('AdminUserList');
+
+export const AdminPayoutQuerySchema = z
+  .object({
+    status: z.enum(['held', 'due', 'paid', 'cancelled']).optional(),
+  })
+  .describe('AdminPayoutQuery');
+export type AdminPayoutQuery = z.infer<typeof AdminPayoutQuerySchema>;

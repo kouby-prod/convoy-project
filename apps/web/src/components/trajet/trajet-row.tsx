@@ -82,12 +82,21 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
         </div>
       </div>
 
-      {trajet.amenities.length > 0 ? (
-        <TrajetAmenities
-          amenities={trajet.amenities}
-          label={(amenity: TrajetAmenity) => t(`amenities.${amenity}`)}
-          className="mt-3 justify-start"
-        />
+      {trajet.amenities.length > 0 || trajet.paymentMethods.length > 0 ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {trajet.amenities.length > 0 ? (
+            <TrajetAmenities
+              amenities={trajet.amenities}
+              label={(amenity: TrajetAmenity) => t(`amenities.${amenity}`)}
+              className="justify-start"
+            />
+          ) : null}
+          {trajet.paymentMethods.map((method) => (
+            <Badge key={method} variant="secondary" className="font-medium">
+              {t(`paymentMethods.${method}`)}
+            </Badge>
+          ))}
+        </div>
       ) : null}
     </Link>
   );

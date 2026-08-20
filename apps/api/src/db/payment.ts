@@ -12,6 +12,7 @@ import {
   check,
 } from 'drizzle-orm/pg-core';
 import { booking } from './trajet-schema';
+import { user } from './auth-schema';
 import type { TaxLine } from '@carpool/schemas';
 
 export const invoiceNumberSeq = pgSequence('invoice_number_seq');
@@ -33,6 +34,8 @@ export const invoice = pgTable(
     status: text('status').notNull(),
     currency: text('currency').notNull(),
     subtotalCents: integer('subtotal_cents').notNull(),
+    fareCents: integer('fare_cents').notNull().default(0),
+    commissionCents: integer('commission_cents').notNull().default(500),
     taxCents: integer('tax_cents').notNull(),
     totalCents: integer('total_cents').notNull(),
     taxLines: jsonb('tax_lines').$type<TaxLine[]>().notNull(),
@@ -134,7 +137,7 @@ export const ledgerEntry = pgTable(
     index('ledger_entry_invoice_idx').on(t.invoiceId),
     check(
       'ledger_entry_account_check',
-      sql`${t.account} in ('accounts_receivable', 'processor_clearing', 'revenue', 'tax_payable', 'refunds')`,
+      sql`${t.account} in ('accounts_receivable', 'processor_clearing', 'revenue', 'tax_payable', 'refunds', 'driver_payable')`,
     ),
     check('ledger_entry_direction_check', sql`${t.direction} in ('debit', 'credit')`),
     check('ledger_entry_amount_check', sql`${t.amountCents} > 0`),
@@ -180,6 +183,40 @@ export const reconciliationMismatch = pgTable('reconciliation_mismatch', {
   detail: jsonb('detail').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+/**
+ * Fare Kouby owes the driver after a card collection. Created on settle;
+ * becomes `due` 24h after departure; marked `paid` by an admin (no Connect).
+ */
+export const driverPayout = pgTable(
+  'driver_payout',
+  {
+    id: text('id').primaryKey(),
+    bookingId: text('booking_id')
+      .notNull()
+      .references(() => booking.id, { onDelete: 'cascade' }),
+    driverId: text('driver_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    amountCents: integer('amount_cents').notNull(),
+    currency: text('currency').notNull(),
+    status: text('status').notNull(),
+    dueAt: timestamp('due_at').notNull(),
+    paidAt: timestamp('paid_at'),
+    paidRef: text('paid_ref'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => [
+    unique('driver_payout_booking_id_unique').on(t.bookingId),
+    index('driver_payout_status_idx').on(t.status),
+    index('driver_payout_driver_idx').on(t.driverId),
+    check(
+      'driver_payout_status_check',
+      sql`${t.status} in ('held', 'due', 'paid', 'cancelled')`,
+    ),
+    check('driver_payout_amount_check', sql`${t.amountCents} > 0`),
+  ],
+);
 
 export const invoiceRelations = relations(invoice, ({ one, many }) => ({
   booking: one(booking, { fields: [invoice.bookingId], references: [booking.id] }),

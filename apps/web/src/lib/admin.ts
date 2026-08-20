@@ -4,6 +4,8 @@ import type {
   AdminStats,
   AdminUser,
   DocumentStatus,
+  DriverPayout,
+  DriverPayoutStatus,
 } from '@carpool/schemas';
 import { createApiClient } from '@carpool/api-client';
 import { env } from './env';
@@ -69,5 +71,22 @@ export async function reviewDocument({
 export async function fetchAdminUsers(): Promise<AdminUser[]> {
   const res = await api.admin.users.$get();
   if (!res.ok) throw new ApiError(res.status, 'Failed to load accounts');
+  return res.json();
+}
+
+/** GET /admin/payouts — driver fare payouts awaiting a manual transfer. */
+export async function fetchAdminPayouts(status?: DriverPayoutStatus): Promise<DriverPayout[]> {
+  const res = await api.admin.payouts.$get({ query: status ? { status } : {} });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to load payouts');
+  return res.json();
+}
+
+/** POST /admin/payouts/:id/paid — record a manual payout. */
+export async function markAdminPayoutPaid(id: string, ref?: string): Promise<DriverPayout> {
+  const res = await api.admin.payouts[':id'].paid.$post({
+    param: { id },
+    json: ref ? { ref } : {},
+  });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to mark payout paid');
   return res.json();
 }

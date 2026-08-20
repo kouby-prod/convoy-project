@@ -2,10 +2,10 @@ import { and, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { db } from '../../db/client';
 import { invoice, payment } from '../../db/payment';
-import { booking } from '../../db/trajet-schema';
 import { notifyUser, paymentUrl, describeTrip } from '../trajet/notifications';
-import { trajet } from '../../db/trajet-schema';
+import { booking, trajet } from '../../db/trajet-schema';
 import { payLines, postLedger } from './ledger';
+import { createHeldDriverPayout } from './payout';
 import { refundStripePaymentIntent, stripeIdempotencyKey } from './stripe';
 import { getPayPalCaptureId, refundPayPalCapture } from './paypal';
 
@@ -73,6 +73,22 @@ export async function settlePaidInvoice(input: SettleInput): Promise<SettleResul
 
     await upsertPayment(tx, input, 'succeeded');
     await postLedger(tx, paid.id, `pay:${paid.id}:${input.providerPaymentId}`, paid.currency, payLines(paid.totalCents));
+
+    if (paid.fareCents > 0) {
+      const [bookingRow] = await tx.select().from(booking).where(eq(booking.id, paid.bookingId));
+      if (bookingRow) {
+        const [trip] = await tx.select().from(trajet).where(eq(trajet.id, bookingRow.trajetId));
+        if (trip) {
+          await createHeldDriverPayout(tx, {
+            bookingId: paid.bookingId,
+            driverId: trip.driverId,
+            amountCents: paid.fareCents,
+            currency: paid.currency,
+            departureAt: trip.departureAt,
+          });
+        }
+      }
+    }
     return 'settled' as const;
   });
 

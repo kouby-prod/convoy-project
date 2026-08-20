@@ -53,6 +53,7 @@ function toListing(row: Trajet): TrajetListing {
     seatsTotal: row.seatsTotal,
     seatsAvailable: row.seatsAvailable,
     amenities: row.amenities,
+    paymentMethods: row.paymentMethods,
     hasIntermediateStop: row.hasIntermediateStop,
     description: row.description ?? '',
     comfort: row.comfort ?? null,
@@ -117,6 +118,7 @@ export async function createTrajet(input: CreateTrajetRequest): Promise<TrajetLi
       pricePerSeat: input.pricePerSeat,
       description: input.description,
       amenities: input.amenities,
+      paymentMethods: input.paymentMethods,
       hasIntermediateStop: input.hasIntermediateStop,
       comfort: input.comfort,
       baggageAllowance: input.baggageAllowance,
@@ -138,6 +140,7 @@ export async function createBooking(input: CreateBookingRequest): Promise<{ id: 
     param: { id: input.trajetId },
     json: {
       seats: 1,
+      paymentMethod: input.paymentMethod,
       firstName: input.firstName,
       lastName: input.lastName,
       email: input.email,

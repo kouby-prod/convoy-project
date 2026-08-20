@@ -3,8 +3,11 @@ import {
   AdminDocumentListSchema,
   AdminDocumentQuerySchema,
   AdminDocumentSchema,
+  AdminPayoutQuerySchema,
   AdminStatsSchema,
   AdminUserListSchema,
+  DriverPayoutSchema,
+  MarkDriverPayoutPaidSchema,
   ReviewDocumentSchema,
 } from '@carpool/schemas';
 
@@ -123,6 +126,63 @@ export const listAdminUsersRoute = createRoute({
     },
     403: {
       description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listAdminPayoutsRoute = createRoute({
+  method: 'get',
+  path: '/admin/payouts',
+  tags: ['admin'],
+  summary: 'Driver payout queue (manual, no Connect)',
+  security: bearerAuth,
+  request: { query: AdminPayoutQuerySchema },
+  responses: {
+    200: {
+      description: 'Matching payouts, newest first',
+      content: { 'application/json': { schema: z.array(DriverPayoutSchema) } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const markAdminPayoutPaidRoute = createRoute({
+  method: 'post',
+  path: '/admin/payouts/{id}/paid',
+  tags: ['admin'],
+  summary: 'Mark a driver payout as paid',
+  security: bearerAuth,
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+    body: { content: { 'application/json': { schema: MarkDriverPayoutPaidSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'The paid payout',
+      content: { 'application/json': { schema: DriverPayoutSchema } },
+    },
+    400: {
+      description: 'Payout is not held or due',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Not found',
       content: { 'application/json': { schema: errorSchema } },
     },
   },

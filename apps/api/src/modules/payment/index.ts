@@ -1,8 +1,14 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, desc, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import type { CheckoutResponse, Invoice, Payment as PaymentDto, CreditNote as CreditNoteDto } from '@carpool/schemas';
-import { CreditNoteSchema, InvoiceSchema, PaymentSchema } from '@carpool/schemas';
+import type {
+  CheckoutBookingSummary,
+  CheckoutResponse,
+  CreditNote as CreditNoteDto,
+  Invoice,
+  Payment as PaymentDto,
+} from '@carpool/schemas';
+import { CheckoutBookingSummarySchema, CreditNoteSchema, InvoiceSchema, PaymentSchema } from '@carpool/schemas';
 import { requireAuth, getAuth, hasRole, type AuthEnv } from '../../auth';
 import { db } from '../../db/client';
 import { creditNote, invoice, payment } from '../../db/payment';
@@ -40,6 +46,26 @@ app.use('/invoices/*', requireAuth);
 app.use('/invoices/:id', requireAuth);
 app.use('/invoices/:id/pdf', requireAuth);
 app.use('/invoices/:id/html', requireAuth);
+
+async function serializeCheckoutBooking(
+  bookingRow: typeof booking.$inferSelect,
+): Promise<CheckoutBookingSummary | null> {
+  const [trip] = await db.select().from(trajet).where(eq(trajet.id, bookingRow.trajetId));
+  if (!trip) return null;
+  return CheckoutBookingSummarySchema.parse({
+    id: bookingRow.id,
+    trajetId: bookingRow.trajetId,
+    status: bookingRow.status,
+    paymentMethod: bookingRow.paymentMethod ?? 'cash',
+    seats: bookingRow.seats,
+    trajet: {
+      departureCity: trip.departureCity,
+      destinationCity: trip.arrivalCity,
+      departureDateTime: trip.departureAt.toISOString(),
+      pricePerSeat: Number(trip.pricePerSeat),
+    },
+  });
+}
 
 function serializePayment(row: typeof payment.$inferSelect): PaymentDto {
   return PaymentSchema.parse({
@@ -260,16 +286,20 @@ export const paymentModule = app
         currency: captured.currency,
       });
     }
-    return c.json(await paymentStateForInvoice(inv.id), 200);
+    const checkoutBooking = await serializeCheckoutBooking(bookingRow);
+    return c.json({ ...(await paymentStateForInvoice(inv.id)), booking: checkoutBooking }, 200);
   })
   .openapi(getPaymentByBookingRoute, async (c) => {
     const { user } = getAuth(c);
     const { bookingId } = c.req.valid('param');
     const authz = await loadBookingAuth(bookingId, user.id, hasRole(user, 'admin'));
     if (!authz.ok) return c.json({ error: authz.error }, authz.status);
+    const checkoutBooking = await serializeCheckoutBooking(authz.booking);
     const [inv] = await db.select().from(invoice).where(eq(invoice.bookingId, bookingId));
-    if (!inv) return c.json({ invoice: null, payment: null, creditNote: null }, 200);
-    return c.json(await paymentStateForInvoice(inv.id), 200);
+    if (!inv) {
+      return c.json({ invoice: null, payment: null, creditNote: null, booking: checkoutBooking }, 200);
+    }
+    return c.json({ ...(await paymentStateForInvoice(inv.id)), booking: checkoutBooking }, 200);
   })
   .openapi(getInvoiceByBookingRoute, async (c) => {
     const { user } = getAuth(c);

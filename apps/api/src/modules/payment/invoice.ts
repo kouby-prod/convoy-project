@@ -5,6 +5,7 @@ import {
   InvoiceSchema,
   type Invoice,
 } from '@carpool/schemas';
+import { user } from '../../db/auth-schema';
 import { invoice } from '../../db/payment';
 import { env } from '../../env';
 import { computeInvoiceAmounts } from './tax';
@@ -28,6 +29,16 @@ async function nextSequenceValue(tx: DbTx, sequence: 'invoice_number_seq' | 'cre
   return parsed;
 }
 
+export function resolveBuyerIdentity(
+  bookingRow: { firstName: string | null; lastName: string | null; email: string | null },
+  account?: { name?: string | null; email?: string | null } | null,
+): { buyerName: string; buyerEmail: string } {
+  const fromBooking = [bookingRow.firstName, bookingRow.lastName].filter(Boolean).join(' ').trim();
+  const buyerName = fromBooking || account?.name?.trim() || 'Passenger';
+  const buyerEmail = (bookingRow.email ?? account?.email ?? '').trim();
+  return { buyerName, buyerEmail };
+}
+
 export function serializeInvoice(row: typeof invoice.$inferSelect): Invoice {
   return InvoiceSchema.parse({
     id: row.id,
@@ -36,6 +47,8 @@ export function serializeInvoice(row: typeof invoice.$inferSelect): Invoice {
     status: row.status,
     currency: row.currency,
     subtotalCents: row.subtotalCents,
+    fareCents: row.fareCents,
+    commissionCents: row.commissionCents,
     taxCents: row.taxCents,
     totalCents: row.totalCents,
     taxLines: row.taxLines,
@@ -50,13 +63,16 @@ export function serializeInvoice(row: typeof invoice.$inferSelect): Invoice {
 }
 
 /**
- * Issue the 5 CAD commission invoice in the same transaction as the booking
- * moving to `awaiting_payment`. Idempotent on bookingId (unique).
+ * Issue the Kouby invoice in the same transaction as the booking moving to
+ * `awaiting_payment`. Card bookings include the ride fare; Interac/cash stay
+ * commission-only. Idempotent on bookingId (unique).
  */
 export async function issueInvoiceForBooking(
   tx: DbTx,
   bookingRow: {
     id: string;
+    paymentMethod?: string | null;
+    fareCents?: number | null;
     firstName: string | null;
     lastName: string | null;
     email: string | null;
@@ -66,13 +82,16 @@ export async function issueInvoiceForBooking(
   const [existing] = await tx.select().from(invoice).where(eq(invoice.bookingId, bookingRow.id));
   if (existing) return serializeInvoice(existing);
 
-  const amounts = computeInvoiceAmounts();
+  const fareCents = bookingRow.paymentMethod === 'card' ? (bookingRow.fareCents ?? 0) : 0;
+  const amounts = computeInvoiceAmounts(fareCents);
   const now = new Date();
   const seq = await nextSequenceValue(tx, 'invoice_number_seq');
   const id = randomUUID();
-  const buyerName =
-    [bookingRow.firstName, bookingRow.lastName].filter(Boolean).join(' ').trim() || 'Passenger';
-  const buyerEmail = bookingRow.email ?? '';
+  const [passenger] = await tx
+    .select({ name: user.name, email: user.email })
+    .from(user)
+    .where(eq(user.id, bookingRow.passengerId));
+  const { buyerName, buyerEmail } = resolveBuyerIdentity(bookingRow, passenger);
 
   const [created] = await tx
     .insert(invoice)
@@ -83,6 +102,8 @@ export async function issueInvoiceForBooking(
       status: 'issued',
       currency: COMMISSION_CURRENCY,
       subtotalCents: amounts.subtotalCents,
+      fareCents: amounts.fareCents,
+      commissionCents: amounts.commissionCents,
       taxCents: amounts.taxCents,
       totalCents: amounts.totalCents,
       taxLines: amounts.taxLines,
@@ -94,7 +115,13 @@ export async function issueInvoiceForBooking(
     .returning();
   if (!created) throw new Error('Invoice insert returned no row');
 
-  await postLedger(tx, created.id, `issue:${created.id}`, COMMISSION_CURRENCY, issueLines(amounts.subtotalCents, amounts.taxCents));
+  await postLedger(
+    tx,
+    created.id,
+    `issue:${created.id}`,
+    COMMISSION_CURRENCY,
+    issueLines(amounts.commissionCents, amounts.fareCents, amounts.taxCents),
+  );
   return serializeInvoice(created);
 }
 

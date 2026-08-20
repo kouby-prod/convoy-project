@@ -18,7 +18,9 @@
     "auth:generate": "better-auth generate --config src/auth/auth.ts --output src/db/auth-schema.ts -y",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate:prod": "node dist/migrate.js",
     "seed:admin": "tsx src/seed-admin.ts",
+    "seed:dev-users": "tsx src/seed-dev-users.ts",
     "seed:trajets": "tsx src/seed-trajets.ts"
   },
   "dependencies": {

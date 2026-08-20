@@ -7,6 +7,7 @@ import {
 } from './payment-jobs';
 import { handlePayPalEvent, handleStripeEvent, markEventProcessed } from '../modules/payment/events';
 import { runPaymentReconciliation } from '../modules/payment/reconcile';
+import { releaseHeldDriverPayouts } from '../modules/payment/payout';
 
 let eventWorker: Worker<PaymentEventJob> | undefined;
 let reconcileWorker: Worker | undefined;
@@ -33,7 +34,11 @@ export function startPaymentWorkers(): void {
     console.log('[payment-worker] listening on queue', PAYMENT_EVENT_QUEUE);
   }
   if (!reconcileWorker) {
-    reconcileWorker = new Worker(PAYMENT_RECONCILE_QUEUE, async () => {
+    reconcileWorker = new Worker(PAYMENT_RECONCILE_QUEUE, async (job) => {
+      if (job.name === 'payout-release') {
+        await releaseHeldDriverPayouts();
+        return;
+      }
       await runPaymentReconciliation();
     }, {
       connection: createRedisConnection('payment-reconcile-worker'),

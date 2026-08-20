@@ -162,6 +162,8 @@ function makeTrajetRow(overrides: Partial<Record<string, unknown>> = {}) {
     description: 'A sample trajet',
     comfort: null,
     baggageAllowance: null,
+    amenities: [],
+    paymentMethods: ['card', 'interac', 'cash'],
     cancelledAt: null,
     createdAt: now,
     updatedAt: now,
@@ -178,6 +180,8 @@ function makeBookingRow(overrides: Partial<Record<string, unknown>> = {}) {
     passengerId: 'u_2',
     seats: 2,
     status: 'pending',
+    paymentMethod: 'cash',
+    fareCents: 0,
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -417,6 +421,7 @@ describe('trajet module', () => {
         departureDateTime: new Date(Date.now() + 60_000).toISOString(),
         seatsTotal: 3,
         pricePerSeat: 20,
+        paymentMethods: ['card', 'interac', 'cash'],
         description: 'A sample trajet',
       }),
     });
@@ -453,6 +458,7 @@ describe('trajet module', () => {
         departureDateTime: new Date(Date.now() - 60_000).toISOString(),
         seatsTotal: 3,
         pricePerSeat: 20,
+        paymentMethods: ['cash'],
       }),
     });
 
@@ -659,10 +665,25 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 1 }),
+      body: JSON.stringify({ seats: 1, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(400);
+  });
+
+  it('POST /trajets/:id/book returns 400 when the ride does not offer that payment method', async () => {
+    getSession.mockResolvedValue(sessionFor('user'));
+    dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', paymentMethods: ['interac'] })];
+
+    const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seats: 1, paymentMethod: 'card' }),
+    });
+
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/payment method/i);
   });
 
   it('POST /trajets/:id/book returns 401 without a session', async () => {
@@ -670,7 +691,7 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 1 }),
+      body: JSON.stringify({ seats: 1, paymentMethod: 'cash' }),
     });
     expect(res.status).toBe(401);
   });
@@ -683,7 +704,7 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 2 }),
+      body: JSON.stringify({ seats: 2, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(201);
@@ -703,7 +724,7 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 1 }),
+      body: JSON.stringify({ seats: 1, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(403);
@@ -716,7 +737,7 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 2 }),
+      body: JSON.stringify({ seats: 2, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(400);
@@ -732,7 +753,7 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 2 }),
+      body: JSON.stringify({ seats: 2, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(201);
@@ -761,7 +782,7 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 1 }),
+      body: JSON.stringify({ seats: 1, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(404);
@@ -908,7 +929,7 @@ describe('trajet module', () => {
       expect(paymentHooks.issueInvoiceForBooking).toHaveBeenCalled();
       expect(notifyUser).toHaveBeenCalledWith(
         'u_2',
-        expect.stringContaining('commission'),
+        expect.stringContaining('Pay Kouby'),
         expect.stringContaining('paiement'),
         undefined,
       );

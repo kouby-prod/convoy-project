@@ -176,7 +176,7 @@
   "Cgv": {
     "title": "Conditions Générales de Vente (CGV)",
     "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Kouby facture une commission de réservation de 5 CAD, payable en ligne par carte (Stripe) ou PayPal après acceptation du conducteur. Le prix du trajet est réglé hors plateforme, directement auprès du conducteur.",
+    "disclaimer": "Kouby facture une commission de réservation de 5 CAD, payable en ligne par carte (Stripe) ou PayPal après acceptation du conducteur. Si vous payez le trajet par carte via Kouby, ce montant est encaissé avec la commission et reversé au conducteur après le trajet. Interac et espèces se règlent directement avec le conducteur.",
     "sections": [
       {
         "heading": "1. Objet",
@@ -196,7 +196,7 @@
       },
       {
         "heading": "4. Processus de réservation",
-        "body": "1. Le passager sélectionne un trajet proposé par un conducteur.\n2. Il confirme sa réservation via la plateforme.\n3. Il procède au paiement de la commission de 5 CAD.\n4. La réservation est considérée comme ferme et définitive après confirmation du paiement."
+        "body": "1. Le passager sélectionne un trajet et un moyen de paiement accepté par le conducteur (carte, Interac ou espèces).\n2. Il confirme sa réservation via la plateforme.\n3. Il paie Kouby en ligne : 5 CAD de commission seulement (Interac/espèces), ou le prix du trajet plus 5 CAD (carte).\n4. La réservation est considérée comme ferme et définitive après confirmation de ce paiement."
       },
       {
         "heading": "5.1 Moyens de paiement",
@@ -208,11 +208,11 @@
       },
       {
         "heading": "6.1 Principe général",
-        "body": "• La commission de réservation est non remboursable après confirmation de la réservation."
+        "body": "• La commission de réservation est non remboursable après confirmation de la réservation.\n• Si le passager annule une réservation carte confirmée, Kouby rembourse le prix du trajet et conserve la commission de 5 CAD."
       },
       {
         "heading": "6.2 Exception – Annulation par le conducteur",
-        "body": "En cas d'annulation du trajet par le conducteur :\n• le passager peut bénéficier du remboursement de la commission de 5 CAD,\n• ou d'une solution alternative proposée par le conducteur."
+        "body": "En cas d'annulation du trajet par le conducteur :\n• le passager peut bénéficier du remboursement du montant payé à Kouby (commission, et le prix du trajet s'il a été encaissé par carte),\n• ou d'une solution alternative proposée par le conducteur."
       },
       {
         "heading": "7. Obligations du conducteur impactant la vente",
@@ -622,6 +622,9 @@
       "title": "Réserver une place",
       "seatsLabel": "Nombre de places",
       "estimatedTotal": "Total estimé : {amount}",
+      "methodLabel": "Comment réglerez-vous le conducteur ?",
+      "estimatedCard": "Vous payez {fare} + {commission} à Kouby (le prix du trajet est reversé au conducteur après le départ).",
+      "estimatedOffPlatform": "Vous payez {commission} à Kouby, puis {fare} directement au conducteur (Interac ou espèces).",
       "submit": "Réserver",
       "submitting": "Réservation en cours...",
       "success": "Votre demande de réservation a été envoyée au conducteur.",
@@ -632,6 +635,7 @@
       "cancelling": "Annulation en cours...",
       "cancelledNotice": "Votre réservation a été annulée.",
       "pay": "Payer la commission de 5 CAD",
+      "payCard": "Payer maintenant",
       "invoice": "Voir la facture",
       "errors": {
         "generic": "Impossible d'effectuer la réservation. Veuillez réessayer.",
@@ -644,6 +648,8 @@
       "empty": "Aucune demande de réservation pour ce trajet.",
       "error": "Impossible de charger les réservations.",
       "seats": "Places demandées",
+      "passenger": "Passager",
+      "method": "Paiement",
       "accept": "Accepter",
       "reject": "Refuser",
       "actionError": "Impossible de mettre à jour cette réservation.",
@@ -761,7 +767,11 @@
     "cancelling": "Annulation en cours...",
     "cancelError": "Impossible d'annuler cette réservation. Veuillez réessayer.",
     "pay": "Payer la commission",
+    "payCard": "Payer maintenant",
     "invoice": "Voir la facture",
+    "method": "Paiement",
+    "amountDue": "Montant dû",
+    "messages": "Messages",
     "review": {
       "cta": "Noter ce trajet",
       "ratingLabel": "Note",
@@ -795,7 +805,8 @@
     "tabs": {
       "label": "Vues du back-office",
       "queue": "Documents",
-      "users": "Comptes"
+      "users": "Comptes",
+      "payouts": "Versements"
     },
     "filters": {
       "status": "Statut",
@@ -837,6 +848,31 @@
       "admin": "Admin",
       "driver": "Conducteur",
       "verification": "Vérification"
+    },
+    "payouts": {
+      "loading": "Chargement des versements…",
+      "error": "Impossible de charger les versements.",
+      "empty": "Aucun versement ne correspond à ce filtre.",
+      "amount": "Montant",
+      "status": "Statut",
+      "dueAt": "Échéance",
+      "booking": "Réservation",
+      "action": "Action",
+      "markPaid": "Marquer payé",
+      "refPlaceholder": "Réf. virement",
+      "statusFilter": {
+        "all": "Tous",
+        "held": "Retenu",
+        "due": "Dû",
+        "paid": "Payé",
+        "cancelled": "Annulé"
+      },
+      "statusValue": {
+        "held": "Retenu",
+        "due": "Dû",
+        "paid": "Payé",
+        "cancelled": "Annulé"
+      }
     }
   },
   "Documents": {
@@ -965,6 +1001,11 @@
       "bikeRack": "Porte-vélos",
       "cardPayment": "Paiement par carte"
     },
+    "paymentMethods": {
+      "card": "Carte (via Kouby)",
+      "interac": "Interac (direct)",
+      "cash": "Espèces (direct)"
+    },
     "filters": {
       "title": "Recherche",
       "from": "Ville de départ",
@@ -1042,21 +1083,38 @@
       "failed": "La publication a échoué. Réessayez plus tard.",
       "invalid": "Vérifiez les champs du formulaire.",
       "baggage": "Bagages",
-      "baggagePlaceholder": "Ex. : un bagage cabine par personne"
+      "baggagePlaceholder": "Ex. : un bagage cabine par personne",
+      "paymentMethods": "Moyens de paiement acceptés",
+      "paymentMethodsHint": "Choisissez-en au moins un. La carte encaisse le trajet via Kouby ; Interac et espèces se règlent directement avec vous."
     }
   },
   "Paiement": {
-    "title": "Paiement de la commission",
-    "subtitle": "Réglez la commission de réservation Kouby (5 CAD) pour confirmer votre place. Le prix du trajet se paie directement au conducteur.",
+    "title": "Paiement Kouby",
+    "subtitle": "Réglez Kouby pour confirmer votre place. Une réservation par carte inclut le prix du trajet ; Interac et espèces ne paient que la commission de 5 CAD, puis le trajet au conducteur.",
     "loading": "Chargement du paiement…",
     "empty": "Aucune facture n'est associée à cette réservation.",
     "error": "Impossible de charger le paiement. Réessayez plus tard.",
     "payTitle": "Payer maintenant",
     "paidTitle": "Paiement reçu",
     "paidBody": "Votre réservation est confirmée. Conservez votre facture.",
+    "confirmingTitle": "Confirmation du paiement",
+    "confirming": "Votre paiement par carte a réussi. Kouby confirme la facture — cela prend généralement quelques secondes.",
+    "confirmingRetry": "Vérifier à nouveau",
+    "waitingDriver": "Le conducteur n'a pas encore accepté. Vous paierez ici dès qu'il acceptera votre demande.",
+    "backToBookings": "Mes réservations",
+    "viewTrip": "Voir le trajet",
+    "openMessages": "Ouvrir les messages",
+    "tripLabel": "Trajet",
+    "seatsOnTrip": "{count, plural, one {# place} other {# places}}",
+    "methodLabel": "Moyen de paiement",
+    "stepRequest": "Demande",
+    "stepPay": "Payer Kouby",
+    "stepConfirmed": "Confirmée",
+    "failedBody": "La tentative précédente a échoué. Vous pouvez réessayer avec la même carte ou une autre.",
     "amountLabel": "Montant à payer",
     "statusLabel": "Statut",
     "payCta": "Payer par carte",
+    "payCtaAmount": "Payer {amount}",
     "paying": "Paiement en cours…",
     "stripeTitle": "Carte bancaire (Stripe)",
     "stripeLoading": "Préparation du paiement par carte…",
@@ -1067,20 +1125,26 @@
     "captureError": "La capture PayPal a échoué.",
     "unavailable": "Aucun moyen de paiement n'est configuré pour le moment.",
     "disclaimer": "En payant, vous acceptez les conditions générales de vente. La commission n'est pas remboursable une fois la réservation confirmée, sauf annulation du trajet par le conducteur.",
+    "disclaimerCard": "En payant, vous acceptez les conditions générales de vente. Ce paiement comprend le prix du trajet plus la commission de 5 CAD. Si vous annulez après confirmation, seul le trajet est remboursé. Si le conducteur annule, le montant total est remboursé.",
+    "disclaimerOffPlatform": "En payant, vous acceptez les conditions générales de vente. Ce paiement est uniquement la commission Kouby de 5 CAD — le prix du trajet se paie directement au conducteur. La commission n'est pas remboursable une fois confirmée, sauf annulation du trajet par le conducteur.",
     "cgvLink": "Lire les CGV"
   },
   "Facture": {
     "title": "Facture",
-    "subtitle": "Document Kouby — le trajet n'y figure pas.",
+    "subtitle": "Facture Kouby — commission, plus le prix du trajet si vous avez payé par carte.",
     "loading": "Chargement de la facture…",
     "empty": "Aucune facture.",
     "error": "Impossible de charger la facture.",
     "number": "Numéro",
     "buyer": "Destinataire",
-    "line": "Ligne",
+    "due": "Échéance",
+    "issued": "Émise le",
+    "line": "Lignes",
     "commissionLine": "Commission de réservation Kouby",
+    "fareLine": "Prix du trajet",
     "total": "Total",
     "fareNote": "Le prix du trajet est payé directement au conducteur et n'apparaît pas sur cette facture.",
+    "fareNoteCard": "Le prix du trajet est encaissé par Kouby et reversé au conducteur après le départ.",
     "downloadPdf": "Télécharger le PDF",
     "downloading": "Téléchargement…",
     "viewHtml": "Version imprimable",
@@ -1091,5 +1155,115 @@
       "paid": "Payée",
       "voided": "Annulée"
     }
+  },
+  "Responsibility": {
+    "title": "Charte de responsabilité",
+    "lastUpdated": "Comment Kouby et ses utilisateurs se partagent la responsabilité.",
+    "sections": [
+      {
+        "heading": "Rôle de Kouby",
+        "body": "Kouby est un intermédiaire technique. Nous mettons en relation conducteurs et passagers, prenons les réservations et collectons la commission. Nous ne sommes pas un transporteur et nous n'exploitons pas le trajet."
+      },
+      {
+        "heading": "Conducteurs",
+        "body": "Le conducteur est seul responsable du trajet : permis valide, assurance, véhicule en état, et respect du code de la sécurité routière de la province."
+      },
+      {
+        "heading": "Passagers",
+        "body": "Les passagers sont responsables d'arriver à l'heure, de payer selon le mode choisi, et de respecter les conditions de l'annonce."
+      },
+      {
+        "heading": "Documents connexes",
+        "body": "Voir aussi les conditions d'utilisation, les conditions de vente et le contrat conducteur."
+      }
+    ]
+  },
+  "BecomeDriver": {
+    "title": "Comment devenir chauffeur",
+    "lastUpdated": "Publier un trajet sur Kouby en quelques étapes.",
+    "sections": [
+      {
+        "heading": "1. Créer un compte",
+        "body": "Inscrivez-vous avec votre e-mail, puis complétez votre profil. Les conducteurs doivent aussi envoyer leurs documents d'identité et de véhicule depuis Mes documents pour vérification."
+      },
+      {
+        "heading": "2. Publier un trajet",
+        "body": "Depuis Publier un trajet, indiquez l'itinéraire, la date, les places, le prix par place, et les moyens de paiement que vous acceptez (carte, Interac, espèces)."
+      },
+      {
+        "heading": "3. Accepter les réservations",
+        "body": "Lorsqu'un passager demande une place, acceptez ou refusez depuis Mes trajets. Accepter émet la facture Kouby et demande au passager de payer."
+      },
+      {
+        "heading": "4. Après le trajet",
+        "body": "Si le passager a payé par carte, Kouby conserve le prix du trajet et vous le reverse après le départ. Interac et espèces se règlent directement avec vous ; Kouby ne conserve que la commission de 5 CAD."
+      }
+    ]
+  },
+  "BecomePassenger": {
+    "title": "Comment devenir passager",
+    "lastUpdated": "Réserver une place sur Kouby en quelques étapes.",
+    "sections": [
+      {
+        "heading": "1. Créer un compte",
+        "body": "Inscrivez-vous avec votre e-mail, puis recherchez un trajet par ville et par date."
+      },
+      {
+        "heading": "2. Réserver une place",
+        "body": "Choisissez comment vous paierez le conducteur : carte (trajet + commission de 5 CAD à Kouby), Interac ou espèces (commission de 5 CAD à Kouby, trajet payé au conducteur)."
+      },
+      {
+        "heading": "3. Payer après acceptation",
+        "body": "Quand le conducteur accepte, vous recevez une facture. Payez-la pour confirmer votre place. La carte inclut le prix du trajet ; Interac et espèces ne paient que la commission."
+      },
+      {
+        "heading": "4. Voyager",
+        "body": "Retrouvez-vous au point de prise en charge à l'heure. Après le trajet, vous pouvez noter le conducteur depuis Mes réservations."
+      }
+    ]
+  },
+  "PassengerTips": {
+    "title": "Conseils passagers",
+    "lastUpdated": "Voyager plus confortablement et en sécurité.",
+    "sections": [
+      {
+        "heading": "Réservez tôt",
+        "body": "Les trajets populaires se remplissent. Envoyez votre demande avec le bon nombre de places et un moyen de paiement déjà accepté par le conducteur."
+      },
+      {
+        "heading": "Payez à temps",
+        "body": "Une réservation reste en attente de paiement tant que la facture n'est pas payée. Les demandes impayées expirent et les places reviennent aux autres passagers."
+      },
+      {
+        "heading": "Restez joignable",
+        "body": "Utilisez les messages de la réservation pour confirmer le point de rendez-vous. Arrivez quelques minutes en avance et gardez un téléphone chargé."
+      },
+      {
+        "heading": "Si vos plans changent",
+        "body": "Annulez depuis Mes réservations dès que vous le savez. Après confirmation, seul le prix du trajet est remboursé pour une réservation par carte ; la commission est conservée sauf si le conducteur annule."
+      }
+    ]
+  },
+  "DriverTips": {
+    "title": "Conseils conducteurs",
+    "lastUpdated": "Publier des trajets qui se remplissent et se déroulent bien.",
+    "sections": [
+      {
+        "heading": "Soyez précis",
+        "body": "Indiquez le vrai point de prise en charge et de dépose, l'heure réelle de départ, et seulement les places que vous pouvez vraiment offrir."
+      },
+      {
+        "heading": "Proposez les bons moyens de paiement",
+        "body": "La carte permet à Kouby d'encaisser le trajet et de vous le reverser après le départ. Interac et espèces signifient que les passagers règlent le trajet directement avec vous et ne paient que la commission de 5 CAD sur la plateforme."
+      },
+      {
+        "heading": "Répondez vite",
+        "body": "Les demandes en attente expirent. Acceptez ou refusez rapidement pour ne pas laisser les passagers attendre, et gardez vos documents à jour dans Mes documents."
+      },
+      {
+        "heading": "Si vous devez annuler",
+        "body": "Annulez depuis Mes trajets dès que possible. Kouby rembourse le passager selon les conditions de vente."
+      }
+    ]
   }
 }

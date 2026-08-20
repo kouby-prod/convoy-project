@@ -13,11 +13,15 @@ import {
   type DriverVerification,
 } from '@carpool/schemas';
 import { serializeDocument } from '../document/serialize';
+import { driverPayout } from '../../db/payment';
+import { markDriverPayoutPaid, serializeDriverPayout } from '../payment/payout';
 import {
   getAdminStatsRoute,
   listAdminDocumentsRoute,
   reviewDocumentRoute,
   listAdminUsersRoute,
+  listAdminPayoutsRoute,
+  markAdminPayoutPaidRoute,
 } from './admin.routes';
 
 /**
@@ -38,6 +42,9 @@ app.use('/admin/stats', requireAuth, requireRole('admin'));
 app.use('/admin/users', requireAuth, requireRole('admin'));
 app.use('/admin/documents', requireAuth, requireRole('admin'));
 app.use('/admin/documents/:id', requireAuth, requireRole('admin'));
+app.use('/admin/payouts', requireAuth, requireRole('admin'));
+app.use('/admin/payouts/:id', requireAuth, requireRole('admin'));
+app.use('/admin/payouts/:id/paid', requireAuth, requireRole('admin'));
 
 /** A submission joined to its submitter — what every queue read returns. */
 type AdminDocumentRow = {
@@ -214,6 +221,24 @@ export const adminModule = app
       })),
       200,
     );
+  })
+  .openapi(listAdminPayoutsRoute, async (c) => {
+    const query = c.req.valid('query');
+    const rows = await db
+      .select()
+      .from(driverPayout)
+      .where(query.status ? eq(driverPayout.status, query.status) : undefined)
+      .orderBy(desc(driverPayout.createdAt));
+    return c.json(rows.map(serializeDriverPayout), 200);
+  })
+  .openapi(markAdminPayoutPaidRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    const body = c.req.valid('json');
+    const [existing] = await db.select().from(driverPayout).where(eq(driverPayout.id, id));
+    if (!existing) return c.json({ error: 'Not found' }, 404);
+    const paid = await markDriverPayoutPaid(id, body.ref);
+    if (!paid) return c.json({ error: 'Payout is not held or due' }, 400);
+    return c.json(paid, 200);
   });
 
 /**

@@ -9,7 +9,8 @@ export type LedgerAccount =
   | 'processor_clearing'
   | 'revenue'
   | 'tax_payable'
-  | 'refunds';
+  | 'refunds'
+  | 'driver_payable';
 
 export type LedgerLine = {
   account: LedgerAccount;
@@ -54,12 +55,15 @@ export async function postLedger(
   );
 }
 
-export function issueLines(subtotalCents: number, taxCents: number): LedgerLine[] {
-  const total = subtotalCents + taxCents;
+export function issueLines(commissionCents: number, fareCents: number, taxCents: number): LedgerLine[] {
+  const total = commissionCents + fareCents + taxCents;
   const lines: LedgerLine[] = [
     { account: 'accounts_receivable', direction: 'debit', amountCents: total },
-    { account: 'revenue', direction: 'credit', amountCents: subtotalCents },
+    { account: 'revenue', direction: 'credit', amountCents: commissionCents },
   ];
+  if (fareCents > 0) {
+    lines.push({ account: 'driver_payable', direction: 'credit', amountCents: fareCents });
+  }
   if (taxCents > 0) {
     lines.push({ account: 'tax_payable', direction: 'credit', amountCents: taxCents });
   }
@@ -73,14 +77,25 @@ export function payLines(totalCents: number): LedgerLine[] {
   ];
 }
 
-export function refundLines(subtotalCents: number, taxCents: number): LedgerLine[] {
-  const total = subtotalCents + taxCents;
+export function refundLines(commissionCents: number, fareCents: number, taxCents: number): LedgerLine[] {
+  const total = commissionCents + fareCents + taxCents;
   const lines: LedgerLine[] = [
-    { account: 'revenue', direction: 'debit', amountCents: subtotalCents },
+    { account: 'revenue', direction: 'debit', amountCents: commissionCents },
     { account: 'processor_clearing', direction: 'credit', amountCents: total },
   ];
+  if (fareCents > 0) {
+    lines.push({ account: 'driver_payable', direction: 'debit', amountCents: fareCents });
+  }
   if (taxCents > 0) {
     lines.push({ account: 'tax_payable', direction: 'debit', amountCents: taxCents });
   }
   return lines;
+}
+
+/** Passenger cancel of a paid card booking — fare back, commission kept. */
+export function fareRefundLines(fareCents: number): LedgerLine[] {
+  return [
+    { account: 'driver_payable', direction: 'debit', amountCents: fareCents },
+    { account: 'processor_clearing', direction: 'credit', amountCents: fareCents },
+  ];
 }

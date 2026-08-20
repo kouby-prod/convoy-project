@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookingMessages } from '@/components/trajets/booking-messages';
+import { BookingStatusBadge } from '@/components/trajets/booking-status-badge';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -94,6 +95,7 @@ export function TrajetBookings({
   departureDateTime: string;
 }) {
   const t = useTranslations('Trajets');
+  const tRide = useTranslations('Trajet');
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [openReviewId, setOpenReviewId] = useState<string | null>(null);
@@ -146,15 +148,20 @@ export function TrajetBookings({
           <p className="text-sm text-muted-foreground">{t('bookings.empty')}</p>
         ) : (
           data.items.map((booking) => (
-            <div key={booking.id} className="grid gap-3 rounded-md border p-3 text-sm">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div>
-                    <strong className="text-foreground">{t('bookings.seats')}:</strong>{' '}
-                    {booking.seats}
+            <div key={booking.id} className="grid gap-3 rounded-md border border-border bg-background/60 p-3 text-sm">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="grid gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-foreground">
+                      {[booking.firstName, booking.lastName].filter(Boolean).join(' ') || t('bookings.passenger')}
+                    </span>
+                    <BookingStatusBadge status={booking.status} />
                   </div>
                   <div className="text-muted-foreground">
-                    {t(`bookings.status.${booking.status}`)}
+                    <strong className="text-foreground">{t('bookings.seats')}:</strong> {booking.seats}
+                    {' · '}
+                    <strong className="text-foreground">{t('bookings.method')}:</strong>{' '}
+                    {tRide(`paymentMethods.${booking.paymentMethod}`)}
                   </div>
                 </div>
 

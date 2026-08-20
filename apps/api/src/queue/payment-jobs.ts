@@ -31,6 +31,11 @@ function getEventQueue(): Queue<PaymentEventJob> {
   return eventQueue;
 }
 
+/** BullMQ custom job IDs cannot contain `:`. */
+export function paymentEventJobId(provider: PaymentEventJob['provider'], eventId: string): string {
+  return `${provider}__${eventId}`;
+}
+
 function getReconcileQueue(): Queue {
   if (!reconcileQueue) {
     reconcileQueue = new Queue(PAYMENT_RECONCILE_QUEUE, {
@@ -47,7 +52,7 @@ function getReconcileQueue(): Queue {
 }
 
 export async function enqueuePaymentEvent(job: PaymentEventJob): Promise<void> {
-  await getEventQueue().add('event', job, { jobId: `${job.provider}:${job.eventId}` });
+  await getEventQueue().add('event', job, { jobId: paymentEventJobId(job.provider, job.eventId) });
 }
 
 export async function schedulePaymentReconcile(): Promise<void> {
@@ -55,6 +60,11 @@ export async function schedulePaymentReconcile(): Promise<void> {
     'payment-reconcile-daily',
     { pattern: '0 6 * * *' },
     { name: 'daily', data: {} },
+  );
+  await getReconcileQueue().upsertJobScheduler(
+    'driver-payout-release-hourly',
+    { pattern: '15 * * * *' },
+    { name: 'payout-release', data: {} },
   );
 }
 

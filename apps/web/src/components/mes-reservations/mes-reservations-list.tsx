@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { createApiClient } from '@carpool/api-client';
+import { COMMISSION_AMOUNT_CENTS, type RidePaymentMethod } from '@carpool/schemas';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
@@ -11,6 +12,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookingMessages } from '@/components/trajets/booking-messages';
+import { BookingStatusBadge } from '@/components/trajets/booking-status-badge';
 import { cn } from '@/lib/utils';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
@@ -90,6 +92,10 @@ function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSubmitted
   );
 }
 
+function amountDueCents(paymentMethod: RidePaymentMethod, fareCents: number) {
+  return paymentMethod === 'card' ? fareCents + COMMISSION_AMOUNT_CENTS : COMMISSION_AMOUNT_CENTS;
+}
+
 /**
  * Passenger's own bookings (`GET /me/bookings`), with a cancel action for
  * `pending`/`confirmed` bookings. This is what makes cancellation usable
@@ -97,7 +103,8 @@ function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSubmitted
  */
 export function MesReservationsList() {
   const t = useTranslations('MesReservations');
-  const tStatus = useTranslations('Trajets');
+  const tRide = useTranslations('Trajet');
+  const format = useFormatter();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
@@ -144,10 +151,11 @@ export function MesReservationsList() {
           <li key={item.id}>
             <Card>
               <CardHeader>
-                <CardTitle>
+                <CardTitle className="flex flex-wrap items-center gap-2">
                   <Link href={`/trajet/${item.trajetId}`} className="hover:underline">
                     {item.trajet.departureCity} - {item.trajet.destinationCity}
                   </Link>
+                  <BookingStatusBadge status={item.status} />
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-2 px-6 pb-6 pt-0 text-sm text-muted-foreground">
@@ -159,9 +167,19 @@ export function MesReservationsList() {
                   <strong className="text-foreground">{t('seats')}:</strong> {item.seats}
                 </div>
                 <div>
-                  <strong className="text-foreground">{t('status')}:</strong>{' '}
-                  {tStatus(`bookings.status.${item.status}`)}
+                  <strong className="text-foreground">{t('method')}:</strong>{' '}
+                  {tRide(`paymentMethods.${item.paymentMethod}`)}
                 </div>
+                {item.status === 'awaiting_payment' ? (
+                  <div>
+                    <strong className="text-foreground">{t('amountDue')}:</strong>{' '}
+                    {format.number(amountDueCents(item.paymentMethod, item.fareCents) / 100, {
+                      style: 'currency',
+                      currency: 'CAD',
+                    })}
+                  </div>
+                ) : null}
+                <div className="flex flex-wrap gap-2 pt-1">
                 {item.status === 'pending' || item.status === 'awaiting_payment' || item.status === 'confirmed' ? (
                   <Button
                     size="sm"
@@ -175,7 +193,7 @@ export function MesReservationsList() {
                 ) : null}
                 {item.status === 'awaiting_payment' ? (
                   <Link href={`/paiement/${item.id}`} className={cn(buttonVariants({ size: 'sm' }), 'w-fit')}>
-                    {t('pay')}
+                    {item.paymentMethod === 'card' ? t('payCard') : t('pay')}
                   </Link>
                 ) : null}
                 {item.status === 'awaiting_payment' || item.status === 'confirmed' ? (
@@ -186,6 +204,15 @@ export function MesReservationsList() {
                     {t('invoice')}
                   </Link>
                 ) : null}
+                {item.status === 'awaiting_payment' || item.status === 'confirmed' || item.status === 'pending' ? (
+                  <Link
+                    href={`/messages/${item.id}`}
+                    className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'w-fit')}
+                  >
+                    {t('messages')}
+                  </Link>
+                ) : null}
+                </div>
                 {item.status === 'confirmed' && new Date(item.trajet.departureDateTime) < new Date() ? (
                   reviewedIds.has(item.id) ? (
                     <p className="text-sm text-muted-foreground">{t('review.success')}</p>

@@ -11,17 +11,26 @@ export function currentTaxMode(): TaxMode {
   return env.TAX_MODE;
 }
 
+export function fareCentsFromPrice(pricePerSeat: string | number, seats: number): number {
+  return Math.round(Number(pricePerSeat) * 100) * seats;
+}
+
 /**
- * Split the 5 CAD commission into subtotal + tax according to TAX_MODE.
- * Rates are applied on the commission, then rounded to the nearest cent.
+ * Split commission (+ optional ride fare) according to TAX_MODE.
+ * Tax is applied on the commission only — the fare is a pass-through.
  */
-export function computeInvoiceAmounts(mode: TaxMode = currentTaxMode()): {
+export function computeInvoiceAmounts(
+  fareCents = 0,
+  mode: TaxMode = currentTaxMode(),
+): {
+  fareCents: number;
+  commissionCents: number;
   subtotalCents: number;
   taxLines: TaxLine[];
   taxCents: number;
   totalCents: number;
 } {
-  const subtotalCents = COMMISSION_AMOUNT_CENTS;
+  const commissionCents = COMMISSION_AMOUNT_CENTS;
   const taxLines: TaxLine[] = [];
 
   if (mode === 'gst' || mode === 'gst_qst') {
@@ -29,7 +38,7 @@ export function computeInvoiceAmounts(mode: TaxMode = currentTaxMode()): {
       code: 'gst',
       label: 'GST',
       rate: GST_RATE,
-      amountCents: Math.round(subtotalCents * GST_RATE),
+      amountCents: Math.round(commissionCents * GST_RATE),
     });
   }
   if (mode === 'gst_qst') {
@@ -37,10 +46,18 @@ export function computeInvoiceAmounts(mode: TaxMode = currentTaxMode()): {
       code: 'qst',
       label: 'QST',
       rate: QST_RATE,
-      amountCents: Math.round(subtotalCents * QST_RATE),
+      amountCents: Math.round(commissionCents * QST_RATE),
     });
   }
 
   const taxCents = taxLines.reduce((sum, line) => sum + line.amountCents, 0);
-  return { subtotalCents, taxLines, taxCents, totalCents: subtotalCents + taxCents };
+  const subtotalCents = commissionCents + fareCents;
+  return {
+    fareCents,
+    commissionCents,
+    subtotalCents,
+    taxLines,
+    taxCents,
+    totalCents: subtotalCents + taxCents,
+  };
 }

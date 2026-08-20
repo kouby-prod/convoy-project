@@ -38,6 +38,8 @@ export const trajet = pgTable('trajet', {
   baggageAllowance: text('baggage_allowance'),
   /** Advertised options, stored as the `TrajetAmenity` string values. */
   amenities: text('amenities').array().notNull().default([]),
+  /** Fare settlement methods the driver accepts: card, interac, cash. */
+  paymentMethods: text('payment_methods').array().notNull().default(['card', 'interac', 'cash']),
   hasIntermediateStop: boolean('has_intermediate_stop').notNull().default(false),
   cancelledAt: timestamp('cancelled_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -52,6 +54,8 @@ export const booking = pgTable(
     passengerId: text('passenger_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
     seats: integer('seats').notNull(),
     status: text('status').notNull(),
+    paymentMethod: text('payment_method').notNull().default('cash'),
+    fareCents: integer('fare_cents').notNull().default(0),
     /** Contact details as typed on the ride detail form. The passenger identity
         is `passengerId`; these are what the driver is shown. */
     firstName: text('first_name'),
@@ -68,6 +72,10 @@ export const booking = pgTable(
     check(
       'booking_status_check',
       sql`${t.status} in ('pending', 'awaiting_payment', 'confirmed', 'rejected', 'cancelled', 'expired')`,
+    ),
+    check(
+      'booking_payment_method_check',
+      sql`${t.paymentMethod} in ('card', 'interac', 'cash')`,
     ),
   ],
 );

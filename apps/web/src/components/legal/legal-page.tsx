@@ -16,7 +16,7 @@ export function LegalPage({
   sections,
 }: {
   title: string;
-  disclaimer: string;
+  disclaimer?: string;
   lastUpdated: string;
   sections: LegalSection[];
 }) {
@@ -27,9 +27,11 @@ export function LegalPage({
         <p className="text-sm text-muted-foreground">{lastUpdated}</p>
       </div>
 
-      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-        {disclaimer}
-      </div>
+      {disclaimer ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          {disclaimer}
+        </div>
+      ) : null}
 
       <div className="grid max-w-3xl gap-6">
         {sections.map((section) => (

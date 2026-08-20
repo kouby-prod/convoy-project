@@ -176,7 +176,7 @@
   "Cgv": {
     "title": "Terms of Sale",
     "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Kouby charges a 5 CAD booking commission, payable online by card (Stripe) or PayPal after the driver accepts. The ride fare is settled off-platform, directly with the driver.",
+    "disclaimer": "Kouby charges a 5 CAD booking commission, payable online by card (Stripe) or PayPal after the driver accepts. If you pay the ride fare by card through Kouby, that fare is collected with the commission and paid out to the driver after the trip. Interac and cash fares are settled directly with the driver.",
     "sections": [
       {
         "heading": "1. Purpose",
@@ -196,7 +196,7 @@
       },
       {
         "heading": "4. Booking process",
-        "body": "1. The passenger selects a trip offered by a driver.\n2. They confirm their booking through the platform.\n3. They pay the 5 CAD commission.\n4. The booking is considered firm and final once payment is confirmed."
+        "body": "1. The passenger selects a trip and a payment method the driver accepts (card, Interac, or cash).\n2. They confirm their booking through the platform.\n3. They pay Kouby online: 5 CAD commission only (Interac/cash), or the ride fare plus 5 CAD (card).\n4. The booking is considered firm and final once that payment is confirmed."
       },
       {
         "heading": "5.1 Payment methods",
@@ -208,11 +208,11 @@
       },
       {
         "heading": "6.1 General principle",
-        "body": "• The booking commission is non-refundable once the booking is confirmed."
+        "body": "• The booking commission is non-refundable once the booking is confirmed.\n• If the passenger cancels a confirmed card booking, Kouby refunds the ride fare and keeps the 5 CAD commission."
       },
       {
         "heading": "6.2 Exception — Cancellation by the driver",
-        "body": "If the driver cancels the trip:\n• the passenger may receive a refund of the 5 CAD commission,\n• or an alternative solution offered by the driver."
+        "body": "If the driver cancels the trip:\n• the passenger may receive a refund of the amount paid to Kouby (commission, and the ride fare when it was collected by card),\n• or an alternative solution offered by the driver."
       },
       {
         "heading": "7. Driver obligations affecting the sale",
@@ -622,6 +622,9 @@
       "title": "Book a seat",
       "seatsLabel": "Number of seats",
       "estimatedTotal": "Estimated total: {amount}",
+      "methodLabel": "How will you pay the driver?",
+      "estimatedCard": "You pay {fare} + {commission} to Kouby (fare is paid out to the driver after the trip).",
+      "estimatedOffPlatform": "You pay {commission} to Kouby, then {fare} directly to the driver (Interac or cash).",
       "submit": "Book",
       "submitting": "Booking...",
       "success": "Your booking request has been sent to the driver.",
@@ -632,6 +635,7 @@
       "cancelling": "Cancelling...",
       "cancelledNotice": "Your booking has been cancelled.",
       "pay": "Pay the 5 CAD commission",
+      "payCard": "Pay now",
       "invoice": "View invoice",
       "errors": {
         "generic": "Unable to complete the booking. Please try again.",
@@ -644,6 +648,8 @@
       "empty": "No booking requests for this ride.",
       "error": "Unable to load bookings.",
       "seats": "Seats requested",
+      "passenger": "Passenger",
+      "method": "Payment",
       "accept": "Accept",
       "reject": "Reject",
       "actionError": "Unable to update this booking.",
@@ -761,7 +767,11 @@
     "cancelling": "Cancelling...",
     "cancelError": "Unable to cancel this booking. Please try again.",
     "pay": "Pay the commission",
+    "payCard": "Pay now",
     "invoice": "View invoice",
+    "method": "Payment",
+    "amountDue": "Amount due",
+    "messages": "Messages",
     "review": {
       "cta": "Rate this ride",
       "ratingLabel": "Rating",
@@ -795,7 +805,8 @@
     "tabs": {
       "label": "Backoffice views",
       "queue": "Documents",
-      "users": "Accounts"
+      "users": "Accounts",
+      "payouts": "Payouts"
     },
     "filters": {
       "status": "Status",
@@ -837,6 +848,31 @@
       "admin": "Admin",
       "driver": "Driver",
       "verification": "Verification"
+    },
+    "payouts": {
+      "loading": "Loading payouts…",
+      "error": "Could not load payouts.",
+      "empty": "No payout matches this filter.",
+      "amount": "Amount",
+      "status": "Status",
+      "dueAt": "Due",
+      "booking": "Booking",
+      "action": "Action",
+      "markPaid": "Mark paid",
+      "refPlaceholder": "Transfer ref",
+      "statusFilter": {
+        "all": "All",
+        "held": "Held",
+        "due": "Due",
+        "paid": "Paid",
+        "cancelled": "Cancelled"
+      },
+      "statusValue": {
+        "held": "Held",
+        "due": "Due",
+        "paid": "Paid",
+        "cancelled": "Cancelled"
+      }
     }
   },
   "Documents": {
@@ -965,6 +1001,11 @@
       "bikeRack": "Bike rack",
       "cardPayment": "Card payment"
     },
+    "paymentMethods": {
+      "card": "Card (via Kouby)",
+      "interac": "Interac (direct)",
+      "cash": "Cash (direct)"
+    },
     "filters": {
       "title": "Search",
       "from": "Departure city",
@@ -1042,21 +1083,38 @@
       "failed": "Publishing failed. Please try again later.",
       "invalid": "Please check the form fields.",
       "baggage": "Baggage",
-      "baggagePlaceholder": "E.g. one cabin bag per person"
+      "baggagePlaceholder": "E.g. one cabin bag per person",
+      "paymentMethods": "Accepted payment methods",
+      "paymentMethodsHint": "Choose at least one. Card collects the fare through Kouby; Interac and cash are settled with you directly."
     }
   },
   "Paiement": {
-    "title": "Commission payment",
-    "subtitle": "Pay the Kouby booking commission (5 CAD) to confirm your seat. The ride fare is paid directly to the driver.",
+    "title": "Kouby payment",
+    "subtitle": "Pay Kouby to confirm your seat. Card bookings include the ride fare; Interac and cash pay only the 5 CAD commission, then settle the fare with the driver.",
     "loading": "Loading payment…",
     "empty": "No invoice is attached to this booking.",
     "error": "Unable to load payment. Please try again later.",
     "payTitle": "Pay now",
     "paidTitle": "Payment received",
     "paidBody": "Your booking is confirmed. Keep your invoice.",
+    "confirmingTitle": "Confirming payment",
+    "confirming": "Your card payment succeeded. We are waiting for Kouby to confirm the invoice — this usually takes a few seconds.",
+    "confirmingRetry": "Check again",
+    "waitingDriver": "The driver has not accepted yet. You will pay here once they accept your request.",
+    "backToBookings": "My bookings",
+    "viewTrip": "View the ride",
+    "openMessages": "Open messages",
+    "tripLabel": "Ride",
+    "seatsOnTrip": "{count, plural, one {# seat} other {# seats}}",
+    "methodLabel": "Payment method",
+    "stepRequest": "Request",
+    "stepPay": "Pay Kouby",
+    "stepConfirmed": "Confirmed",
+    "failedBody": "The previous card attempt failed. You can try again with the same or another card.",
     "amountLabel": "Amount due",
     "statusLabel": "Status",
     "payCta": "Pay by card",
+    "payCtaAmount": "Pay {amount}",
     "paying": "Paying…",
     "stripeTitle": "Card (Stripe)",
     "stripeLoading": "Preparing card payment…",
@@ -1067,20 +1125,26 @@
     "captureError": "PayPal capture failed.",
     "unavailable": "No payment method is configured yet.",
     "disclaimer": "By paying, you accept the terms of sale. The commission is not refundable once the booking is confirmed, except if the driver cancels the trip.",
+    "disclaimerCard": "By paying, you accept the terms of sale. This charge includes the ride fare plus the 5 CAD commission. If you cancel after confirmation, only the fare is refunded. If the driver cancels, the full amount is refunded.",
+    "disclaimerOffPlatform": "By paying, you accept the terms of sale. This charge is the 5 CAD Kouby commission only — pay the ride fare directly to the driver. The commission is not refundable once confirmed, except if the driver cancels.",
     "cgvLink": "Read the terms of sale"
   },
   "Facture": {
     "title": "Invoice",
-    "subtitle": "Kouby document — the ride fare is not included.",
+    "subtitle": "Kouby invoice — commission, plus the ride fare when you paid by card.",
     "loading": "Loading invoice…",
     "empty": "No invoice.",
     "error": "Unable to load the invoice.",
     "number": "Number",
     "buyer": "Bill to",
-    "line": "Line",
+    "due": "Due",
+    "issued": "Issued",
+    "line": "Line items",
     "commissionLine": "Kouby booking commission",
+    "fareLine": "Ride fare",
     "total": "Total",
     "fareNote": "The ride fare is paid directly to the driver and is not on this invoice.",
+    "fareNoteCard": "The ride fare is collected by Kouby and paid out to the driver after the trip.",
     "downloadPdf": "Download PDF",
     "downloading": "Downloading…",
     "viewHtml": "Printable version",
@@ -1091,5 +1155,115 @@
       "paid": "Paid",
       "voided": "Voided"
     }
+  },
+  "Responsibility": {
+    "title": "Responsibility charter",
+    "lastUpdated": "How Kouby and its users share responsibility.",
+    "sections": [
+      {
+        "heading": "Kouby's role",
+        "body": "Kouby is a technical intermediary. We connect drivers and passengers, take bookings, and collect the platform commission. We are not a carrier and we do not operate the trip."
+      },
+      {
+        "heading": "Drivers",
+        "body": "The driver is solely responsible for the trip: a valid licence, insurance, a roadworthy vehicle, and compliance with the highway safety code of the province of travel."
+      },
+      {
+        "heading": "Passengers",
+        "body": "Passengers are responsible for arriving on time, paying according to the chosen method, and following the conditions of the listing."
+      },
+      {
+        "heading": "Related documents",
+        "body": "See also the terms of use, the terms of sale, and the driver agreement."
+      }
+    ]
+  },
+  "BecomeDriver": {
+    "title": "How to become a driver",
+    "lastUpdated": "Publish a trip on Kouby in a few steps.",
+    "sections": [
+      {
+        "heading": "1. Create an account",
+        "body": "Sign up with your email, then complete your profile. Drivers must also send identity and vehicle documents from My documents so we can verify them."
+      },
+      {
+        "heading": "2. Publish a trip",
+        "body": "From Publish a trip, enter the route, date, seats, price per seat, and which payment methods you accept (card, Interac, cash)."
+      },
+      {
+        "heading": "3. Accept bookings",
+        "body": "When a passenger requests a seat, accept or reject from My trips. Accepting issues the Kouby invoice and asks the passenger to pay."
+      },
+      {
+        "heading": "4. After the trip",
+        "body": "If the passenger paid by card, Kouby holds the fare and pays it out after departure. Interac and cash fares are settled directly with you; Kouby only keeps the 5 CAD commission."
+      }
+    ]
+  },
+  "BecomePassenger": {
+    "title": "How to become a passenger",
+    "lastUpdated": "Book a seat on Kouby in a few steps.",
+    "sections": [
+      {
+        "heading": "1. Create an account",
+        "body": "Sign up with your email, then search for a trip by city and date."
+      },
+      {
+        "heading": "2. Book a seat",
+        "body": "Choose how you will pay the driver: card (fare + 5 CAD commission to Kouby), Interac, or cash (5 CAD commission to Kouby, fare paid to the driver)."
+      },
+      {
+        "heading": "3. Pay after acceptance",
+        "body": "When the driver accepts, you receive an invoice. Pay it to confirm your seat. Card payments include the fare; Interac and cash pay only the commission."
+      },
+      {
+        "heading": "4. Travel",
+        "body": "Meet at the pickup point on time. After the trip you can rate the driver from My bookings."
+      }
+    ]
+  },
+  "PassengerTips": {
+    "title": "Tips for passengers",
+    "lastUpdated": "Travel more comfortably and safely.",
+    "sections": [
+      {
+        "heading": "Book early",
+        "body": "Popular routes fill up. Send your request with the right number of seats and a payment method the driver already accepts."
+      },
+      {
+        "heading": "Pay on time",
+        "body": "A booking stays awaiting payment until the invoice is paid. Unpaid requests expire and the seats go back to other passengers."
+      },
+      {
+        "heading": "Stay reachable",
+        "body": "Use the booking messages to confirm the meeting point. Arrive a few minutes early and keep a charged phone."
+      },
+      {
+        "heading": "If plans change",
+        "body": "Cancel from My bookings as soon as you know. After confirmation, only the fare is refunded on a card booking; the commission is kept unless the driver cancels."
+      }
+    ]
+  },
+  "DriverTips": {
+    "title": "Tips for drivers",
+    "lastUpdated": "Publish trips that fill and run smoothly.",
+    "sections": [
+      {
+        "heading": "Be accurate",
+        "body": "List the real pickup and drop-off, the true departure time, and only the seats you can actually offer."
+      },
+      {
+        "heading": "Offer the right payment methods",
+        "body": "Card lets Kouby collect the fare and pay you after the trip. Interac and cash mean passengers settle the fare with you directly and only pay the 5 CAD commission on the platform."
+      },
+      {
+        "heading": "Answer quickly",
+        "body": "Pending requests expire. Accept or reject soon so passengers are not left waiting, and keep documents up to date in My documents."
+      },
+      {
+        "heading": "If you must cancel",
+        "body": "Cancel from My trips as early as you can. Kouby refunds the passenger according to the terms of sale."
+      }
+    ]
   }
 }

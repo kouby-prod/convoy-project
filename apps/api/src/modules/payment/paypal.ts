@@ -138,11 +138,26 @@ export async function capturePayPalOrder(orderId: string, invoiceId: string): Pr
   return retrievePayPalOrder(orderId);
 }
 
-export async function refundPayPalCapture(captureId: string, invoiceId: string, creditNoteId: string): Promise<void> {
+export async function refundPayPalCapture(
+  captureId: string,
+  invoiceId: string,
+  creditNoteId: string,
+  amountCents?: number,
+  currency = 'cad',
+): Promise<void> {
+  const body =
+    amountCents !== undefined
+      ? JSON.stringify({
+          amount: {
+            currency_code: currency.toUpperCase(),
+            value: (amountCents / 100).toFixed(2),
+          },
+        })
+      : '{}';
   const res = await paypalFetch(`/v2/payments/captures/${captureId}/refund`, {
     method: 'POST',
     requestId: paypalRequestId(invoiceId, 'refund', creditNoteId),
-    body: '{}',
+    body,
   });
   if (!res.ok && res.status !== 422) {
     throw new Error(`PayPal refund failed (${res.status})`);

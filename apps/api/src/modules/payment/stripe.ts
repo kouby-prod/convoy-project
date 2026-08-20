@@ -71,8 +71,18 @@ export async function cancelStripePaymentIntent(id: string): Promise<void> {
   }
 }
 
-export async function refundStripePaymentIntent(paymentIntentId: string, idempotencyKey: string): Promise<void> {
-  await stripe().refunds.create({ payment_intent: paymentIntentId }, { idempotencyKey });
+export async function refundStripePaymentIntent(
+  paymentIntentId: string,
+  idempotencyKey: string,
+  amountCents?: number,
+): Promise<void> {
+  await stripe().refunds.create(
+    {
+      payment_intent: paymentIntentId,
+      ...(amountCents !== undefined ? { amount: amountCents } : {}),
+    },
+    { idempotencyKey },
+  );
 }
 
 export function constructStripeEvent(rawBody: string, signature: string): Stripe.Event {

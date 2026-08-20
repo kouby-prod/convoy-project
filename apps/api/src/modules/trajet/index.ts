@@ -43,9 +43,11 @@ import {
   issueInvoiceForBooking,
   voidIssuedInvoiceForBooking,
   refundPaidBooking,
+  refundFareOnlyForBooking,
   expireUnpaidBookings,
   cancelOpenPaymentsForBooking,
 } from '../payment/booking-hooks';
+import { fareCentsFromPrice } from '../payment/tax';
 import { cancelStripePaymentIntent } from '../payment/stripe';
 import { renderInvoicePdf } from '../payment/pdf';
 import { smtpEmailSender } from '../../auth/email';
@@ -112,6 +114,14 @@ async function sweepBookingHolds(
   return {
     seatsAvailable: unpaid.seatsAvailable,
     expired: [...pending.expired, ...unpaid.expired],
+  };
+}
+
+function namesFromAccount(name: string): { firstName: string | null; lastName: string | null } {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] ?? null,
+    lastName: parts.length > 1 ? parts.slice(1).join(' ') : null,
   };
 }
 
@@ -335,6 +345,7 @@ export const trajetModule = app
         comfort: body.comfort ?? null,
         baggageAllowance: body.baggageAllowance ?? null,
         amenities: body.amenities ?? [],
+        paymentMethods: body.paymentMethods,
         hasIntermediateStop: body.hasIntermediateStop ?? false,
       })
       .returning();
@@ -399,6 +410,7 @@ export const trajetModule = app
             arrivalAt: body.arrivalDateTime ? new Date(body.arrivalDateTime) : null,
           }),
           ...(body.amenities !== undefined && { amenities: body.amenities }),
+          ...(body.paymentMethods !== undefined && { paymentMethods: body.paymentMethods }),
           ...(body.hasIntermediateStop !== undefined && { hasIntermediateStop: body.hasIntermediateStop }),
         })
         .where(eq(trajet.id, id))
@@ -499,7 +511,7 @@ export const trajetModule = app
   .openapi(bookTrajetRoute, async (c) => {
     const { user } = getAuth(c);
     const { id } = c.req.valid('param');
-    const { seats, firstName, lastName, email, phone, message } = c.req.valid('json');
+    const { seats, paymentMethod, firstName, lastName, email, phone, message } = c.req.valid('json');
 
     let expiredBookings: ExpiredBooking[] = [];
     let trip: { departureCity: string; arrivalCity: string; departureAt: Date } | undefined;
@@ -514,6 +526,14 @@ export const trajetModule = app
       if (row.driverId === user.id) {
         return { ok: false as const, status: 403 as const, error: 'Cannot book your own trajet' };
       }
+      const offered = row.paymentMethods ?? [];
+      if (!offered.includes(paymentMethod)) {
+        return {
+          ok: false as const,
+          status: 400 as const,
+          error: 'This ride does not accept that payment method',
+        };
+      }
 
       const sweep = await sweepBookingHolds(tx, id, row.seatsAvailable);
       expiredBookings = sweep.expired;
@@ -521,6 +541,7 @@ export const trajetModule = app
         return { ok: false as const, status: 400 as const, error: 'Not enough seats available' };
       }
 
+      const fromAccount = namesFromAccount(user.name);
       const [created] = await tx
         .insert(booking)
         .values({
@@ -531,9 +552,11 @@ export const trajetModule = app
           // Seats are held immediately (below) so a booking always starts
           // `pending` — the driver still has to accept or reject it.
           status: 'pending',
-          firstName: firstName ?? null,
-          lastName: lastName ?? null,
-          email: email ?? null,
+          paymentMethod,
+          fareCents: fareCentsFromPrice(row.pricePerSeat, seats),
+          firstName: firstName ?? fromAccount.firstName,
+          lastName: lastName ?? fromAccount.lastName,
+          email: email ?? user.email ?? null,
           phone: phone ?? null,
           message: message ?? null,
         })
@@ -670,7 +693,7 @@ export const trajetModule = app
       }
       await notifyUser(
         result.passengerId,
-        'Pay the 5 CAD Kouby commission to confirm your booking',
+        'Pay Kouby to confirm your booking',
         `The driver accepted your request for the trip from ${describeTrip(result)}. Pay invoice ${invoiceNumber ?? ''} to confirm: ${paymentUrl(result.booking.id)}`,
         attachments,
       );
@@ -724,9 +747,12 @@ export const trajetModule = app
       if (!updated) throw new Error('Update returned no row');
 
       let openAttempts: Array<{ provider: 'stripe' | 'paypal'; providerPaymentId: string }> = [];
+      let refundFare = false;
       if (bookingRow.status === 'awaiting_payment') {
         await voidIssuedInvoiceForBooking(tx, bookingRow.id);
         openAttempts = await cancelOpenPaymentsForBooking(tx, bookingRow.id);
+      } else if (bookingRow.status === 'confirmed' && bookingRow.paymentMethod === 'card' && bookingRow.fareCents > 0) {
+        refundFare = true;
       }
 
       // Pending, awaiting_payment and confirmed all hold seats.
@@ -744,6 +770,7 @@ export const trajetModule = app
         arrivalCity: trajetRow.arrivalCity,
         departureAt: trajetRow.departureAt,
         openAttempts,
+        refundFare,
       };
     });
 
@@ -754,6 +781,11 @@ export const trajetModule = app
       if (attempt.provider === 'stripe') {
         void cancelStripePaymentIntent(attempt.providerPaymentId);
       }
+    }
+    if (result.refundFare) {
+      await refundFareOnlyForBooking(result.booking.id).catch((err: unknown) => {
+        console.error(`Failed to refund fare for booking ${result.booking.id}`, err);
+      });
     }
     await notifyUser(
       result.driverId,
@@ -787,6 +819,8 @@ export const trajetModule = app
         passengerId: booking.passengerId,
         seats: booking.seats,
         status: booking.status,
+        paymentMethod: booking.paymentMethod,
+        fareCents: booking.fareCents,
         firstName: booking.firstName,
         lastName: booking.lastName,
         email: booking.email,
@@ -889,7 +923,8 @@ function serialize(row: typeof trajet.$inferSelect, driver: DriverProfile): Traj
     description: row.description,
     comfort: row.comfort as Trajet['comfort'],
     baggageAllowance: row.baggageAllowance,
-    amenities: row.amenities as Trajet['amenities'],
+    amenities: (row.amenities ?? []) as Trajet['amenities'],
+    paymentMethods: (row.paymentMethods?.length ? row.paymentMethods : ['cash']) as Trajet['paymentMethods'],
     hasIntermediateStop: row.hasIntermediateStop,
     driver,
     cancelledAt: row.cancelledAt ? row.cancelledAt.toISOString() : null,
@@ -905,6 +940,8 @@ function serializeBooking(row: typeof booking.$inferSelect): Booking {
     passengerId: row.passengerId,
     seats: row.seats,
     status: row.status as Booking['status'],
+    paymentMethod: (row.paymentMethod ?? 'cash') as Booking['paymentMethod'],
+    fareCents: row.fareCents ?? 0,
     firstName: row.firstName,
     lastName: row.lastName,
     email: row.email,
@@ -922,6 +959,8 @@ function serializeBookingWithTrajet(row: {
   passengerId: string;
   seats: number;
   status: string;
+  paymentMethod: string;
+  fareCents: number;
   firstName: string | null;
   lastName: string | null;
   email: string | null;
@@ -940,6 +979,8 @@ function serializeBookingWithTrajet(row: {
     passengerId: row.passengerId,
     seats: row.seats,
     status: row.status as BookingWithTrajet['status'],
+    paymentMethod: (row.paymentMethod ?? 'cash') as BookingWithTrajet['paymentMethod'],
+    fareCents: row.fareCents ?? 0,
     firstName: row.firstName,
     lastName: row.lastName,
     email: row.email,

@@ -103,6 +103,11 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
             label={(amenity: TrajetAmenity) => t(`amenities.${amenity}`)}
             className="mt-5 justify-center"
           />
+          {trajet.paymentMethods.length > 0 ? (
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              {trajet.paymentMethods.map((method) => t(`paymentMethods.${method}`)).join(' · ')}
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 
