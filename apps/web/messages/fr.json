@@ -504,8 +504,10 @@
     "threadTitle": "Conversation",
     "threadSubtitle": "Coordonnez-vous en toute confiance autour de votre réservation.",
     "loading": "Chargement des messages...",
-    "empty": "Aucune conversation pour le moment. Les échanges liés à vos réservations et trajets apparaîtront ici.",
+    "empty": "Aucune conversation.",
+    "emptyCta": "Chercher un trajet",
     "error": "Impossible de charger les messages.",
+    "retry": "Réessayer",
     "show": "Messages",
     "hide": "Masquer les messages",
     "placeholder": "Écrire un message...",
@@ -522,12 +524,45 @@
     "counterpartUnknown": "Correspondant",
     "contextMissing": "Contexte du trajet indisponible — vous pouvez toujours échanger ici.",
     "threadEmpty": "Commencez la conversation pour vous coordonner sur ce trajet.",
+    "filterLabel": "Filtrer les conversations",
+    "filterAll": "Tous",
+    "filterPassenger": "Passager",
+    "filterDriver": "Conducteur",
+    "selectThread": "Choisissez une conversation.",
+    "tripsCount": "{count, plural, one {# trajet} other {# trajets}}",
+    "tripSwitcher": "Trajets avec cette personne",
+    "tripOption": "{date} · {route} · {status}",
+    "tripGroupUpcoming": "À venir",
+    "tripGroupPast": "Passés",
+    "sendHint": "Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne.",
+    "day": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier"
+    },
     "live": "En direct",
     "reconnecting": "Reconnexion…",
     "offline": "Actualisation périodique",
     "role": {
       "passenger": "Conducteur",
       "driver": "Passager"
+    },
+    "quick": {
+      "here": "Je suis arrivé(e)",
+      "late": "5 min de retard"
+    },
+    "report": {
+      "cta": "Signaler",
+      "hint": "Kouby recevra ce signalement avec le trajet et pourra vous recontacter.",
+      "placeholder": "Décrivez le problème (optionnel)",
+      "submit": "Envoyer le signalement",
+      "sending": "Envoi…",
+      "cancel": "Annuler",
+      "success": "Signalement envoyé.",
+      "error": "Impossible d’envoyer le signalement. Réessayez.",
+      "needEmail": "Ajoutez un e-mail à votre compte pour signaler.",
+      "noReason": "Aucun détail fourni.",
+      "subject": "Signalement — conversation avec {name}",
+      "body": "Réservation {bookingId}\nTrajet {route}\nCorrespondant {name}\n\n{reason}"
     }
   },
   "Trajets": {
@@ -636,13 +671,22 @@
       "full": "Ce trajet est complet.",
       "signInPrompt": "Connectez-vous pour réserver une place sur ce trajet.",
       "signInLink": "Se connecter",
-      "cancel": "Annuler ma réservation",
-      "cancelling": "Annulation en cours...",
-      "cancelledNotice": "Votre réservation a été annulée.",
+      "cancel": "Annuler",
+      "cancelling": "Annulation…",
+      "cancelledNotice": "Réservation annulée.",
       "pay": "Payer {amount}",
       "payCard": "Payer {amount}",
-      "invoice": "Voir la facture",
-      "messages": "Écrire au conducteur",
+      "invoice": "Facture",
+      "messages": "Message",
+      "moreTitle": "Réserver plus de places",
+      "bookedSeats": "{count, plural, one {# place} other {# places}}",
+      "cancelConfirm": {
+        "pending": "Le conducteur sera prévenu.",
+        "awaiting_payment": "La place sera libérée. Vous ne serez pas facturé.",
+        "confirmed": "La place sera libérée. Un paiement déjà fait suit les conditions de vente.",
+        "submit": "Annuler",
+        "keep": "Garder"
+      },
       "methodCard": {
         "cardTitle": "Carte via Kouby",
         "cardPay": "Payer {amount} maintenant",
@@ -683,9 +727,10 @@
       "settleOffPlatform": "Si vous acceptez, le passager paie Kouby maintenant et vous doit encore le tarif ({method}).",
       "confirmCard": "Le passager devra payer {passenger}. Kouby conserve {driver} et vous verse après le départ.",
       "confirmOffPlatform": "Kouby prend {commission}. Vous encaissez {driver} auprès du passager.",
+      "payWindowLabel": "5 minutes pour payer",
       "payWindow": "Le passager a {remaining} pour payer",
       "payWindowExpired": "Le délai de paiement est passé. Cette place va être libérée.",
-      "payWindowOverdue": "Les 15 minutes sont écoulées. Ils peuvent encore payer ; cette place sera libérée sous peu.",
+      "payWindowOverdue": "Les 5 minutes sont écoulées. Ils peuvent encore payer ; cette place sera libérée sous peu.",
       "paymentFailed": "Leur carte a été refusée. Ils peuvent réessayer jusqu'à la libération de la place.",
       "paymentProcessing": "Paiement en cours. Actualisez dans un instant.",
       "declinedShort": "Refusé",
@@ -781,58 +826,101 @@
       "success": "Trajet publié avec succès!"
     }
   },
+  "TripWhen": {
+    "today": "Aujourd’hui",
+    "tomorrow": "Demain",
+    "yesterday": "Hier"
+  },
   "MesTrajets": {
     "title": "Mes trajets",
-    "subtitle": "Retrouvez les trajets que vous avez publiés et suivez les réservations.",
-    "loading": "Chargement de vos trajets...",
-    "empty": "Vous n'avez publié aucun trajet pour le moment.",
+    "subtitle": "Voyez qui attend une décision, combien de places restent, et ce qui est déjà parti.",
+    "post": "Annoncer un trajet",
+    "loading": "Chargement…",
+    "loadingMore": "Chargement…",
+    "loadMore": "Afficher plus",
+    "empty": "Aucun trajet publié.",
+    "emptyHint": "Publiez un trajet pour recevoir des demandes de réservation.",
+    "emptyCta": "Annoncer un trajet",
+    "emptyFilter": {
+      "upcoming": "Aucun trajet à venir.",
+      "past": "Aucun trajet passé.",
+      "cancelled": "Aucun trajet annulé."
+    },
     "error": "Impossible de charger vos trajets.",
-    "departureAt": "Départ",
-    "seats": "Places",
-    "price": "Prix",
+    "retry": "Réessayer",
+    "perSeat": "par place",
+    "occupancy": "{taken}/{total} places occupées",
+    "needsAction": "À traiter",
+    "pendingRequests": "{count, plural, one {# à traiter} other {# à traiter}}",
+    "awaitingPayment": "{count, plural, one {# en paiement} other {# en paiement}}",
     "cancelledBadge": "Annulé",
-    "pagination": {
-      "previous": "Précédent",
-      "next": "Suivant",
-      "page": "Page {page}"
+    "filters": {
+      "label": "Statut des trajets",
+      "upcoming": "À venir",
+      "past": "Passés",
+      "cancelled": "Annulés"
     }
   },
   "MesReservations": {
     "title": "Mes réservations",
-    "subtitle": "Retrouvez vos réservations et leur statut.",
-    "loading": "Chargement de vos réservations...",
-    "empty": "Vous n'avez aucune réservation pour le moment.",
+    "subtitle": "Payez quand une place est retenue, puis coordonnez le rendez-vous avec le conducteur.",
+    "loading": "Chargement…",
+    "loadingMore": "Chargement…",
+    "loadMore": "Afficher plus",
+    "empty": "Aucune réservation.",
+    "emptyHint": "Cherchez un trajet et réservez une place en quelques étapes.",
+    "emptyCta": "Chercher un trajet",
+    "emptyFilter": {
+      "action": "Rien à traiter.",
+      "upcoming": "Aucun trajet à venir.",
+      "past": "Aucune réservation passée."
+    },
+    "waitingDriver": "En attente du conducteur.",
+    "payGroup": "À payer",
+    "pendingGroup": "En attente",
     "error": "Impossible de charger vos réservations.",
-    "departureAt": "Départ",
+    "retry": "Réessayer",
     "seats": "Places réservées",
+    "seatsCount": "{count, plural, one {# place} other {# places}}",
+    "driverBy": "avec {name}",
     "status": "Statut",
-    "cancel": "Annuler ma réservation",
-    "cancelling": "Annulation en cours...",
-    "cancelError": "Impossible d'annuler cette réservation. Veuillez réessayer.",
+    "cancel": "Annuler",
+    "cancelling": "Annulation…",
+    "cancelError": "Impossible d’annuler. Réessayez.",
+    "cancelConfirm": {
+      "pending": "Le conducteur sera prévenu.",
+      "awaiting_payment": "La place sera libérée. Vous ne serez pas facturé.",
+      "confirmed": "La place sera libérée. Un paiement déjà fait suit les conditions de vente.",
+      "submit": "Annuler",
+      "keep": "Garder"
+    },
     "pay": "Payer {amount}",
     "payCard": "Payer {amount}",
-    "invoice": "Voir la facture",
+    "invoice": "Facture",
+    "findAnother": "Chercher un trajet",
     "method": "Paiement",
     "amountDue": "Montant dû",
     "due": "Payer avant",
     "dueExpired": "Le délai de paiement est passé. Cette place va être libérée.",
-    "dueOverdue": "Les 15 minutes sont écoulées — payez maintenant ou cette place sera libérée.",
+    "dueOverdue": "Délai dépassé — payez maintenant.",
     "stillOweDriver": "Il reste {amount} à payer au conducteur ({method}).",
-    "stillOweDriverHint": "Payez ce tarif directement au conducteur ({method}).",
-    "messages": "Messages",
+    "stillOweDriverHint": "{method} au conducteur",
+    "messages": "Message",
     "review": {
-      "cta": "Noter ce trajet",
+      "cta": "Noter",
       "ratingLabel": "Note",
+      "stars": "{count, plural, one {# étoile} other {# étoiles}}",
       "commentLabel": "Commentaire (optionnel)",
       "submit": "Envoyer",
-      "submitting": "Envoi en cours...",
-      "success": "Merci pour votre avis !",
-      "error": "Impossible d'envoyer votre avis. Veuillez réessayer."
+      "submitting": "Envoi…",
+      "success": "Avis envoyé.",
+      "error": "Impossible d’envoyer l’avis. Réessayez."
     },
-    "pagination": {
-      "previous": "Précédent",
-      "next": "Suivant",
-      "page": "Page {page}"
+    "filters": {
+      "label": "Statut des réservations",
+      "action": "À traiter",
+      "upcoming": "À venir",
+      "past": "Passés"
     }
   },
   "Admin": {
@@ -844,19 +932,36 @@
     "authCta": "Se connecter",
     "forbidden": "Cette page est réservée aux administrateurs.",
     "backHome": "Retour à l'accueil",
+    "retry": "Réessayer",
     "stats": {
-      "pending": "En attente",
+      "pending": "Documents à traiter",
       "approved": "Validés",
       "rejected": "Refusés",
       "users": "Comptes",
-      "incidents": "Incidents paiement"
+      "incidents": "Incidents paiement",
+      "awaitingPayment": "Réservations à payer",
+      "invoicesIssued": "Factures émises",
+      "upcoming": "Annonces à venir"
     },
     "tabs": {
       "label": "Vues du back-office",
       "queue": "Documents",
       "users": "Comptes",
+      "rides": "Annonces",
+      "bookings": "Réservations",
+      "payments": "Paiements",
       "payouts": "Versements",
       "incidents": "Incidents"
+    },
+    "paymentsSub": {
+      "label": "Vues paiement",
+      "invoices": "Factures",
+      "payouts": "Versements",
+      "incidents": "Incidents"
+    },
+    "nav": {
+      "work": "À traiter",
+      "registry": "Registre"
     },
     "filters": {
       "status": "Statut",
@@ -864,10 +969,17 @@
       "search": "Rechercher",
       "searchPlaceholder": "Nom ou e-mail du conducteur",
       "allStatuses": "Tous les statuts",
-      "allTypes": "Tous les types"
+      "allTypes": "Tous les types",
+      "from": "Du",
+      "to": "Au"
     },
     "queue": {
       "empty": "Aucun document ne correspond à ces filtres.",
+      "select": "Sélectionnez un document.",
+      "back": "File",
+      "next": "Suivant",
+      "previous": "Précédent",
+      "shortcut": "J et K pour parcourir la file.",
       "view": "Voir",
       "approve": "Valider",
       "reject": "Refuser",
@@ -897,7 +1009,71 @@
       "approved": "Validés",
       "admin": "Admin",
       "driver": "Conducteur",
-      "verification": "Vérification"
+      "verification": "Vérification",
+      "openDocuments": "Documents",
+      "rides": "Annonces",
+      "bookings": "Réservations",
+      "openRides": "Annonces",
+      "openBookings": "Réservations"
+    },
+    "rides": {
+      "empty": "Aucune annonce ne correspond à ces filtres.",
+      "state": "État",
+      "searchPlaceholder": "Ville ou conducteur",
+      "cancelled": "Annulée",
+      "open": "Voir l'annonce",
+      "seats": "{taken}/{total} places",
+      "bookingsCount": "{count, plural, =0 {Aucune réservation} one {# réservation} other {# réservations}}",
+      "stateFilter": {
+        "upcoming": "À venir",
+        "past": "Passées",
+        "cancelled": "Annulées",
+        "all": "Toutes"
+      }
+    },
+    "bookings": {
+      "empty": "Aucune réservation ne correspond à ces filtres.",
+      "status": "Statut",
+      "paymentMethod": "Paiement du trajet",
+      "invoice": "Facture",
+      "allStatuses": "Tous les statuts",
+      "allMethods": "Tous les moyens",
+      "allInvoices": "Toutes les factures",
+      "searchPlaceholder": "Ville, passager ou conducteur",
+      "seats": "{count, plural, one {# place} other {# places}}",
+      "noInvoice": "Pas de facture",
+      "invoiceLine": "{number} · {status}",
+      "statusValue": {
+        "pending": "En attente",
+        "awaiting_payment": "À payer",
+        "confirmed": "Confirmée",
+        "rejected": "Refusée",
+        "cancelled": "Annulée",
+        "expired": "Expirée"
+      }
+    },
+    "invoices": {
+      "empty": "Aucune facture ne correspond à ces filtres.",
+      "status": "Statut de la facture",
+      "paymentStatus": "Statut du paiement",
+      "allStatuses": "Tous les statuts",
+      "allPayments": "Tous les paiements",
+      "searchPlaceholder": "Nom ou e-mail de l'acheteur",
+      "noPayment": "Aucune tentative",
+      "statusValue": {
+        "draft": "Brouillon",
+        "issued": "Émise",
+        "paid": "Payée",
+        "voided": "Annulée"
+      },
+      "paymentValue": {
+        "created": "Créé",
+        "processing": "En cours",
+        "succeeded": "Réussi",
+        "failed": "Échoué",
+        "cancelled": "Annulé",
+        "refunded": "Remboursé"
+      }
     },
     "payouts": {
       "loading": "Chargement des versements…",
@@ -1052,6 +1228,7 @@
     "resultsCount": "{count, plural, =0 {Aucun trajet} one {# trajet} other {# trajets}}",
     "error": "Impossible de charger les trajets. Réessayez plus tard.",
     "ratingLabel": "{rating} sur 5 — {count} avis",
+    "occupancy": "{taken}/{total} places occupées",
     "seatsAvailable": "{count, plural, =0 {Complet} one {# place} other {# places}}",
     "perSeat": "par place",
     "plusKoubyFee": "+ {amount} de frais Kouby",
@@ -1178,8 +1355,10 @@
     "waitingDriver": "Votre place est réservée. Payez Kouby pour confirmer.",
     "waitingDriverTotal": "Montant dû : {total}.",
     "dueIn": "Payez dans {remaining}",
-    "dueExpired": "Les 15 minutes de paiement sont écoulées. Cette place va être libérée.",
-    "overdueBody": "Les 15 minutes de paiement sont écoulées. Payez maintenant pour garder la place — elle sera libérée sous peu.",
+    "windowLabel": "Temps restant",
+    "windowHint": "Vous avez 5 minutes pour confirmer cette place.",
+    "dueExpired": "Les 5 minutes de paiement sont écoulées. Cette place va être libérée.",
+    "overdueBody": "Les 5 minutes de paiement sont écoulées. Payez maintenant pour garder la place — elle sera libérée sous peu.",
     "expiredTitle": "Délai de paiement dépassé",
     "expiredBody": "Cette facture n'est plus payable. Cherchez un autre trajet si la place a été libérée.",
     "backToBookings": "Mes réservations",
@@ -1191,6 +1370,14 @@
     "stepRequest": "Réservation",
     "stepPay": "Payer Kouby",
     "stepConfirmed": "Confirmée",
+    "stepsLabel": "Étapes de la réservation",
+    "amountPaid": "Payé à Kouby",
+    "settledHint": "Rien d'autre à payer sur Kouby. Le conducteur est payé après le trajet.",
+    "waitStep": {
+      "sent": "Demande envoyée",
+      "driver": "En attente du conducteur",
+      "pay": "Vous payez pour confirmer"
+    },
     "failedBody": "La tentative précédente a échoué. Vos informations sont encore là — réessayez ou utilisez une autre carte.",
     "decline": {
       "generic": "Cette carte a été refusée. Essayez une autre carte ou contactez votre banque.",
@@ -1307,7 +1494,7 @@
       },
       {
         "heading": "3. Payer pour confirmer",
-        "body": "Après la réservation, vous avez 15 minutes pour payer la facture et confirmer votre place. Une place impayée revient aux autres passagers. La carte inclut le prix du trajet ; Interac et espèces ne paient que la commission."
+        "body": "Après la réservation, vous avez 5 minutes pour payer la facture et confirmer votre place. Une place impayée revient aux autres passagers. La carte inclut le prix du trajet ; Interac et espèces ne paient que la commission."
       },
       {
         "heading": "4. Voyager",
@@ -1325,7 +1512,7 @@
       },
       {
         "heading": "Payez à temps",
-        "body": "Vous avez 15 minutes après la réservation pour payer la facture. Une réservation impayée expire et la place revient aux autres passagers."
+        "body": "Vous avez 5 minutes après la réservation pour payer la facture. Une réservation impayée expire et la place revient aux autres passagers."
       },
       {
         "heading": "Restez joignable",

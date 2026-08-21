@@ -11,6 +11,8 @@ export interface DocumentPreviewProps {
   id: string;
   mimeType: string;
   fileName: string;
+  /** Case pane starts open so the reviewer sees the file without a second click. */
+  defaultOpen?: boolean;
 }
 
 /**
@@ -25,9 +27,14 @@ export interface DocumentPreviewProps {
  * Fetched only once expanded, and never cached: the URL is signed for minutes,
  * so a reused one would be a broken image rather than a fast one.
  */
-export function DocumentPreview({ id, mimeType, fileName }: DocumentPreviewProps) {
+export function DocumentPreview({
+  id,
+  mimeType,
+  fileName,
+  defaultOpen = false,
+}: DocumentPreviewProps) {
   const t = useTranslations('Admin');
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['document-file', id],

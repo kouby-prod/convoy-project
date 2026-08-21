@@ -6,8 +6,7 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { Providers } from './providers';
-import { Navbar } from '@/components/ui/navbar';
-import { Footer } from '@/components/ui/footer';
+import { AppChrome } from '@/components/ui/app-chrome';
 import { cn } from '@/lib/utils';
 import '../globals.css';
 
@@ -45,9 +44,7 @@ export default async function LocaleLayout({
       <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
         <NextIntlClientProvider>
           <Providers>
-            <Navbar />
-            <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">{children}</main>
-            <Footer />
+            <AppChrome>{children}</AppChrome>
           </Providers>
         </NextIntlClientProvider>
       </body>

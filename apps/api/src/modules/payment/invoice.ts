@@ -15,7 +15,7 @@ import { issueLines, postLedger, type DbTx } from './ledger';
  * How long a passenger has to pay after reserving. Unpaid seats are released
  * when this elapses. The 24h clock is for driver payout follow-up, not this.
  */
-const AWAITING_PAYMENT_TTL_MS = 15 * 60 * 1000;
+const AWAITING_PAYMENT_TTL_MS = 5 * 60 * 1000;
 
 export function formatInvoiceNumber(seq: number, at = new Date()): string {
   const year = at.getUTCFullYear();
@@ -149,7 +149,7 @@ export function hashRequest(body: unknown): string {
   return createHash('sha256').update(JSON.stringify(body)).digest('hex');
 }
 
-/** Invoice due timestamps are 15 minutes out — show date and time. */
+/** Invoice due timestamps are 5 minutes out — show date and time. */
 export function formatInvoiceInstant(iso: string): string {
   const date = new Date(iso);
   if (!Number.isFinite(date.getTime())) return iso;

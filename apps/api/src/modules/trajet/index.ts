@@ -5,6 +5,7 @@ import {
   asc,
   avg,
   count,
+  desc,
   eq,
   gte,
   ilike,
@@ -24,7 +25,7 @@ import { trajet, booking } from '../../db/trajet-schema';
 import { invoice, driverPayout, payment } from '../../db/payment';
 import { review } from '../../db/review';
 import { user } from '../../db/auth-schema';
-import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet, DriverBooking, DriverProfile, PaymentStatus, Invoice } from '@carpool/schemas';
+import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet, DriverBooking, DriverProfile, OwnedTrajet, PaymentStatus, Invoice } from '@carpool/schemas';
 import {
   listTrajetsRoute,
   getTrajetRoute,
@@ -184,7 +185,7 @@ async function notifyPassengerToPay(input: {
   await notifyUser(
     input.passengerId,
     'Pay Kouby to confirm your booking',
-    `${input.intro} Pay ${amountLabel}${dueLabel} to confirm your seat. Unpaid seats are released after 15 minutes: ${paymentUrl(input.bookingId)}\n\n${fareNote}`,
+    `${input.intro} Pay ${amountLabel}${dueLabel} to confirm your seat. Unpaid seats are released after 5 minutes: ${paymentUrl(input.bookingId)}\n\n${fareNote}`,
     attachments,
   );
 }
@@ -265,6 +266,34 @@ async function getDriverProfile(driverId: string): Promise<DriverProfile> {
     ratingRow?.averageRating ? Number(ratingRow.averageRating) : null,
     ratingRow?.reviewCount ?? 0,
   );
+}
+
+function splitPersonName(name: string | null | undefined): { firstName: string; lastName: string } {
+  const [firstName, ...rest] = (name ?? '').split(' ').filter(Boolean);
+  return { firstName: firstName ?? '', lastName: rest.join(' ') };
+}
+
+/** Pending accept/reject + unpaid holds for a page of the driver's rides. */
+async function bookingActionCounts(trajetIds: string[]) {
+  const counts = new Map<string, { pending: number; awaitingPayment: number }>();
+  if (!trajetIds.length) return counts;
+  const rows = await db
+    .select({
+      trajetId: booking.trajetId,
+      status: booking.status,
+      n: count(),
+    })
+    .from(booking)
+    .where(and(inArray(booking.trajetId, trajetIds), inArray(booking.status, ['pending', 'awaiting_payment'])))
+    .groupBy(booking.trajetId, booking.status);
+  for (const row of rows) {
+    if (!row.trajetId) continue;
+    const current = counts.get(row.trajetId) ?? { pending: 0, awaitingPayment: 0 };
+    if (row.status === 'pending') current.pending = Number(row.n) || 0;
+    if (row.status === 'awaiting_payment') current.awaitingPayment = Number(row.n) || 0;
+    counts.set(row.trajetId, current);
+  }
+  return counts;
 }
 
 // Reads are public; creating requires authentication. Adjust to your auth rules
@@ -896,16 +925,32 @@ export const trajetModule = app
       .select()
       .from(trajet)
       .where(eq(trajet.driverId, user.id))
+      .orderBy(desc(trajet.departureAt))
       .limit(limit + 1)
       .offset((page - 1) * limit);
 
     const { items, hasMore } = paginate(rows, limit);
-    // Every row shares the same driver (the caller) — fetch the profile once.
     const driver = await getDriverProfile(user.id);
-    return c.json({ items: items.map((row) => serialize(row, driver)), page, limit, hasMore }, 200);
+    const counts = await bookingActionCounts(items.map((row) => row.id));
+    return c.json(
+      {
+        items: items.map((row) => {
+          const action = counts.get(row.id);
+          return {
+            ...serialize(row, driver),
+            pendingRequestCount: action?.pending ?? 0,
+            awaitingPaymentCount: action?.awaitingPayment ?? 0,
+          } satisfies OwnedTrajet;
+        }),
+        page,
+        limit,
+        hasMore,
+      },
+      200,
+    );
   })
   .openapi(myBookingsRoute, async (c) => {
-    const { user } = getAuth(c);
+    const { user: me } = getAuth(c);
     const { page, limit } = c.req.valid('query');
     const rows = await db
       .select({
@@ -926,14 +971,24 @@ export const trajetModule = app
         departureCity: trajet.departureCity,
         arrivalCity: trajet.arrivalCity,
         departureAt: trajet.departureAt,
+        departurePlace: trajet.departurePlace,
+        arrivalPlace: trajet.arrivalPlace,
         pricePerSeat: trajet.pricePerSeat,
+        driverName: user.name,
+        reviewId: review.id,
         invoiceDueAt: invoice.dueAt,
         invoiceTotalCents: invoice.totalCents,
       })
       .from(booking)
       .innerJoin(trajet, eq(booking.trajetId, trajet.id))
+      .innerJoin(user, eq(trajet.driverId, user.id))
       .leftJoin(invoice, eq(invoice.bookingId, booking.id))
-      .where(eq(booking.passengerId, user.id))
+      .leftJoin(
+        review,
+        and(eq(review.bookingId, booking.id), eq(review.direction, 'passenger_to_driver')),
+      )
+      .where(eq(booking.passengerId, me.id))
+      .orderBy(desc(trajet.departureAt))
       .limit(limit + 1)
       .offset((page - 1) * limit);
 
@@ -1152,10 +1207,15 @@ function serializeBookingWithTrajet(row: {
   departureCity: string;
   arrivalCity: string;
   departureAt: Date;
+  departurePlace: string | null;
+  arrivalPlace: string | null;
   pricePerSeat: string;
+  driverName: string | null;
+  reviewId: string | null;
   invoiceDueAt: Date | null;
   invoiceTotalCents: number | null;
 }): BookingWithTrajet {
+  const driver = splitPersonName(row.driverName);
   return {
     id: row.id,
     trajetId: row.trajetId,
@@ -1173,11 +1233,16 @@ function serializeBookingWithTrajet(row: {
     updatedAt: row.updatedAt.toISOString(),
     invoiceDueAt: row.invoiceDueAt ? row.invoiceDueAt.toISOString() : null,
     invoiceTotalCents: row.invoiceTotalCents ?? null,
+    reviewedByPassenger: Boolean(row.reviewId),
     trajet: {
       departureCity: row.departureCity,
       destinationCity: row.arrivalCity,
       departureDateTime: row.departureAt.toISOString(),
       pricePerSeat: Number(row.pricePerSeat),
+      departurePlace: row.departurePlace ?? null,
+      arrivalPlace: row.arrivalPlace ?? null,
+      driverFirstName: driver.firstName,
+      driverLastName: driver.lastName,
     },
   };
 }

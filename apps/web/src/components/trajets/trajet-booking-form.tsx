@@ -1,16 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
-import { Clock } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
-import type { RidePaymentMethod } from '@carpool/schemas';
+import type { BookingStatus, RidePaymentMethod } from '@carpool/schemas';
 import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import {
-  driverFareCents,
   formatCad,
   koubyDueCents,
   payableCents,
@@ -18,14 +16,26 @@ import {
 } from '@/lib/booking-money';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { BookingMessages } from '@/components/trajets/booking-messages';
+import { BookingStatusBadge } from '@/components/trajets/booking-status-badge';
+import { DueCountdown } from '@/components/paiement/due-countdown';
 import { cn } from '@/lib/utils';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
+const ACTIVE_BOOKING = new Set<BookingStatus>(['pending', 'awaiting_payment', 'confirmed']);
+
+type PanelBooking = {
+  id: string;
+  status: BookingStatus;
+  paymentMethod: RidePaymentMethod;
+  seats: number;
+  invoiceTotalCents: number | null;
+  invoiceDueAt: string | null;
+};
+
 /**
- * Quiet booking panel — price + seats + method cards + CTA. Intentionally
- * secondary to the itinerary (BlaBlaCar-style detail hierarchy).
+ * Quiet booking panel — price + seats + method cards + CTA. A confirmed
+ * (or held) booking stays visible; leftover seats keep a second book path.
  */
 export function TrajetBookingForm({
   trajetId,
@@ -52,13 +62,13 @@ export function TrajetBookingForm({
   const [seats, setSeats] = useState(1);
   const offered = paymentMethods.length > 0 ? paymentMethods : (['cash'] as RidePaymentMethod[]);
   const [paymentMethod, setPaymentMethod] = useState<RidePaymentMethod>(offered[0] ?? 'cash');
-  const [myBooking, setMyBooking] = useState<{
-    id: string;
-    status: string;
-    paymentMethod: RidePaymentMethod;
-    seats: number;
-  } | null>(null);
+  const [optimistic, setOptimistic] = useState<PanelBooking | null>(null);
   const [cancelledNotice, setCancelledNotice] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (seatsAvailable >= 1 && seats > seatsAvailable) setSeats(seatsAvailable);
+  }, [seats, seatsAvailable]);
 
   const bookMutation = useMutation({
     mutationFn: async () => {
@@ -70,11 +80,13 @@ export function TrajetBookingForm({
       return res.json();
     },
     onSuccess: (data) => {
-      setMyBooking({
+      setOptimistic({
         id: data.id,
         status: data.status,
         paymentMethod: data.paymentMethod,
         seats: data.seats,
+        invoiceTotalCents: null,
+        invoiceDueAt: null,
       });
       setCancelledNotice(false);
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
@@ -86,50 +98,46 @@ export function TrajetBookingForm({
     },
   });
 
-  const { data: existingBooking } = useQuery({
+  const { data: fetchedBookings = [] } = useQuery({
     queryKey: ['me', 'bookings', 'trajet', trajetId],
     enabled: Boolean(session?.user),
     queryFn: async () => {
       const res = await api.me.bookings.$get({ query: { page: '1', limit: '50' } });
-      if (!res.ok) return null;
+      if (!res.ok) return [] as PanelBooking[];
       const body = await res.json();
-      return (
-        body.items.find(
-          (item) =>
-            item.trajetId === trajetId &&
-            (item.status === 'pending' ||
-              item.status === 'awaiting_payment' ||
-              item.status === 'confirmed'),
-        ) ?? null
-      );
+      return body.items
+        .filter((item) => item.trajetId === trajetId && ACTIVE_BOOKING.has(item.status))
+        .map((item) => ({
+          id: item.id,
+          status: item.status,
+          paymentMethod: item.paymentMethod,
+          seats: item.seats,
+          invoiceTotalCents: item.invoiceTotalCents,
+          invoiceDueAt: item.invoiceDueAt,
+        }));
     },
-    refetchInterval: (query) => (query.state.data?.status === 'pending' ? 8_000 : false),
+    refetchInterval: (query) =>
+      query.state.data?.some((item) => item.status === 'pending') ? 8_000 : false,
   });
 
-  const panelBooking = existingBooking
-    ? {
-        id: existingBooking.id,
-        status: existingBooking.status,
-        paymentMethod: existingBooking.paymentMethod,
-        seats: existingBooking.seats,
-        invoiceTotalCents: existingBooking.invoiceTotalCents,
-      }
-    : myBooking
-      ? { ...myBooking, invoiceTotalCents: null as number | null }
-      : null;
+  const activeBookings = useMemo(() => {
+    if (!optimistic) return fetchedBookings;
+    if (fetchedBookings.some((item) => item.id === optimistic.id)) return fetchedBookings;
+    return [...fetchedBookings, optimistic];
+  }, [fetchedBookings, optimistic]);
 
   const cancelMutation = useMutation({
-    mutationFn: async () => {
-      if (!panelBooking) throw new Error('No active booking to cancel');
+    mutationFn: async (bookingId: string) => {
       const res = await api.trajets[':id'].bookings[':bookingId'].cancel.$post({
-        param: { id: trajetId, bookingId: panelBooking.id },
+        param: { id: trajetId, bookingId },
       });
       if (!res.ok) throw new Error(t('booking.errors.cancelGeneric'));
       return res.json();
     },
-    onSuccess: () => {
-      setMyBooking(null);
+    onSuccess: (_data, bookingId) => {
+      setOptimistic((current) => (current?.id === bookingId ? null : current));
       setCancelledNotice(true);
+      setConfirmingId(null);
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
       queryClient.invalidateQueries({ queryKey: ['trajet'] });
       queryClient.invalidateQueries({ queryKey: ['me', 'bookings'] });
@@ -138,6 +146,7 @@ export function TrajetBookingForm({
 
   const shell =
     'rounded-lg bg-card p-4 shadow-md ring-1 ring-foreground/5 sm:p-5 dark:ring-foreground/10';
+  const canBookMore = !cancelled && seatsAvailable >= 1;
 
   if (isSessionPending) {
     return <div className={cn(shell, 'text-sm text-muted-foreground')}>{t('loading')}</div>;
@@ -168,9 +177,9 @@ export function TrajetBookingForm({
     );
   }
 
-  if (!panelBooking && cancelled) return null;
+  if (!activeBookings.length && cancelled) return null;
 
-  if (!panelBooking && seatsAvailable < 1) {
+  if (!activeBookings.length && !canBookMore) {
     return (
       <div className={shell}>
         <p className="text-sm font-medium text-foreground">{t('booking.title')}</p>
@@ -179,173 +188,265 @@ export function TrajetBookingForm({
     );
   }
 
-  const estimatedFare =
-    typeof pricePerSeat === 'number'
-      ? Math.round(pricePerSeat * 100) * (panelBooking?.seats ?? seats)
-      : null;
-  const method = panelBooking?.paymentMethod ?? paymentMethod;
-  const koubyDue =
-    estimatedFare !== null
-      ? payableCents(panelBooking?.invoiceTotalCents, method, estimatedFare)
-      : null;
-  const driverDue = estimatedFare !== null ? driverFareCents(method, estimatedFare) : 0;
+  return (
+    <div className={cn(shell, 'grid gap-4')}>
+      {activeBookings.map((booking) => {
+        const fare =
+          typeof pricePerSeat === 'number' ? Math.round(pricePerSeat * 100) * booking.seats : null;
+        const due =
+          fare !== null ? payableCents(booking.invoiceTotalCents, booking.paymentMethod, fare) : null;
+        const payAmount =
+          booking.status === 'awaiting_payment' && due !== null ? formatCad(due, locale) : null;
+        return (
+          <BookedPanel
+            key={booking.id}
+            booking={booking}
+            payAmount={payAmount}
+            confirmingCancel={confirmingId === booking.id}
+            cancelling={cancelMutation.isPending && confirmingId === booking.id}
+            cancelError={
+              cancelMutation.isError && confirmingId === booking.id
+                ? t('booking.errors.cancelGeneric')
+                : null
+            }
+            onConfirmCancel={() => setConfirmingId(booking.id)}
+            onDismissCancel={() => setConfirmingId(null)}
+            onCancel={() => cancelMutation.mutate(booking.id)}
+          />
+        );
+      })}
+
+      {canBookMore ? (
+        <div className={cn('grid gap-3', activeBookings.length && 'border-t border-border pt-4')}>
+          {typeof pricePerSeat === 'number' ? (
+            <PriceBlock
+              pricePerSeat={pricePerSeat}
+              seatsAvailable={seatsAvailable}
+              seatsTotal={seatsTotal}
+              format={format}
+              t={t}
+              tRide={tRide}
+              locale={locale}
+            />
+          ) : null}
+          {activeBookings.length ? (
+            <p className="text-sm font-medium text-foreground">{t('booking.moreTitle')}</p>
+          ) : null}
+          {cancelledNotice && !activeBookings.length ? (
+            <p className="text-sm text-muted-foreground">{t('booking.cancelledNotice')}</p>
+          ) : null}
+          <NewBookingFields
+            seats={seats}
+            seatsAvailable={seatsAvailable}
+            paymentMethod={paymentMethod}
+            offered={offered}
+            pricePerSeat={pricePerSeat}
+            locale={locale}
+            pending={bookMutation.isPending}
+            error={bookMutation.isError ? t('booking.errors.generic') : null}
+            onSeats={setSeats}
+            onMethod={setPaymentMethod}
+            onSubmit={() => bookMutation.mutate()}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function NewBookingFields({
+  seats,
+  seatsAvailable,
+  paymentMethod,
+  offered,
+  pricePerSeat,
+  locale,
+  pending,
+  error,
+  onSeats,
+  onMethod,
+  onSubmit,
+}: {
+  seats: number;
+  seatsAvailable: number;
+  paymentMethod: RidePaymentMethod;
+  offered: RidePaymentMethod[];
+  pricePerSeat?: number;
+  locale: string;
+  pending: boolean;
+  error: string | null;
+  onSeats: (value: number) => void;
+  onMethod: (value: RidePaymentMethod) => void;
+  onSubmit: () => void;
+}) {
+  const t = useTranslations('Trajets');
 
   return (
-    <div className={shell}>
-      {typeof pricePerSeat === 'number' && !panelBooking ? (
-        <PriceBlock
-          pricePerSeat={pricePerSeat}
-          seatsAvailable={seatsAvailable}
-          seatsTotal={seatsTotal}
-          format={format}
-          t={t}
-          tRide={tRide}
-          locale={locale}
+    <div className="grid gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor="bookingSeats" className="text-sm text-muted-foreground">
+          {t('booking.seatsLabel')}
+        </label>
+        <Input
+          id="bookingSeats"
+          type="number"
+          min={1}
+          max={seatsAvailable}
+          value={seats}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            onSeats(Number.isFinite(next) ? Math.min(Math.max(1, next), seatsAvailable) : 1);
+          }}
+          className="h-9 w-20"
         />
-      ) : (
-        <p className="text-sm font-semibold text-foreground">{t('booking.title')}</p>
-      )}
+      </div>
+      <fieldset className="space-y-2">
+        <legend className="text-sm text-muted-foreground">{t('booking.methodLabel')}</legend>
+        {offered.map((methodOption) => {
+          const fareCents = typeof pricePerSeat === 'number' ? Math.round(pricePerSeat * 100) * seats : 0;
+          const payNow = formatCad(koubyDueCents(methodOption, fareCents), locale);
+          const fare = formatCad(fareCents, locale);
+          const selected = paymentMethod === methodOption;
+          return (
+            <label
+              key={methodOption}
+              className={cn(
+                'flex cursor-pointer flex-col gap-1 rounded-lg px-3 py-3 transition-all',
+                selected
+                  ? 'bg-primary/10 shadow-sm ring-2 ring-primary/40'
+                  : 'bg-muted/50 ring-1 ring-foreground/5 hover:bg-muted',
+              )}
+            >
+              <input
+                type="radio"
+                name="paymentMethod"
+                className="sr-only"
+                checked={selected}
+                onChange={() => onMethod(methodOption)}
+              />
+              <span className="text-sm font-medium text-foreground">
+                {t(`booking.methodCard.${methodOption}Title`)}
+              </span>
+              <span className="font-display text-lg font-semibold tabular-nums tracking-tight text-foreground">
+                {t(`booking.methodCard.${methodOption}Pay`, { amount: payNow })}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {methodOption === 'card'
+                  ? t('booking.methodCard.cardBody')
+                  : t(`booking.methodCard.${methodOption}Body`, { fare })}
+              </span>
+            </label>
+          );
+        })}
+      </fieldset>
+      <Button onClick={onSubmit} disabled={pending} size="default" className="w-full font-semibold">
+        {pending ? t('booking.submitting') : t('booking.submit')}
+      </Button>
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+    </div>
+  );
+}
 
-      {panelBooking ? (
-        <div className="mt-4 space-y-3">
-          {panelBooking.status === 'pending' ? (
-            <div className="flex gap-2.5 rounded-lg bg-muted px-3 py-3 ring-1 ring-foreground/5">
-              <Clock className="mt-0.5 size-4 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden />
-              <div>
-                <p className="text-sm font-medium text-foreground">{t('booking.pendingTitle')}</p>
-                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
-                  {driverDue > 0 && koubyDue !== null && estimatedFare !== null
-                    ? t('booking.pendingBodyOffPlatform', {
-                        commission: formatCad(koubyDue, locale),
-                        fare: formatCad(estimatedFare, locale),
-                      })
-                    : t('booking.pendingBody', {
-                        total: koubyDue !== null ? formatCad(koubyDue, locale) : '',
-                      })}
-                </p>
-              </div>
-            </div>
-          ) : panelBooking.status === 'awaiting_payment' ? (
-            <div className="rounded-lg bg-primary/10 px-3 py-3 ring-1 ring-primary/20">
-              <p className="text-sm font-medium text-foreground">{t('booking.awaitingTitle')}</p>
-              {koubyDue !== null ? (
-                <p className="mt-1 font-display text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-                  {formatCad(koubyDue, locale)}
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t(`bookings.status.${panelBooking.status}`)}</p>
-          )}
-          {panelBooking.status === 'pending' || panelBooking.status === 'awaiting_payment' || panelBooking.status === 'confirmed' ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full"
-              disabled={cancelMutation.isPending}
-              onClick={() => cancelMutation.mutate()}
-            >
-              {cancelMutation.isPending ? t('booking.cancelling') : t('booking.cancel')}
+function cancelCopy(
+  status: BookingStatus,
+  t: ReturnType<typeof useTranslations<'Trajets'>>,
+) {
+  if (status === 'awaiting_payment') return t('booking.cancelConfirm.awaiting_payment');
+  if (status === 'confirmed') return t('booking.cancelConfirm.confirmed');
+  return t('booking.cancelConfirm.pending');
+}
+
+function BookedPanel({
+  booking,
+  payAmount,
+  confirmingCancel,
+  cancelling,
+  cancelError,
+  onConfirmCancel,
+  onDismissCancel,
+  onCancel,
+}: {
+  booking: PanelBooking;
+  payAmount: string | null;
+  confirmingCancel: boolean;
+  cancelling: boolean;
+  cancelError: string | null;
+  onConfirmCancel: () => void;
+  onDismissCancel: () => void;
+  onCancel: () => void;
+}) {
+  const t = useTranslations('Trajets');
+  const canCancel =
+    booking.status === 'pending' ||
+    booking.status === 'awaiting_payment' ||
+    booking.status === 'confirmed';
+
+  return (
+    <div className="grid gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <BookingStatusBadge status={booking.status} />
+        <p className="text-sm text-muted-foreground">{t('booking.bookedSeats', { count: booking.seats })}</p>
+      </div>
+
+      {payAmount ? (
+        <div className="grid gap-2 rounded-lg bg-primary/10 px-3 py-3 ring-1 ring-primary/20">
+          <p className="font-display text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+            {payAmount}
+          </p>
+          {booking.invoiceDueAt ? <DueCountdown dueAt={booking.invoiceDueAt} emphasis="hero" /> : null}
+          <Link
+            href={`/paiement/${booking.id}`}
+            className={cn(buttonVariants({ size: 'default' }), 'w-full font-semibold')}
+          >
+            {t('booking.pay', { amount: payAmount })}
+          </Link>
+        </div>
+      ) : null}
+
+      {confirmingCancel ? (
+        <div className="grid gap-3 rounded-lg bg-destructive/10 p-4 ring-1 ring-destructive/20">
+          <p className="text-sm font-medium text-foreground">{cancelCopy(booking.status, t)}</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button variant="destructive" disabled={cancelling} onClick={onCancel} className="sm:flex-1">
+              {cancelling ? t('booking.cancelling') : t('booking.cancelConfirm.submit')}
             </Button>
-          ) : null}
-          {panelBooking.status === 'awaiting_payment' && koubyDue !== null ? (
+            <Button variant="outline" disabled={cancelling} onClick={onDismissCancel} className="sm:flex-1">
+              {t('booking.cancelConfirm.keep')}
+            </Button>
+          </div>
+          {cancelError ? <p className="text-sm text-destructive">{cancelError}</p> : null}
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/messages/${booking.id}`}
+            className={cn(
+              buttonVariants({
+                variant: payAmount ? 'outline' : 'secondary',
+                size: 'sm',
+              }),
+              'w-fit',
+            )}
+          >
+            {t('booking.messages')}
+          </Link>
+          {booking.status === 'confirmed' ? (
             <Link
-              href={`/paiement/${panelBooking.id}`}
-              className={cn(buttonVariants({ variant: 'primary', size: 'sm' }), 'w-full font-semibold')}
-            >
-              {t('booking.pay', { amount: formatCad(koubyDue, locale) })}
-            </Link>
-          ) : null}
-          {panelBooking.status === 'confirmed' ? (
-            <Link
-              href={`/paiement/${panelBooking.id}`}
-              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}
+              href={`/paiement/${booking.id}`}
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-fit')}
             >
               {t('booking.invoice')}
             </Link>
           ) : null}
-          <Link
-            href={`/messages/${panelBooking.id}`}
-            className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'w-full')}
-          >
-            {t('booking.messages')}
-          </Link>
-          {cancelMutation.isError ? (
-            <p className="text-sm text-destructive">{t('booking.errors.cancelGeneric')}</p>
-          ) : null}
-          <BookingMessages bookingId={panelBooking.id} />
-        </div>
-      ) : (
-        <div className="mt-4 space-y-3">
-          {cancelledNotice ? (
-            <p className="text-sm text-muted-foreground">{t('booking.cancelledNotice')}</p>
-          ) : null}
-          <div className="flex items-center justify-between gap-3">
-            <label htmlFor="bookingSeats" className="text-sm text-muted-foreground">
-              {t('booking.seatsLabel')}
-            </label>
-            <Input
-              id="bookingSeats"
-              type="number"
-              min={1}
-              max={seatsAvailable}
-              value={seats}
-              onChange={(e) => {
-                const next = Number(e.target.value);
-                setSeats(Number.isFinite(next) ? Math.min(Math.max(1, next), seatsAvailable) : 1);
-              }}
-              className="h-9 w-20"
-            />
-          </div>
-          <fieldset className="space-y-2">
-            <legend className="text-sm text-muted-foreground">{t('booking.methodLabel')}</legend>
-            {offered.map((methodOption) => {
-              const fareCents = typeof pricePerSeat === 'number' ? Math.round(pricePerSeat * 100) * seats : 0;
-              const payNow = formatCad(koubyDueCents(methodOption, fareCents), locale);
-              const fare = formatCad(fareCents, locale);
-              const selected = paymentMethod === methodOption;
-              return (
-                <label
-                  key={methodOption}
-                  className={cn(
-                    'flex cursor-pointer flex-col gap-1 rounded-lg px-3 py-3 transition-all',
-                    selected
-                      ? 'bg-primary/10 shadow-sm ring-2 ring-primary/40'
-                      : 'bg-muted/50 ring-1 ring-foreground/5 hover:bg-muted',
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    className="sr-only"
-                    checked={selected}
-                    onChange={() => setPaymentMethod(methodOption)}
-                  />
-                  <span className="text-sm font-medium text-foreground">
-                    {t(`booking.methodCard.${methodOption}Title`)}
-                  </span>
-                  <span className="font-display text-lg font-semibold tabular-nums tracking-tight text-foreground">
-                    {t(`booking.methodCard.${methodOption}Pay`, { amount: payNow })}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {methodOption === 'card'
-                      ? t('booking.methodCard.cardBody')
-                      : t(`booking.methodCard.${methodOption}Body`, { fare })}
-                  </span>
-                </label>
-              );
-            })}
-          </fieldset>
-          <Button
-            onClick={() => bookMutation.mutate()}
-            disabled={bookMutation.isPending}
-            size="default"
-            className="w-full font-semibold"
-          >
-            {bookMutation.isPending ? t('booking.submitting') : t('booking.submit')}
-          </Button>
-          {bookMutation.isError ? (
-            <p className="text-sm text-destructive">{t('booking.errors.generic')}</p>
+          {canCancel ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="w-fit text-muted-foreground"
+              onClick={onConfirmCancel}
+            >
+              {t('booking.cancel')}
+            </Button>
           ) : null}
         </div>
       )}

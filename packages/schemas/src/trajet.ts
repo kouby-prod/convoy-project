@@ -222,6 +222,18 @@ export function paginatedSchema<Item extends z.ZodTypeAny>(itemSchema: Item) {
 export const TrajetPageSchema = paginatedSchema(TrajetSchema).describe('TrajetPage');
 
 /**
+ * A driver's own ride on `GET /me/trajets`. Same as `Trajet`, plus how many
+ * bookings still need a look (legacy accept/reject, or the passenger paying).
+ */
+export const OwnedTrajetSchema = TrajetSchema.extend({
+  pendingRequestCount: z.number().int().nonnegative(),
+  awaitingPaymentCount: z.number().int().nonnegative(),
+}).describe('OwnedTrajet');
+export type OwnedTrajet = z.infer<typeof OwnedTrajetSchema>;
+
+export const OwnedTrajetPageSchema = paginatedSchema(OwnedTrajetSchema).describe('OwnedTrajetPage');
+
+/**
  * A trajet as returned by search, with the driver's rating summary (also
  * available at `driver.rating`/`driver.reviewCount` — kept top-level too for
  * backward compatibility) and (when `nearLat`/`nearLng` were part of the
@@ -308,7 +320,7 @@ export type TrajetApiSearchQuery = z.infer<typeof TrajetApiSearchQuerySchema>;
  * A booking starts `awaiting_payment` (seats held, Kouby invoice issued) and:
  * - Stripe/PayPal settlement moves `awaiting_payment` → `confirmed`,
  * - the passenger moves it to `cancelled` (POST .../cancel), or
- * - the system moves it to `expired` (unpaid invoice TTL, 15 minutes).
+ * - the system moves it to `expired` (unpaid invoice TTL, 5 minutes).
  * Legacy `pending` rows can still be accepted/rejected via
  * `UpdateBookingStatusSchema` (`confirmed` still means "I accept").
  */
@@ -367,6 +379,11 @@ export const BookingTrajetSummarySchema = z
     destinationCity: z.string(),
     departureDateTime: z.string(),
     pricePerSeat: z.number(),
+    /** Pickup point within the city. Absent on older checkout payloads. */
+    departurePlace: z.string().nullable().optional(),
+    arrivalPlace: z.string().nullable().optional(),
+    driverFirstName: z.string().optional(),
+    driverLastName: z.string().optional(),
   })
   .describe('BookingTrajetSummary');
 
@@ -382,6 +399,9 @@ export const BookingWithTrajetSchema = BookingSchema.extend({
     .nonnegative()
     .nullable()
     .describe('Issued invoice total in cents, if any'),
+  reviewedByPassenger: z
+    .boolean()
+    .describe('True when this passenger already left a passenger_to_driver review'),
 }).describe('BookingWithTrajet');
 export type BookingWithTrajet = z.infer<typeof BookingWithTrajetSchema>;
 

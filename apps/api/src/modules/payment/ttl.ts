@@ -11,7 +11,7 @@ export interface ExpiredUnpaidBooking {
 }
 
 /**
- * Expire `awaiting_payment` bookings whose invoice is past due (15-minute
+ * Expire `awaiting_payment` bookings whose invoice is past due (5-minute
  * reserve window). Skip a 3-D Secure / webhook attempt that was touched
  * recently so an in-flight challenge is not cut off.
  */

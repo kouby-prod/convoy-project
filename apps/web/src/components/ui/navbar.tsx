@@ -19,6 +19,7 @@ import {
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { authClient, isAdminRole } from '@/lib/auth-client';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { MessagesNavLink } from '@/components/messages/messages-nav-link';
 import { cn } from '@/lib/utils';
 
 /**
@@ -183,10 +184,15 @@ export function Navbar({ className }: NavbarProps) {
 
         <div className="hidden h-8 w-px shrink-0 bg-white/25 lg:block" aria-hidden />
 
+        {user ? <MessagesNavLink className="ml-auto lg:ml-0" /> : null}
+
         {/* ── 4. Account ───────────────────────────────────────────── */}
         <div
           ref={accountRef}
-          className="relative flex shrink-0 items-center gap-1.5"
+          className={cn(
+            'relative flex shrink-0 items-center gap-1.5',
+            !user && 'ml-auto lg:ml-0',
+          )}
           aria-label={translateNavbar('sections.account')}
         >
           <button

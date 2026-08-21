@@ -3,10 +3,17 @@ import {
   AdminDocumentListSchema,
   AdminDocumentQuerySchema,
   AdminDocumentSchema,
+  AdminBookingListSchema,
+  AdminBookingQuerySchema,
+  AdminInvoiceListSchema,
+  AdminInvoiceQuerySchema,
   AdminMismatchQuerySchema,
   AdminPayoutQuerySchema,
   AdminStatsSchema,
+  AdminTrajetListSchema,
+  AdminTrajetQuerySchema,
   AdminUserListSchema,
+  AdminUserQuerySchema,
   DriverPayoutSchema,
   MarkDriverPayoutPaidSchema,
   ReconciliationMismatchSchema,
@@ -118,10 +125,80 @@ export const listAdminUsersRoute = createRoute({
   tags: ['admin'],
   summary: "Accounts, with each one's document tally",
   security: bearerAuth,
+  request: { query: AdminUserQuerySchema },
   responses: {
     200: {
       description: 'All accounts, newest first',
       content: { 'application/json': { schema: AdminUserListSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listAdminTrajetsRoute = createRoute({
+  method: 'get',
+  path: '/admin/trajets',
+  tags: ['admin'],
+  summary: 'Published ride ads, filterable by date and state',
+  security: bearerAuth,
+  request: { query: AdminTrajetQuerySchema },
+  responses: {
+    200: {
+      description: 'Matching ads, by ride date',
+      content: { 'application/json': { schema: AdminTrajetListSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listAdminBookingsRoute = createRoute({
+  method: 'get',
+  path: '/admin/bookings',
+  tags: ['admin'],
+  summary: 'Reservations with trip, people, and invoice status',
+  security: bearerAuth,
+  request: { query: AdminBookingQuerySchema },
+  responses: {
+    200: {
+      description: 'Matching reservations, by ride date',
+      content: { 'application/json': { schema: AdminBookingListSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listAdminInvoicesRoute = createRoute({
+  method: 'get',
+  path: '/admin/invoices',
+  tags: ['admin'],
+  summary: 'Passenger invoices and latest payment attempt',
+  security: bearerAuth,
+  request: { query: AdminInvoiceQuerySchema },
+  responses: {
+    200: {
+      description: 'Matching invoices, newest first',
+      content: { 'application/json': { schema: AdminInvoiceListSchema } },
     },
     401: {
       description: 'Not authenticated',

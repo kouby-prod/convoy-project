@@ -34,16 +34,24 @@ export function isPastDue(dueAt: string | null | undefined): boolean {
   return Number.isFinite(due) && due <= Date.now();
 }
 
+/** Live clock for the 5-minute pay window — `4:32`, then seconds under a minute. */
 export function remainingDueLabel(dueAt: string, now = Date.now()): string | null {
   const due = Date.parse(dueAt);
   if (!Number.isFinite(due)) return null;
   const ms = due - now;
   if (ms <= 0) return null;
-  if (ms < 60_000) {
-    return `${Math.max(1, Math.ceil(ms / 1000))} s`;
+  const totalSec = Math.max(1, Math.ceil(ms / 1000));
+  const hours = Math.floor(totalSec / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+  if (hours >= 1) {
+    return `${hours} h ${String(minutes).padStart(2, '0')} min`;
   }
-  const hours = Math.floor(ms / 3_600_000);
-  const minutes = Math.ceil((ms % 3_600_000) / 60_000);
-  if (hours >= 1) return `${hours} h ${minutes} min`;
-  return `${Math.ceil(ms / 60_000)} min`;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+export function remainingDueMs(dueAt: string, now = Date.now()): number | null {
+  const due = Date.parse(dueAt);
+  if (!Number.isFinite(due)) return null;
+  return due - now;
 }

@@ -1,8 +1,15 @@
 import type {
+  AdminBooking,
+  AdminBookingQuery,
   AdminDocument,
   AdminDocumentQuery,
+  AdminInvoiceQuery,
+  AdminInvoiceRow,
   AdminStats,
+  AdminTrajet,
+  AdminTrajetQuery,
   AdminUser,
+  AdminUserQuery,
   DocumentStatus,
   DriverPayout,
   DriverPayoutStatus,
@@ -69,9 +76,64 @@ export async function reviewDocument({
 }
 
 /** GET /admin/users — accounts with their document tallies, newest first. */
-export async function fetchAdminUsers(): Promise<AdminUser[]> {
-  const res = await api.admin.users.$get();
+export async function fetchAdminUsers(query: AdminUserQuery = {}): Promise<AdminUser[]> {
+  const params: Record<string, string> = {};
+  if (query.q) params.q = query.q;
+  const res = await api.admin.users.$get({ query: params });
   if (!res.ok) throw new ApiError(res.status, 'Failed to load accounts');
+  return res.json();
+}
+
+function compactQuery(query: Record<string, string | undefined>): Record<string, string> {
+  const params: Record<string, string> = {};
+  for (const [key, value] of Object.entries(query)) {
+    if (value) params[key] = value;
+  }
+  return params;
+}
+
+/** GET /admin/trajets — published ride ads. */
+export async function fetchAdminTrajets(query: AdminTrajetQuery = {}): Promise<AdminTrajet[]> {
+  const res = await api.admin.trajets.$get({
+    query: compactQuery({
+      q: query.q,
+      from: query.from,
+      to: query.to,
+      state: query.state,
+    }),
+  });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to load ads');
+  return res.json();
+}
+
+/** GET /admin/bookings — reservations by ride date and payment status. */
+export async function fetchAdminBookings(query: AdminBookingQuery = {}): Promise<AdminBooking[]> {
+  const res = await api.admin.bookings.$get({
+    query: compactQuery({
+      q: query.q,
+      status: query.status,
+      paymentMethod: query.paymentMethod,
+      invoiceStatus: query.invoiceStatus,
+      from: query.from,
+      to: query.to,
+    }),
+  });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to load reservations');
+  return res.json();
+}
+
+/** GET /admin/invoices — passenger invoices and payment attempts. */
+export async function fetchAdminInvoices(query: AdminInvoiceQuery = {}): Promise<AdminInvoiceRow[]> {
+  const res = await api.admin.invoices.$get({
+    query: compactQuery({
+      q: query.q,
+      status: query.status,
+      paymentStatus: query.paymentStatus,
+      from: query.from,
+      to: query.to,
+    }),
+  });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to load invoices');
   return res.json();
 }
 

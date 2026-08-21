@@ -504,8 +504,10 @@
     "threadTitle": "Conversation",
     "threadSubtitle": "Coordinate safely around your booking.",
     "loading": "Loading messages...",
-    "empty": "No conversations yet. Chats linked to your bookings and rides will show up here.",
+    "empty": "No conversations.",
+    "emptyCta": "Search rides",
     "error": "Unable to load messages.",
+    "retry": "Try again",
     "show": "Messages",
     "hide": "Hide messages",
     "placeholder": "Write a message...",
@@ -522,12 +524,45 @@
     "counterpartUnknown": "Contact",
     "contextMissing": "Trip context unavailable — you can still chat here.",
     "threadEmpty": "Start the conversation to coordinate this trip.",
+    "filterLabel": "Filter conversations",
+    "filterAll": "All",
+    "filterPassenger": "Passenger",
+    "filterDriver": "Driver",
+    "selectThread": "Choose a conversation.",
+    "tripsCount": "{count, plural, one {# trip} other {# trips}}",
+    "tripSwitcher": "Rides with this person",
+    "tripOption": "{date} · {route} · {status}",
+    "tripGroupUpcoming": "Upcoming",
+    "tripGroupPast": "Past",
+    "sendHint": "Enter to send, Shift+Enter for a new line.",
+    "day": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
     "live": "Live",
     "reconnecting": "Reconnecting…",
     "offline": "Periodic refresh",
     "role": {
       "passenger": "Driver",
       "driver": "Passenger"
+    },
+    "quick": {
+      "here": "I’m here",
+      "late": "Running 5 min late"
+    },
+    "report": {
+      "cta": "Report",
+      "hint": "Kouby will receive this report with the trip and can follow up.",
+      "placeholder": "Describe the issue (optional)",
+      "submit": "Send report",
+      "sending": "Sending…",
+      "cancel": "Cancel",
+      "success": "Report sent.",
+      "error": "Unable to send the report. Try again.",
+      "needEmail": "Add an email to your account to report.",
+      "noReason": "No details given.",
+      "subject": "Report — conversation with {name}",
+      "body": "Booking {bookingId}\nTrip {route}\nCounterpart {name}\n\n{reason}"
     }
   },
   "Trajets": {
@@ -636,13 +671,22 @@
       "full": "This ride is full.",
       "signInPrompt": "Sign in to reserve a seat on this ride.",
       "signInLink": "Sign in",
-      "cancel": "Cancel my booking",
-      "cancelling": "Cancelling...",
-      "cancelledNotice": "Your booking has been cancelled.",
+      "cancel": "Cancel",
+      "cancelling": "Cancelling…",
+      "cancelledNotice": "Booking cancelled.",
       "pay": "Pay {amount}",
       "payCard": "Pay {amount}",
-      "invoice": "View invoice",
-      "messages": "Message the driver",
+      "invoice": "Invoice",
+      "messages": "Message",
+      "moreTitle": "Reserve more seats",
+      "bookedSeats": "{count, plural, one {# seat} other {# seats}}",
+      "cancelConfirm": {
+        "pending": "The driver will be notified.",
+        "awaiting_payment": "Your seat hold will be released. You will not be charged.",
+        "confirmed": "Your seat will be released. A payment already made follows the terms of sale.",
+        "submit": "Cancel",
+        "keep": "Keep"
+      },
       "methodCard": {
         "cardTitle": "Card via Kouby",
         "cardPay": "Pay {amount} now",
@@ -683,9 +727,10 @@
       "settleOffPlatform": "If you accept, they pay Kouby now and still owe you the fare ({method}).",
       "confirmCard": "They will be asked to pay {passenger}. Kouby holds {driver} and pays you after departure.",
       "confirmOffPlatform": "Kouby takes {commission}. You collect {driver} from the passenger yourself.",
+      "payWindowLabel": "5 minutes to pay",
       "payWindow": "Passenger has {remaining} to pay",
       "payWindowExpired": "Payment window ended. This seat will be released.",
-      "payWindowOverdue": "The 15-minute window ended. They can still pay; this seat will be released shortly.",
+      "payWindowOverdue": "The 5-minute window ended. They can still pay; this seat will be released shortly.",
       "paymentFailed": "Their card was declined. They can retry until the seat is released.",
       "paymentProcessing": "Payment is in progress. Refresh in a moment.",
       "declinedShort": "Declined",
@@ -781,58 +826,101 @@
       "success": "Ride published successfully!"
     }
   },
+  "TripWhen": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "yesterday": "Yesterday"
+  },
   "MesTrajets": {
     "title": "My rides",
-    "subtitle": "Find the rides you've published and follow bookings.",
-    "loading": "Loading your rides...",
-    "empty": "You haven't published any ride yet.",
+    "subtitle": "See who still needs a decision, how full each ride is, and what has already left.",
+    "post": "Offer a ride",
+    "loading": "Loading…",
+    "loadingMore": "Loading…",
+    "loadMore": "Load more",
+    "empty": "No rides published.",
+    "emptyHint": "Post a trip to start receiving booking requests.",
+    "emptyCta": "Offer a ride",
+    "emptyFilter": {
+      "upcoming": "No upcoming rides.",
+      "past": "No past rides.",
+      "cancelled": "No cancelled rides."
+    },
     "error": "Unable to load your rides.",
-    "departureAt": "Departure",
-    "seats": "Seats",
-    "price": "Price",
+    "retry": "Try again",
+    "perSeat": "per seat",
+    "occupancy": "{taken}/{total} seats filled",
+    "needsAction": "Needs action",
+    "pendingRequests": "{count, plural, one {# to review} other {# to review}}",
+    "awaitingPayment": "{count, plural, one {# paying} other {# paying}}",
     "cancelledBadge": "Cancelled",
-    "pagination": {
-      "previous": "Previous",
-      "next": "Next",
-      "page": "Page {page}"
+    "filters": {
+      "label": "Ride status",
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "cancelled": "Cancelled"
     }
   },
   "MesReservations": {
     "title": "My bookings",
-    "subtitle": "Find your bookings and their status.",
-    "loading": "Loading your bookings...",
-    "empty": "You don't have any booking yet.",
+    "subtitle": "Pay when a seat is held, then coordinate pickup with your driver.",
+    "loading": "Loading…",
+    "loadingMore": "Loading…",
+    "loadMore": "Load more",
+    "empty": "No bookings.",
+    "emptyHint": "Search a ride and reserve a seat in a few steps.",
+    "emptyCta": "Search rides",
+    "emptyFilter": {
+      "action": "Nothing to do.",
+      "upcoming": "No upcoming trips.",
+      "past": "No past bookings."
+    },
+    "waitingDriver": "Waiting for the driver.",
+    "payGroup": "To pay",
+    "pendingGroup": "Waiting",
     "error": "Unable to load your bookings.",
-    "departureAt": "Departure",
+    "retry": "Try again",
     "seats": "Seats booked",
+    "seatsCount": "{count, plural, one {# seat} other {# seats}}",
+    "driverBy": "with {name}",
     "status": "Status",
-    "cancel": "Cancel my booking",
-    "cancelling": "Cancelling...",
-    "cancelError": "Unable to cancel this booking. Please try again.",
+    "cancel": "Cancel",
+    "cancelling": "Cancelling…",
+    "cancelError": "Unable to cancel. Try again.",
+    "cancelConfirm": {
+      "pending": "The driver will be notified.",
+      "awaiting_payment": "Your seat hold will be released. You will not be charged.",
+      "confirmed": "Your seat will be released. A payment already made follows the terms of sale.",
+      "submit": "Cancel",
+      "keep": "Keep"
+    },
     "pay": "Pay {amount}",
     "payCard": "Pay {amount}",
-    "invoice": "View invoice",
+    "invoice": "Invoice",
+    "findAnother": "Search rides",
     "method": "Payment",
     "amountDue": "Amount due",
     "due": "Pay by",
     "dueExpired": "The payment window has ended. This seat will be released.",
-    "dueOverdue": "The 15-minute window is up — pay now or this seat will be released.",
+    "dueOverdue": "Window closed — pay now.",
     "stillOweDriver": "Still pay the driver {amount} ({method}).",
-    "stillOweDriverHint": "Pay this fare to the driver yourself ({method}).",
-    "messages": "Messages",
+    "stillOweDriverHint": "{method} to the driver",
+    "messages": "Message",
     "review": {
-      "cta": "Rate this ride",
+      "cta": "Rate",
       "ratingLabel": "Rating",
+      "stars": "{count, plural, one {# star} other {# stars}}",
       "commentLabel": "Comment (optional)",
       "submit": "Submit",
-      "submitting": "Submitting...",
-      "success": "Thanks for your review!",
-      "error": "Unable to submit your review. Please try again."
+      "submitting": "Submitting…",
+      "success": "Review sent.",
+      "error": "Unable to submit the review. Try again."
     },
-    "pagination": {
-      "previous": "Previous",
-      "next": "Next",
-      "page": "Page {page}"
+    "filters": {
+      "label": "Booking status",
+      "action": "Needs action",
+      "upcoming": "Upcoming",
+      "past": "Past"
     }
   },
   "Admin": {
@@ -844,19 +932,36 @@
     "authCta": "Sign in",
     "forbidden": "This page is for administrators only.",
     "backHome": "Back to home",
+    "retry": "Try again",
     "stats": {
-      "pending": "Pending",
+      "pending": "Documents to review",
       "approved": "Approved",
       "rejected": "Rejected",
       "users": "Accounts",
-      "incidents": "Payment incidents"
+      "incidents": "Payment incidents",
+      "awaitingPayment": "Bookings to pay",
+      "invoicesIssued": "Invoices issued",
+      "upcoming": "Upcoming ads"
     },
     "tabs": {
       "label": "Backoffice views",
       "queue": "Documents",
       "users": "Accounts",
+      "rides": "Ads",
+      "bookings": "Bookings",
+      "payments": "Payments",
       "payouts": "Payouts",
       "incidents": "Incidents"
+    },
+    "paymentsSub": {
+      "label": "Payment views",
+      "invoices": "Invoices",
+      "payouts": "Payouts",
+      "incidents": "Incidents"
+    },
+    "nav": {
+      "work": "To do",
+      "registry": "Registry"
     },
     "filters": {
       "status": "Status",
@@ -864,10 +969,17 @@
       "search": "Search",
       "searchPlaceholder": "Driver name or email",
       "allStatuses": "All statuses",
-      "allTypes": "All types"
+      "allTypes": "All types",
+      "from": "From",
+      "to": "To"
     },
     "queue": {
       "empty": "No document matches these filters.",
+      "select": "Select a document.",
+      "back": "Queue",
+      "next": "Next",
+      "previous": "Previous",
+      "shortcut": "J and K to move through the queue.",
       "view": "View",
       "approve": "Approve",
       "reject": "Reject",
@@ -897,7 +1009,71 @@
       "approved": "Approved",
       "admin": "Admin",
       "driver": "Driver",
-      "verification": "Verification"
+      "verification": "Verification",
+      "openDocuments": "Documents",
+      "rides": "Ads",
+      "bookings": "Bookings",
+      "openRides": "Ads",
+      "openBookings": "Bookings"
+    },
+    "rides": {
+      "empty": "No ad matches these filters.",
+      "state": "State",
+      "searchPlaceholder": "City or driver",
+      "cancelled": "Cancelled",
+      "open": "View ad",
+      "seats": "{taken}/{total} seats",
+      "bookingsCount": "{count, plural, =0 {No booking} one {# booking} other {# bookings}}",
+      "stateFilter": {
+        "upcoming": "Upcoming",
+        "past": "Past",
+        "cancelled": "Cancelled",
+        "all": "All"
+      }
+    },
+    "bookings": {
+      "empty": "No booking matches these filters.",
+      "status": "Status",
+      "paymentMethod": "Ride payment",
+      "invoice": "Invoice",
+      "allStatuses": "All statuses",
+      "allMethods": "All methods",
+      "allInvoices": "All invoices",
+      "searchPlaceholder": "City, passenger or driver",
+      "seats": "{count, plural, one {# seat} other {# seats}}",
+      "noInvoice": "No invoice",
+      "invoiceLine": "{number} · {status}",
+      "statusValue": {
+        "pending": "Pending",
+        "awaiting_payment": "Awaiting payment",
+        "confirmed": "Confirmed",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled",
+        "expired": "Expired"
+      }
+    },
+    "invoices": {
+      "empty": "No invoice matches these filters.",
+      "status": "Invoice status",
+      "paymentStatus": "Payment status",
+      "allStatuses": "All statuses",
+      "allPayments": "All payments",
+      "searchPlaceholder": "Buyer name or email",
+      "noPayment": "No attempt",
+      "statusValue": {
+        "draft": "Draft",
+        "issued": "Issued",
+        "paid": "Paid",
+        "voided": "Voided"
+      },
+      "paymentValue": {
+        "created": "Created",
+        "processing": "Processing",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "cancelled": "Cancelled",
+        "refunded": "Refunded"
+      }
     },
     "payouts": {
       "loading": "Loading payouts…",
@@ -1052,6 +1228,7 @@
     "resultsCount": "{count, plural, =0 {No rides} one {# ride} other {# rides}}",
     "error": "Could not load the rides. Please try again later.",
     "ratingLabel": "{rating} out of 5 — {count} reviews",
+    "occupancy": "{taken}/{total} seats filled",
     "seatsAvailable": "{count, plural, =0 {Full} one {# seat} other {# seats}}",
     "perSeat": "per seat",
     "plusKoubyFee": "+ {amount} Kouby fee",
@@ -1178,8 +1355,10 @@
     "waitingDriver": "Your seat is reserved. Pay Kouby to confirm.",
     "waitingDriverTotal": "Amount due: {total}.",
     "dueIn": "Pay within {remaining}",
-    "dueExpired": "The 15-minute payment window has ended. This seat will be released.",
-    "overdueBody": "The 15-minute payment window has ended. Pay now to keep the seat — it will be released shortly.",
+    "windowLabel": "Time left",
+    "windowHint": "You have 5 minutes to confirm this seat.",
+    "dueExpired": "The 5-minute payment window has ended. This seat will be released.",
+    "overdueBody": "The 5-minute payment window has ended. Pay now to keep the seat — it will be released shortly.",
     "expiredTitle": "Payment window ended",
     "expiredBody": "This invoice is no longer payable. Search for another ride if the seat has been released.",
     "backToBookings": "My bookings",
@@ -1191,6 +1370,14 @@
     "stepRequest": "Reserve",
     "stepPay": "Pay Kouby",
     "stepConfirmed": "Confirmed",
+    "stepsLabel": "Booking steps",
+    "amountPaid": "Paid to Kouby",
+    "settledHint": "Nothing else to pay on Kouby. The driver is paid after the trip.",
+    "waitStep": {
+      "sent": "Request sent",
+      "driver": "Waiting for the driver",
+      "pay": "You pay to confirm"
+    },
     "failedBody": "The previous attempt failed. Your details are still here — try again or use another card.",
     "decline": {
       "generic": "This card was declined. Try another card or contact your bank.",
@@ -1307,7 +1494,7 @@
       },
       {
         "heading": "3. Pay to confirm",
-        "body": "After you reserve, you have 15 minutes to pay the invoice and confirm your seat. Unpaid seats go back to other passengers. Card payments include the fare; Interac and cash pay only the commission."
+        "body": "After you reserve, you have 5 minutes to pay the invoice and confirm your seat. Unpaid seats go back to other passengers. Card payments include the fare; Interac and cash pay only the commission."
       },
       {
         "heading": "4. Travel",
@@ -1325,7 +1512,7 @@
       },
       {
         "heading": "Pay on time",
-        "body": "You have 15 minutes after reserving to pay the invoice. Unpaid bookings expire and the seats go back to other passengers."
+        "body": "You have 5 minutes after reserving to pay the invoice. Unpaid bookings expire and the seats go back to other passengers."
       },
       {
         "heading": "Stay reachable",

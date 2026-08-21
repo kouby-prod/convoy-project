@@ -1,7 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import {
   TrajetSchema,
-  TrajetPageSchema,
+  OwnedTrajetPageSchema,
   TrajetSearchPageSchema,
   TrajetApiSearchQuerySchema,
   PaginationQuerySchema,
@@ -290,8 +290,8 @@ export const myTrajetsRoute = createRoute({
   request: { query: PaginationQuerySchema },
   responses: {
     200: {
-      description: 'A page of trajets',
-      content: { 'application/json': { schema: TrajetPageSchema } },
+      description: 'A page of trajets with pending/awaiting-payment counts',
+      content: { 'application/json': { schema: OwnedTrajetPageSchema } },
     },
     401: {
       description: 'Not authenticated',

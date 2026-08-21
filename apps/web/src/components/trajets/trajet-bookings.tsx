@@ -27,6 +27,10 @@ import {
 } from '@/components/ui/select';
 import { BookingMessages } from '@/components/trajets/booking-messages';
 import { BookingStatusBadge } from '@/components/trajets/booking-status-badge';
+import { UnreadBadge } from '@/components/messages/unread-badge';
+import { useMessageReadMap } from '@/hooks/use-message-read';
+import { fetchConversations } from '@/lib/conversations';
+import { isThreadUnread } from '@/lib/message-read';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -153,6 +157,12 @@ export function TrajetBookings({
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const hasDeparted = new Date(departureDateTime) < new Date();
+  const { markRead, userId, readMap } = useMessageReadMap();
+  const { data: inbox } = useQuery({
+    queryKey: ['messages', 'inbox'],
+    queryFn: fetchConversations,
+    staleTime: 30_000,
+  });
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['trajets', trajetId, 'bookings', page],
@@ -209,6 +219,7 @@ export function TrajetBookings({
     setSelectedId(id);
     setConfirmingId(null);
     setMobileShowDetail(true);
+    markRead(id);
   }
 
   return (
@@ -241,6 +252,9 @@ export function TrajetBookings({
                     booking={booking}
                     locale={locale}
                     selected={booking.id === selectedId}
+                    unread={Boolean(
+                      inbox?.find((thread) => thread.bookingId === booking.id && isThreadUnread(thread, userId, readMap)),
+                    )}
                     onSelect={() => selectBooking(booking.id)}
                   />
                 </li>
@@ -338,11 +352,13 @@ function QueueRow({
   booking,
   locale,
   selected,
+  unread,
   onSelect,
 }: {
   booking: DriverBooking;
   locale: string;
   selected: boolean;
+  unread: boolean;
   onSelect: () => void;
 }) {
   const t = useTranslations('Trajets');
@@ -374,7 +390,9 @@ function QueueRow({
         {passengerInitials(booking.firstName, booking.lastName, displayName)}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-foreground">{displayName}</span>
+        <span className={cn('block truncate text-sm text-foreground', unread ? 'font-semibold' : 'font-medium')}>
+          {displayName}
+        </span>
         <span className="block truncate text-xs text-muted-foreground">
           {t('bookings.seatsCount', { count: booking.seats })}
           {' · '}
@@ -397,6 +415,7 @@ function QueueRow({
           ) : null}
         </span>
       </span>
+      {unread ? <UnreadBadge count={1} /> : null}
       <BookingStatusBadge status={booking.status} />
     </button>
   );
@@ -535,7 +554,14 @@ function DriverBookingCard({
 
       {booking.status === 'confirmed' ? <ConfirmedSettlement booking={booking} locale={locale} /> : null}
 
-      <BookingMessages bookingId={booking.id} />
+      <BookingMessages
+        bookingId={booking.id}
+        pickupHints={
+          booking.status === 'pending' ||
+          booking.status === 'awaiting_payment' ||
+          booking.status === 'confirmed'
+        }
+      />
 
       {booking.status === 'confirmed' && hasDeparted ? (
         reviewed ? (
@@ -703,9 +729,14 @@ function PayWindow({ dueAt, expired }: { dueAt: string; expired: boolean }) {
   const remaining = remainingDueLabel(dueAt, now);
   if (!remaining) return null;
   return (
-    <div className="flex items-start gap-3 rounded-lg bg-primary/10 px-3 py-3 ring-1 ring-primary/20">
-      <Clock className="mt-0.5 size-4 shrink-0 text-foreground" strokeWidth={2} aria-hidden />
-      <p className="text-sm font-medium text-foreground">{t('bookings.payWindow', { remaining })}</p>
+    <div className="grid gap-1 rounded-lg bg-primary/10 px-3 py-3 ring-1 ring-primary/20">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {t('bookings.payWindowLabel')}
+      </p>
+      <p className="font-display text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+        {remaining}
+      </p>
+      <p className="text-sm text-foreground">{t('bookings.payWindow', { remaining })}</p>
     </div>
   );
 }

@@ -1,9 +1,9 @@
-import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ConversationView } from '@/components/messages/conversation-view';
+import { setRequestLocale } from 'next-intl/server';
+import { MessagesInbox } from '@/components/messages/messages-inbox';
 
 /**
- * Single booking conversation. Server shell; thread UI is client-side
- * (auth, TanStack Query, optional WebSocket).
+ * Single booking conversation. Same split-pane as the inbox; mobile shows
+ * the thread full-bleed with a back control.
  */
 export default async function MessageThreadPage({
   params,
@@ -12,16 +12,10 @@ export default async function MessageThreadPage({
 }) {
   const { locale, bookingId } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations('Messages');
 
   return (
-    <section className="flex flex-col gap-8 py-12">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('threadTitle')}</h1>
-        <p className="text-sm text-muted-foreground">{t('threadSubtitle')}</p>
-      </div>
-
-      <ConversationView bookingId={bookingId} />
-    </section>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <MessagesInbox selectedId={bookingId} />
+    </div>
   );
 }

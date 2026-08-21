@@ -1143,14 +1143,14 @@ describe('trajet module', () => {
       const res = await trajetModule.request('/me/trajets');
       expect(res.status).toBe(200);
       const body = (await res.json()) as {
-        items: Array<{ driverId: string }>;
+        items: Array<{ driverId: string; pendingRequestCount: number }>;
         page: number;
         limit: number;
         hasMore: boolean;
       };
       expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
       expect(body.items).toHaveLength(1);
-      expect(body.items[0]).toMatchObject({ driverId: 'u_1' });
+      expect(body.items[0]).toMatchObject({ driverId: 'u_1', pendingRequestCount: 0 });
     });
 
     it('caps a page at `limit` items and reports hasMore', async () => {
@@ -1196,7 +1196,11 @@ describe('trajet module', () => {
           departureCity: 'Montreal',
           arrivalCity: 'Quebec',
           departureAt: now,
+          departurePlace: 'Gare Centrale',
+          arrivalPlace: 'Gare du Palais',
           pricePerSeat: '20',
+          driverName: 'Alex Driver',
+          reviewId: null,
         },
       ];
 
@@ -1211,7 +1215,14 @@ describe('trajet module', () => {
       expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
       expect(body.items).toHaveLength(1);
       expect(body.items[0]).toMatchObject({ id: BOOKING_ID });
-      expect(body.items[0]?.trajet).toMatchObject({ destinationCity: 'Quebec', pricePerSeat: 20 });
+      expect(body.items[0]?.trajet).toMatchObject({
+        destinationCity: 'Quebec',
+        pricePerSeat: 20,
+        departurePlace: 'Gare Centrale',
+        driverFirstName: 'Alex',
+        driverLastName: 'Driver',
+      });
+      expect(body.items[0]).toMatchObject({ reviewedByPassenger: false });
     });
 
     it('rejects a page below 1', async () => {

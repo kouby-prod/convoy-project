@@ -212,16 +212,17 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
           <p className="text-sm text-muted-foreground">
             {booking?.status === 'pending' ? t('waitingDriver') : t('empty')}
           </p>
+          {booking?.status === 'pending' ? <WaitTimeline /> : null}
           {booking?.status === 'pending' && pendingTotal ? (
-            <p className="text-sm text-foreground">{t('waitingDriverTotal', { total: pendingTotal })}</p>
+            <p className="font-display text-2xl font-semibold tabular-nums">{pendingTotal}</p>
           ) : null}
           <div className="flex flex-wrap gap-2">
             <Link href="/mes-reservations" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
               {t('backToBookings')}
             </Link>
             {booking ? (
-              <Link href={`/trajet/${booking.trajetId}`} className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
-                {t('viewTrip')}
+              <Link href={`/messages/${booking.id}`} className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }))}>
+                {t('openMessages')}
               </Link>
             ) : null}
           </div>
@@ -242,24 +243,24 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
   return (
     <div className="grid gap-6">
       {booking ? (
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <TripSummary booking={booking} locale={locale} />
-          <div className="grid justify-items-end gap-1">
+          <div className="min-w-0 lg:justify-items-end">
             <CheckoutSteps status={paid ? 'confirmed' : booking.status} />
-            {!paid ? <DueCountdown dueAt={invoice.dueAt} /> : null}
           </div>
         </div>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <Card>
-          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+        <OrderSummary invoice={invoice} booking={booking} locale={locale} paid={paid} />
+        <Card className="lg:order-first">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 px-4 sm:px-6">
             <CardTitle>
               {paid ? t('paidTitle') : confirming ? t('confirmingTitle') : windowClosed ? t('expiredTitle') : t('payTitle')}
             </CardTitle>
             <Badge variant={invoiceStatusVariant(invoice.status)}>{tFacture(`status.${invoice.status}`)}</Badge>
           </CardHeader>
-          <CardContent className="grid gap-5 px-6 pb-6 pt-0">
+          <CardContent className="grid gap-5 px-4 pb-6 pt-0 sm:px-6">
             {paid ? (
               <PaidState booking={booking} invoice={invoice} locale={locale} />
             ) : confirming ? (
@@ -306,7 +307,6 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
             )}
           </CardContent>
         </Card>
-        <OrderSummary invoice={invoice} booking={booking} locale={locale} paid={paid} />
       </div>
     </div>
   );
@@ -322,6 +322,7 @@ function PaidState({
   locale: string;
 }) {
   const t = useTranslations('Paiement');
+  const tFacture = useTranslations('Facture');
   const tRide = useTranslations('Trajet');
   const remaining =
     booking && booking.paymentMethod !== 'card' ? driverFareCents(booking.paymentMethod, booking.fareCents) : 0;
@@ -329,15 +330,25 @@ function PaidState({
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-4">
       <p className="flex items-start gap-2 rounded-md bg-success/10 px-3 py-2 text-sm text-foreground ring-1 ring-success/20">
         <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" strokeWidth={2} aria-hidden />
         {invoice.fareCents > 0 ? t('paidBodyCard') : t('paidBodyOffPlatform')}
       </p>
+      <dl className="grid gap-1 text-sm">
+        <div className="flex items-center justify-between gap-4">
+          <dt className="text-muted-foreground">{tFacture('number')}</dt>
+          <dd className="font-medium tabular-nums">{invoice.number}</dd>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <dt className="text-muted-foreground">{t('amountPaid')}</dt>
+          <dd className="font-medium tabular-nums">{formatCad(invoice.totalCents, locale)}</dd>
+        </div>
+      </dl>
       {remainingLabel && booking ? (
         <div className="grid gap-2 rounded-lg bg-muted/40 px-3 py-3 ring-1 ring-foreground/5">
           <p className="text-sm font-medium text-foreground">{t('remainingFareTitle')}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {t('remainingFareBody', {
               amount: remainingLabel,
               method: tRide(`paymentMethods.${booking.paymentMethod}`),
@@ -360,21 +371,50 @@ function PaidState({
             {copied ? t('copied') : t('copyAmount')}
           </Button>
         </div>
-      ) : null}
+      ) : (
+        <p className="text-sm text-muted-foreground">{t('settledHint')}</p>
+      )}
       <div className="flex flex-wrap gap-2">
-        <Link href="/mes-reservations" className={cn(buttonVariants({ variant: 'primary', size: 'sm' }))}>
-          {t('backToBookings')}
-        </Link>
-        <Link href={`/messages/${invoice.bookingId}`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
+        <Link href={`/messages/${invoice.bookingId}`} className={cn(buttonVariants({ variant: 'primary', size: 'sm' }))}>
           {t('openMessages')}
         </Link>
         {booking ? (
-          <Link href={`/trajet/${booking.trajetId}`} className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
+          <Link href={`/trajet/${booking.trajetId}`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
             {t('viewTrip')}
           </Link>
         ) : null}
       </div>
     </div>
+  );
+}
+
+function WaitTimeline() {
+  const t = useTranslations('Paiement');
+  const steps = [
+    { label: t('waitStep.sent'), state: 'done' as const },
+    { label: t('waitStep.driver'), state: 'current' as const },
+    { label: t('waitStep.pay'), state: 'todo' as const },
+  ];
+
+  return (
+    <ol className="grid gap-2">
+      {steps.map((step) => (
+        <li key={step.label} className="flex items-center gap-2 text-sm">
+          <span
+            className={cn(
+              'size-2 shrink-0 rounded-full',
+              step.state === 'done'
+                ? 'bg-success'
+                : step.state === 'current'
+                  ? 'bg-primary'
+                  : 'bg-muted-foreground/40',
+            )}
+            aria-hidden
+          />
+          <span className={step.state === 'todo' ? 'text-muted-foreground' : 'text-foreground'}>{step.label}</span>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -411,20 +451,27 @@ function CheckoutSteps({ status }: { status: BookingStatus | 'confirmed' }) {
   ];
 
   return (
-    <ol className="flex flex-wrap gap-2 text-xs">
+    <ol className="flex w-full max-w-full items-center overflow-x-auto text-xs" aria-label={t('stepsLabel')}>
       {steps.map((step, index) => (
-        <li
-          key={step.label}
-          className={cn(
-            'rounded-md px-2.5 py-1 ring-1',
-            step.done
-              ? 'bg-success/10 text-foreground ring-success/20'
-              : step.current
-                ? 'bg-primary/20 text-foreground ring-primary/30'
-                : 'bg-muted text-muted-foreground ring-foreground/5',
-          )}
-        >
-          {index + 1}. {step.label}
+        <li key={step.label} className="flex items-center">
+          {index > 0 ? (
+            <span
+              className={cn('mx-1 h-px w-5 sm:w-8', step.done || steps[index - 1]?.done ? 'bg-success' : 'bg-border')}
+              aria-hidden
+            />
+          ) : null}
+          <span
+            className={cn(
+              'shrink-0 rounded-full px-2.5 py-1',
+              step.done
+                ? 'bg-success/10 text-foreground'
+                : step.current
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground',
+            )}
+          >
+            {step.label}
+          </span>
         </li>
       ))}
     </ol>
@@ -472,23 +519,23 @@ function OrderSummary({
 
   return (
     <Card className="h-fit lg:sticky lg:top-4">
-      <CardHeader>
+      <CardHeader className="px-4 sm:px-6">
         <CardTitle>{t('summaryTitle')}</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-3 px-6 pb-6 pt-0 text-sm">
+      <CardContent className="grid gap-3 px-4 pb-6 pt-0 text-sm sm:px-6">
         {booking ? (
           <p className="text-xs text-muted-foreground">
             {t('methodLabel')}: {tRide(`paymentMethods.${booking.paymentMethod}`)}
           </p>
         ) : null}
-        <p className="font-display text-3xl font-semibold tabular-nums text-foreground">
+        <p className="font-display text-2xl font-semibold tabular-nums text-foreground sm:text-3xl">
           {formatCad(invoice.totalCents, locale)}
         </p>
+        {!paid ? <DueCountdown dueAt={invoice.dueAt} emphasis="hero" /> : null}
         <AmountBreakdown invoice={invoice} locale={locale} />
         <p className="text-xs leading-relaxed text-muted-foreground">
           {invoice.fareCents > 0 ? t('disclaimerCard') : t('disclaimerOffPlatform')}
         </p>
-        <DueCountdown dueAt={invoice.dueAt} paid={paid} />
         {paid ? <InvoiceDownloads invoice={invoice} /> : null}
         <Link href="/cgv" className={cn(buttonVariants({ variant: 'link', size: 'sm' }), 'h-auto w-fit px-0')}>
           {t('cgvLink')}
@@ -731,7 +778,7 @@ function StripeForm({
           {t('trust')} {t('cardLogos')}.
         </span>
       </p>
-      <div className="sticky bottom-0 z-10 -mx-6 border-t border-border bg-card px-6 py-3 lg:static lg:mx-0 lg:border-0 lg:p-0">
+      <div className="sticky bottom-0 z-10 -mx-4 border-t border-border bg-card px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:p-0">
         <Button
           type="button"
           disabled={!stripe || pending}
