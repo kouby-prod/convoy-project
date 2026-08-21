@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, Clock, Users, XCircle, type LucideIcon } from 'lucide-react';
+import { CheckCircle2, Clock, ShieldAlert, Users, XCircle, type LucideIcon } from 'lucide-react';
 import type { AdminStats } from '@carpool/schemas';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -45,10 +45,17 @@ export function AdminStatsTiles({ stats }: { stats: AdminStats }) {
       Icon: Users,
       tone: 'bg-primary/10 text-primary',
     },
+    {
+      key: 'incidents',
+      label: t('stats.incidents'),
+      value: stats.payments.openIncidents,
+      Icon: ShieldAlert,
+      tone: 'bg-destructive/10 text-destructive',
+    },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
       {tiles.map(({ key, label, value, Icon, tone }) => (
         <Card key={key}>
           <CardContent className="flex items-center gap-4 p-5 pt-5">

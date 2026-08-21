@@ -10,6 +10,7 @@ import type {
 } from '@carpool/schemas';
 import { CheckoutBookingSummarySchema, CreditNoteSchema, InvoiceSchema, PaymentSchema } from '@carpool/schemas';
 import { requireAuth, getAuth, hasRole, type AuthEnv } from '../../auth';
+import { rateLimit } from '../../middleware/rate-limit';
 import { db } from '../../db/client';
 import { creditNote, invoice, payment } from '../../db/payment';
 import { booking, trajet } from '../../db/trajet-schema';
@@ -26,12 +27,13 @@ import {
   isPayPalConfigured,
   retrievePayPalOrder,
 } from './paypal';
-import { settlePaidInvoice } from './settle';
+import { settlePaidInvoice, markPaymentProcessing } from './settle';
 import { renderInvoicePdf } from './pdf';
 import { renderInvoiceHtml } from './html';
 import { putObject, getObjectBuffer } from '../../storage/s3';
 import {
   capturePayPalRoute,
+  confirmStripeRoute,
   createPaymentRoute,
   getInvoiceByBookingRoute,
   getInvoiceRoute,
@@ -40,7 +42,16 @@ import {
 
 const app = new OpenAPIHono<AuthEnv>();
 
+const checkoutRateLimit = rateLimit<AuthEnv>({
+  windowSeconds: 60,
+  max: 20,
+  keyGenerator: (c) => getAuth(c).user.id,
+});
+
 app.use('/payments', requireAuth);
+app.use('/payments/*', requireAuth);
+app.use('/payments', async (c, next) => (c.req.method === 'POST' ? checkoutRateLimit(c, next) : next()));
+app.use('/payments/stripe/confirm', checkoutRateLimit);
 app.use('/payments/*', requireAuth);
 app.use('/invoices/*', requireAuth);
 app.use('/invoices/:id', requireAuth);
@@ -159,28 +170,53 @@ async function startCheckout(
     .orderBy(desc(payment.createdAt))
     .limit(1);
 
-  if (open && open.status !== 'refunded' && open.status !== 'cancelled') {
+  if (open) {
     if (provider === 'stripe') {
       const intent = await retrieveStripePaymentIntent(open.providerPaymentId);
+      if (intent.status === 'succeeded') {
+        await settlePaidInvoice({
+          invoiceId: inv.id,
+          provider: 'stripe',
+          providerPaymentId: intent.id,
+          amountCents: intent.amount,
+          currency: intent.currency,
+        });
+        const [paidInv] = await db.select().from(invoice).where(eq(invoice.id, inv.id));
+        return {
+          ok: true,
+          value: {
+            provider,
+            clientSecret: intent.clientSecret,
+            orderId: null,
+            invoice: serializeInvoice(paidInv ?? inv),
+          },
+        };
+      }
+      // Same PaymentIntent can complete 3-D Secure or accept another card
+      // after a decline (`requires_payment_method`). Only a canceled intent
+      // needs a new Stripe object.
+      if (intent.status !== 'canceled') {
+        return {
+          ok: true,
+          value: {
+            provider,
+            clientSecret: intent.clientSecret,
+            orderId: null,
+            invoice: serializeInvoice(inv),
+          },
+        };
+      }
+    } else if (open.status === 'created' || open.status === 'processing') {
       return {
         ok: true,
         value: {
           provider,
-          clientSecret: intent.clientSecret,
-          orderId: null,
+          clientSecret: null,
+          orderId: open.providerPaymentId,
           invoice: serializeInvoice(inv),
         },
       };
     }
-    return {
-      ok: true,
-      value: {
-        provider,
-        clientSecret: null,
-        orderId: open.providerPaymentId,
-        invoice: serializeInvoice(inv),
-      },
-    };
   }
 
   if (provider === 'stripe') {
@@ -190,6 +226,7 @@ async function startCheckout(
       invoiceNumber: inv.number,
       amountCents: inv.totalCents,
       currency: inv.currency,
+      attemptKey: open ? randomUUID() : undefined,
     });
     await db.insert(payment).values({
       id: randomUUID(),
@@ -237,6 +274,56 @@ async function startCheckout(
   };
 }
 
+async function confirmStripePayment(
+  userId: string,
+  bookingId: string,
+): Promise<
+  | { ok: true; value: Awaited<ReturnType<typeof paymentStateForInvoice>> & { booking: CheckoutBookingSummary | null } }
+  | { ok: false; status: 403 | 404 | 503; error: string }
+> {
+  const [bookingRow] = await db.select().from(booking).where(eq(booking.id, bookingId));
+  if (!bookingRow) return { ok: false, status: 404, error: 'Booking not found' };
+  if (bookingRow.passengerId !== userId) return { ok: false, status: 403, error: 'Not your booking' };
+  if (!isStripeConfigured()) return { ok: false, status: 503, error: 'Stripe is not configured' };
+
+  const [inv] = await db.select().from(invoice).where(eq(invoice.bookingId, bookingId));
+  const checkoutBooking = async () => {
+    const [fresh] = await db.select().from(booking).where(eq(booking.id, bookingId));
+    return serializeCheckoutBooking(fresh ?? bookingRow);
+  };
+
+  if (!inv) {
+    return { ok: true, value: { invoice: null, payment: null, creditNote: null, booking: await checkoutBooking() } };
+  }
+
+  const [open] = await db
+    .select()
+    .from(payment)
+    .where(and(eq(payment.invoiceId, inv.id), eq(payment.provider, 'stripe')))
+    .orderBy(desc(payment.createdAt))
+    .limit(1);
+
+  if (open) {
+    const intent = await retrieveStripePaymentIntent(open.providerPaymentId);
+    if (intent.status === 'succeeded' && inv.status === 'issued') {
+      await settlePaidInvoice({
+        invoiceId: inv.id,
+        provider: 'stripe',
+        providerPaymentId: intent.id,
+        amountCents: intent.amount,
+        currency: intent.currency,
+      });
+    } else if (intent.status === 'processing') {
+      await markPaymentProcessing({ provider: 'stripe', providerPaymentId: intent.id });
+    }
+  }
+
+  return {
+    ok: true,
+    value: { ...(await paymentStateForInvoice(inv.id)), booking: await checkoutBooking() },
+  };
+}
+
 export const paymentModule = app
   .openapi(createPaymentRoute, async (c) => {
     const { user } = getAuth(c);
@@ -264,6 +351,13 @@ export const paymentModule = app
       }
       throw err;
     }
+  })
+  .openapi(confirmStripeRoute, async (c) => {
+    const { user } = getAuth(c);
+    const { bookingId } = c.req.valid('json');
+    const confirmed = await confirmStripePayment(user.id, bookingId);
+    if (!confirmed.ok) return c.json({ error: confirmed.error }, confirmed.status);
+    return c.json(confirmed.value, 200);
   })
   .openapi(capturePayPalRoute, async (c) => {
     const { user } = getAuth(c);

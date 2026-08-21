@@ -174,15 +174,29 @@ export const idempotencyKey = pgTable(
   (t) => [unique('idempotency_key_user_key_unique').on(t.userId, t.key)],
 );
 
-export const reconciliationMismatch = pgTable('reconciliation_mismatch', {
-  id: text('id').primaryKey(),
-  kind: text('kind').notNull(),
-  provider: text('provider'),
-  providerPaymentId: text('provider_payment_id'),
-  invoiceId: text('invoice_id'),
-  detail: jsonb('detail').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+export const reconciliationMismatch = pgTable(
+  'reconciliation_mismatch',
+  {
+    id: text('id').primaryKey(),
+    kind: text('kind').notNull(),
+    provider: text('provider'),
+    providerPaymentId: text('provider_payment_id'),
+    invoiceId: text('invoice_id'),
+    detail: jsonb('detail').notNull(),
+    status: text('status').notNull().default('open'),
+    note: text('note'),
+    resolvedAt: timestamp('resolved_at'),
+    resolvedBy: text('resolved_by'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => [
+    index('reconciliation_mismatch_status_idx').on(t.status),
+    check(
+      'reconciliation_mismatch_status_check',
+      sql`${t.status} in ('open', 'resolved')`,
+    ),
+  ],
+);
 
 /**
  * Fare Kouby owes the driver after a card collection. Created on settle;
@@ -212,7 +226,7 @@ export const driverPayout = pgTable(
     index('driver_payout_driver_idx').on(t.driverId),
     check(
       'driver_payout_status_check',
-      sql`${t.status} in ('held', 'due', 'paid', 'cancelled')`,
+      sql`${t.status} in ('held', 'due', 'paid', 'cancelled', 'frozen')`,
     ),
     check('driver_payout_amount_check', sql`${t.amountCents} > 0`),
   ],

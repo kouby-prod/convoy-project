@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ArrowRight, Banknote, Clock } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
 import { DueCountdown } from '@/components/paiement/due-countdown';
-import { driverFareCents, formatCad, isPastDue, koubyDueCents } from '@/lib/booking-money';
+import { driverFareCents, formatCad, isPastDue, payableCents } from '@/lib/booking-money';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
@@ -222,28 +222,29 @@ export function MesReservationsList() {
                       {t('amountDue')}
                     </p>
                     <p className="font-display text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-                      {formatCad(koubyDueCents(item.paymentMethod, item.fareCents), locale)}
+                      {formatCad(payableCents(item.invoiceTotalCents, item.paymentMethod, item.fareCents), locale)}
                     </p>
                     {item.invoiceDueAt ? (
                       isPastDue(item.invoiceDueAt) ? (
                         <p className="flex items-start gap-2 text-sm text-destructive">
                           <Clock className="mt-0.5 size-4 shrink-0" strokeWidth={2} aria-hidden />
-                          {t('dueExpired')}
+                          {t('dueOverdue')}
                         </p>
                       ) : (
                         <DueCountdown dueAt={item.invoiceDueAt} />
                       )
                     ) : null}
-                    {!isPastDue(item.invoiceDueAt) ? (
-                      <Link
-                        href={`/paiement/${item.id}`}
-                        className={cn(buttonVariants({ size: 'default' }), 'mt-1 w-full font-semibold')}
-                      >
-                        {t('pay', {
-                          amount: formatCad(koubyDueCents(item.paymentMethod, item.fareCents), locale),
-                        })}
-                      </Link>
-                    ) : null}
+                    <Link
+                      href={`/paiement/${item.id}`}
+                      className={cn(buttonVariants({ size: 'default' }), 'mt-1 w-full font-semibold')}
+                    >
+                      {t('pay', {
+                        amount: formatCad(
+                          payableCents(item.invoiceTotalCents, item.paymentMethod, item.fareCents),
+                          locale,
+                        ),
+                      })}
+                    </Link>
                   </div>
                 ) : null}
                 {item.status === 'confirmed' && driverFareCents(item.paymentMethod, item.fareCents) > 0 ? (

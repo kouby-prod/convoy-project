@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
 const SETTLEMENT_POLL_MS = 1000;
-const SETTLEMENT_TIMEOUT_MS = 30_000;
+const SETTLEMENT_TIMEOUT_MS = 60_000;
 
 const stripePromise = env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -65,6 +65,36 @@ async function startCheckout(bookingId: string, invoiceId: string, provider: 'st
     throw new Error(body?.error ?? 'Checkout failed');
   }
   return res.json();
+}
+
+async function confirmStripePayment(bookingId: string) {
+  const res = await api.payments.stripe.confirm.$post({ json: { bookingId } });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error ?? 'Confirm failed');
+  }
+  return res.json();
+}
+
+function checkoutReturnUrl(): string {
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.hash = '';
+  return url.toString();
+}
+
+function stripStripeReturnParams(): { redirected: boolean; succeeded: boolean } {
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get('redirect_status');
+  const redirected = Boolean(status || params.get('payment_intent'));
+  if (redirected) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('redirect_status');
+    url.searchParams.delete('payment_intent');
+    url.searchParams.delete('payment_intent_client_secret');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+  return { redirected, succeeded: status === 'succeeded' || status === 'processing' };
 }
 
 function invoiceStatusVariant(status: Invoice['status']) {
@@ -106,15 +136,8 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const locale = useLocale();
+  const [returnReady, setReturnReady] = useState(false);
   const [settlement, setSettlement] = useState<'idle' | 'polling' | 'stuck'>('idle');
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get('redirect_status');
-    if (status === 'succeeded' || status === 'processing') {
-      setSettlement('polling');
-    }
-  }, []);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['payments', 'by-booking', bookingId],
@@ -130,6 +153,22 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
   const paid = isPaidInvoice(data);
 
   useEffect(() => {
+    const { succeeded } = stripStripeReturnParams();
+    if (succeeded) setSettlement('polling');
+    setReturnReady(true);
+    if (!succeeded) return;
+    void (async () => {
+      try {
+        await confirmStripePayment(bookingId);
+      } catch {
+        /* webhook may still settle */
+      }
+      await queryClient.invalidateQueries({ queryKey: ['payments', 'by-booking', bookingId] });
+      await refetch();
+    })();
+  }, [bookingId, queryClient, refetch]);
+
+  useEffect(() => {
     if (paid && settlement !== 'idle') setSettlement('idle');
   }, [paid, settlement]);
 
@@ -141,6 +180,11 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
 
   const onPaid = useCallback(async () => {
     setSettlement('polling');
+    try {
+      await confirmStripePayment(bookingId);
+    } catch {
+      /* webhook may still settle */
+    }
     await queryClient.invalidateQueries({ queryKey: ['payments', 'by-booking', bookingId] });
     await queryClient.invalidateQueries({ queryKey: ['me', 'bookings'] });
     await refetch();
@@ -151,7 +195,7 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
     router.push('/sign-in');
     return <p className="text-muted-foreground">{t('loading')}</p>;
   }
-  if (isLoading) return <p className="text-muted-foreground">{t('loading')}</p>;
+  if (isLoading || !returnReady) return <p className="text-muted-foreground">{t('loading')}</p>;
   if (isError) return <p className="text-destructive">{t('error')}</p>;
 
   const booking = data?.booking ?? null;
@@ -188,12 +232,12 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
 
   const confirming = settlement !== 'idle' && !paid;
   const failed = payment?.status === 'failed' && !paid && !confirming;
-  const windowExpired =
+  const windowClosed =
     !paid &&
     !confirming &&
-    (invoice.status === 'voided' ||
-      booking?.status === 'expired' ||
-      (invoice.status === 'issued' && isPastDue(invoice.dueAt)));
+    (invoice.status === 'voided' || booking?.status === 'expired');
+  const overdueOpen =
+    !paid && !confirming && !windowClosed && invoice.status === 'issued' && isPastDue(invoice.dueAt);
 
   return (
     <div className="grid gap-6">
@@ -211,7 +255,7 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
             <CardTitle>
-              {paid ? t('paidTitle') : confirming ? t('confirmingTitle') : windowExpired ? t('expiredTitle') : t('payTitle')}
+              {paid ? t('paidTitle') : confirming ? t('confirmingTitle') : windowClosed ? t('expiredTitle') : t('payTitle')}
             </CardTitle>
             <Badge variant={invoiceStatusVariant(invoice.status)}>{tFacture(`status.${invoice.status}`)}</Badge>
           </CardHeader>
@@ -222,7 +266,7 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
               <div className="grid gap-3">
                 <p className="flex items-start gap-2 rounded-md bg-muted px-3 py-2 text-sm text-foreground">
                   <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" aria-hidden />
-                  {t('confirming')}
+                  {t(payment?.status === 'processing' ? 'confirming3ds' : 'confirming')}
                 </p>
                 {settlement === 'stuck' ? (
                   <Button
@@ -231,14 +275,14 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
                     className="w-fit"
                     onClick={() => {
                       setSettlement('polling');
-                      void refetch();
+                      void onPaid();
                     }}
                   >
                     {t('confirmingRetry')}
                   </Button>
                 ) : null}
               </div>
-            ) : windowExpired ? (
+            ) : windowClosed ? (
               <div className="grid gap-3">
                 <p className="text-sm text-muted-foreground">{t('expiredBody')}</p>
                 <Link href="/mes-reservations" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-fit')}>
@@ -247,6 +291,11 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
               </div>
             ) : (
               <div className="grid gap-3">
+                {overdueOpen ? (
+                  <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-destructive/20">
+                    {t('overdueBody')}
+                  </p>
+                ) : null}
                 {failed ? (
                   <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-destructive/20">
                     {t('failedBody')}
@@ -609,21 +658,38 @@ function StripeForm({
   const [walletsReady, setWalletsReady] = useState(false);
 
   const confirm = async () => {
-    if (!stripe || !elements) return { ok: false as const };
+    if (!stripe || !elements) return { ok: false as const, pendingAction: false as const };
     const result = await stripe.confirmPayment({
       elements,
-      confirmParams: { return_url: window.location.href },
+      confirmParams: { return_url: checkoutReturnUrl() },
       redirect: 'if_required',
     });
     if (result.error) {
+      if (result.error.code === 'payment_intent_unexpected_state') {
+        await onPaid();
+        return { ok: true as const, pendingAction: false as const };
+      }
       onError(stripeDeclineMessage(result.error, t));
-      return { ok: false as const };
+      return { ok: false as const, pendingAction: false as const };
     }
-    if (result.paymentIntent?.status === 'succeeded' || result.paymentIntent?.status === 'processing') {
+    const status = result.paymentIntent?.status;
+    if (status === 'succeeded' || status === 'processing') {
       await onPaid();
-      return { ok: true as const };
+      return { ok: true as const, pendingAction: false as const };
     }
-    return { ok: false as const };
+    if (status === 'requires_action' && result.paymentIntent?.client_secret) {
+      const next = await stripe.handleNextAction({ clientSecret: result.paymentIntent.client_secret });
+      if (next.error) {
+        onError(stripeDeclineMessage(next.error, t));
+        return { ok: false as const, pendingAction: false as const };
+      }
+      if (next.paymentIntent?.status === 'succeeded' || next.paymentIntent?.status === 'processing') {
+        await onPaid();
+        return { ok: true as const, pendingAction: false as const };
+      }
+      return { ok: false as const, pendingAction: true as const };
+    }
+    return { ok: false as const, pendingAction: false as const };
   };
 
   const submit = async () => {
@@ -647,7 +713,7 @@ function StripeForm({
         onConfirm={async (event) => {
           onError(null);
           const result = await confirm();
-          if (!result.ok) {
+          if (!result.ok && !result.pendingAction) {
             event.paymentFailed({ reason: 'fail' });
           }
         }}

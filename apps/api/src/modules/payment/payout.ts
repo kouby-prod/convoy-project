@@ -6,6 +6,7 @@ import { creditNote, driverPayout, invoice } from '../../db/payment';
 import { booking } from '../../db/trajet-schema';
 import type { DbTx } from './ledger';
 
+/** Kouby follows up the driver fare 24h after departure — not the passenger pay window. */
 const PAYOUT_HOLD_MS = 24 * 60 * 60 * 1000;
 
 export function serializeDriverPayout(row: typeof driverPayout.$inferSelect): DriverPayout {
@@ -74,7 +75,7 @@ export async function releaseHeldDriverPayouts(now = new Date()): Promise<number
       ? await db.select().from(creditNote).where(eq(creditNote.invoiceId, inv.id))
       : [undefined];
 
-    if (!bookingRow || bookingRow.status === 'cancelled' || note) {
+    if (!bookingRow || bookingRow.status === 'cancelled' || note || row.status === 'frozen') {
       await db
         .update(driverPayout)
         .set({ status: 'cancelled' })
@@ -92,13 +93,29 @@ export async function releaseHeldDriverPayouts(now = new Date()): Promise<number
   return released;
 }
 
-export async function markDriverPayoutPaid(id: string, ref?: string): Promise<DriverPayout | null> {
+export async function freezeDriverPayoutForBooking(bookingId: string): Promise<void> {
+  await db
+    .update(driverPayout)
+    .set({ status: 'frozen' })
+    .where(and(eq(driverPayout.bookingId, bookingId), inArray(driverPayout.status, ['held', 'due'])));
+}
+
+export async function unfreezeDriverPayoutForBooking(bookingId: string): Promise<void> {
+  await db
+    .update(driverPayout)
+    .set({ status: 'held' })
+    .where(and(eq(driverPayout.bookingId, bookingId), eq(driverPayout.status, 'frozen')));
+}
+
+export async function markDriverPayoutPaid(id: string, ref: string): Promise<DriverPayout | null> {
+  const trimmed = ref.trim();
+  if (trimmed.length < 4) return null;
   const [updated] = await db
     .update(driverPayout)
     .set({
       status: 'paid',
       paidAt: new Date(),
-      paidRef: ref?.trim() ? ref.trim() : null,
+      paidRef: trimmed,
     })
     .where(and(eq(driverPayout.id, id), inArray(driverPayout.status, ['held', 'due'])))
     .returning();

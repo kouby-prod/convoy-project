@@ -7,26 +7,90 @@ import { fareRefundLines, postLedger, refundLines, type DbTx } from './ledger';
 import { cancelDriverPayoutForBooking } from './payout';
 import { refundStripePaymentIntent, stripeIdempotencyKey } from './stripe';
 import { getPayPalCaptureId, refundPayPalCapture } from './paypal';
+import { recordPaymentIncident } from './incidents';
 
 export function formatCreditNoteNumber(seq: number, at = new Date()): string {
   return `CN-${at.getUTCFullYear()}-${String(seq).padStart(6, '0')}`;
 }
 
+type RefundKind = 'full' | 'fare' | 'dispute';
+
 /**
- * Refund a paid booking (driver cancel). Creates at most one credit note per
- * invoice; PSP refunds use a deterministic idempotency key so retries are safe.
+ * Refund a paid booking (driver cancel). PSP refund runs first — the credit
+ * note is only written after Stripe/PayPal accepts, so the books cannot say
+ * refunded while the card is still captured.
  */
 export async function refundPaidBooking(bookingId: string, reason: string): Promise<void> {
+  await refundPaidBookingInternal(bookingId, reason, 'full', { refundPsp: true });
+}
+
+/**
+ * Passenger cancel of a confirmed card booking: refund the fare only, keep the
+ * 5 CAD commission, and cancel the driver payout. The payment row stays
+ * `succeeded` because commission was kept.
+ */
+export async function refundFareOnlyForBooking(bookingId: string): Promise<void> {
+  await refundPaidBookingInternal(
+    bookingId,
+    'Passenger cancelled — fare refunded, commission kept',
+    'fare',
+    { refundPsp: true },
+  );
+}
+
+/**
+ * Chargeback lost: Stripe already reversed the charge. Record the credit note
+ * and cancel the payout without sending another refund to the PSP.
+ */
+export async function creditPaidBookingAfterLostDispute(bookingId: string): Promise<void> {
+  await refundPaidBookingInternal(bookingId, 'Stripe dispute lost', 'dispute', { refundPsp: false });
+}
+
+async function refundPaidBookingInternal(
+  bookingId: string,
+  reason: string,
+  kind: RefundKind,
+  opts: { refundPsp: boolean },
+): Promise<void> {
   const [inv] = await db.select().from(invoice).where(eq(invoice.bookingId, bookingId));
   if (!inv || inv.status !== 'paid') return;
+  if (kind === 'fare' && inv.fareCents <= 0) return;
 
-  const note = await db.transaction(async (tx) => {
+  const [succeeded] = await db
+    .select()
+    .from(payment)
+    .where(and(eq(payment.invoiceId, inv.id), eq(payment.status, 'succeeded')));
+
+  if (opts.refundPsp && succeeded) {
+    try {
+      await refundProvider(
+        succeeded.provider as 'stripe' | 'paypal',
+        succeeded.providerPaymentId,
+        inv.id,
+        kind,
+        kind === 'fare' ? inv.fareCents : undefined,
+        inv.currency,
+      );
+    } catch (err: unknown) {
+      await recordPaymentIncident({
+        kind: 'psp_refund_failed',
+        provider: succeeded.provider,
+        providerPaymentId: succeeded.providerPaymentId,
+        invoiceId: inv.id,
+        detail: { bookingId, error: err instanceof Error ? err.message : String(err) },
+      });
+      throw err;
+    }
+  }
+
+  await db.transaction(async (tx) => {
     const [existing] = await tx.select().from(creditNote).where(eq(creditNote.invoiceId, inv.id));
     if (existing) {
       await cancelDriverPayoutForBooking(tx, bookingId);
-      return existing;
+      return;
     }
 
+    const amountCents = kind === 'fare' ? inv.fareCents : inv.totalCents;
     const seqResult = await tx.execute(sql.raw(`select nextval('credit_note_number_seq') as n`));
     const rows = (seqResult as unknown as { rows?: Array<{ n: string | number }> }).rows ?? [];
     const raw = rows[0]?.n;
@@ -39,85 +103,22 @@ export async function refundPaidBooking(bookingId: string, reason: string): Prom
         id: randomUUID(),
         invoiceId: inv.id,
         number: formatCreditNoteNumber(seq),
-        amountCents: inv.totalCents,
+        amountCents,
         currency: inv.currency,
         reason,
       })
       .returning();
     if (!created) throw new Error('Credit note insert returned no row');
 
-    await postLedger(
-      tx,
-      inv.id,
-      `refund:${created.id}`,
-      inv.currency,
-      refundLines(inv.commissionCents, inv.fareCents, inv.taxCents),
-    );
+    const lines =
+      kind === 'fare'
+        ? fareRefundLines(inv.fareCents)
+        : refundLines(inv.commissionCents, inv.fareCents, inv.taxCents);
+    await postLedger(tx, inv.id, `refund:${created.id}`, inv.currency, lines);
     await cancelDriverPayoutForBooking(tx, bookingId);
-    return created;
   });
 
-  const [succeeded] = await db
-    .select()
-    .from(payment)
-    .where(and(eq(payment.invoiceId, inv.id), eq(payment.status, 'succeeded')));
-
-  if (succeeded) {
-    await refundProvider(succeeded.provider as 'stripe' | 'paypal', succeeded.providerPaymentId, inv.id, note.id);
-    await db.update(payment).set({ status: 'refunded' }).where(eq(payment.id, succeeded.id));
-  }
-}
-
-/**
- * Passenger cancel of a confirmed card booking: refund the fare only, keep the
- * 5 CAD commission, and cancel the driver payout.
- */
-export async function refundFareOnlyForBooking(bookingId: string): Promise<void> {
-  const [inv] = await db.select().from(invoice).where(eq(invoice.bookingId, bookingId));
-  if (!inv || inv.status !== 'paid' || inv.fareCents <= 0) return;
-
-  const note = await db.transaction(async (tx) => {
-    const [existing] = await tx.select().from(creditNote).where(eq(creditNote.invoiceId, inv.id));
-    if (existing) return existing;
-
-    const seqResult = await tx.execute(sql.raw(`select nextval('credit_note_number_seq') as n`));
-    const rows = (seqResult as unknown as { rows?: Array<{ n: string | number }> }).rows ?? [];
-    const raw = rows[0]?.n;
-    const seq = typeof raw === 'number' ? raw : Number(raw);
-    if (!Number.isFinite(seq) || seq < 1) throw new Error('Failed to allocate credit note number');
-
-    const [created] = await tx
-      .insert(creditNote)
-      .values({
-        id: randomUUID(),
-        invoiceId: inv.id,
-        number: formatCreditNoteNumber(seq),
-        amountCents: inv.fareCents,
-        currency: inv.currency,
-        reason: 'Passenger cancelled — fare refunded, commission kept',
-      })
-      .returning();
-    if (!created) throw new Error('Credit note insert returned no row');
-
-    await postLedger(tx, inv.id, `refund-fare:${created.id}`, inv.currency, fareRefundLines(inv.fareCents));
-    await cancelDriverPayoutForBooking(tx, bookingId);
-    return created;
-  });
-
-  const [succeeded] = await db
-    .select()
-    .from(payment)
-    .where(and(eq(payment.invoiceId, inv.id), eq(payment.status, 'succeeded')));
-
-  if (succeeded) {
-    await refundProvider(
-      succeeded.provider as 'stripe' | 'paypal',
-      succeeded.providerPaymentId,
-      inv.id,
-      note.id,
-      inv.fareCents,
-      inv.currency,
-    );
+  if (kind !== 'fare' && succeeded) {
     await db.update(payment).set({ status: 'refunded' }).where(eq(payment.id, succeeded.id));
   }
 }

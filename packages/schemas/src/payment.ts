@@ -123,6 +123,40 @@ export const CapturePayPalSchema = z
   .describe('CapturePayPal');
 export type CapturePayPal = z.infer<typeof CapturePayPalSchema>;
 
+export const ConfirmStripeSchema = z
+  .object({
+    bookingId: z.string().min(1),
+  })
+  .describe('ConfirmStripe');
+export type ConfirmStripe = z.infer<typeof ConfirmStripeSchema>;
+
+export const ReconciliationMismatchStatusSchema = z.enum(['open', 'resolved']);
+export type ReconciliationMismatchStatus = z.infer<typeof ReconciliationMismatchStatusSchema>;
+
+export const ReconciliationMismatchSchema = z
+  .object({
+    id: z.string(),
+    kind: z.string(),
+    provider: z.string().nullable(),
+    providerPaymentId: z.string().nullable(),
+    invoiceId: z.string().nullable(),
+    detail: z.unknown(),
+    status: ReconciliationMismatchStatusSchema,
+    note: z.string().nullable(),
+    createdAt: z.string().describe('ISO-8601 timestamp'),
+    resolvedAt: z.string().nullable().describe('ISO-8601 timestamp'),
+    resolvedBy: z.string().nullable(),
+  })
+  .describe('ReconciliationMismatch');
+export type ReconciliationMismatch = z.infer<typeof ReconciliationMismatchSchema>;
+
+export const ResolveMismatchSchema = z
+  .object({
+    note: z.string().trim().max(500).optional(),
+  })
+  .describe('ResolveMismatch');
+export type ResolveMismatch = z.infer<typeof ResolveMismatchSchema>;
+
 export const CheckoutBookingSummarySchema = z
   .object({
     id: z.string(),
@@ -146,7 +180,7 @@ export const BookingPaymentStateSchema = z
   .describe('BookingPaymentState');
 export type BookingPaymentState = z.infer<typeof BookingPaymentStateSchema>;
 
-export const DriverPayoutStatusSchema = z.enum(['held', 'due', 'paid', 'cancelled']);
+export const DriverPayoutStatusSchema = z.enum(['held', 'due', 'paid', 'cancelled', 'frozen']);
 export type DriverPayoutStatus = z.infer<typeof DriverPayoutStatusSchema>;
 
 export const DriverPayoutSchema = z
@@ -167,14 +201,21 @@ export type DriverPayout = z.infer<typeof DriverPayoutSchema>;
 
 export const MarkDriverPayoutPaidSchema = z
   .object({
-    ref: z.string().trim().max(200).optional(),
+    ref: z.string().trim().min(4).max(200),
   })
   .describe('MarkDriverPayoutPaid');
 export type MarkDriverPayoutPaid = z.infer<typeof MarkDriverPayoutPaidSchema>;
 
-/** Driver-facing booking row: invoice due window + payout, if any. */
+/** Driver-facing booking row: invoice due window, latest payment, payout. */
 export const DriverBookingSchema = BookingSchema.extend({
   invoiceDueAt: z.string().nullable().describe('ISO-8601 invoice due date, if issued'),
+  invoiceTotalCents: z
+    .number()
+    .int()
+    .nonnegative()
+    .nullable()
+    .describe('Issued invoice total in cents, if any'),
+  paymentStatus: PaymentStatusSchema.nullable().describe('Latest payment attempt status, if any'),
   payout: DriverPayoutSchema.nullable(),
 }).describe('DriverBooking');
 export type DriverBooking = z.infer<typeof DriverBookingSchema>;

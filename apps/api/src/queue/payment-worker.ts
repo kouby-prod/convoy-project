@@ -8,6 +8,9 @@ import {
 import { handlePayPalEvent, handleStripeEvent, markEventProcessed } from '../modules/payment/events';
 import { runPaymentReconciliation } from '../modules/payment/reconcile';
 import { releaseHeldDriverPayouts } from '../modules/payment/payout';
+import { expireAllUnpaidBookings } from '../modules/payment/ttl';
+import { recordPaymentIncident } from '../modules/payment/incidents';
+import { notifyUser, describeTrip, trajetSearchUrl } from '../modules/trajet/notifications';
 
 let eventWorker: Worker<PaymentEventJob> | undefined;
 let reconcileWorker: Worker | undefined;
@@ -30,6 +33,12 @@ export function startPaymentWorkers(): void {
     });
     eventWorker.on('failed', (job, err) => {
       console.error(`[payment-worker] job ${job?.id ?? '?'} failed:`, err);
+      void recordPaymentIncident({
+        kind: 'worker_job_failed',
+        provider: job?.data.provider,
+        providerPaymentId: job?.data.eventId ?? job?.id,
+        detail: { type: job?.data.type, error: err.message },
+      });
     });
     console.log('[payment-worker] listening on queue', PAYMENT_EVENT_QUEUE);
   }
@@ -37,6 +46,17 @@ export function startPaymentWorkers(): void {
     reconcileWorker = new Worker(PAYMENT_RECONCILE_QUEUE, async (job) => {
       if (job.name === 'payout-release') {
         await releaseHeldDriverPayouts();
+        return;
+      }
+      if (job.name === 'unpaid-expire') {
+        const expired = await expireAllUnpaidBookings();
+        for (const row of expired) {
+          await notifyUser(
+            row.passengerId,
+            'Your Kouby payment window expired',
+            `Your booking for ${describeTrip(row.trip)} expired because the invoice was not paid in time. Search for another ride: ${trajetSearchUrl()}`,
+          );
+        }
         return;
       }
       await runPaymentReconciliation();

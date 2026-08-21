@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
-import { ArrowLeft, Banknote, CheckCircle2, Clock } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Banknote, CheckCircle2, Clock } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
 import type { DriverBooking } from '@carpool/schemas';
 import { env } from '@/lib/env';
@@ -11,7 +11,7 @@ import {
   COMMISSION_AMOUNT_CENTS,
   formatCad,
   isPastDue,
-  koubyDueCents,
+  payableCents,
   remainingDueLabel,
 } from '@/lib/booking-money';
 import { cn } from '@/lib/utils';
@@ -38,6 +38,13 @@ const BOOKING_ACTION_ORDER: Record<DriverBooking['status'], number> = {
   cancelled: 4,
   expired: 5,
 };
+
+function queueAmountCents(booking: DriverBooking): number {
+  if (booking.paymentMethod !== 'card' || booking.status === 'confirmed') {
+    return booking.fareCents;
+  }
+  return payableCents(booking.invoiceTotalCents, booking.paymentMethod, booking.fareCents);
+}
 
 function sortDriverBookings(items: DriverBooking[]) {
   return [...items].sort(
@@ -341,7 +348,12 @@ function QueueRow({
   const t = useTranslations('Trajets');
   const displayName =
     [booking.firstName, booking.lastName].filter(Boolean).join(' ') || t('bookings.passenger');
-  const amount = formatCad(koubyDueCents(booking.paymentMethod, booking.fareCents), locale);
+  const amount = formatCad(queueAmountCents(booking), locale);
+  const remaining =
+    booking.status === 'awaiting_payment' && booking.invoiceDueAt && !isPastDue(booking.invoiceDueAt)
+      ? remainingDueLabel(booking.invoiceDueAt)
+      : null;
+  const overdue = booking.status === 'awaiting_payment' && isPastDue(booking.invoiceDueAt);
 
   return (
     <button
@@ -367,6 +379,22 @@ function QueueRow({
           {t('bookings.seatsCount', { count: booking.seats })}
           {' · '}
           {amount}
+          {booking.paymentStatus === 'failed' ? (
+            <>
+              {' · '}
+              <span className="text-destructive">{t('bookings.declinedShort')}</span>
+            </>
+          ) : remaining ? (
+            <>
+              {' · '}
+              {remaining}
+            </>
+          ) : overdue ? (
+            <>
+              {' · '}
+              <span className="text-destructive">{t('bookings.overdueShort')}</span>
+            </>
+          ) : null}
         </span>
       </span>
       <BookingStatusBadge status={booking.status} />
@@ -407,7 +435,10 @@ function DriverBookingCard({
 }) {
   const t = useTranslations('Trajets');
   const tRide = useTranslations('Trajet');
-  const passengerPays = formatCad(koubyDueCents(booking.paymentMethod, booking.fareCents), locale);
+  const passengerPays = formatCad(
+    payableCents(booking.invoiceTotalCents, booking.paymentMethod, booking.fareCents),
+    locale,
+  );
   const driverGets = formatCad(booking.fareCents, locale);
   const commission = formatCad(COMMISSION_AMOUNT_CENTS, locale);
   const methodLabel = tRide(`paymentMethods.${booking.paymentMethod}`);
@@ -487,8 +518,19 @@ function DriverBookingCard({
         </>
       ) : null}
 
-      {booking.status === 'awaiting_payment' && booking.invoiceDueAt ? (
-        <PayWindow dueAt={booking.invoiceDueAt} expired={payWindowExpired} />
+      {booking.status === 'awaiting_payment' ? (
+        <>
+          <SettlementStrip passengerPays={passengerPays} youReceive={driverGets} />
+          {booking.paymentStatus === 'failed' ? (
+            <StatusCallout tone="danger" icon={AlertCircle} copy={t('bookings.paymentFailed')} />
+          ) : null}
+          {booking.paymentStatus === 'processing' ? (
+            <StatusCallout tone="held" icon={Clock} copy={t('bookings.paymentProcessing')} />
+          ) : null}
+          {booking.invoiceDueAt ? (
+            <PayWindow dueAt={booking.invoiceDueAt} expired={payWindowExpired} />
+          ) : null}
+        </>
       ) : null}
 
       {booking.status === 'confirmed' ? <ConfirmedSettlement booking={booking} locale={locale} /> : null}
@@ -553,7 +595,9 @@ function ConfirmedSettlement({ booking, locale }: { booking: DriverBooking; loca
           ? t('bookings.payoutDue')
           : booking.payout.status === 'paid'
             ? t('bookings.payoutPaid')
-            : t('bookings.payoutCancelled');
+            : booking.payout.status === 'frozen'
+              ? t('bookings.payoutFrozen')
+              : t('bookings.payoutCancelled');
     const tone =
       booking.payout.status === 'paid' || booking.payout.status === 'due'
         ? 'success'
@@ -647,13 +691,13 @@ function PayWindow({ dueAt, expired }: { dueAt: string; expired: boolean }) {
 
   useEffect(() => {
     if (expired) return;
-    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    const id = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(id);
   }, [expired]);
 
   if (expired || isPastDue(dueAt)) {
     return (
-      <StatusCallout tone="danger" icon={Clock} copy={t('bookings.payWindowExpired')} />
+      <StatusCallout tone="danger" icon={Clock} copy={t('bookings.payWindowOverdue')} />
     );
   }
   const remaining = remainingDueLabel(dueAt, now);

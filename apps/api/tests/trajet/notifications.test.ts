@@ -22,7 +22,7 @@ const db = vi.hoisted(() => ({
 }));
 vi.mock('../../src/db/client', () => ({ db }));
 
-import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip, paymentUrl } from '../../src/modules/trajet/notifications';
+import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip, paymentUrl, formatDueAt } from '../../src/modules/trajet/notifications';
 
 describe('notifyUser', () => {
   beforeEach(() => {
@@ -65,9 +65,13 @@ describe('notifyUser', () => {
 
 describe('trajetUrl / trajetSearchUrl / describeTrip', () => {
   it('builds links from the web app origin', () => {
-    expect(trajetUrl('abc-123')).toBe('https://example.test/trajets/abc-123');
+    expect(trajetUrl('abc-123')).toBe('https://example.test/trajet/abc-123');
     expect(trajetSearchUrl()).toBe('https://example.test/trajets');
     expect(paymentUrl('book-1')).toBe('https://example.test/paiement/book-1');
+  });
+
+  it('formats a due date in Eastern time', () => {
+    expect(formatDueAt('2026-08-21T16:00:00.000Z')).toMatch(/2026/);
   });
 
   it('describes a trip', () => {

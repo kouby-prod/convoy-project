@@ -176,7 +176,7 @@
   "Cgv": {
     "title": "Conditions Générales de Vente (CGV)",
     "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Kouby facture une commission de réservation de 5 CAD, payable en ligne par carte (Stripe) ou PayPal après acceptation du conducteur. Si vous payez le trajet par carte via Kouby, ce montant est encaissé avec la commission et reversé au conducteur après le trajet. Interac et espèces se règlent directement avec le conducteur.",
+    "disclaimer": "Kouby facture une commission de réservation de 5 CAD, payable en ligne par carte (Stripe) ou PayPal dès la réservation. Si vous payez le trajet par carte via Kouby, ce montant est encaissé avec la commission et reversé au conducteur après le trajet. Interac et espèces se règlent directement avec le conducteur.",
     "sections": [
       {
         "heading": "1. Objet",
@@ -569,7 +569,7 @@
     "seatsLeft": "{count, plural, =0 {Complet} one {# place restante} other {# places restantes}}",
     "ownerWorkspace": {
       "backToRides": "Mes trajets",
-      "tabRequests": "Demandes",
+      "tabRequests": "Réservations",
       "tabTrip": "Trajet"
     },
     "driverRating": {
@@ -620,38 +620,38 @@
       "reset": "Réinitialiser"
     },
     "booking": {
-      "title": "Demander une place",
+      "title": "Réserver une place",
       "seatsLabel": "Nombre de places",
       "estimatedTotal": "Total estimé : {amount}",
       "methodLabel": "Comment paierez-vous ?",
       "estimatedCard": "Vous payez {fare} + {commission} à Kouby (le prix du trajet est reversé au conducteur après le départ).",
       "estimatedOffPlatform": "Vous payez {commission} à Kouby, puis {fare} directement au conducteur (Interac ou espèces).",
-      "submit": "Demander une place",
-      "submitting": "Envoi de la demande...",
+      "submit": "Réserver et payer",
+      "submitting": "Réservation...",
       "pendingTitle": "Demande envoyée",
       "pendingBody": "Vous ne payez que si le conducteur accepte. Total si accepté : {total}.",
       "pendingBodyOffPlatform": "Vous ne payez que si le conducteur accepte. Frais Kouby {commission} après acceptation, puis {fare} au conducteur.",
-      "awaitingTitle": "Le conducteur a accepté — payez pour confirmer",
-      "success": "Votre demande de réservation a été envoyée au conducteur.",
+      "awaitingTitle": "Payez pour confirmer votre place",
+      "success": "Votre place est réservée. Payez Kouby pour confirmer.",
       "full": "Ce trajet est complet.",
-      "signInPrompt": "Connectez-vous pour demander une place sur ce trajet.",
+      "signInPrompt": "Connectez-vous pour réserver une place sur ce trajet.",
       "signInLink": "Se connecter",
-      "cancel": "Annuler ma demande",
+      "cancel": "Annuler ma réservation",
       "cancelling": "Annulation en cours...",
-      "cancelledNotice": "Votre demande a été annulée.",
+      "cancelledNotice": "Votre réservation a été annulée.",
       "pay": "Payer {amount}",
       "payCard": "Payer {amount}",
       "invoice": "Voir la facture",
       "messages": "Écrire au conducteur",
       "methodCard": {
         "cardTitle": "Carte via Kouby",
-        "cardPay": "Payer {amount} après acceptation",
+        "cardPay": "Payer {amount} maintenant",
         "cardBody": "Le trajet est conservé par Kouby et versé au conducteur après le départ.",
         "interacTitle": "Interac",
-        "interacPay": "Payer {amount} après acceptation",
+        "interacPay": "Payer {amount} maintenant",
         "interacBody": "Frais Kouby seulement. Vous envoyez {fare} au conducteur par Interac.",
         "cashTitle": "Espèces",
-        "cashPay": "Payer {amount} après acceptation",
+        "cashPay": "Payer {amount} maintenant",
         "cashBody": "Frais Kouby seulement. Vous payez {fare} au conducteur dans la voiture — aucune protection Kouby sur ce montant."
       },
       "errors": {
@@ -660,13 +660,13 @@
       }
     },
     "bookings": {
-      "title": "Demandes de réservation",
-      "subtitle": "Acceptez une demande pour envoyer une facture au passager.",
-      "queueLabel": "Demandes",
-      "selectPrompt": "Choisissez une demande pour accepter, refuser ou écrire au passager.",
-      "backToQueue": "Toutes les demandes",
+      "title": "Réservations",
+      "subtitle": "Les passagers réservent directement. Ils paient Kouby pour confirmer la place.",
+      "queueLabel": "Réservations",
+      "selectPrompt": "Choisissez une réservation pour suivre le paiement ou écrire au passager.",
+      "backToQueue": "Toutes les réservations",
       "loading": "Chargement des réservations...",
-      "empty": "Aucune demande de réservation pour ce trajet.",
+      "empty": "Aucune réservation pour ce trajet.",
       "error": "Impossible de charger les réservations.",
       "seats": "Places demandées",
       "seatsCount": "{count, plural, one {# place} other {# places}}",
@@ -685,10 +685,16 @@
       "confirmOffPlatform": "Kouby prend {commission}. Vous encaissez {driver} auprès du passager.",
       "payWindow": "Le passager a {remaining} pour payer",
       "payWindowExpired": "Le délai de paiement est passé. Cette place va être libérée.",
-      "payoutHeld": "Conservé par Kouby · versé après le trajet",
+      "payWindowOverdue": "Les 15 minutes sont écoulées. Ils peuvent encore payer ; cette place sera libérée sous peu.",
+      "paymentFailed": "Leur carte a été refusée. Ils peuvent réessayer jusqu'à la libération de la place.",
+      "paymentProcessing": "Paiement en cours. Actualisez dans un instant.",
+      "declinedShort": "Refusé",
+      "overdueShort": "En retard",
+      "payoutHeld": "Conservé par Kouby · nous faisons le suivi du versement 24 h après le départ",
       "payoutDue": "Prêt à vous être versé",
       "payoutPaid": "Versé sur votre compte",
       "payoutCancelled": "Ce versement a été annulé",
+      "payoutFrozen": "Conservé — un litige carte est ouvert. Kouby vous tiendra au courant.",
       "collectYourself": "Encaissez ce tarif auprès du passager ({method}). Kouby n'envoie pas ce montant.",
       "status": {
         "pending": "En attente",
@@ -729,7 +735,7 @@
         "description": "Votre voiture a des places libres ? Faites-en une opportunité.",
         "steps": [
           "Publiez votre trajet en quelques minutes.",
-          "Validez les demandes de réservation.",
+          "Suivez les réservations au fur et à mesure des paiements.",
           "Partagez les frais et la route."
         ],
         "ctaHref": "/trajet/nouveau",
@@ -777,7 +783,7 @@
   },
   "MesTrajets": {
     "title": "Mes trajets",
-    "subtitle": "Retrouvez les trajets que vous avez publiés et gérez les demandes de réservation.",
+    "subtitle": "Retrouvez les trajets que vous avez publiés et suivez les réservations.",
     "loading": "Chargement de vos trajets...",
     "empty": "Vous n'avez publié aucun trajet pour le moment.",
     "error": "Impossible de charger vos trajets.",
@@ -793,7 +799,7 @@
   },
   "MesReservations": {
     "title": "Mes réservations",
-    "subtitle": "Retrouvez vos demandes de réservation et leur statut.",
+    "subtitle": "Retrouvez vos réservations et leur statut.",
     "loading": "Chargement de vos réservations...",
     "empty": "Vous n'avez aucune réservation pour le moment.",
     "error": "Impossible de charger vos réservations.",
@@ -810,6 +816,7 @@
     "amountDue": "Montant dû",
     "due": "Payer avant",
     "dueExpired": "Le délai de paiement est passé. Cette place va être libérée.",
+    "dueOverdue": "Les 15 minutes sont écoulées — payez maintenant ou cette place sera libérée.",
     "stillOweDriver": "Il reste {amount} à payer au conducteur ({method}).",
     "stillOweDriverHint": "Payez ce tarif directement au conducteur ({method}).",
     "messages": "Messages",
@@ -841,13 +848,15 @@
       "pending": "En attente",
       "approved": "Validés",
       "rejected": "Refusés",
-      "users": "Comptes"
+      "users": "Comptes",
+      "incidents": "Incidents paiement"
     },
     "tabs": {
       "label": "Vues du back-office",
       "queue": "Documents",
       "users": "Comptes",
-      "payouts": "Versements"
+      "payouts": "Versements",
+      "incidents": "Incidents"
     },
     "filters": {
       "status": "Statut",
@@ -901,18 +910,36 @@
       "action": "Action",
       "markPaid": "Marquer payé",
       "refPlaceholder": "Réf. virement",
+      "frozenHint": "Gelé jusqu'à la clôture du litige",
       "statusFilter": {
         "all": "Tous",
         "held": "Retenu",
         "due": "Dû",
+        "frozen": "Gelé",
         "paid": "Payé",
         "cancelled": "Annulé"
       },
       "statusValue": {
         "held": "Retenu",
         "due": "Dû",
+        "frozen": "Gelé",
         "paid": "Payé",
         "cancelled": "Annulé"
+      }
+    },
+    "incidents": {
+      "loading": "Chargement des incidents…",
+      "error": "Impossible de charger les incidents.",
+      "empty": "Aucun incident ne correspond à ce filtre.",
+      "kind": "Type",
+      "provider": "Fournisseur",
+      "when": "Quand",
+      "action": "Action",
+      "resolve": "Résoudre",
+      "resolved": "Résolu",
+      "statusFilter": {
+        "open": "Ouverts",
+        "resolved": "Résolus"
       }
     }
   },
@@ -1146,20 +1173,22 @@
     "copied": "Copié",
     "confirmingTitle": "Confirmation de votre place",
     "confirming": "La banque a accepté le paiement. Nous confirmons votre place — cela prend généralement quelques secondes. Ne fermez pas cette page.",
+    "confirming3ds": "Votre banque vérifie le paiement (3-D Secure). Gardez cette page ouverte — nous confirmerons la place une fois terminé.",
     "confirmingRetry": "Vérifier le statut",
-    "waitingDriver": "Demande envoyée. Vous ne payez que si le conducteur accepte.",
-    "waitingDriverTotal": "Total si accepté : {total}.",
+    "waitingDriver": "Votre place est réservée. Payez Kouby pour confirmer.",
+    "waitingDriverTotal": "Montant dû : {total}.",
     "dueIn": "Payez dans {remaining}",
-    "dueExpired": "Le délai de paiement est passé. Cette place va être libérée.",
+    "dueExpired": "Les 15 minutes de paiement sont écoulées. Cette place va être libérée.",
+    "overdueBody": "Les 15 minutes de paiement sont écoulées. Payez maintenant pour garder la place — elle sera libérée sous peu.",
     "expiredTitle": "Délai de paiement dépassé",
-    "expiredBody": "Cette facture est échue. La place sera libérée si ce n'est pas déjà fait.",
+    "expiredBody": "Cette facture n'est plus payable. Cherchez un autre trajet si la place a été libérée.",
     "backToBookings": "Mes réservations",
     "viewTrip": "Voir le trajet",
     "openMessages": "Écrire au conducteur",
     "tripLabel": "Trajet",
     "seatsOnTrip": "{count, plural, one {# place} other {# places}}",
     "methodLabel": "Moyen de paiement",
-    "stepRequest": "Demande",
+    "stepRequest": "Réservation",
     "stepPay": "Payer Kouby",
     "stepConfirmed": "Confirmée",
     "failedBody": "La tentative précédente a échoué. Vos informations sont encore là — réessayez ou utilisez une autre carte.",
@@ -1255,8 +1284,8 @@
         "body": "Depuis Publier un trajet, indiquez l'itinéraire, la date, les places, le prix par place, et les moyens de paiement que vous acceptez (carte, Interac, espèces)."
       },
       {
-        "heading": "3. Accepter les réservations",
-        "body": "Lorsqu'un passager demande une place, acceptez ou refusez depuis Mes trajets. Accepter émet la facture Kouby et demande au passager de payer."
+        "heading": "3. Suivre les réservations",
+        "body": "Lorsqu'un passager réserve une place, il paie Kouby pour confirmer. Suivez le paiement depuis Mes trajets."
       },
       {
         "heading": "4. Après le trajet",
@@ -1277,8 +1306,8 @@
         "body": "Choisissez comment vous paierez le conducteur : carte (trajet + commission de 5 CAD à Kouby), Interac ou espèces (commission de 5 CAD à Kouby, trajet payé au conducteur)."
       },
       {
-        "heading": "3. Payer après acceptation",
-        "body": "Quand le conducteur accepte, vous recevez une facture. Payez-la pour confirmer votre place. La carte inclut le prix du trajet ; Interac et espèces ne paient que la commission."
+        "heading": "3. Payer pour confirmer",
+        "body": "Après la réservation, vous avez 15 minutes pour payer la facture et confirmer votre place. Une place impayée revient aux autres passagers. La carte inclut le prix du trajet ; Interac et espèces ne paient que la commission."
       },
       {
         "heading": "4. Voyager",
@@ -1292,11 +1321,11 @@
     "sections": [
       {
         "heading": "Réservez tôt",
-        "body": "Les trajets populaires se remplissent. Envoyez votre demande avec le bon nombre de places et un moyen de paiement déjà accepté par le conducteur."
+        "body": "Les trajets populaires se remplissent. Réservez le bon nombre de places avec un moyen de paiement déjà accepté par le conducteur."
       },
       {
         "heading": "Payez à temps",
-        "body": "Une réservation reste en attente de paiement tant que la facture n'est pas payée. Les demandes impayées expirent et les places reviennent aux autres passagers."
+        "body": "Vous avez 15 minutes après la réservation pour payer la facture. Une réservation impayée expire et la place revient aux autres passagers."
       },
       {
         "heading": "Restez joignable",
@@ -1321,8 +1350,8 @@
         "body": "La carte permet à Kouby d'encaisser le trajet et de vous le reverser après le départ. Interac et espèces signifient que les passagers règlent le trajet directement avec vous et ne paient que la commission de 5 CAD sur la plateforme."
       },
       {
-        "heading": "Répondez vite",
-        "body": "Les demandes en attente expirent. Acceptez ou refusez rapidement pour ne pas laisser les passagers attendre, et gardez vos documents à jour dans Mes documents."
+        "heading": "Gardez vos documents à jour",
+        "body": "Gardez vos documents d'identité et de véhicule à jour dans Mes documents pour que les passagers réservent en confiance."
       },
       {
         "heading": "Si vous devez annuler",

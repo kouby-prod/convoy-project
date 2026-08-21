@@ -29,8 +29,8 @@ const clock = { hour: '2-digit', minute: '2-digit' } as const;
  * Ride detail — two jobs, two layouts.
  *
  * Passengers keep a BlaBlaCar listing (itinerary + quiet book panel).
- * Drivers get an operational console: compact chrome, Requests vs Ride tabs,
- * and a master-detail request inbox (Material list-detail / Airbnb host).
+ * Drivers get an operational console: compact chrome, Bookings vs Ride tabs,
+ * and a master-detail inbox (Material list-detail / Airbnb host).
  */
 export function TrajetDetail({ id }: { id: string }) {
   const t = useTranslations('Trajets');

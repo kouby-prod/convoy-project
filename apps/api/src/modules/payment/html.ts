@@ -1,5 +1,5 @@
 import type { Invoice } from '@carpool/schemas';
-import { invoiceSeller } from './invoice';
+import { formatInvoiceInstant, invoiceSeller } from './invoice';
 
 function escapeHtml(value: string): string {
   return value
@@ -48,7 +48,7 @@ export function renderInvoiceHtml(doc: Invoice): string {
   ${address}${gst}${qst}
   <h2>Invoice ${escapeHtml(doc.number)}</h2>
   <p>Status: ${escapeHtml(doc.status)}</p>
-  <p>Issued: ${escapeHtml(doc.issuedAt.slice(0, 10))} · Due: ${escapeHtml(doc.dueAt.slice(0, 10))}</p>
+  <p>Issued: ${escapeHtml(formatInvoiceInstant(doc.issuedAt))} · Due: ${escapeHtml(formatInvoiceInstant(doc.dueAt))}</p>
   <h3>Bill to</h3>
   <p>${escapeHtml(doc.buyerName)}</p>
   ${doc.buyerEmail ? `<p>${escapeHtml(doc.buyerEmail)}</p>` : ''}

@@ -1,13 +1,13 @@
 import { and, eq, gt, lt } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
 import { db } from '../../db/client';
-import { invoice, payment, processedEvent, reconciliationMismatch } from '../../db/payment';
+import { invoice, payment, processedEvent } from '../../db/payment';
 import { listRecentStripePaymentIntents } from './stripe';
 import { isPayPalConfigured, retrievePayPalOrder } from './paypal';
 import { settlePaidInvoice } from './settle';
+import { recordPaymentIncident } from './incidents';
 
 /**
- * Compare PSP paid objects to the local ledger. Writes mismatch rows; does
+ * Compare PSP paid objects to the local ledger. Writes incident rows; does
  * not move money except via the already-idempotent settle path (safe to re-run).
  */
 export async function runPaymentReconciliation(): Promise<{ mismatches: number }> {
@@ -44,21 +44,53 @@ export async function runPaymentReconciliation(): Promise<{ mismatches: number }
         .from(payment)
         .where(and(eq(payment.provider, 'stripe'), eq(payment.providerPaymentId, intent.id)));
       if (!again) {
-        await writeMismatch('missing_local', 'stripe', intent.id, invoiceId, { intent });
+        await recordPaymentIncident({
+          kind: 'missing_local',
+          provider: 'stripe',
+          providerPaymentId: intent.id,
+          invoiceId,
+          detail: { intent },
+        });
         mismatches += 1;
       }
       continue;
     }
     if (local.amountCents !== intent.amount || local.currency !== intent.currency) {
-      await writeMismatch('amount_drift', 'stripe', intent.id, invoiceId, {
-        local: local.amountCents,
-        remote: intent.amount,
+      await recordPaymentIncident({
+        kind: 'amount_drift',
+        provider: 'stripe',
+        providerPaymentId: intent.id,
+        invoiceId,
+        detail: { local: local.amountCents, remote: intent.amount },
       });
       mismatches += 1;
     }
     if (local.status !== 'succeeded' && local.status !== 'refunded') {
-      await writeMismatch('status_drift', 'stripe', intent.id, invoiceId, { local: local.status });
-      mismatches += 1;
+      if (invoiceId) {
+        await settlePaidInvoice({
+          invoiceId,
+          provider: 'stripe',
+          providerPaymentId: intent.id,
+          amountCents: intent.amount,
+          currency: intent.currency,
+        }).catch((err: unknown) => {
+          console.error('[reconcile] status_drift settle failed', err);
+        });
+      }
+      const [again] = await db
+        .select()
+        .from(payment)
+        .where(and(eq(payment.provider, 'stripe'), eq(payment.providerPaymentId, intent.id)));
+      if (again && again.status !== 'succeeded' && again.status !== 'refunded') {
+        await recordPaymentIncident({
+          kind: 'status_drift',
+          provider: 'stripe',
+          providerPaymentId: intent.id,
+          invoiceId,
+          detail: { local: again.status },
+        });
+        mismatches += 1;
+      }
     }
   }
 
@@ -70,7 +102,13 @@ export async function runPaymentReconciliation(): Promise<{ mismatches: number }
   const remoteIds = new Set(stripeIntents.map((intent) => intent.id));
   for (const row of localPaid) {
     if (!remoteIds.has(row.providerPaymentId) && stripeIntents.length > 0) {
-      await writeMismatch('extra_local', 'stripe', row.providerPaymentId, row.invoiceId, {});
+      await recordPaymentIncident({
+        kind: 'extra_local',
+        provider: 'stripe',
+        providerPaymentId: row.providerPaymentId,
+        invoiceId: row.invoiceId,
+        detail: {},
+      });
       mismatches += 1;
     }
   }
@@ -87,7 +125,13 @@ export async function runPaymentReconciliation(): Promise<{ mismatches: number }
         return null;
       });
       if (!order) {
-        await writeMismatch('missing_remote', 'paypal', row.providerPaymentId, row.invoiceId, {});
+        await recordPaymentIncident({
+          kind: 'missing_remote',
+          provider: 'paypal',
+          providerPaymentId: row.providerPaymentId,
+          invoiceId: row.invoiceId,
+          detail: {},
+        });
         mismatches += 1;
         continue;
       }
@@ -103,9 +147,12 @@ export async function runPaymentReconciliation(): Promise<{ mismatches: number }
         });
       }
       if (order.amountCents !== row.amountCents || order.currency !== row.currency) {
-        await writeMismatch('amount_drift', 'paypal', row.providerPaymentId, row.invoiceId, {
-          local: row.amountCents,
-          remote: order.amountCents,
+        await recordPaymentIncident({
+          kind: 'amount_drift',
+          provider: 'paypal',
+          providerPaymentId: row.providerPaymentId,
+          invoiceId: row.invoiceId,
+          detail: { local: row.amountCents, remote: order.amountCents },
         });
         mismatches += 1;
       }
@@ -118,7 +165,12 @@ export async function runPaymentReconciliation(): Promise<{ mismatches: number }
     .from(processedEvent)
     .where(and(eq(processedEvent.status, 'received'), lt(processedEvent.createdAt, stuckCutoff)));
   for (const row of stuck) {
-    await writeMismatch('stuck_received', row.provider, row.eventId, undefined, { rowId: row.id });
+    await recordPaymentIncident({
+      kind: 'stuck_received',
+      provider: row.provider,
+      providerPaymentId: row.eventId,
+      detail: { rowId: row.id },
+    });
     mismatches += 1;
   }
 
@@ -129,8 +181,26 @@ export async function runPaymentReconciliation(): Promise<{ mismatches: number }
       .from(payment)
       .where(and(eq(payment.invoiceId, inv.id), eq(payment.status, 'succeeded')));
     if (succeeded) {
-      await writeMismatch('invoice_unpaid_with_succeeded_payment', succeeded.provider, succeeded.providerPaymentId, inv.id, {});
-      mismatches += 1;
+      await settlePaidInvoice({
+        invoiceId: inv.id,
+        provider: succeeded.provider as 'stripe' | 'paypal',
+        providerPaymentId: succeeded.providerPaymentId,
+        amountCents: succeeded.amountCents,
+        currency: succeeded.currency,
+      }).catch((err: unknown) => {
+        console.error('[reconcile] issued+succeeded settle failed', err);
+      });
+      const [again] = await db.select().from(invoice).where(eq(invoice.id, inv.id));
+      if (again?.status === 'issued') {
+        await recordPaymentIncident({
+          kind: 'invoice_unpaid_with_succeeded_payment',
+          provider: succeeded.provider,
+          providerPaymentId: succeeded.providerPaymentId,
+          invoiceId: inv.id,
+          detail: {},
+        });
+        mismatches += 1;
+      }
     }
   }
 
@@ -140,21 +210,4 @@ export async function runPaymentReconciliation(): Promise<{ mismatches: number }
     console.log('[reconcile] clean');
   }
   return { mismatches };
-}
-
-async function writeMismatch(
-  kind: string,
-  provider: string | undefined,
-  providerPaymentId: string | undefined,
-  invoiceId: string | undefined,
-  detail: unknown,
-): Promise<void> {
-  await db.insert(reconciliationMismatch).values({
-    id: randomUUID(),
-    kind,
-    provider: provider ?? null,
-    providerPaymentId: providerPaymentId ?? null,
-    invoiceId: invoiceId ?? null,
-    detail,
-  });
 }

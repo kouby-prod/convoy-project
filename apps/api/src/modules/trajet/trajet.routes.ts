@@ -153,7 +153,7 @@ export const bookTrajetRoute = createRoute({
   method: 'post',
   path: '/trajets/{id}/book',
   tags: ['trajet'],
-  summary: 'Book seats on a trajet',
+  summary: 'Reserve seats on a trajet (issues the Kouby invoice immediately)',
   security: bearerAuth,
   request: {
     params: z.object({ id: z.string().uuid() }),
@@ -218,7 +218,7 @@ export const updateBookingStatusRoute = createRoute({
   method: 'patch',
   path: '/trajets/{id}/bookings/{bookingId}',
   tags: ['trajet'],
-  summary: "Accept or reject a passenger's booking request (driver only)",
+  summary: 'Accept or reject a leftover pending booking (driver only)',
   security: bearerAuth,
   request: {
     params: z.object({ id: z.string().uuid(), bookingId: z.string().uuid() }),
@@ -252,7 +252,7 @@ export const cancelBookingRoute = createRoute({
   method: 'post',
   path: '/trajets/{id}/bookings/{bookingId}/cancel',
   tags: ['trajet'],
-  summary: 'Cancel your own booking request (passenger only)',
+  summary: 'Cancel your own booking (passenger only)',
   security: bearerAuth,
   request: {
     params: z.object({ id: z.string().uuid(), bookingId: z.string().uuid() }),

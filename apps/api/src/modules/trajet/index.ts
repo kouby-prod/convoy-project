@@ -21,10 +21,10 @@ import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { rateLimit } from '../../middleware/rate-limit';
 import { db } from '../../db/client';
 import { trajet, booking } from '../../db/trajet-schema';
-import { invoice, driverPayout } from '../../db/payment';
+import { invoice, driverPayout, payment } from '../../db/payment';
 import { review } from '../../db/review';
 import { user } from '../../db/auth-schema';
-import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet, DriverBooking, DriverProfile } from '@carpool/schemas';
+import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet, DriverBooking, DriverProfile, PaymentStatus, Invoice } from '@carpool/schemas';
 import {
   listTrajetsRoute,
   getTrajetRoute,
@@ -38,7 +38,7 @@ import {
   myTrajetsRoute,
   myBookingsRoute,
 } from './trajet.routes';
-import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip, paymentUrl } from './notifications';
+import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip, paymentUrl, formatDueAt } from './notifications';
 import { geocodeAndStoreTrajetLocation } from './geocoding';
 import {
   issueInvoiceForBooking,
@@ -48,6 +48,7 @@ import {
   expireUnpaidBookings,
   cancelOpenPaymentsForBooking,
 } from '../payment/booking-hooks';
+import { recordPaymentIncident } from '../payment/incidents';
 import { fareCentsFromPrice } from '../payment/tax';
 import { cancelStripePaymentIntent } from '../payment/stripe';
 import { renderInvoicePdf } from '../payment/pdf';
@@ -69,10 +70,11 @@ const app = new OpenAPIHono<AuthEnv>();
  */
 const PENDING_BOOKING_TTL_MS = 12 * 60 * 60 * 1000;
 
-/** A `pending` booking expired by the TTL sweep — enough to notify its passenger. */
+/** A `pending` or unpaid booking expired by the TTL sweep. */
 interface ExpiredBooking {
   passengerId: string;
   seats: number;
+  reason: 'pending' | 'unpaid';
 }
 
 /**
@@ -102,7 +104,10 @@ async function expireStalePendingBookings(
   const freedSeats = expired.reduce((sum, row) => sum + row.seats, 0);
   const updatedSeatsAvailable = seatsAvailable + freedSeats;
   await tx.update(trajet).set({ seatsAvailable: updatedSeatsAvailable }).where(eq(trajet.id, trajetId));
-  return { seatsAvailable: updatedSeatsAvailable, expired };
+  return {
+    seatsAvailable: updatedSeatsAvailable,
+    expired: expired.map((row) => ({ ...row, reason: 'pending' as const })),
+  };
 }
 
 async function sweepBookingHolds(
@@ -114,7 +119,10 @@ async function sweepBookingHolds(
   const unpaid = await expireUnpaidBookings(tx, trajetId, pending.seatsAvailable);
   return {
     seatsAvailable: unpaid.seatsAvailable,
-    expired: [...pending.expired, ...unpaid.expired],
+    expired: [
+      ...pending.expired,
+      ...unpaid.expired.map((row) => ({ ...row, reason: 'unpaid' as const })),
+    ],
   };
 }
 
@@ -131,13 +139,54 @@ async function notifyExpiredBookings(
   expired: ExpiredBooking[],
   trip: { departureCity: string; arrivalCity: string; departureAt: Date },
 ): Promise<void> {
-  for (const { passengerId } of expired) {
+  for (const { passengerId, reason } of expired) {
+    if (reason === 'unpaid') {
+      await notifyUser(
+        passengerId,
+        'Your Kouby payment window expired',
+        `Your booking for the trip from ${describeTrip(trip)} expired because the invoice was not paid in time. Search for another ride: ${trajetSearchUrl()}`,
+      );
+      continue;
+    }
     await notifyUser(
       passengerId,
       'Your Carpool booking request expired',
       `Your request for the trip from ${describeTrip(trip)} expired because the driver didn't respond in time. Seats may still be available: ${trajetSearchUrl()}`,
     );
   }
+}
+
+async function notifyPassengerToPay(input: {
+  passengerId: string;
+  trip: { departureCity: string; arrivalCity: string; departureAt: Date };
+  bookingId: string;
+  issued?: Invoice;
+  intro: string;
+}): Promise<void> {
+  let attachments: Parameters<typeof notifyUser>[3];
+  if (smtpEmailSender && input.issued) {
+    try {
+      const pdf = await renderInvoicePdf(input.issued);
+      attachments = [{ filename: `${input.issued.number}.pdf`, content: pdf, contentType: 'application/pdf' }];
+    } catch (err) {
+      console.error('[payment] failed to attach invoice PDF', err);
+    }
+  }
+  const amountLabel =
+    typeof input.issued?.totalCents === 'number'
+      ? `${(input.issued.totalCents / 100).toFixed(2)} CAD`
+      : `invoice ${input.issued?.number ?? ''}`.trim();
+  const dueLabel = input.issued?.dueAt ? ` before ${formatDueAt(input.issued.dueAt)}` : '';
+  const fareNote =
+    (input.issued?.fareCents ?? 0) > 0
+      ? 'This amount includes the ride fare and the Kouby fee. The driver is paid after the trip.'
+      : 'This amount is the 5.00 CAD Kouby fee only. Pay the ride fare directly to the driver.';
+  await notifyUser(
+    input.passengerId,
+    'Pay Kouby to confirm your booking',
+    `${input.intro} Pay ${amountLabel}${dueLabel} to confirm your seat. Unpaid seats are released after 15 minutes: ${paymentUrl(input.bookingId)}\n\n${fareNote}`,
+    attachments,
+  );
 }
 
 /**
@@ -494,6 +543,12 @@ export const trajetModule = app
       result.paidIds.map((bookingId) =>
         refundPaidBooking(bookingId, 'Driver cancelled the trip').catch((err: unknown) => {
           console.error(`Failed to refund booking ${bookingId}`, err);
+          void recordPaymentIncident({
+            kind: 'psp_refund_failed',
+            invoiceId: bookingId,
+            providerPaymentId: bookingId,
+            detail: { bookingId, error: err instanceof Error ? err.message : String(err) },
+          });
         }),
       ),
     );
@@ -550,9 +605,9 @@ export const trajetModule = app
           trajetId: id,
           passengerId: user.id,
           seats,
-          // Seats are held immediately (below) so a booking always starts
-          // `pending` — the driver still has to accept or reject it.
-          status: 'pending',
+          // Instant book: seats are held and the Kouby invoice is issued now.
+          // Confirmed only after the passenger pays.
+          status: 'awaiting_payment',
           paymentMethod,
           fareCents: fareCentsFromPrice(row.pricePerSeat, seats),
           firstName: firstName ?? fromAccount.firstName,
@@ -569,6 +624,8 @@ export const trajetModule = app
         .set({ seatsAvailable: sweep.seatsAvailable - seats })
         .where(eq(trajet.id, id));
 
+      const issuedInvoice = await issueInvoiceForBooking(tx, created);
+
       return {
         ok: true as const,
         booking: created,
@@ -576,6 +633,7 @@ export const trajetModule = app
         departureCity: row.departureCity,
         arrivalCity: row.arrivalCity,
         departureAt: row.departureAt,
+        issuedInvoice,
       };
     });
 
@@ -584,11 +642,18 @@ export const trajetModule = app
     if (trip) await notifyExpiredBookings(expiredBookings, trip);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
+    await notifyPassengerToPay({
+      passengerId: result.booking.passengerId,
+      trip: result,
+      bookingId: result.booking.id,
+      issued: result.issuedInvoice,
+      intro: `Your seat is reserved for the trip from ${describeTrip(result)}.`,
+    });
     await notifyUser(
       result.driverId,
-      'New booking request on your Carpool trip',
-      `A passenger requested ${seats} seat(s) on your trip from ${describeTrip(result)}. ` +
-        `Sign in to accept or reject it: ${trajetUrl(id)}`,
+      'New booking on your Kouby trip',
+      `A passenger reserved ${seats} seat(s) on your trip from ${describeTrip(result)}. ` +
+        `They pay Kouby to confirm the seat: ${trajetUrl(id)}`,
     );
     return c.json(serializeBooking(result.booking), 201);
   })
@@ -620,6 +685,13 @@ export const trajetModule = app
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
         invoiceDueAt: invoice.dueAt,
+        invoiceTotalCents: invoice.totalCents,
+        paymentStatus: sql<string | null>`(
+          select ${payment.status} from ${payment}
+          where ${payment.invoiceId} = ${invoice.id}
+          order by ${payment.createdAt} desc
+          limit 1
+        )`,
         payoutId: driverPayout.id,
         payoutDriverId: driverPayout.driverId,
         payoutAmountCents: driverPayout.amountCents,
@@ -707,29 +779,13 @@ export const trajetModule = app
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     if (status === 'confirmed') {
-      const issued = result.issuedInvoice;
-      let attachments: Parameters<typeof notifyUser>[3];
-      if (smtpEmailSender && issued) {
-        try {
-          const pdf = await renderInvoicePdf(issued);
-          attachments = [{ filename: `${issued.number}.pdf`, content: pdf, contentType: 'application/pdf' }];
-        } catch (err) {
-          console.error('[payment] failed to attach invoice PDF', err);
-        }
-      }
-      const amountLabel =
-        typeof issued?.totalCents === 'number' ? `${(issued.totalCents / 100).toFixed(2)} CAD` : `invoice ${issued?.number ?? ''}`.trim();
-      const dueLabel = issued?.dueAt ? ` before ${issued.dueAt}` : '';
-      const fareNote =
-        (issued?.fareCents ?? 0) > 0
-          ? 'This amount includes the ride fare and the Kouby fee. The driver is paid after the trip.'
-          : 'This amount is the 5.00 CAD Kouby fee only. Pay the ride fare directly to the driver.';
-      await notifyUser(
-        result.passengerId,
-        'Pay Kouby to confirm your booking',
-        `The driver accepted your request for the trip from ${describeTrip(result)}. Pay ${amountLabel}${dueLabel} to confirm your seat: ${paymentUrl(result.booking.id)}\n\n${fareNote}`,
-        attachments,
-      );
+      await notifyPassengerToPay({
+        passengerId: result.passengerId,
+        trip: result,
+        bookingId: result.booking.id,
+        issued: result.issuedInvoice,
+        intro: `The driver accepted your request for the trip from ${describeTrip(result)}.`,
+      });
     } else {
       await notifyUser(
         result.passengerId,
@@ -818,6 +874,12 @@ export const trajetModule = app
     if (result.refundFare) {
       await refundFareOnlyForBooking(result.booking.id).catch((err: unknown) => {
         console.error(`Failed to refund fare for booking ${result.booking.id}`, err);
+        void recordPaymentIncident({
+          kind: 'psp_refund_failed',
+          invoiceId: result.booking.id,
+          providerPaymentId: result.booking.id,
+          detail: { bookingId: result.booking.id, error: err instanceof Error ? err.message : String(err) },
+        });
       });
     }
     await notifyUser(
@@ -866,6 +928,7 @@ export const trajetModule = app
         departureAt: trajet.departureAt,
         pricePerSeat: trajet.pricePerSeat,
         invoiceDueAt: invoice.dueAt,
+        invoiceTotalCents: invoice.totalCents,
       })
       .from(booking)
       .innerJoin(trajet, eq(booking.trajetId, trajet.id))
@@ -987,6 +1050,17 @@ function serializeBooking(row: typeof booking.$inferSelect): Booking {
   };
 }
 
+function isPaymentStatus(value: string | null | undefined): value is PaymentStatus {
+  return (
+    value === 'created' ||
+    value === 'processing' ||
+    value === 'succeeded' ||
+    value === 'failed' ||
+    value === 'cancelled' ||
+    value === 'refunded'
+  );
+}
+
 function serializeDriverBooking(row: {
   id: string;
   trajetId: string;
@@ -1003,6 +1077,8 @@ function serializeDriverBooking(row: {
   createdAt: Date;
   updatedAt: Date;
   invoiceDueAt: Date | null;
+  invoiceTotalCents: number | null;
+  paymentStatus: string | null;
   payoutId: string | null;
   payoutDriverId: string | null;
   payoutAmountCents: number | null;
@@ -1031,6 +1107,8 @@ function serializeDriverBooking(row: {
       updatedAt: row.updatedAt,
     }),
     invoiceDueAt: row.invoiceDueAt ? row.invoiceDueAt.toISOString() : null,
+    invoiceTotalCents: row.invoiceTotalCents ?? null,
+    paymentStatus: isPaymentStatus(row.paymentStatus) ? row.paymentStatus : null,
     payout:
       row.payoutId &&
       row.payoutDriverId &&
@@ -1076,6 +1154,7 @@ function serializeBookingWithTrajet(row: {
   departureAt: Date;
   pricePerSeat: string;
   invoiceDueAt: Date | null;
+  invoiceTotalCents: number | null;
 }): BookingWithTrajet {
   return {
     id: row.id,
@@ -1093,6 +1172,7 @@ function serializeBookingWithTrajet(row: {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     invoiceDueAt: row.invoiceDueAt ? row.invoiceDueAt.toISOString() : null,
+    invoiceTotalCents: row.invoiceTotalCents ?? null,
     trajet: {
       departureCity: row.departureCity,
       destinationCity: row.arrivalCity,

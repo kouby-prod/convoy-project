@@ -3,6 +3,7 @@ import {
   BookingPaymentStateSchema,
   CapturePayPalSchema,
   CheckoutResponseSchema,
+  ConfirmStripeSchema,
   CreatePaymentSchema,
   InvoiceSchema,
 } from '@carpool/schemas';
@@ -41,6 +42,10 @@ export const createPaymentRoute = createRoute({
     },
     409: {
       description: 'Idempotency-Key reused with a different body',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    429: {
+      description: 'Too many checkout attempts',
       content: { 'application/json': { schema: errorSchema } },
     },
     404: {
@@ -86,6 +91,47 @@ export const capturePayPalRoute = createRoute({
     },
     503: {
       description: 'PayPal is not configured',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const confirmStripeRoute = createRoute({
+  method: 'post',
+  path: '/payments/stripe/confirm',
+  tags: ['payment'],
+  summary: 'Settle a Stripe PaymentIntent after 3-D Secure or a client-side confirm',
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: ConfirmStripeSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Payment state after confirming with Stripe',
+      content: { 'application/json': { schema: BookingPaymentStateSchema } },
+    },
+    400: {
+      description: 'No Stripe payment to confirm',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Not the passenger',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Booking not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    429: {
+      description: 'Too many confirm attempts',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    503: {
+      description: 'Stripe is not configured',
       content: { 'application/json': { schema: errorSchema } },
     },
   },

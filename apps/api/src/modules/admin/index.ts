@@ -13,8 +13,9 @@ import {
   type DriverVerification,
 } from '@carpool/schemas';
 import { serializeDocument } from '../document/serialize';
-import { driverPayout } from '../../db/payment';
+import { driverPayout, reconciliationMismatch } from '../../db/payment';
 import { markDriverPayoutPaid, serializeDriverPayout } from '../payment/payout';
+import { serializeMismatch } from '../payment/incidents';
 import {
   getAdminStatsRoute,
   listAdminDocumentsRoute,
@@ -22,6 +23,8 @@ import {
   listAdminUsersRoute,
   listAdminPayoutsRoute,
   markAdminPayoutPaidRoute,
+  listAdminMismatchesRoute,
+  resolveAdminMismatchRoute,
 } from './admin.routes';
 
 /**
@@ -45,6 +48,8 @@ app.use('/admin/documents/:id', requireAuth, requireRole('admin'));
 app.use('/admin/payouts', requireAuth, requireRole('admin'));
 app.use('/admin/payouts/:id', requireAuth, requireRole('admin'));
 app.use('/admin/payouts/:id/paid', requireAuth, requireRole('admin'));
+app.use('/admin/payments/incidents', requireAuth, requireRole('admin'));
+app.use('/admin/payments/incidents/:id/resolve', requireAuth, requireRole('admin'));
 
 /** A submission joined to its submitter — what every queue read returns. */
 type AdminDocumentRow = {
@@ -90,6 +95,11 @@ export const adminModule = app
       .from(driverDocument)
       .where(eq(driverDocument.status, 'pending'));
 
+    const [incidents] = await db
+      .select({ value: sql<number>`count(*)::int` })
+      .from(reconciliationMismatch)
+      .where(eq(reconciliationMismatch.status, 'open'));
+
     return c.json(
       {
         documents: {
@@ -102,6 +112,9 @@ export const adminModule = app
           total: users?.total ?? 0,
           admins: users?.admins ?? 0,
           awaitingReview: awaiting?.value ?? 0,
+        },
+        payments: {
+          openIncidents: incidents?.value ?? 0,
         },
       },
       200,
@@ -239,6 +252,35 @@ export const adminModule = app
     const paid = await markDriverPayoutPaid(id, body.ref);
     if (!paid) return c.json({ error: 'Payout is not held or due' }, 400);
     return c.json(paid, 200);
+  })
+  .openapi(listAdminMismatchesRoute, async (c) => {
+    const query = c.req.valid('query');
+    const rows = await db
+      .select()
+      .from(reconciliationMismatch)
+      .where(query.status ? eq(reconciliationMismatch.status, query.status) : undefined)
+      .orderBy(desc(reconciliationMismatch.createdAt));
+    return c.json(rows.map(serializeMismatch), 200);
+  })
+  .openapi(resolveAdminMismatchRoute, async (c) => {
+    const { user: adminUser } = getAuth(c);
+    const { id } = c.req.valid('param');
+    const body = c.req.valid('json');
+    const [existing] = await db.select().from(reconciliationMismatch).where(eq(reconciliationMismatch.id, id));
+    if (!existing) return c.json({ error: 'Not found' }, 404);
+    if (existing.status === 'resolved') return c.json({ error: 'Incident is already resolved' }, 400);
+    const [updated] = await db
+      .update(reconciliationMismatch)
+      .set({
+        status: 'resolved',
+        resolvedAt: new Date(),
+        resolvedBy: adminUser.id,
+        note: body.note?.trim() ? body.note.trim() : existing.note,
+      })
+      .where(eq(reconciliationMismatch.id, id))
+      .returning();
+    if (!updated) return c.json({ error: 'Not found' }, 404);
+    return c.json(serializeMismatch(updated), 200);
   });
 
 /**

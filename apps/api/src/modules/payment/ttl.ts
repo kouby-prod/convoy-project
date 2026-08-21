@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm';
+import { db } from '../../db/client';
 import { booking, trajet } from '../../db/trajet-schema';
 import { invoice, payment } from '../../db/payment';
 import { voidIssuedInvoiceForBooking, AWAITING_PAYMENT_TTL_MS } from './invoice';
@@ -10,9 +11,11 @@ export interface ExpiredUnpaidBooking {
 }
 
 /**
- * Expire `awaiting_payment` bookings whose invoice is past due, unless a
- * payment attempt is currently `processing` (webhook in flight).
+ * Expire `awaiting_payment` bookings whose invoice is past due (15-minute
+ * reserve window). Skip a 3-D Secure / webhook attempt that was touched
+ * recently so an in-flight challenge is not cut off.
  */
+const PROCESSING_GRACE_MS = 10 * 60 * 1000;
 export async function expireUnpaidBookings(
   tx: DbTx,
   trajetId: string,
@@ -35,7 +38,10 @@ export async function expireUnpaidBookings(
     if (inv) {
       const attempts = await tx.select().from(payment).where(eq(payment.invoiceId, inv.id));
       const latest = attempts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-      if (latest?.status === 'processing') continue;
+      if (latest?.status === 'processing') {
+        const touched = latest.updatedAt?.getTime() ?? latest.createdAt.getTime();
+        if (now.getTime() - touched < PROCESSING_GRACE_MS) continue;
+      }
     }
 
     const [updated] = await tx
@@ -55,6 +61,52 @@ export async function expireUnpaidBookings(
   }
 
   return { seatsAvailable: seats, expired };
+}
+
+export type ExpiredUnpaidNotice = ExpiredUnpaidBooking & {
+  trip: { id: string; departureCity: string; arrivalCity: string; departureAt: Date };
+};
+
+/**
+ * Sweep every ride that still has an `awaiting_payment` booking. The per-trajet
+ * expire above only runs when someone mutates that ride — quiet trips would
+ * otherwise hold seats past the invoice due date.
+ */
+export async function expireAllUnpaidBookings(): Promise<ExpiredUnpaidNotice[]> {
+  const open = await db
+    .select({
+      trajetId: booking.trajetId,
+    })
+    .from(booking)
+    .where(eq(booking.status, 'awaiting_payment'));
+
+  const trajetIds = [...new Set(open.map((row) => row.trajetId))];
+  const notices: ExpiredUnpaidNotice[] = [];
+
+  for (const trajetId of trajetIds) {
+    let expired: ExpiredUnpaidBooking[] = [];
+    let trip: ExpiredUnpaidNotice['trip'] | undefined;
+
+    await db.transaction(async (tx) => {
+      const [locked] = await tx.select().from(trajet).where(eq(trajet.id, trajetId)).for('update');
+      if (!locked) return;
+      trip = {
+        id: locked.id,
+        departureCity: locked.departureCity,
+        arrivalCity: locked.arrivalCity,
+        departureAt: locked.departureAt,
+      };
+      const result = await expireUnpaidBookings(tx, trajetId, locked.seatsAvailable);
+      expired = result.expired;
+    });
+
+    if (!trip) continue;
+    for (const row of expired) {
+      notices.push({ ...row, trip });
+    }
+  }
+
+  return notices;
 }
 
 export function heldBookingStatuses(): Array<'pending' | 'awaiting_payment' | 'confirmed'> {

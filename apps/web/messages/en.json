@@ -176,7 +176,7 @@
   "Cgv": {
     "title": "Terms of Sale",
     "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Kouby charges a 5 CAD booking commission, payable online by card (Stripe) or PayPal after the driver accepts. If you pay the ride fare by card through Kouby, that fare is collected with the commission and paid out to the driver after the trip. Interac and cash fares are settled directly with the driver.",
+    "disclaimer": "Kouby charges a 5 CAD booking commission, payable online by card (Stripe) or PayPal when you reserve a seat. If you pay the ride fare by card through Kouby, that fare is collected with the commission and paid out to the driver after the trip. Interac and cash fares are settled directly with the driver.",
     "sections": [
       {
         "heading": "1. Purpose",
@@ -569,7 +569,7 @@
     "seatsLeft": "{count, plural, =0 {Full} one {# seat left} other {# seats left}}",
     "ownerWorkspace": {
       "backToRides": "My rides",
-      "tabRequests": "Requests",
+      "tabRequests": "Bookings",
       "tabTrip": "Ride"
     },
     "driverRating": {
@@ -620,38 +620,38 @@
       "reset": "Reset"
     },
     "booking": {
-      "title": "Request a seat",
+      "title": "Reserve a seat",
       "seatsLabel": "Number of seats",
       "estimatedTotal": "Estimated total: {amount}",
       "methodLabel": "How will you pay?",
       "estimatedCard": "You pay {fare} + {commission} to Kouby (fare is paid out to the driver after the trip).",
       "estimatedOffPlatform": "You pay {commission} to Kouby, then {fare} directly to the driver (Interac or cash).",
-      "submit": "Request seat",
-      "submitting": "Sending request...",
+      "submit": "Reserve and pay",
+      "submitting": "Reserving...",
       "pendingTitle": "Request sent",
       "pendingBody": "You pay only if the driver accepts. Total if accepted: {total}.",
       "pendingBodyOffPlatform": "You pay only if the driver accepts. Kouby fee {commission} after accept, then {fare} to the driver.",
-      "awaitingTitle": "The driver accepted — pay to confirm",
-      "success": "Your booking request has been sent to the driver.",
+      "awaitingTitle": "Pay to confirm your seat",
+      "success": "Your seat is reserved. Pay Kouby to confirm.",
       "full": "This ride is full.",
-      "signInPrompt": "Sign in to request a seat on this ride.",
+      "signInPrompt": "Sign in to reserve a seat on this ride.",
       "signInLink": "Sign in",
-      "cancel": "Cancel my request",
+      "cancel": "Cancel my booking",
       "cancelling": "Cancelling...",
-      "cancelledNotice": "Your request has been cancelled.",
+      "cancelledNotice": "Your booking has been cancelled.",
       "pay": "Pay {amount}",
       "payCard": "Pay {amount}",
       "invoice": "View invoice",
       "messages": "Message the driver",
       "methodCard": {
         "cardTitle": "Card via Kouby",
-        "cardPay": "Pay {amount} after accept",
+        "cardPay": "Pay {amount} now",
         "cardBody": "Fare is held by Kouby and paid to the driver after departure.",
         "interacTitle": "Interac",
-        "interacPay": "Pay {amount} after accept",
+        "interacPay": "Pay {amount} now",
         "interacBody": "Kouby fee only. You send {fare} to the driver by Interac.",
         "cashTitle": "Cash",
-        "cashPay": "Pay {amount} after accept",
+        "cashPay": "Pay {amount} now",
         "cashBody": "Kouby fee only. You pay the driver {fare} in the car — no platform protection on the fare."
       },
       "errors": {
@@ -660,13 +660,13 @@
       }
     },
     "bookings": {
-      "title": "Booking requests",
-      "subtitle": "Accept a request to send the passenger an invoice.",
-      "queueLabel": "Requests",
-      "selectPrompt": "Choose a request to accept, refuse, or message the passenger.",
-      "backToQueue": "All requests",
+      "title": "Bookings",
+      "subtitle": "Passengers reserve instantly. They pay Kouby to confirm the seat.",
+      "queueLabel": "Bookings",
+      "selectPrompt": "Choose a booking to follow payment or message the passenger.",
+      "backToQueue": "All bookings",
       "loading": "Loading bookings...",
-      "empty": "No booking requests for this ride.",
+      "empty": "No bookings for this ride yet.",
       "error": "Unable to load bookings.",
       "seats": "Seats requested",
       "seatsCount": "{count, plural, one {# seat} other {# seats}}",
@@ -685,10 +685,16 @@
       "confirmOffPlatform": "Kouby takes {commission}. You collect {driver} from the passenger yourself.",
       "payWindow": "Passenger has {remaining} to pay",
       "payWindowExpired": "Payment window ended. This seat will be released.",
-      "payoutHeld": "Held by Kouby · paid out after the trip",
+      "payWindowOverdue": "The 15-minute window ended. They can still pay; this seat will be released shortly.",
+      "paymentFailed": "Their card was declined. They can retry until the seat is released.",
+      "paymentProcessing": "Payment is in progress. Refresh in a moment.",
+      "declinedShort": "Declined",
+      "overdueShort": "Overdue",
+      "payoutHeld": "Held by Kouby · we follow up with your fare 24 hours after departure",
       "payoutDue": "Ready to pay out",
       "payoutPaid": "Paid to you",
       "payoutCancelled": "This payout was cancelled",
+      "payoutFrozen": "Held — a card dispute is open. Kouby will update you.",
       "collectYourself": "Collect this fare from the passenger yourself ({method}). Kouby does not send it.",
       "status": {
         "pending": "Pending",
@@ -729,7 +735,7 @@
         "description": "Got free seats in your car? Turn them into an opportunity.",
         "steps": [
           "Publish your ride in a few minutes.",
-          "Review booking requests.",
+          "Follow bookings as passengers pay.",
           "Share costs and the journey."
         ],
         "ctaHref": "/trajet/nouveau",
@@ -777,7 +783,7 @@
   },
   "MesTrajets": {
     "title": "My rides",
-    "subtitle": "Find the rides you've published and manage booking requests.",
+    "subtitle": "Find the rides you've published and follow bookings.",
     "loading": "Loading your rides...",
     "empty": "You haven't published any ride yet.",
     "error": "Unable to load your rides.",
@@ -793,7 +799,7 @@
   },
   "MesReservations": {
     "title": "My bookings",
-    "subtitle": "Find your booking requests and their status.",
+    "subtitle": "Find your bookings and their status.",
     "loading": "Loading your bookings...",
     "empty": "You don't have any booking yet.",
     "error": "Unable to load your bookings.",
@@ -810,6 +816,7 @@
     "amountDue": "Amount due",
     "due": "Pay by",
     "dueExpired": "The payment window has ended. This seat will be released.",
+    "dueOverdue": "The 15-minute window is up — pay now or this seat will be released.",
     "stillOweDriver": "Still pay the driver {amount} ({method}).",
     "stillOweDriverHint": "Pay this fare to the driver yourself ({method}).",
     "messages": "Messages",
@@ -841,13 +848,15 @@
       "pending": "Pending",
       "approved": "Approved",
       "rejected": "Rejected",
-      "users": "Accounts"
+      "users": "Accounts",
+      "incidents": "Payment incidents"
     },
     "tabs": {
       "label": "Backoffice views",
       "queue": "Documents",
       "users": "Accounts",
-      "payouts": "Payouts"
+      "payouts": "Payouts",
+      "incidents": "Incidents"
     },
     "filters": {
       "status": "Status",
@@ -901,18 +910,36 @@
       "action": "Action",
       "markPaid": "Mark paid",
       "refPlaceholder": "Transfer ref",
+      "frozenHint": "Frozen until the dispute closes",
       "statusFilter": {
         "all": "All",
         "held": "Held",
         "due": "Due",
+        "frozen": "Frozen",
         "paid": "Paid",
         "cancelled": "Cancelled"
       },
       "statusValue": {
         "held": "Held",
         "due": "Due",
+        "frozen": "Frozen",
         "paid": "Paid",
         "cancelled": "Cancelled"
+      }
+    },
+    "incidents": {
+      "loading": "Loading incidents…",
+      "error": "Could not load incidents.",
+      "empty": "No incident matches this filter.",
+      "kind": "Kind",
+      "provider": "Provider",
+      "when": "When",
+      "action": "Action",
+      "resolve": "Resolve",
+      "resolved": "Resolved",
+      "statusFilter": {
+        "open": "Open",
+        "resolved": "Resolved"
       }
     }
   },
@@ -1146,20 +1173,22 @@
     "copied": "Copied",
     "confirmingTitle": "Confirming your seat",
     "confirming": "The bank accepted the payment. We are confirming your seat — this usually takes a few seconds. Do not close this page.",
+    "confirming3ds": "Your bank is verifying the payment (3-D Secure). Keep this page open — we will confirm the seat when it completes.",
     "confirmingRetry": "Check status",
-    "waitingDriver": "Request sent. You pay only if the driver accepts.",
-    "waitingDriverTotal": "Total if accepted: {total}.",
+    "waitingDriver": "Your seat is reserved. Pay Kouby to confirm.",
+    "waitingDriverTotal": "Amount due: {total}.",
     "dueIn": "Pay within {remaining}",
-    "dueExpired": "The payment window has ended. This seat will be released.",
+    "dueExpired": "The 15-minute payment window has ended. This seat will be released.",
+    "overdueBody": "The 15-minute payment window has ended. Pay now to keep the seat — it will be released shortly.",
     "expiredTitle": "Payment window ended",
-    "expiredBody": "This invoice is past due. The seat will be released if it has not been already.",
+    "expiredBody": "This invoice is no longer payable. Search for another ride if the seat has been released.",
     "backToBookings": "My bookings",
     "viewTrip": "View the ride",
     "openMessages": "Message the driver",
     "tripLabel": "Ride",
     "seatsOnTrip": "{count, plural, one {# seat} other {# seats}}",
     "methodLabel": "Payment method",
-    "stepRequest": "Request",
+    "stepRequest": "Reserve",
     "stepPay": "Pay Kouby",
     "stepConfirmed": "Confirmed",
     "failedBody": "The previous attempt failed. Your details are still here — try again or use another card.",
@@ -1255,8 +1284,8 @@
         "body": "From Publish a trip, enter the route, date, seats, price per seat, and which payment methods you accept (card, Interac, cash)."
       },
       {
-        "heading": "3. Accept bookings",
-        "body": "When a passenger requests a seat, accept or reject from My trips. Accepting issues the Kouby invoice and asks the passenger to pay."
+        "heading": "3. Follow bookings",
+        "body": "When a passenger reserves a seat, they pay Kouby to confirm. Follow payment status from My trips."
       },
       {
         "heading": "4. After the trip",
@@ -1277,8 +1306,8 @@
         "body": "Choose how you will pay the driver: card (fare + 5 CAD commission to Kouby), Interac, or cash (5 CAD commission to Kouby, fare paid to the driver)."
       },
       {
-        "heading": "3. Pay after acceptance",
-        "body": "When the driver accepts, you receive an invoice. Pay it to confirm your seat. Card payments include the fare; Interac and cash pay only the commission."
+        "heading": "3. Pay to confirm",
+        "body": "After you reserve, you have 15 minutes to pay the invoice and confirm your seat. Unpaid seats go back to other passengers. Card payments include the fare; Interac and cash pay only the commission."
       },
       {
         "heading": "4. Travel",
@@ -1292,11 +1321,11 @@
     "sections": [
       {
         "heading": "Book early",
-        "body": "Popular routes fill up. Send your request with the right number of seats and a payment method the driver already accepts."
+        "body": "Popular routes fill up. Reserve the right number of seats with a payment method the driver already accepts."
       },
       {
         "heading": "Pay on time",
-        "body": "A booking stays awaiting payment until the invoice is paid. Unpaid requests expire and the seats go back to other passengers."
+        "body": "You have 15 minutes after reserving to pay the invoice. Unpaid bookings expire and the seats go back to other passengers."
       },
       {
         "heading": "Stay reachable",
@@ -1321,8 +1350,8 @@
         "body": "Card lets Kouby collect the fare and pay you after the trip. Interac and cash mean passengers settle the fare with you directly and only pay the 5 CAD commission on the platform."
       },
       {
-        "heading": "Answer quickly",
-        "body": "Pending requests expire. Accept or reject soon so passengers are not left waiting, and keep documents up to date in My documents."
+        "heading": "Keep documents ready",
+        "body": "Keep identity and vehicle documents up to date in My documents so passengers can book with confidence."
       },
       {
         "heading": "If you must cancel",

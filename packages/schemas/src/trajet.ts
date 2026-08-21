@@ -305,14 +305,12 @@ export type TrajetApiSearchQuery = z.infer<typeof TrajetApiSearchQuerySchema>;
  * Booking contract — a passenger reserving seats on a trajet. The passenger is
  * the authenticated user; the contact fields are what they typed on the ride
  * detail form and are stored alongside the reservation for the driver to see.
- * A booking starts `pending` (seats are provisionally held) and either:
- * - the driver rejects it, or accepts it (`UpdateBookingStatusSchema` still
- *   sends `confirmed` meaning "I accept") which the API persists as
- *   `awaiting_payment` and issues a 5 CAD invoice,
- * - a Stripe/PayPal settlement moves `awaiting_payment` → `confirmed`,
+ * A booking starts `awaiting_payment` (seats held, Kouby invoice issued) and:
+ * - Stripe/PayPal settlement moves `awaiting_payment` → `confirmed`,
  * - the passenger moves it to `cancelled` (POST .../cancel), or
- * - the system moves it to `expired` (pending TTL without a driver response,
- *   or unpaid TTL after accept).
+ * - the system moves it to `expired` (unpaid invoice TTL, 15 minutes).
+ * Legacy `pending` rows can still be accepted/rejected via
+ * `UpdateBookingStatusSchema` (`confirmed` still means "I accept").
  */
 export const CreateBookingSchema = z
   .object({
@@ -378,6 +376,12 @@ export const BookingWithTrajetSchema = BookingSchema.extend({
     .string()
     .nullable()
     .describe('ISO-8601 due date of the issued invoice, if any'),
+  invoiceTotalCents: z
+    .number()
+    .int()
+    .nonnegative()
+    .nullable()
+    .describe('Issued invoice total in cents, if any'),
 }).describe('BookingWithTrajet');
 export type BookingWithTrajet = z.infer<typeof BookingWithTrajetSchema>;
 
@@ -386,7 +390,8 @@ export const BookingWithTrajetPageSchema = paginatedSchema(BookingWithTrajetSche
 );
 
 /**
- * Driver-only action: accept or reject a pending booking request.
+ * Driver-only action on a leftover `pending` booking (instant book is the
+ * default; this remains for rows created before that change).
  */
 export const UpdateBookingStatusSchema = z
   .object({

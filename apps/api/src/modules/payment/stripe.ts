@@ -27,6 +27,7 @@ export async function createStripePaymentIntent(input: {
   invoiceNumber: string;
   amountCents: number;
   currency: string;
+  attemptKey?: string;
 }): Promise<{ id: string; clientSecret: string | null }> {
   const intent = await stripe().paymentIntents.create(
     {
@@ -39,7 +40,7 @@ export async function createStripePaymentIntent(input: {
       },
       automatic_payment_methods: { enabled: true },
     },
-    { idempotencyKey: stripeIdempotencyKey(input.invoiceId, 'intent') },
+    { idempotencyKey: stripeIdempotencyKey(input.invoiceId, 'intent', input.attemptKey) },
   );
   return { id: intent.id, clientSecret: intent.client_secret };
 }
@@ -92,6 +93,21 @@ export function constructStripeEvent(rawBody: string, signature: string): Stripe
   return stripe().webhooks.constructEvent(rawBody, signature, env.STRIPE_WEBHOOK_SECRET);
 }
 
+export async function paymentIntentIdFromStripeDispute(
+  payload: Record<string, unknown>,
+): Promise<string | undefined> {
+  if (typeof payload.payment_intent === 'string' && payload.payment_intent.startsWith('pi_')) {
+    return payload.payment_intent;
+  }
+  const chargeId = typeof payload.charge === 'string' ? payload.charge : undefined;
+  if (!chargeId) return undefined;
+  const charge = await stripe().charges.retrieve(chargeId);
+  const intent = charge.payment_intent;
+  if (typeof intent === 'string') return intent;
+  if (intent && typeof intent === 'object' && 'id' in intent) return String(intent.id);
+  return undefined;
+}
+
 export async function listRecentStripePaymentIntents(createdGteUnix: number): Promise<
   Array<{
     id: string;
@@ -102,12 +118,32 @@ export async function listRecentStripePaymentIntents(createdGteUnix: number): Pr
   }>
 > {
   if (!isStripeConfigured()) return [];
-  const list = await stripe().paymentIntents.list({ created: { gte: createdGteUnix }, limit: 100 });
-  return list.data.map((intent) => ({
-    id: intent.id,
-    status: intent.status,
-    amount: intent.amount,
-    currency: intent.currency,
-    metadata: (intent.metadata ?? {}) as Record<string, string>,
-  }));
+  const collected: Array<{
+    id: string;
+    status: string;
+    amount: number;
+    currency: string;
+    metadata: Record<string, string>;
+  }> = [];
+  let startingAfter: string | undefined;
+  for (let page = 0; page < 20; page += 1) {
+    const list = await stripe().paymentIntents.list({
+      created: { gte: createdGteUnix },
+      limit: 100,
+      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    });
+    for (const intent of list.data) {
+      collected.push({
+        id: intent.id,
+        status: intent.status,
+        amount: intent.amount,
+        currency: intent.currency,
+        metadata: (intent.metadata ?? {}) as Record<string, string>,
+      });
+    }
+    if (!list.has_more || list.data.length === 0) break;
+    startingAfter = list.data[list.data.length - 1]?.id;
+    if (!startingAfter) break;
+  }
+  return collected;
 }

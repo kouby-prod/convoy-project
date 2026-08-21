@@ -6,6 +6,7 @@ import type {
   DocumentStatus,
   DriverPayout,
   DriverPayoutStatus,
+  ReconciliationMismatch,
 } from '@carpool/schemas';
 import { createApiClient } from '@carpool/api-client';
 import { env } from './env';
@@ -82,11 +83,28 @@ export async function fetchAdminPayouts(status?: DriverPayoutStatus): Promise<Dr
 }
 
 /** POST /admin/payouts/:id/paid — record a manual payout. */
-export async function markAdminPayoutPaid(id: string, ref?: string): Promise<DriverPayout> {
+export async function markAdminPayoutPaid(id: string, ref: string): Promise<DriverPayout> {
   const res = await api.admin.payouts[':id'].paid.$post({
     param: { id },
-    json: ref ? { ref } : {},
+    json: { ref },
   });
   if (!res.ok) throw new ApiError(res.status, 'Failed to mark payout paid');
+  return res.json();
+}
+
+/** GET /admin/payments/incidents */
+export async function fetchAdminIncidents(status?: 'open' | 'resolved'): Promise<ReconciliationMismatch[]> {
+  const res = await api.admin.payments.incidents.$get({ query: status ? { status } : {} });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to load incidents');
+  return res.json();
+}
+
+/** POST /admin/payments/incidents/:id/resolve */
+export async function resolveAdminIncident(id: string, note?: string): Promise<ReconciliationMismatch> {
+  const res = await api.admin.payments.incidents[':id'].resolve.$post({
+    param: { id },
+    json: note ? { note } : {},
+  });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to resolve incident');
   return res.json();
 }

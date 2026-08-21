@@ -1,9 +1,12 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db } from '../../db/client';
-import { processedEvent } from '../../db/payment';
-import { retrieveStripePaymentIntent } from './stripe';
+import { invoice, payment, processedEvent } from '../../db/payment';
+import { paymentIntentIdFromStripeDispute, retrieveStripePaymentIntent } from './stripe';
 import { retrievePayPalOrder } from './paypal';
 import { markPaymentFailed, markPaymentProcessing, settlePaidInvoice } from './settle';
+import { freezeDriverPayoutForBooking, unfreezeDriverPayoutForBooking } from './payout';
+import { creditPaidBookingAfterLostDispute } from './refund';
+import { recordPaymentIncident } from './incidents';
 
 export async function handleStripeEvent(type: string, payload: Record<string, unknown>): Promise<void> {
   const id = typeof payload.id === 'string' ? payload.id : undefined;
@@ -25,11 +28,77 @@ export async function handleStripeEvent(type: string, payload: Record<string, un
     await markPaymentProcessing({ provider: 'stripe', providerPaymentId: id });
     return;
   }
+  if (type === 'payment_intent.requires_action' && id) {
+    await markPaymentProcessing({ provider: 'stripe', providerPaymentId: id });
+    return;
+  }
   if (type === 'payment_intent.payment_failed' && id) {
     await markPaymentFailed({ provider: 'stripe', providerPaymentId: id });
     return;
   }
-  // Refund webhooks must not roll a paid invoice back — credit notes do that.
+  if (type === 'charge.dispute.created' || type === 'charge.dispute.closed') {
+    await handleStripeDispute(type, payload);
+  }
+}
+
+async function handleStripeDispute(type: string, payload: Record<string, unknown>): Promise<void> {
+  const disputeId = typeof payload.id === 'string' ? payload.id : undefined;
+  const status = typeof payload.status === 'string' ? payload.status : undefined;
+  const piId = await paymentIntentIdFromStripeDispute(payload);
+  if (!piId) {
+    await recordPaymentIncident({
+      kind: 'dispute_missing_pi',
+      provider: 'stripe',
+      providerPaymentId: disputeId,
+      detail: { status },
+    });
+    return;
+  }
+
+  const [pay] = await db
+    .select()
+    .from(payment)
+    .where(and(eq(payment.provider, 'stripe'), eq(payment.providerPaymentId, piId)));
+  if (!pay) {
+    await recordPaymentIncident({
+      kind: 'dispute_unknown_payment',
+      provider: 'stripe',
+      providerPaymentId: piId,
+      detail: { disputeId, status },
+    });
+    return;
+  }
+
+  const [inv] = await db.select().from(invoice).where(eq(invoice.id, pay.invoiceId));
+  const bookingId = inv?.bookingId;
+
+  if (type === 'charge.dispute.created') {
+    if (bookingId) await freezeDriverPayoutForBooking(bookingId);
+    await recordPaymentIncident({
+      kind: 'dispute_open',
+      provider: 'stripe',
+      providerPaymentId: piId,
+      invoiceId: pay.invoiceId,
+      detail: { disputeId, status },
+    });
+    return;
+  }
+
+  if (status === 'lost' && bookingId) {
+    await creditPaidBookingAfterLostDispute(bookingId);
+    await recordPaymentIncident({
+      kind: 'dispute_lost',
+      provider: 'stripe',
+      providerPaymentId: piId,
+      invoiceId: pay.invoiceId,
+      detail: { disputeId, status },
+    });
+    return;
+  }
+
+  if (status === 'won' && bookingId) {
+    await unfreezeDriverPayoutForBooking(bookingId);
+  }
 }
 
 function paypalOrderIdFromEvent(type: string, resource: Record<string, unknown> | undefined): string | undefined {

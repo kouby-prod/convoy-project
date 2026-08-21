@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import type { Invoice } from '@carpool/schemas';
-import { invoiceSeller } from './invoice';
+import { formatInvoiceInstant, invoiceSeller } from './invoice';
 
 function money(cents: number, currency: string): string {
   return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: currency.toUpperCase() }).format(
@@ -30,8 +30,8 @@ export async function renderInvoicePdf(doc: Invoice): Promise<Buffer> {
   y -= 8;
   line(`Invoice ${doc.number}`, 14, bold);
   line(`Status: ${doc.status}`, 11, font);
-  line(`Issued: ${doc.issuedAt.slice(0, 10)}`, 11, font);
-  line(`Due: ${doc.dueAt.slice(0, 10)}`, 11, font);
+  line(`Issued: ${formatInvoiceInstant(doc.issuedAt)}`, 11, font);
+  line(`Due: ${formatInvoiceInstant(doc.dueAt)}`, 11, font);
   y -= 8;
   line('Bill to', 12, bold);
   line(doc.buyerName, 11, font);

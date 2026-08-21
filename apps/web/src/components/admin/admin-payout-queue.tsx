@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { fetchAdminPayouts, markAdminPayoutPaid } from '@/lib/admin';
 
-const STATUSES: Array<DriverPayoutStatus | 'all'> = ['all', 'held', 'due', 'paid', 'cancelled'];
+const STATUSES: Array<DriverPayoutStatus | 'all'> = ['all', 'held', 'due', 'frozen', 'paid', 'cancelled'];
 
 export function AdminPayoutQueue() {
   const t = useTranslations('Admin.payouts');
@@ -23,7 +23,7 @@ export function AdminPayoutQueue() {
   });
 
   const markPaid = useMutation({
-    mutationFn: ({ id, ref }: { id: string; ref?: string }) => markAdminPayoutPaid(id, ref),
+    mutationFn: ({ id, ref }: { id: string; ref: string }) => markAdminPayoutPaid(id, ref),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'payouts'] });
     },
@@ -82,12 +82,14 @@ export function AdminPayoutQueue() {
                         />
                         <Button
                           size="sm"
-                          disabled={markPaid.isPending}
-                          onClick={() => markPaid.mutate({ id: row.id, ref: refs[row.id] })}
+                          disabled={markPaid.isPending || (refs[row.id] ?? '').trim().length < 4}
+                          onClick={() => markPaid.mutate({ id: row.id, ref: (refs[row.id] ?? '').trim() })}
                         >
                           {t('markPaid')}
                         </Button>
                       </div>
+                    ) : row.status === 'frozen' ? (
+                      <span className="text-xs text-muted-foreground">{t('frozenHint')}</span>
                     ) : row.paidRef ? (
                       <span className="text-xs text-muted-foreground">{row.paidRef}</span>
                     ) : (

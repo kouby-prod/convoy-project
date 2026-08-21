@@ -79,9 +79,10 @@ vi.mock('../../src/auth/auth', () => ({
 const notifyUser = vi.fn();
 vi.mock('../../src/modules/trajet/notifications', () => ({
   notifyUser: (...a: unknown[]) => notifyUser(...a),
-  trajetUrl: (id: string) => `https://example.test/trajets/${id}`,
+  trajetUrl: (id: string) => `https://example.test/trajet/${id}`,
   trajetSearchUrl: () => 'https://example.test/trajets',
   paymentUrl: (id: string) => `https://example.test/paiement/${id}`,
+  formatDueAt: (dueAt: Date | string) => String(dueAt),
   describeTrip: (trip: { departureCity: string; arrivalCity: string; departureAt: Date }) =>
     `${trip.departureCity} to ${trip.arrivalCity} (departing ${trip.departureAt.toUTCString()})`,
 }));
@@ -707,10 +708,10 @@ describe('trajet module', () => {
     expect(res.status).toBe(401);
   });
 
-  it('POST /trajets/:id/book books seats as pending when enough are available', async () => {
+  it('POST /trajets/:id/book books seats as awaiting_payment and issues an invoice', async () => {
     getSession.mockResolvedValue(sessionFor('user'));
     dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', seatsAvailable: 3 })];
-    dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'pending' })];
+    dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'awaiting_payment' })];
 
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
@@ -720,10 +721,17 @@ describe('trajet module', () => {
 
     expect(res.status).toBe(201);
     const body = await res.json();
-    expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'pending' });
+    expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'awaiting_payment' });
+    expect(paymentHooks.issueInvoiceForBooking).toHaveBeenCalled();
+    expect(notifyUser).toHaveBeenCalledWith(
+      'u_1',
+      expect.stringContaining('Pay Kouby'),
+      expect.any(String),
+      undefined,
+    );
     expect(notifyUser).toHaveBeenCalledWith(
       'someone-else',
-      expect.stringContaining('New booking request'),
+      expect.stringContaining('New booking'),
       expect.any(String),
     );
   });
@@ -759,7 +767,7 @@ describe('trajet module', () => {
     // Fully booked at rest, but one pending request (2 seats) is past the TTL.
     dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', seatsAvailable: 0 })];
     dbState.updateQueue = [[{ passengerId: 'u_3', seats: 2 }]];
-    dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'pending' })];
+    dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'awaiting_payment' })];
 
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
@@ -769,7 +777,7 @@ describe('trajet module', () => {
 
     expect(res.status).toBe(201);
     const body = await res.json();
-    expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'pending' });
+    expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'awaiting_payment' });
     // Sweep's expire update + the trajet restock it triggers + this booking's
     // own seatsAvailable decrement.
     expect(db.update).toHaveBeenCalledTimes(3);
@@ -781,7 +789,7 @@ describe('trajet module', () => {
     );
     expect(notifyUser).toHaveBeenCalledWith(
       'someone-else',
-      expect.stringContaining('New booking request'),
+      expect.stringContaining('New booking'),
       expect.any(String),
     );
   });
@@ -841,7 +849,14 @@ describe('trajet module', () => {
       };
       expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
       expect(body.items).toHaveLength(2);
-      expect(body.items[0]).toMatchObject({ id: BOOKING_ID, status: 'pending', invoiceDueAt: null, payout: null });
+      expect(body.items[0]).toMatchObject({
+        id: BOOKING_ID,
+        status: 'pending',
+        invoiceDueAt: null,
+        invoiceTotalCents: null,
+        paymentStatus: null,
+        payout: null,
+      });
       expect(body.items[1]).toMatchObject({ id: 'b_2', status: 'confirmed' });
     });
 

@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { swaggerUI } from '@hono/swagger-ui';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { healthRoute, pingRoute } from './routes/ping';
+import { healthRoute, pingRoute, readyRoute, checkReady } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
 import { trajetModule } from './modules/trajet';
 import { documentModule } from './modules/document';
@@ -66,6 +66,16 @@ app.use('/admin/health', requireAuth, requireRole('admin'));
 const routes = app
   .openapi(healthRoute, (c) => {
     return c.json({ status: 'ok' as const }, 200);
+  })
+  .openapi(readyRoute, async (c) => {
+    const deps = await checkReady();
+    if (deps.postgres === 'ok' && deps.redis === 'ok') {
+      return c.json({ status: 'ok' as const, postgres: 'ok' as const, redis: 'ok' as const }, 200);
+    }
+    return c.json(
+      { status: 'error' as const, postgres: deps.postgres, redis: deps.redis },
+      503,
+    );
   })
   .openapi(pingRoute, (c) => {
     return c.json(

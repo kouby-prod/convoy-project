@@ -1,15 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { Clock } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
 import type { RidePaymentMethod } from '@carpool/schemas';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
-import { driverFareCents, formatCad, koubyDueCents, COMMISSION_AMOUNT_CENTS } from '@/lib/booking-money';
+import {
+  driverFareCents,
+  formatCad,
+  koubyDueCents,
+  payableCents,
+  COMMISSION_AMOUNT_CENTS,
+} from '@/lib/booking-money';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BookingMessages } from '@/components/trajets/booking-messages';
@@ -40,6 +46,7 @@ export function TrajetBookingForm({
   const tRide = useTranslations('Trajet');
   const format = useFormatter();
   const locale = useLocale();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [seats, setSeats] = useState(1);
@@ -72,14 +79,50 @@ export function TrajetBookingForm({
       setCancelledNotice(false);
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
       queryClient.invalidateQueries({ queryKey: ['trajet'] });
+      queryClient.invalidateQueries({ queryKey: ['me', 'bookings'] });
+      if (data.status === 'awaiting_payment') {
+        router.push(`/paiement/${data.id}`);
+      }
     },
   });
 
+  const { data: existingBooking } = useQuery({
+    queryKey: ['me', 'bookings', 'trajet', trajetId],
+    enabled: Boolean(session?.user),
+    queryFn: async () => {
+      const res = await api.me.bookings.$get({ query: { page: '1', limit: '50' } });
+      if (!res.ok) return null;
+      const body = await res.json();
+      return (
+        body.items.find(
+          (item) =>
+            item.trajetId === trajetId &&
+            (item.status === 'pending' ||
+              item.status === 'awaiting_payment' ||
+              item.status === 'confirmed'),
+        ) ?? null
+      );
+    },
+    refetchInterval: (query) => (query.state.data?.status === 'pending' ? 8_000 : false),
+  });
+
+  const panelBooking = existingBooking
+    ? {
+        id: existingBooking.id,
+        status: existingBooking.status,
+        paymentMethod: existingBooking.paymentMethod,
+        seats: existingBooking.seats,
+        invoiceTotalCents: existingBooking.invoiceTotalCents,
+      }
+    : myBooking
+      ? { ...myBooking, invoiceTotalCents: null as number | null }
+      : null;
+
   const cancelMutation = useMutation({
     mutationFn: async () => {
-      if (!myBooking) throw new Error('No active booking to cancel');
+      if (!panelBooking) throw new Error('No active booking to cancel');
       const res = await api.trajets[':id'].bookings[':bookingId'].cancel.$post({
-        param: { id: trajetId, bookingId: myBooking.id },
+        param: { id: trajetId, bookingId: panelBooking.id },
       });
       if (!res.ok) throw new Error(t('booking.errors.cancelGeneric'));
       return res.json();
@@ -89,6 +132,7 @@ export function TrajetBookingForm({
       setCancelledNotice(true);
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
       queryClient.invalidateQueries({ queryKey: ['trajet'] });
+      queryClient.invalidateQueries({ queryKey: ['me', 'bookings'] });
     },
   });
 
@@ -124,9 +168,9 @@ export function TrajetBookingForm({
     );
   }
 
-  if (!myBooking && cancelled) return null;
+  if (!panelBooking && cancelled) return null;
 
-  if (!myBooking && seatsAvailable < 1) {
+  if (!panelBooking && seatsAvailable < 1) {
     return (
       <div className={shell}>
         <p className="text-sm font-medium text-foreground">{t('booking.title')}</p>
@@ -137,15 +181,18 @@ export function TrajetBookingForm({
 
   const estimatedFare =
     typeof pricePerSeat === 'number'
-      ? Math.round(pricePerSeat * 100) * (myBooking?.seats ?? seats)
+      ? Math.round(pricePerSeat * 100) * (panelBooking?.seats ?? seats)
       : null;
-  const method = myBooking?.paymentMethod ?? paymentMethod;
-  const koubyDue = estimatedFare !== null ? koubyDueCents(method, estimatedFare) : null;
+  const method = panelBooking?.paymentMethod ?? paymentMethod;
+  const koubyDue =
+    estimatedFare !== null
+      ? payableCents(panelBooking?.invoiceTotalCents, method, estimatedFare)
+      : null;
   const driverDue = estimatedFare !== null ? driverFareCents(method, estimatedFare) : 0;
 
   return (
     <div className={shell}>
-      {typeof pricePerSeat === 'number' && !myBooking ? (
+      {typeof pricePerSeat === 'number' && !panelBooking ? (
         <PriceBlock
           pricePerSeat={pricePerSeat}
           seatsAvailable={seatsAvailable}
@@ -159,9 +206,9 @@ export function TrajetBookingForm({
         <p className="text-sm font-semibold text-foreground">{t('booking.title')}</p>
       )}
 
-      {myBooking ? (
+      {panelBooking ? (
         <div className="mt-4 space-y-3">
-          {myBooking.status === 'pending' ? (
+          {panelBooking.status === 'pending' ? (
             <div className="flex gap-2.5 rounded-lg bg-muted px-3 py-3 ring-1 ring-foreground/5">
               <Clock className="mt-0.5 size-4 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden />
               <div>
@@ -178,7 +225,7 @@ export function TrajetBookingForm({
                 </p>
               </div>
             </div>
-          ) : myBooking.status === 'awaiting_payment' ? (
+          ) : panelBooking.status === 'awaiting_payment' ? (
             <div className="rounded-lg bg-primary/10 px-3 py-3 ring-1 ring-primary/20">
               <p className="text-sm font-medium text-foreground">{t('booking.awaitingTitle')}</p>
               {koubyDue !== null ? (
@@ -188,9 +235,9 @@ export function TrajetBookingForm({
               ) : null}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">{t(`bookings.status.${myBooking.status}`)}</p>
+            <p className="text-sm text-muted-foreground">{t(`bookings.status.${panelBooking.status}`)}</p>
           )}
-          {myBooking.status === 'pending' || myBooking.status === 'awaiting_payment' || myBooking.status === 'confirmed' ? (
+          {panelBooking.status === 'pending' || panelBooking.status === 'awaiting_payment' || panelBooking.status === 'confirmed' ? (
             <Button
               size="sm"
               variant="outline"
@@ -201,24 +248,24 @@ export function TrajetBookingForm({
               {cancelMutation.isPending ? t('booking.cancelling') : t('booking.cancel')}
             </Button>
           ) : null}
-          {myBooking.status === 'awaiting_payment' && koubyDue !== null ? (
+          {panelBooking.status === 'awaiting_payment' && koubyDue !== null ? (
             <Link
-              href={`/paiement/${myBooking.id}`}
+              href={`/paiement/${panelBooking.id}`}
               className={cn(buttonVariants({ variant: 'primary', size: 'sm' }), 'w-full font-semibold')}
             >
               {t('booking.pay', { amount: formatCad(koubyDue, locale) })}
             </Link>
           ) : null}
-          {myBooking.status === 'confirmed' ? (
+          {panelBooking.status === 'confirmed' ? (
             <Link
-              href={`/paiement/${myBooking.id}`}
+              href={`/paiement/${panelBooking.id}`}
               className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}
             >
               {t('booking.invoice')}
             </Link>
           ) : null}
           <Link
-            href={`/messages/${myBooking.id}`}
+            href={`/messages/${panelBooking.id}`}
             className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'w-full')}
           >
             {t('booking.messages')}
@@ -226,7 +273,7 @@ export function TrajetBookingForm({
           {cancelMutation.isError ? (
             <p className="text-sm text-destructive">{t('booking.errors.cancelGeneric')}</p>
           ) : null}
-          <BookingMessages bookingId={myBooking.id} />
+          <BookingMessages bookingId={panelBooking.id} />
         </div>
       ) : (
         <div className="mt-4 space-y-3">

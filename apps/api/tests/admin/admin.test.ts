@@ -29,7 +29,7 @@ function createChain(result: unknown, onSet?: (values: unknown) => void) {
 
 /**
  * `selectQueue` is consumed one entry per `db.select()` call, because
- * GET /admin/stats deliberately runs three separate aggregates — counting
+ * GET /admin/stats deliberately runs four separate aggregates — counting
  * documents and accounts over a single join would multiply the account rows.
  * Queuing makes each test state that sequence explicitly.
  */
@@ -146,6 +146,7 @@ describe('admin module', () => {
     ['/admin/stats'],
     ['/admin/documents'],
     ['/admin/users'],
+    ['/admin/payments/incidents'],
   ])('GET %s returns 401 without a session', async (path) => {
     getSession.mockResolvedValue(null);
     const res = await adminModule.request(path);
@@ -156,6 +157,7 @@ describe('admin module', () => {
     ['/admin/stats'],
     ['/admin/documents'],
     ['/admin/users'],
+    ['/admin/payments/incidents'],
   ])('GET %s returns 403 for a signed-in non-admin', async (path) => {
     getSession.mockResolvedValue(sessionFor('u_1', 'user'));
     const res = await adminModule.request(path);
@@ -456,6 +458,7 @@ describe('admin module', () => {
       [{ total: 7, pending: 3, approved: 3, rejected: 1 }],
       [{ total: 5, admins: 1 }],
       [{ value: 2 }],
+      [{ value: 0 }],
     ];
 
     const res = await adminModule.request('/admin/stats');
@@ -464,13 +467,14 @@ describe('admin module', () => {
     expect(await res.json()).toEqual({
       documents: { total: 7, pending: 3, approved: 3, rejected: 1 },
       users: { total: 5, admins: 1, awaitingReview: 2 },
+      payments: { openIncidents: 0 },
     });
   });
 
   it('GET /admin/stats reports zeroes on an empty database', async () => {
     getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
     // No aggregate rows at all — the handler must not emit nulls into the contract.
-    dbState.selectQueue = [[], [], []];
+    dbState.selectQueue = [[], [], [], []];
 
     const res = await adminModule.request('/admin/stats');
 
@@ -478,6 +482,7 @@ describe('admin module', () => {
     expect(await res.json()).toEqual({
       documents: { total: 0, pending: 0, approved: 0, rejected: 0 },
       users: { total: 0, admins: 0, awaitingReview: 0 },
+      payments: { openIncidents: 0 },
     });
   });
 

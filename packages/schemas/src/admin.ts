@@ -111,6 +111,9 @@ export const AdminStatsSchema = z
       /** Accounts with at least one document still awaiting a decision. */
       awaitingReview: z.number().int().nonnegative(),
     }),
+    payments: z.object({
+      openIncidents: z.number().int().nonnegative(),
+    }),
   })
   .describe('AdminStats');
 export type AdminStats = z.infer<typeof AdminStatsSchema>;
@@ -144,9 +147,16 @@ export type AdminUser = z.infer<typeof AdminUserSchema>;
 
 export const AdminUserListSchema = z.array(AdminUserSchema).describe('AdminUserList');
 
+export const AdminMismatchQuerySchema = z
+  .object({
+    status: z.enum(['open', 'resolved']).optional(),
+  })
+  .describe('AdminMismatchQuery');
+export type AdminMismatchQuery = z.infer<typeof AdminMismatchQuerySchema>;
+
 export const AdminPayoutQuerySchema = z
   .object({
-    status: z.enum(['held', 'due', 'paid', 'cancelled']).optional(),
+    status: z.enum(['held', 'due', 'paid', 'cancelled', 'frozen']).optional(),
   })
   .describe('AdminPayoutQuery');
 export type AdminPayoutQuery = z.infer<typeof AdminPayoutQuerySchema>;

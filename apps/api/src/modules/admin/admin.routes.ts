@@ -3,11 +3,14 @@ import {
   AdminDocumentListSchema,
   AdminDocumentQuerySchema,
   AdminDocumentSchema,
+  AdminMismatchQuerySchema,
   AdminPayoutQuerySchema,
   AdminStatsSchema,
   AdminUserListSchema,
   DriverPayoutSchema,
   MarkDriverPayoutPaidSchema,
+  ReconciliationMismatchSchema,
+  ResolveMismatchSchema,
   ReviewDocumentSchema,
 } from '@carpool/schemas';
 
@@ -171,6 +174,63 @@ export const markAdminPayoutPaidRoute = createRoute({
     },
     400: {
       description: 'Payout is not held or due',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listAdminMismatchesRoute = createRoute({
+  method: 'get',
+  path: '/admin/payments/incidents',
+  tags: ['admin'],
+  summary: 'Open payment incidents and reconcile mismatches',
+  security: bearerAuth,
+  request: { query: AdminMismatchQuerySchema },
+  responses: {
+    200: {
+      description: 'Incidents, newest first',
+      content: { 'application/json': { schema: z.array(ReconciliationMismatchSchema) } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const resolveAdminMismatchRoute = createRoute({
+  method: 'post',
+  path: '/admin/payments/incidents/{id}/resolve',
+  tags: ['admin'],
+  summary: 'Mark a payment incident as resolved',
+  security: bearerAuth,
+  request: {
+    params: z.object({ id: z.string() }),
+    body: { content: { 'application/json': { schema: ResolveMismatchSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'The resolved incident',
+      content: { 'application/json': { schema: ReconciliationMismatchSchema } },
+    },
+    400: {
+      description: 'Incident is already resolved',
       content: { 'application/json': { schema: errorSchema } },
     },
     401: {

@@ -15,8 +15,9 @@ import { AdminStatsTiles } from './admin-stats';
 import { AdminDocumentQueue } from './admin-document-queue';
 import { AdminUserTable } from './admin-user-table';
 import { AdminPayoutQueue } from './admin-payout-queue';
+import { AdminIncidentQueue } from './admin-incident-queue';
 
-type AdminView = 'queue' | 'users' | 'payouts';
+type AdminView = 'queue' | 'users' | 'payouts' | 'incidents';
 
 /**
  * Backoffice root.
@@ -72,7 +73,7 @@ export function AdminDashboard() {
         aria-label={t('tabs.label')}
         className="flex w-fit gap-1 rounded-full bg-muted p-1"
       >
-        {(['queue', 'users', 'payouts'] as const).map((tab) => (
+        {(['queue', 'users', 'payouts', 'incidents'] as const).map((tab) => (
           <button
             key={tab}
             role="tab"
@@ -94,6 +95,7 @@ export function AdminDashboard() {
       {view === 'queue' ? <AdminDocumentQueue /> : null}
       {view === 'users' ? <AdminUserTable /> : null}
       {view === 'payouts' ? <AdminPayoutQueue /> : null}
+      {view === 'incidents' ? <AdminIncidentQueue /> : null}
     </div>
   );
 }

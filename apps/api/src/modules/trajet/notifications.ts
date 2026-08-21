@@ -10,7 +10,17 @@ function webOrigin(): string {
 }
 
 export function trajetUrl(trajetId: string): string {
-  return `${webOrigin()}/trajets/${trajetId}`;
+  return `${webOrigin()}/trajet/${trajetId}`;
+}
+
+/** Human-readable due instant for emails (Eastern, English). */
+export function formatDueAt(dueAt: Date | string): string {
+  const date = dueAt instanceof Date ? dueAt : new Date(dueAt);
+  return date.toLocaleString('en-CA', {
+    timeZone: 'America/Toronto',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
 }
 
 export function trajetSearchUrl(): string {

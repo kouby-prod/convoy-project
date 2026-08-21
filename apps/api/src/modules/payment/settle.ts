@@ -2,12 +2,13 @@ import { and, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { db } from '../../db/client';
 import { invoice, payment } from '../../db/payment';
-import { notifyUser, paymentUrl, describeTrip } from '../trajet/notifications';
+import { notifyUser, paymentUrl, describeTrip, trajetUrl } from '../trajet/notifications';
 import { booking, trajet } from '../../db/trajet-schema';
 import { payLines, postLedger } from './ledger';
 import { createHeldDriverPayout } from './payout';
 import { refundStripePaymentIntent, stripeIdempotencyKey } from './stripe';
 import { getPayPalCaptureId, refundPayPalCapture } from './paypal';
+import { recordPaymentIncident } from './incidents';
 
 export type SettleInput = {
   invoiceId: string;
@@ -31,7 +32,10 @@ export async function settlePaidInvoice(input: SettleInput): Promise<SettleResul
   const result = await db.transaction(async (tx) => {
     const [current] = await tx.select().from(invoice).where(eq(invoice.id, input.invoiceId));
     if (!current) return 'rejected' as const;
-    if (current.currency !== input.currency || current.totalCents !== input.amountCents) {
+    if (
+      current.currency.toLowerCase() !== input.currency.toLowerCase() ||
+      current.totalCents !== input.amountCents
+    ) {
       console.error('[payment] settle amount mismatch', {
         invoiceId: input.invoiceId,
         expected: current.totalCents,
@@ -93,13 +97,21 @@ export async function settlePaidInvoice(input: SettleInput): Promise<SettleResul
   });
 
   if (loser) {
-    await refundLosingAttempt(loser).catch((err: unknown) => {
+    const failed = loser;
+    await refundLosingAttempt(failed).catch((err: unknown) => {
       console.error('[payment] loser refund failed', err);
+      void recordPaymentIncident({
+        kind: 'psp_refund_failed',
+        provider: failed.provider,
+        providerPaymentId: failed.providerPaymentId,
+        invoiceId: failed.invoiceId,
+        detail: { error: err instanceof Error ? err.message : String(err), reason: 'loser' },
+      });
     });
   }
 
   if (result === 'settled') {
-    await notifyPassengerPaid(input.invoiceId).catch((err: unknown) => {
+    await notifyBookingPaid(input.invoiceId).catch((err: unknown) => {
       console.error('[payment] paid notification failed', err);
     });
   }
@@ -160,20 +172,27 @@ async function refundLosingAttempt(loser: {
     );
 }
 
-async function notifyPassengerPaid(invoiceId: string): Promise<void> {
+async function notifyBookingPaid(invoiceId: string): Promise<void> {
   const [inv] = await db.select().from(invoice).where(eq(invoice.id, invoiceId));
   if (!inv) return;
   const [bookingRow] = await db.select().from(booking).where(eq(booking.id, inv.bookingId));
   if (!bookingRow) return;
   const [trip] = await db.select().from(trajet).where(eq(trajet.id, bookingRow.trajetId));
-  const tripText = trip
-    ? describeTrip(trip)
-    : 'your trip';
+  const tripText = trip ? describeTrip(trip) : 'your trip';
   await notifyUser(
     bookingRow.passengerId,
     'Your Kouby booking is confirmed',
     `Invoice ${inv.number} is paid. Your booking for ${tripText} is confirmed. ${paymentUrl(bookingRow.id)}`,
   );
+  if (trip) {
+    const passengerName =
+      [bookingRow.firstName, bookingRow.lastName].filter(Boolean).join(' ').trim() || 'A passenger';
+    await notifyUser(
+      trip.driverId,
+      'Passenger paid — booking confirmed',
+      `${passengerName} paid the Kouby invoice for ${tripText}. The seat is confirmed: ${trajetUrl(trip.id)}`,
+    );
+  }
 }
 
 export async function markPaymentProcessing(input: {

@@ -16,7 +16,7 @@ export function DueCountdown({
 
   useEffect(() => {
     if (paid) return;
-    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    const id = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(id);
   }, [paid]);
 

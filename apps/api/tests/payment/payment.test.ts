@@ -58,6 +58,7 @@ const notifyUser = vi.fn();
 vi.mock('../../src/modules/trajet/notifications', () => ({
   notifyUser: (...a: unknown[]) => notifyUser(...a),
   paymentUrl: (id: string) => `https://example.test/paiement/${id}`,
+  trajetUrl: (id: string) => `https://example.test/trajet/${id}`,
   describeTrip: () => 'Montreal to Quebec',
 }));
 
@@ -71,6 +72,9 @@ const stripeMocks = vi.hoisted(() => ({
   stripeIdempotencyKey: (invoiceId: string, kind: string, extra?: string) =>
     extra ? `invoice:${invoiceId}:stripe:${kind}:${extra}` : `invoice:${invoiceId}:stripe:${kind}`,
   listRecentStripePaymentIntents: vi.fn(async () => []),
+  paymentIntentIdFromStripeDispute: vi.fn(async (payload: Record<string, unknown>) =>
+    typeof payload.payment_intent === 'string' ? payload.payment_intent : undefined,
+  ),
 }));
 vi.mock('../../src/modules/payment/stripe', () => stripeMocks);
 
@@ -146,7 +150,7 @@ function makeInvoice(overrides: Record<string, unknown> = {}) {
     buyerEmail: 'ada@example.com',
     pdfStorageKey: null,
     issuedAt: now,
-    dueAt: new Date(now.getTime() + 86_400_000),
+    dueAt: new Date(now.getTime() + 15 * 60 * 1000),
     paidAt: null,
     createdAt: now,
     updatedAt: now,
@@ -413,6 +417,42 @@ describe('Stripe test-card states', () => {
     expect(dbState.setCalls).toContainEqual({ status: 'processing' });
   });
 
+  it('3DS challenge → payment_intent.requires_action marks the attempt processing', async () => {
+    dbState.selectResult = [makePayment({ status: 'created', providerPaymentId: 'pi_3ds' })];
+    await handleStripeEvent('payment_intent.requires_action', { id: 'pi_3ds' });
+    expect(dbState.setCalls).toContainEqual({ status: 'processing' });
+  });
+
+  it('charge.dispute.created freezes the driver payout', async () => {
+    dbState.selectQueue = [
+      [makePayment({ status: 'succeeded', providerPaymentId: 'pi_1' })],
+      [makeInvoice({ status: 'paid', bookingId: BOOKING_ID })],
+      [],
+    ];
+    dbState.insertResult = [
+      {
+        id: 'inc_1',
+        kind: 'dispute_open',
+        provider: 'stripe',
+        providerPaymentId: 'pi_1',
+        invoiceId: INVOICE_ID,
+        detail: {},
+        status: 'open',
+        note: null,
+        resolvedAt: null,
+        resolvedBy: null,
+        createdAt: now,
+      },
+    ];
+    dbState.updateResult = [{ id: 'po_1', status: 'frozen' }];
+    await handleStripeEvent('charge.dispute.created', {
+      id: 'dp_1',
+      payment_intent: 'pi_1',
+      status: 'needs_response',
+    });
+    expect(dbState.setCalls).toContainEqual({ status: 'frozen' });
+  });
+
   it('4000 0000 0000 9995 insufficient funds → payment_intent.payment_failed', async () => {
     dbState.selectResult = [makePayment({ status: 'created', providerPaymentId: 'pi_nsf' })];
     await handleStripeEvent('payment_intent.payment_failed', { id: 'pi_nsf' });
@@ -532,6 +572,26 @@ describe('unpaid TTL', () => {
     expect(result.expired).toHaveLength(1);
     expect(result.expired[0]?.passengerId).toBe('u_1');
   });
+
+  it('expires a stale 3DS processing attempt after the grace window', async () => {
+    const staleAt = new Date(now.getTime() - 20 * 60 * 1000);
+    const stale = makeBooking({ updatedAt: new Date(now.getTime() - 48 * 3600 * 1000) });
+    const txSelect = vi
+      .fn()
+      .mockImplementationOnce(() => createChain([stale]))
+      .mockImplementationOnce(() => createChain([makeInvoice({ dueAt: new Date(now.getTime() - 1000) })]))
+      .mockImplementationOnce(() =>
+        createChain([makePayment({ status: 'processing', createdAt: staleAt, updatedAt: staleAt })]),
+      );
+
+    const tx = {
+      select: txSelect,
+      update: vi.fn(() => createChain([stale])),
+    };
+
+    const result = await expireUnpaidBookings(tx as never, 't_1', 0);
+    expect(result.expired).toHaveLength(1);
+  });
 });
 
 describe('refund + credit note', () => {
@@ -599,7 +659,7 @@ describe('refund + credit note', () => {
 
     await refundPaidBooking(BOOKING_ID, 'Driver cancelled the trip');
     expect(stripeMocks.refundStripePaymentIntent).toHaveBeenCalledTimes(1);
-    expect(stripeMocks.refundStripePaymentIntent.mock.calls[0]?.[1]).toContain('cn_1');
+    expect(stripeMocks.refundStripePaymentIntent.mock.calls[0]?.[1]).toContain('full');
   });
 });
 
@@ -656,6 +716,140 @@ describe('POST /payments', () => {
     );
     const body = await res.json();
     expect(body).toMatchObject({ provider: 'stripe', clientSecret: 'sec_1' });
+  });
+
+  it('reuses a declined Stripe PaymentIntent so 3DS or another card can complete on it', async () => {
+    getSession.mockResolvedValue(sessionFor('u_1'));
+    dbState.selectQueue = [[], [makeBooking()], [makeInvoice()], [makePayment({ status: 'failed' })]];
+    stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
+      id: 'pi_1',
+      status: 'requires_payment_method',
+      amount: 500,
+      currency: 'cad',
+      metadata: { invoiceId: INVOICE_ID },
+      clientSecret: 'sec_retry',
+    });
+
+    const res = await paymentModule.request('/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': 'k-retry' },
+      body: JSON.stringify({ bookingId: BOOKING_ID, provider: 'stripe' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(stripeMocks.retrieveStripePaymentIntent).toHaveBeenCalledWith('pi_1');
+    expect(stripeMocks.createStripePaymentIntent).not.toHaveBeenCalled();
+    const body = await res.json();
+    expect(body).toMatchObject({ provider: 'stripe', clientSecret: 'sec_retry' });
+  });
+
+  it('reuses a PaymentIntent that is waiting on 3-D Secure', async () => {
+    getSession.mockResolvedValue(sessionFor('u_1'));
+    dbState.selectQueue = [[], [makeBooking()], [makeInvoice()], [makePayment({ status: 'processing' })]];
+    stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
+      id: 'pi_1',
+      status: 'requires_action',
+      amount: 500,
+      currency: 'cad',
+      metadata: { invoiceId: INVOICE_ID },
+      clientSecret: 'sec_3ds',
+    });
+
+    const res = await paymentModule.request('/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': 'k-3ds' },
+      body: JSON.stringify({ bookingId: BOOKING_ID, provider: 'stripe' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(stripeMocks.createStripePaymentIntent).not.toHaveBeenCalled();
+    const body = await res.json();
+    expect(body).toMatchObject({ provider: 'stripe', clientSecret: 'sec_3ds' });
+  });
+});
+
+describe('POST /payments/stripe/confirm', () => {
+  beforeEach(() => {
+    getSession.mockReset();
+    db.select.mockClear();
+    db.update.mockClear();
+    dbState.selectQueue = [];
+    dbState.selectResult = [];
+    dbState.updateQueue = [];
+    dbState.setCalls = [];
+    stripeMocks.retrieveStripePaymentIntent.mockReset();
+  });
+
+  it('settles a succeeded 3DS PaymentIntent', async () => {
+    getSession.mockResolvedValue(sessionFor('u_1'));
+    const issued = makeInvoice();
+    const paid = makeInvoice({ status: 'paid', paidAt: now });
+    stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
+      id: 'pi_1',
+      status: 'succeeded',
+      amount: 500,
+      currency: 'cad',
+      metadata: { invoiceId: INVOICE_ID },
+      clientSecret: 'sec',
+    });
+    dbState.selectQueue = [
+      [makeBooking()],
+      [issued],
+      [makePayment({ status: 'processing' })],
+      [issued],
+      [makePayment({ status: 'processing' })],
+      [paid],
+      [makeBooking({ status: 'confirmed' })],
+      [],
+      [paid],
+      [makePayment({ status: 'succeeded' })],
+      [],
+      [makeBooking({ status: 'confirmed' })],
+      [],
+    ];
+    dbState.updateQueue = [[paid], [makeBooking({ status: 'confirmed' })]];
+
+    const res = await paymentModule.request('/payments/stripe/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: BOOKING_ID }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(stripeMocks.retrieveStripePaymentIntent).toHaveBeenCalledWith('pi_1');
+    expect(dbState.setCalls).toContainEqual({ status: 'paid', paidAt: expect.any(Date) });
+    expect(dbState.setCalls).toContainEqual({ status: 'confirmed' });
+  });
+
+  it('does not settle while 3DS still requires_action', async () => {
+    getSession.mockResolvedValue(sessionFor('u_1'));
+    stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
+      id: 'pi_1',
+      status: 'requires_action',
+      amount: 500,
+      currency: 'cad',
+      metadata: { invoiceId: INVOICE_ID },
+      clientSecret: 'sec',
+    });
+    dbState.selectQueue = [
+      [makeBooking()],
+      [makeInvoice()],
+      [makePayment({ status: 'processing' })],
+      [makeInvoice()],
+      [makePayment({ status: 'processing' })],
+      [],
+      [makeBooking()],
+      [],
+    ];
+
+    const res = await paymentModule.request('/payments/stripe/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: BOOKING_ID }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(dbState.setCalls).not.toContainEqual({ status: 'paid', paidAt: expect.any(Date) });
   });
 });
 
@@ -767,8 +961,9 @@ describe('driver payouts', () => {
     await refundFareOnlyForBooking(BOOKING_ID);
     expect(stripeMocks.refundStripePaymentIntent).toHaveBeenCalledWith(
       'pi_1',
-      expect.stringContaining('refund'),
+      expect.stringContaining('fare'),
       2000,
     );
+    expect(dbState.setCalls).not.toContainEqual({ status: 'refunded' });
   });
 });

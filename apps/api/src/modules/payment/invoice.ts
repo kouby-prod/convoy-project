@@ -11,7 +11,11 @@ import { env } from '../../env';
 import { computeInvoiceAmounts } from './tax';
 import { issueLines, postLedger, type DbTx } from './ledger';
 
-const AWAITING_PAYMENT_TTL_MS = 24 * 60 * 60 * 1000;
+/**
+ * How long a passenger has to pay after reserving. Unpaid seats are released
+ * when this elapses. The 24h clock is for driver payout follow-up, not this.
+ */
+const AWAITING_PAYMENT_TTL_MS = 15 * 60 * 1000;
 
 export function formatInvoiceNumber(seq: number, at = new Date()): string {
   const year = at.getUTCFullYear();
@@ -143,6 +147,21 @@ export function invoiceSeller() {
 
 export function hashRequest(body: unknown): string {
   return createHash('sha256').update(JSON.stringify(body)).digest('hex');
+}
+
+/** Invoice due timestamps are 15 minutes out — show date and time. */
+export function formatInvoiceInstant(iso: string): string {
+  const date = new Date(iso);
+  if (!Number.isFinite(date.getTime())) return iso;
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
 }
 
 export { AWAITING_PAYMENT_TTL_MS };

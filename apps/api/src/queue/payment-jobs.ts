@@ -66,6 +66,12 @@ export async function schedulePaymentReconcile(): Promise<void> {
     { pattern: '15 * * * *' },
     { name: 'payout-release', data: {} },
   );
+  await getReconcileQueue().removeJobScheduler('unpaid-invoice-expire-quarter-hour').catch(() => undefined);
+  await getReconcileQueue().upsertJobScheduler(
+    'unpaid-invoice-expire-minute',
+    { pattern: '* * * * *' },
+    { name: 'unpaid-expire', data: {} },
+  );
 }
 
 export async function enqueuePaymentReconcileNow(): Promise<void> {
