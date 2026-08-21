@@ -66,6 +66,11 @@ export function startPaymentWorkers(): void {
     });
     reconcileWorker.on('failed', (job, err) => {
       console.error(`[payment-reconcile] job ${job?.id ?? '?'} failed:`, err);
+      void recordPaymentIncident({
+        kind: 'worker_job_failed',
+        providerPaymentId: job?.id,
+        detail: { queue: PAYMENT_RECONCILE_QUEUE, name: job?.name, error: err.message },
+      });
     });
     console.log('[payment-reconcile] listening on queue', PAYMENT_RECONCILE_QUEUE);
   }

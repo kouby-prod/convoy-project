@@ -4,6 +4,7 @@ import { db } from '../../db/client';
 import { reconciliationMismatch } from '../../db/payment';
 import { sendEmail } from '../../auth/email';
 import { env } from '../../env';
+import { reportOncall } from '../../observability';
 import type { ReconciliationMismatch } from '@carpool/schemas';
 import { ReconciliationMismatchSchema } from '@carpool/schemas';
 
@@ -65,6 +66,16 @@ export async function recordPaymentIncident(input: {
 
   await notifySupport(row.kind, row.id, input.detail).catch((err: unknown) => {
     console.error('[payment] incident email failed', err);
+  });
+  await reportOncall({
+    kind: row.kind,
+    incidentId: row.id,
+    provider: input.provider,
+    providerPaymentId: input.providerPaymentId,
+    invoiceId: input.invoiceId,
+    detail: input.detail,
+  }).catch((err: unknown) => {
+    console.error('[payment] on-call report failed', err);
   });
   return { id: row.id, created: true };
 }

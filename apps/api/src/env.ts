@@ -118,6 +118,24 @@ const EnvSchema = z.object({
   INVOICE_GST_NUMBER: optionalString,
   INVOICE_QST_NUMBER: optionalString,
   TAX_MODE: z.enum(['none', 'gst', 'gst_qst']).default('none'),
+
+  // --- Observability (optional — incidents still email + admin inbox) ---
+  // GlitchTip (or Sentry) DSN — envelope ingest. Host vs Docker hosts differ.
+  SENTRY_DSN: optionalString,
+  SENTRY_ENVIRONMENT: optionalString,
+  // ntfy (self-hosted or ntfy.sh). Topic should be unguessable.
+  NTFY_URL: optionalString,
+  NTFY_TOPIC: optionalString,
+  NTFY_TOKEN: optionalString,
+  // Optional leftover — unused when ntfy is set.
+  PAGERDUTY_ROUTING_KEY: optionalString,
+
+  // When true (default), this process also consumes payment BullMQ jobs.
+  // Docker API sets false; the `payment-worker` service consumes instead.
+  PAYMENT_WORKER_EMBEDDED: z
+    .string()
+    .optional()
+    .transform((value) => value !== 'false'),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

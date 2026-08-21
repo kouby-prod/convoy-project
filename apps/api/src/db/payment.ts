@@ -22,6 +22,8 @@ export const creditNoteNumberSeq = pgSequence('credit_note_number_seq');
  * Kouby-owned invoice — the document of record. Stripe/PayPal only collect.
  * Numbers come from `invoice_number_seq` (KOU-YYYY-000001). Never delete a
  * row: void an unpaid invoice or issue a credit note against a paid one.
+ * Foreign keys use ON DELETE restrict so a booking/user wipe cannot erase
+ * the ledger.
  */
 export const invoice = pgTable(
   'invoice',
@@ -29,7 +31,7 @@ export const invoice = pgTable(
     id: text('id').primaryKey(),
     bookingId: text('booking_id')
       .notNull()
-      .references(() => booking.id, { onDelete: 'cascade' }),
+      .references(() => booking.id, { onDelete: 'restrict' }),
     number: text('number').notNull(),
     status: text('status').notNull(),
     currency: text('currency').notNull(),
@@ -68,7 +70,7 @@ export const creditNote = pgTable(
     id: text('id').primaryKey(),
     invoiceId: text('invoice_id')
       .notNull()
-      .references(() => invoice.id, { onDelete: 'cascade' }),
+      .references(() => invoice.id, { onDelete: 'restrict' }),
     number: text('number').notNull(),
     amountCents: integer('amount_cents').notNull(),
     currency: text('currency').notNull(),
@@ -92,7 +94,7 @@ export const payment = pgTable(
     id: text('id').primaryKey(),
     invoiceId: text('invoice_id')
       .notNull()
-      .references(() => invoice.id, { onDelete: 'cascade' }),
+      .references(() => invoice.id, { onDelete: 'restrict' }),
     provider: text('provider').notNull(),
     providerPaymentId: text('provider_payment_id').notNull(),
     amountCents: integer('amount_cents').notNull(),
@@ -125,7 +127,7 @@ export const ledgerEntry = pgTable(
     txnId: text('txn_id').notNull(),
     invoiceId: text('invoice_id')
       .notNull()
-      .references(() => invoice.id, { onDelete: 'cascade' }),
+      .references(() => invoice.id, { onDelete: 'restrict' }),
     account: text('account').notNull(),
     direction: text('direction').notNull(),
     amountCents: integer('amount_cents').notNull(),
@@ -201,6 +203,7 @@ export const reconciliationMismatch = pgTable(
 /**
  * Fare Kouby owes the driver after a card collection. Created on settle;
  * becomes `due` 24h after departure; marked `paid` by an admin (no Connect).
+ * Restrict-on-delete: a user or booking wipe must not drop payout history.
  */
 export const driverPayout = pgTable(
   'driver_payout',
@@ -208,10 +211,10 @@ export const driverPayout = pgTable(
     id: text('id').primaryKey(),
     bookingId: text('booking_id')
       .notNull()
-      .references(() => booking.id, { onDelete: 'cascade' }),
+      .references(() => booking.id, { onDelete: 'restrict' }),
     driverId: text('driver_id')
       .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
+      .references(() => user.id, { onDelete: 'restrict' }),
     amountCents: integer('amount_cents').notNull(),
     currency: text('currency').notNull(),
     status: text('status').notNull(),
