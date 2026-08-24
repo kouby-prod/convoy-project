@@ -5,6 +5,7 @@ import { logger } from 'hono/logger';
 import { healthRoute, pingRoute } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
 import { trajetModule } from './modules/trajet';
+import { geocodeModule } from './modules/geocode';
 import { documentModule } from './modules/document';
 import { vehicleModule } from './modules/vehicle';
 import { adminModule } from './modules/admin';
@@ -74,6 +75,8 @@ const routes = app
   })
   // --- TRAJET domain routes ---
   .route('/', trajetModule)
+  // --- GEOCODE routes (place search/reverse-geocode for the location picker) ---
+  .route('/', geocodeModule)
   // --- DOCUMENT domain routes (a driver's own submissions) ---
   .route('/', documentModule)
   // --- VEHICLE domain routes (a driver's own car description) ---

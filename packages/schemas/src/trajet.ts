@@ -140,6 +140,14 @@ export const CreateTrajetSchema = z
   .object({
     departureCity: z.string().min(1),
     destinationCity: z.string().min(1),
+    // Client-supplied when the driver used the location picker (see
+    // apps/web's LocationPicker); left out otherwise, in which case the API
+    // falls back to a best-effort city-level geocode (see
+    // geocodeAndStoreTrajetLocation in apps/api/src/modules/trajet/geocoding.ts).
+    departureLat: z.number().min(-90).max(90).nullable().optional(),
+    departureLng: z.number().min(-180).max(180).nullable().optional(),
+    arrivalLat: z.number().min(-90).max(90).nullable().optional(),
+    arrivalLng: z.number().min(-180).max(180).nullable().optional(),
     departureDateTime: z.string().datetime(),
     seatsTotal: z.number().int().min(1),
     pricePerSeat: z.number().nonnegative(),
@@ -169,6 +177,12 @@ export const UpdateTrajetSchema = z
   .object({
     departureCity: z.string().min(1).optional(),
     destinationCity: z.string().min(1).optional(),
+    // Same as CreateTrajetSchema: supplied when the driver re-picked a
+    // location, absent otherwise.
+    departureLat: z.number().min(-90).max(90).nullable().optional(),
+    departureLng: z.number().min(-180).max(180).nullable().optional(),
+    arrivalLat: z.number().min(-90).max(90).nullable().optional(),
+    arrivalLng: z.number().min(-180).max(180).nullable().optional(),
     departureDateTime: z.string().datetime().optional(),
     seatsTotal: z.number().int().min(1).optional(),
     pricePerSeat: z.number().nonnegative().optional(),
@@ -391,6 +405,10 @@ export const TrajetListingSchema = z
     departurePlace: z.string(),
     arrivalCity: z.string(),
     arrivalPlace: z.string(),
+    departureLat: z.number().min(-90).max(90).nullable(),
+    departureLng: z.number().min(-180).max(180).nullable(),
+    arrivalLat: z.number().min(-90).max(90).nullable(),
+    arrivalLng: z.number().min(-180).max(180).nullable(),
     /** ISO-8601 departure instant. */
     departureAt: z.iso.datetime(),
     /** ISO-8601 estimated arrival instant, or null when unknown. */
@@ -439,6 +457,12 @@ export const CreateTrajetRequestSchema = z
     departurePlace: z.string().trim().min(1),
     arrivalCity: z.string().trim().min(1),
     arrivalPlace: z.string().trim().min(1),
+    // Set when the driver picked a precise point via the location picker
+    // (apps/web's LocationPicker); left null for a free-text-only entry.
+    departureLat: z.number().min(-90).max(90).nullable().optional(),
+    departureLng: z.number().min(-180).max(180).nullable().optional(),
+    arrivalLat: z.number().min(-90).max(90).nullable().optional(),
+    arrivalLng: z.number().min(-180).max(180).nullable().optional(),
     departureAt: z.iso.datetime(),
     /** Optional — not every driver knows or wants to commit to an arrival time. */
     arrivalAt: z.iso.datetime().nullable().optional(),

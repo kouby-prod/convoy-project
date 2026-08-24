@@ -429,8 +429,8 @@ describe('trajet module', () => {
     // Fired without being awaited by the response — see createTrajetRoute.
     expect(geocodeAndStoreTrajetLocation).toHaveBeenCalledWith(
       '11111111-1111-4111-8111-111111111111',
-      'Montreal',
-      'Quebec',
+      { city: 'Montreal', lat: undefined, lng: undefined },
+      { city: 'Quebec', lat: undefined, lng: undefined },
     );
   });
 
@@ -558,8 +558,8 @@ describe('trajet module', () => {
       expect(res.status).toBe(200);
       expect(geocodeAndStoreTrajetLocation).toHaveBeenCalledWith(
         '11111111-1111-4111-8111-111111111111',
-        'Sherbrooke',
-        'Quebec',
+        { city: 'Sherbrooke', lat: undefined, lng: undefined },
+        { city: 'Quebec', lat: undefined, lng: undefined },
       );
     });
 

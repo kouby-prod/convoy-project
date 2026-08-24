@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CityCombobox } from '@/components/ui/city-combobox';
+import { LocationPicker, type LocationValue } from '@/components/ui/location-picker';
 import {
   Select,
   SelectContent,
@@ -60,6 +60,10 @@ interface RideDraft {
   comfort: 'standard' | 'confort' | 'premium';
   departureCity: string;
   arrivalCity: string;
+  departureLat: number | null;
+  departureLng: number | null;
+  arrivalLat: number | null;
+  arrivalLng: number | null;
   departurePlace: string;
   arrivalPlace: string;
   date: string;
@@ -79,6 +83,10 @@ const EMPTY_RIDE_DRAFT: RideDraft = {
   comfort: 'standard',
   departureCity: '',
   arrivalCity: '',
+  departureLat: null,
+  departureLng: null,
+  arrivalLat: null,
+  arrivalLng: null,
   departurePlace: '',
   arrivalPlace: '',
   date: '',
@@ -176,8 +184,12 @@ export function TrajetCreateForm() {
     const parsed = CreateTrajetRequestSchema.safeParse({
       departureCity: draft.departureCity.trim(),
       departurePlace: draft.departurePlace,
+      departureLat: draft.departureLat,
+      departureLng: draft.departureLng,
       arrivalCity: draft.arrivalCity.trim(),
       arrivalPlace: draft.arrivalPlace,
+      arrivalLat: draft.arrivalLat,
+      arrivalLng: draft.arrivalLng,
       departureAt: departureAt.toISOString(),
       arrivalAt: arrivalAt ? arrivalAt.toISOString() : null,
       pricePerSeat: Number(draft.pricePerSeat),
@@ -250,12 +262,17 @@ export function TrajetCreateForm() {
         <div className={cn('flex flex-col gap-6', draft.step !== 'ride-vehicle' && 'hidden')}>
           <form id="ride-details-form" onSubmit={handleStep1Submit} className="flex flex-col gap-6">
             <Field label={t('create.departure')}>
-              <CityCombobox
+              <LocationPicker
                 name="departureCity"
-                value={draft.departureCity}
-                onChange={(value) => updateDraft({ departureCity: value })}
+                value={{ city: draft.departureCity, lat: draft.departureLat, lng: draft.departureLng }}
+                onChange={(value: LocationValue) =>
+                  updateDraft({ departureCity: value.city, departureLat: value.lat, departureLng: value.lng })
+                }
                 placeholder={t('filters.from')}
                 aria-label={t('filters.from')}
+                useMyLocationLabel={t('create.useMyLocation')}
+                locationErrorLabel={t('create.locationError')}
+                mapColor="blue"
                 required
               />
               <Input
@@ -268,12 +285,17 @@ export function TrajetCreateForm() {
             </Field>
 
             <Field label={t('create.arrival')}>
-              <CityCombobox
+              <LocationPicker
                 name="arrivalCity"
-                value={draft.arrivalCity}
-                onChange={(value) => updateDraft({ arrivalCity: value })}
+                value={{ city: draft.arrivalCity, lat: draft.arrivalLat, lng: draft.arrivalLng }}
+                onChange={(value: LocationValue) =>
+                  updateDraft({ arrivalCity: value.city, arrivalLat: value.lat, arrivalLng: value.lng })
+                }
                 placeholder={t('filters.to')}
                 aria-label={t('filters.to')}
+                useMyLocationLabel={t('create.useMyLocation')}
+                locationErrorLabel={t('create.locationError')}
+                mapColor="green"
                 required
               />
               <Input

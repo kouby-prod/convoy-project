@@ -1045,6 +1045,8 @@
       "departurePlace": "Pick-up point",
       "arrival": "Arrival",
       "arrivalPlace": "Drop-off point",
+      "useMyLocation": "Use my current location",
+      "locationError": "Couldn't access your location. Check your browser's location permissions.",
       "when": "Date and times",
       "departureTime": "Departure time",
       "arrivalTime": "Arrival time (approximate)",

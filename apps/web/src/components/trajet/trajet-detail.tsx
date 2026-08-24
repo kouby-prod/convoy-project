@@ -3,6 +3,7 @@ import { ArrowRight, BadgeCheck, Briefcase, Car, Image as ImageIcon, Sparkles, U
 import type { TrajetListing, TrajetAmenity } from '@carpool/schemas';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { TripMap, type TripMapPin } from '@/components/ui/trip-map';
 import { RatingStars } from '@/components/trajet/rating-stars';
 import { TrajetAmenities } from '@/components/trajet/trajet-amenities';
 
@@ -21,6 +22,18 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
   // Null until the driver supplies an estimate — the arrival line is dropped
   // rather than shown as an invented time.
   const arrival = trajet.arrivalAt ? new Date(trajet.arrivalAt) : null;
+
+  // Coordinates are null until the background/picker geocode resolves (see
+  // apps/api/src/modules/trajet/geocoding.ts) — the map is dropped rather
+  // than shown centered on nothing.
+  const pins: TripMapPin[] = [
+    trajet.departureLat !== null && trajet.departureLng !== null
+      ? { id: 'departure', lat: trajet.departureLat, lng: trajet.departureLng, color: 'blue' as const }
+      : null,
+    trajet.arrivalLat !== null && trajet.arrivalLng !== null
+      ? { id: 'arrival', lat: trajet.arrivalLat, lng: trajet.arrivalLng, color: 'green' as const }
+      : null,
+  ].filter((pin): pin is TripMapPin => pin !== null);
 
   return (
     <div className="flex flex-col gap-8">
@@ -106,6 +119,8 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
           />
         </CardContent>
       </Card>
+
+      {pins.length > 0 ? <TripMap pins={pins} className="h-56" /> : null}
 
       {/* Driver + vehicle */}
       <Card>

@@ -1045,6 +1045,8 @@
       "departurePlace": "Lieu de départ",
       "arrival": "Arrivée",
       "arrivalPlace": "Lieu d'arrivée",
+      "useMyLocation": "Utiliser ma position actuelle",
+      "locationError": "Impossible d'accéder à votre position. Vérifiez les autorisations de localisation de votre navigateur.",
       "when": "Date et heures",
       "departureTime": "Heure de départ",
       "arrivalTime": "Heure d'arrivée (environ)",

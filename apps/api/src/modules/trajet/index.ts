@@ -332,6 +332,13 @@ export const trajetModule = app
         departureAt: new Date(body.departureDateTime),
         departurePlace: body.departurePlace ?? null,
         arrivalPlace: body.arrivalPlace ?? null,
+        // Set directly when the driver picked a precise point (see
+        // LocationPicker) so the response already carries them — the
+        // fire-and-forget geocode below only fills in whatever's still null.
+        departureLat: body.departureLat != null ? body.departureLat.toString() : null,
+        departureLng: body.departureLng != null ? body.departureLng.toString() : null,
+        arrivalLat: body.arrivalLat != null ? body.arrivalLat.toString() : null,
+        arrivalLng: body.arrivalLng != null ? body.arrivalLng.toString() : null,
         arrivalAt: body.arrivalDateTime ? new Date(body.arrivalDateTime) : null,
         seatsTotal: body.seatsTotal,
         seatsAvailable: body.seatsTotal,
@@ -349,10 +356,17 @@ export const trajetModule = app
     // rate-limits to ~1 req/sec and this needs two lookups) — a trajet must
     // stay immediately bookable rather than wait on it. Coordinates land a
     // couple of seconds later via a background UPDATE, or never if geocoding
-    // fails.
-    geocodeAndStoreTrajetLocation(row.id, row.departureCity, row.arrivalCity).catch((err) => {
-      console.error(`Failed to geocode trajet ${row.id}`, err);
-    });
+    // fails. Skipped entirely when the picker already supplied both sides —
+    // nothing left to fill in.
+    if (row.departureLat === null || row.arrivalLat === null) {
+      geocodeAndStoreTrajetLocation(
+        row.id,
+        { city: row.departureCity, lat: body.departureLat, lng: body.departureLng },
+        { city: row.arrivalCity, lat: body.arrivalLat, lng: body.arrivalLng },
+      ).catch((err) => {
+        console.error(`Failed to geocode trajet ${row.id}`, err);
+      });
+    }
 
     const driver = await getDriverProfile(authUser.id);
     return c.json(serialize(row, driver), 201);
@@ -387,6 +401,10 @@ export const trajetModule = app
         .set({
           ...(body.departureCity !== undefined && { departureCity: body.departureCity }),
           ...(body.destinationCity !== undefined && { arrivalCity: body.destinationCity }),
+          ...(body.departureLat !== undefined && { departureLat: body.departureLat?.toString() ?? null }),
+          ...(body.departureLng !== undefined && { departureLng: body.departureLng?.toString() ?? null }),
+          ...(body.arrivalLat !== undefined && { arrivalLat: body.arrivalLat?.toString() ?? null }),
+          ...(body.arrivalLng !== undefined && { arrivalLng: body.arrivalLng?.toString() ?? null }),
           ...(body.departureDateTime !== undefined && {
             departureAt: new Date(body.departureDateTime),
           }),
@@ -415,14 +433,24 @@ export const trajetModule = app
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
 
-    // Only re-geocode when a city actually changed — same fire-and-forget
-    // reasoning as createTrajetRoute above.
-    if (body.departureCity !== undefined || body.destinationCity !== undefined) {
-      geocodeAndStoreTrajetLocation(result.trajet.id, result.trajet.departureCity, result.trajet.arrivalCity).catch(
-        (err) => {
-          console.error(`Failed to re-geocode trajet ${result.trajet.id}`, err);
-        },
-      );
+    // Re-geocode when a city changed (re-derive coordinates for whichever
+    // side has none of its own) or when the driver re-picked a precise point
+    // directly — same fire-and-forget reasoning as createTrajetRoute above.
+    if (
+      body.departureCity !== undefined ||
+      body.destinationCity !== undefined ||
+      body.departureLat !== undefined ||
+      body.departureLng !== undefined ||
+      body.arrivalLat !== undefined ||
+      body.arrivalLng !== undefined
+    ) {
+      geocodeAndStoreTrajetLocation(
+        result.trajet.id,
+        { city: result.trajet.departureCity, lat: body.departureLat, lng: body.departureLng },
+        { city: result.trajet.arrivalCity, lat: body.arrivalLat, lng: body.arrivalLng },
+      ).catch((err) => {
+        console.error(`Failed to re-geocode trajet ${result.trajet.id}`, err);
+      });
     }
 
     const driver = await getDriverProfile(result.trajet.driverId);
