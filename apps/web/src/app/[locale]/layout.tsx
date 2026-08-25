@@ -7,6 +7,7 @@ import { setRequestLocale } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { Providers } from './providers';
 import { AppChrome } from '@/components/ui/app-chrome';
+import { ThemeScript } from '@/components/ui/theme-script';
 import { cn } from '@/lib/utils';
 import '../globals.css';
 
@@ -42,6 +43,7 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
+        <ThemeScript />
         <NextIntlClientProvider>
           <Providers>
             <AppChrome>{children}</AppChrome>

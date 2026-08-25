@@ -9,6 +9,7 @@ import { Navbar } from '@/components/ui/navbar';
 import { Footer } from '@/components/ui/footer';
 import { SkipLink } from '@/components/ui/skip-link';
 import { Toaster } from '@/components/ui/toast';
+import { LocaleSwitcher } from '@/components/ui/locale-switcher';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -95,15 +96,18 @@ function CheckoutBar() {
           <ArrowLeft className="size-4" strokeWidth={2.25} aria-hidden />
           <span className="max-sm:sr-only">{t('backToBookings')}</span>
         </Link>
-        <Link href="/" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/30">
-          <Image
-            src="/images/logo.png"
-            alt={tNav('brand')}
-            width={28}
-            height={28}
-            className="size-7 rounded-full"
-          />
-        </Link>
+        <div className="flex items-center gap-3">
+          <LocaleSwitcher />
+          <Link href="/" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/30">
+            <Image
+              src="/images/logo.png"
+              alt={tNav('brand')}
+              width={28}
+              height={28}
+              className="size-7 rounded-full"
+            />
+          </Link>
+        </div>
       </div>
     </header>
   );

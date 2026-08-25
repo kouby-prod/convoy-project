@@ -23,12 +23,15 @@
     "sections": {
       "search": "Recherche",
       "actions": "Actions",
-      "account": "Compte"
+      "account": "Compte",
+      "language": "Langue"
     }
   },
   "A11y": {
     "skipToContent": "Aller au contenu principal",
-    "dismiss": "Fermer"
+    "dismiss": "Fermer",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "LocaleSwitcher": {
     "label": "Langue",
@@ -56,6 +59,7 @@
       "subtitle": "Accédez à vos trajets, réservations et messages.",
       "submit": "Se connecter",
       "pending": "Connexion…",
+      "forgotPassword": "Mot de passe oublié ?",
       "noAccount": "Pas encore de compte ?",
       "createAccount": "Créer un compte"
     },
@@ -66,6 +70,23 @@
       "pending": "Création…",
       "hasAccount": "Déjà inscrit ?",
       "signIn": "Se connecter"
+    },
+    "forgotPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Indiquez l’e-mail du compte. S’il existe, nous enverrons un lien de réinitialisation.",
+      "submit": "Envoyer le lien",
+      "pending": "Envoi…",
+      "sent": "Si cet e-mail correspond à un compte, un lien de réinitialisation est en route.",
+      "backToSignIn": "Retour à la connexion"
+    },
+    "resetPassword": {
+      "title": "Choisir un nouveau mot de passe",
+      "subtitle": "Au moins 8 caractères.",
+      "submit": "Mettre à jour le mot de passe",
+      "pending": "Mise à jour…",
+      "success": "Mot de passe mis à jour. Vous pouvez vous connecter.",
+      "missingToken": "Ce lien est incomplet ou a expiré. Demandez-en un nouveau.",
+      "invalidToken": "Ce lien n’est plus valable. Demandez-en un nouveau."
     },
     "fields": {
       "email": "Adresse e-mail",
@@ -86,7 +107,9 @@
       "missingFields": "Veuillez remplir tous les champs.",
       "passwordMismatch": "Les mots de passe ne correspondent pas.",
       "signUpFailed": "Échec de l'inscription. Réessayez.",
-      "signUpUnavailable": "Impossible de créer le compte. Réessayez plus tard."
+      "signUpUnavailable": "Impossible de créer le compte. Réessayez plus tard.",
+      "resetFailed": "Impossible d’envoyer le lien. Réessayez plus tard.",
+      "resetUnavailable": "Impossible de mettre à jour le mot de passe. Réessayez plus tard."
     }
   },
   "Terms": {
@@ -482,7 +505,7 @@
   },
   "Parametres": {
     "title": "Paramètres du compte",
-    "subtitle": "Gérez vos informations personnelles et votre mot de passe.",
+    "subtitle": "Gérez votre profil, votre mot de passe et l'apparence.",
     "loading": "Chargement...",
     "profile": {
       "title": "Profil",
@@ -503,6 +526,14 @@
       "saving": "Mise à jour...",
       "success": "Mot de passe mis à jour.",
       "error": "Impossible de mettre à jour le mot de passe. Vérifiez votre mot de passe actuel."
+    },
+    "appearance": {
+      "title": "Apparence",
+      "description": "Choisissez le mode clair, sombre, ou suivez l'appareil.",
+      "label": "Thème",
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système"
     }
   },
   "Messages": {
@@ -1301,17 +1332,28 @@
       "to": "Ville d'arrivée",
       "date": "Date",
       "time": "Heure",
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain",
+      "dateChips": "Dates rapides",
       "more": "Plus de filtres",
       "less": "Moins de filtres",
       "clear": "Effacer",
       "swap": "Inverser départ et arrivée",
       "swapShort": "Inverser",
       "seats": "Places",
+      "seatsValue": "{count, plural, one {# place} other {# places}}",
+      "seatsMinus": "Moins de places",
+      "seatsPlus": "Plus de places",
       "maxPrice": "Prix max.",
       "amenitiesLegend": "Options du trajet",
       "direct": "Sans arrêt intermédiaire",
       "withStops": "Avec arrêt intermédiaire",
-      "submit": "Rechercher"
+      "submit": "Rechercher",
+      "openSheet": "Filtres",
+      "closeSheet": "Fermer les filtres",
+      "sheetTitle": "Filtres de recherche",
+      "summaryEmpty": "Départ, date, places",
+      "summaryRoute": "{from} → {to}"
     },
     "comfort": {
       "legend": "Confort",

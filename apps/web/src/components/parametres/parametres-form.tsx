@@ -10,7 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { FormAlert, FormStatus } from '@/components/ui/form-alert';
 import { CardSkeleton } from '@/components/ui/list-skeleton';
+import { PasswordInput } from '@/components/ui/password-input';
 import { toast } from '@/components/ui/toast';
+import { AppearanceForm } from '@/components/parametres/appearance-form';
 
 /**
  * Account settings: profile (name) and password, the two mutations
@@ -21,6 +23,7 @@ import { toast } from '@/components/ui/toast';
  */
 export function ParametresForm() {
   const t = useTranslations('Parametres');
+  const translateA11y = useTranslations('A11y');
   const router = useRouter();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const user = session?.user;
@@ -136,23 +139,27 @@ export function ParametresForm() {
           <form onSubmit={handlePasswordSubmit} className="grid gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="currentPassword">{t('password.current')}</Label>
-              <Input
+              <PasswordInput
                 id="currentPassword"
-                type="password"
                 value={currentPassword}
                 onChange={(event) => setCurrentPassword(event.target.value)}
+                autoComplete="current-password"
                 required
+                showLabel={translateA11y('showPassword')}
+                hideLabel={translateA11y('hidePassword')}
               />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="newPassword">{t('password.new')}</Label>
-              <Input
+              <PasswordInput
                 id="newPassword"
-                type="password"
-                minLength={8}
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
+                autoComplete="new-password"
+                minLength={8}
                 required
+                showLabel={translateA11y('showPassword')}
+                hideLabel={translateA11y('hidePassword')}
               />
             </div>
             {passwordState.error ? <FormAlert>{passwordState.error}</FormAlert> : null}
@@ -167,6 +174,8 @@ export function ParametresForm() {
           </form>
         </CardContent>
       </Card>
+
+      <AppearanceForm />
     </div>
   );
 }

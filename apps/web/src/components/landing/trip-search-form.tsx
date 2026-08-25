@@ -6,9 +6,10 @@ import { ArrowUpDown, Search } from 'lucide-react';
 import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { CityCombobox } from '@/components/ui/city-combobox';
-import { DropdownDatePicker, dateToParam } from '@/components/ui/dropdown-date-picker';
+import { DropdownDatePicker, dateToParam, paramToDate } from '@/components/ui/dropdown-date-picker';
 import { DropdownTimePicker } from '@/components/ui/dropdown-time-picker';
 import { formatTime, type TimeValue } from '@/components/ui/time-picker';
+import { DateQuickChips, SeatsStepper } from '@/components/trajet/search-chips';
 
 export function TripSearchForm() {
   const translateHero = useTranslations('Hero');
@@ -18,6 +19,7 @@ export function TripSearchForm() {
   const [to, setTo] = useState('');
   const [departureDate, setDepartureDate] = useState<Date>();
   const [departureTime, setDepartureTime] = useState<TimeValue>();
+  const [seats, setSeats] = useState('1');
 
   function swapCities() {
     setFrom(to);
@@ -36,6 +38,7 @@ export function TripSearchForm() {
       params.set('date', dateToParam(departureDate));
       if (departureTime) params.set('time', formatTime(departureTime));
     }
+    if (seats) params.set('seats', seats);
 
     const queryString = params.toString();
     router.push(`/trajet${queryString ? `?${queryString}` : ''}`);
@@ -92,6 +95,21 @@ export function TripSearchForm() {
           className="w-full"
         />
       </div>
+      <DateQuickChips
+        date={departureDate ? dateToParam(departureDate) : ''}
+        onChange={(next) => setDepartureDate(next ? paramToDate(next) : undefined)}
+        todayLabel={tFilters('today')}
+        tomorrowLabel={tFilters('tomorrow')}
+        groupLabel={tFilters('dateChips')}
+      />
+      <SeatsStepper
+        value={seats}
+        onChange={setSeats}
+        label={tFilters('seats')}
+        minusLabel={tFilters('seatsMinus')}
+        plusLabel={tFilters('seatsPlus')}
+        countLabel={(count) => tFilters('seatsValue', { count })}
+      />
       <Button type="submit" size="lg" className="mt-1 w-full font-semibold">
         <Search className="size-4" strokeWidth={2.25} />
         {translateHero('search')}

@@ -100,6 +100,16 @@ export function FilterSkeleton({ label }: { label: string }) {
   );
 }
 
+/** Compact sticky filter bar while the mobile sheet trigger hydrates. */
+export function FilterBarSkeleton({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2" aria-busy aria-label={label}>
+      <Skeleton className="h-11 flex-1" />
+      <Skeleton className="h-11 w-24" />
+    </div>
+  );
+}
+
 /** Chat bubbles while the thread history loads. */
 export function ThreadSkeleton({ label }: { label: string }) {
   return (

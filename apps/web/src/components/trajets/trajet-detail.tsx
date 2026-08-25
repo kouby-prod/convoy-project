@@ -201,9 +201,19 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-12">
         <div className="flex flex-col gap-10">
-          <h1 className="sr-only">
-            {trajet.departureCity} → {trajet.destinationCity}
-          </h1>
+          <header className="flex flex-col gap-1">
+            <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+              {trajet.departureCity} → {trajet.destinationCity}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {format.dateTime(departure, {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </p>
+          </header>
 
           <div className="flex flex-col gap-4">
           <ItineraryTimeline

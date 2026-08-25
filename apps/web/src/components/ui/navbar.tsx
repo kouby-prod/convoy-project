@@ -26,6 +26,7 @@ import { env } from '@/lib/env';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { MessagesNavLink } from '@/components/messages/messages-nav-link';
 import { Badge } from '@/components/ui/badge';
+import { LocaleSwitcher } from '@/components/ui/locale-switcher';
 import { cn } from '@/lib/utils';
 
 /**
@@ -283,6 +284,7 @@ export function Navbar({ className }: NavbarProps) {
             </Link>
           ) : null}
           {user ? <MessagesNavLink /> : null}
+          <LocaleSwitcher className="hidden text-white md:inline-flex" />
 
           <div
             ref={accountRef}
@@ -472,6 +474,13 @@ export function Navbar({ className }: NavbarProps) {
                 {translateNavbar('signOut')}
               </button>
             ) : null}
+          </section>
+
+          <section className="flex flex-col gap-2" aria-label={translateNavbar('sections.language')}>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">
+              {translateNavbar('sections.language')}
+            </p>
+            <LocaleSwitcher className="text-white" />
           </section>
         </div>
       </div>

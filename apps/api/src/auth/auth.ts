@@ -36,8 +36,8 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       await sendEmail({
         to: user.email,
-        subject: 'Reset your Carpool password',
-        text: `Reset your password with this link: ${url}`,
+        subject: 'Reset your Convoy password / Réinitialisez votre mot de passe Convoy',
+        text: `Reset your password with this link / Réinitialisez votre mot de passe avec ce lien : ${url}`,
       });
     },
     onPasswordReset: async ({ user }) => {
@@ -121,6 +121,7 @@ export const auth = betterAuth({
     customRules: {
       '/sign-in/email': { window: 10, max: 5 },
       '/sign-up/email': { window: 60, max: 5 },
+      '/request-password-reset': { window: 60, max: 3 },
       '/phone-number/send-otp': { window: 60, max: 3 },
     },
   },

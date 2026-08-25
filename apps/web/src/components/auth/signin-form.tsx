@@ -9,9 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { FormAlert } from '@/components/ui/form-alert';
+import { PasswordInput } from '@/components/ui/password-input';
 
 export function SignInForm() {
   const translateAuth = useTranslations('Auth');
+  const translateBrand = useTranslations('Navbar');
+  const translateA11y = useTranslations('A11y');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -52,7 +55,7 @@ export function SignInForm() {
   return (
     <Card className="mx-auto w-full max-w-lg gap-0 py-0 shadow-xl">
       <CardHeader className="gap-2 px-8 pt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">Convoy</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">{translateBrand('brand')}</p>
         <CardTitle className="font-display text-2xl font-semibold">
           {translateAuth('signIn.title')}
         </CardTitle>
@@ -73,14 +76,20 @@ export function SignInForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">{translateAuth('fields.password')}</Label>
-            <Input
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="password">{translateAuth('fields.password')}</Label>
+              <Link href="/auth/forgot-password" className="text-xs font-semibold text-primary hover:underline">
+                {translateAuth('signIn.forgotPassword')}
+              </Link>
+            </div>
+            <PasswordInput
               id="password"
-              type="password"
               name="password"
               autoComplete="current-password"
               placeholder={translateAuth('fields.passwordPlaceholder')}
               required
+              showLabel={translateA11y('showPassword')}
+              hideLabel={translateA11y('hidePassword')}
             />
           </div>
 

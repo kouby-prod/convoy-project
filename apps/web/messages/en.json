@@ -23,12 +23,15 @@
     "sections": {
       "search": "Search",
       "actions": "Actions",
-      "account": "Account"
+      "account": "Account",
+      "language": "Language"
     }
   },
   "A11y": {
     "skipToContent": "Skip to main content",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "LocaleSwitcher": {
     "label": "Language",
@@ -56,6 +59,7 @@
       "subtitle": "Access your rides, bookings, and messages.",
       "submit": "Sign in",
       "pending": "Signing in…",
+      "forgotPassword": "Forgot password?",
       "noAccount": "No account yet?",
       "createAccount": "Create an account"
     },
@@ -66,6 +70,23 @@
       "pending": "Creating…",
       "hasAccount": "Already registered?",
       "signIn": "Sign in"
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "subtitle": "Enter the email on your account. If it exists, we will send a reset link.",
+      "submit": "Send reset link",
+      "pending": "Sending…",
+      "sent": "If that email is on an account, a reset link is on its way.",
+      "backToSignIn": "Back to sign in"
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "subtitle": "Use at least 8 characters.",
+      "submit": "Update password",
+      "pending": "Updating…",
+      "success": "Password updated. You can sign in.",
+      "missingToken": "This reset link is missing or has expired. Request a new one.",
+      "invalidToken": "This reset link is no longer valid. Request a new one."
     },
     "fields": {
       "email": "Email address",
@@ -86,7 +107,9 @@
       "missingFields": "Please fill in all fields.",
       "passwordMismatch": "Passwords do not match.",
       "signUpFailed": "Sign-up failed. Please try again.",
-      "signUpUnavailable": "Unable to create the account. Please try again later."
+      "signUpUnavailable": "Unable to create the account. Please try again later.",
+      "resetFailed": "Unable to send the reset link. Please try again later.",
+      "resetUnavailable": "Unable to update the password. Please try again later."
     }
   },
   "Terms": {
@@ -482,7 +505,7 @@
   },
   "Parametres": {
     "title": "Account settings",
-    "subtitle": "Manage your personal information and your password.",
+    "subtitle": "Manage your profile, password, and appearance.",
     "loading": "Loading...",
     "profile": {
       "title": "Profile",
@@ -503,6 +526,14 @@
       "saving": "Updating...",
       "success": "Password updated.",
       "error": "Unable to update the password. Check your current password."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Choose light, dark, or match your device.",
+      "label": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
     }
   },
   "Messages": {
@@ -1301,17 +1332,28 @@
       "to": "Arrival city",
       "date": "Date",
       "time": "Time",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "dateChips": "Quick dates",
       "more": "More filters",
       "less": "Fewer filters",
       "clear": "Clear",
       "swap": "Swap departure and arrival",
       "swapShort": "Swap",
       "seats": "Seats",
+      "seatsValue": "{count, plural, one {# seat} other {# seats}}",
+      "seatsMinus": "Fewer seats",
+      "seatsPlus": "More seats",
       "maxPrice": "Max price",
       "amenitiesLegend": "Ride options",
       "direct": "No intermediate stop",
       "withStops": "With an intermediate stop",
-      "submit": "Search"
+      "submit": "Search",
+      "openSheet": "Filters",
+      "closeSheet": "Close filters",
+      "sheetTitle": "Search filters",
+      "summaryEmpty": "Departure, date, seats",
+      "summaryRoute": "{from} → {to}"
     },
     "comfort": {
       "legend": "Comfort",

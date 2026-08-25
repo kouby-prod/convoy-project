@@ -93,32 +93,35 @@
   --warning: var(--brand-yellow);
   --warning-foreground: #1c1c1c;
   --radius: 0.375rem;
+  color-scheme: light;
 }
 
 .dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #18181b;
-  --card-foreground: #fafafa;
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
+  --canvas: #121614;
+  --background: #121614;
+  --foreground: #f3f5f3;
+  --card: #1a1f1c;
+  --card-foreground: #f3f5f3;
+  --popover: #1a1f1c;
+  --popover-foreground: #f3f5f3;
   --primary: var(--brand-yellow);
-  --primary-foreground: #0a0a0a;
+  --primary-foreground: #1c1c1c;
   --secondary: #1e8f43;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
+  --secondary-foreground: #f3f5f3;
+  --muted: #242a26;
+  --muted-foreground: #a8b2ab;
   --accent: #1a2e22;
-  --accent-foreground: #fafafa;
+  --accent-foreground: #f3f5f3;
   --destructive: oklch(0.6 0.19 25);
   --destructive-foreground: #ffffff;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: color-mix(in srgb, var(--brand-blue) 70%, #09090b);
+  --border: #2c3530;
+  --input: #242a26;
+  --ring: var(--brand-blue);
   --success: #2fc466;
   --success-foreground: #052e16;
   --warning: var(--brand-yellow);
   --warning-foreground: #171717;
+  color-scheme: dark;
 }
 
 @layer base {
