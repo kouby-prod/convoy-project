@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -279,8 +280,8 @@ export function TrajetsList() {
         </div>
       </form>
 
-      {isLoading ? <p className="text-muted-foreground">{t('loading')}</p> : null}
-      {isError ? <p className="text-destructive">{t('error')}</p> : null}
+      {isLoading ? <ListSkeleton label={t('loading')} /> : null}
+      {isError ? <p role="alert" className="text-destructive">{t('error')}</p> : null}
       {!isLoading && !isError && !data?.items.length ? (
         <p className="text-muted-foreground">{t('empty')}</p>
       ) : null}

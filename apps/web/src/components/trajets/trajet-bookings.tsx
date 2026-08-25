@@ -30,6 +30,7 @@ import { UnreadBadge } from '@/components/messages/unread-badge';
 import { useMessageReadMap } from '@/hooks/use-message-read';
 import { fetchConversations } from '@/lib/conversations';
 import { isThreadUnread } from '@/lib/message-read';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -238,9 +239,13 @@ export function TrajetBookings({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
           {isLoading ? (
-            <p className="px-2 py-4 text-sm text-muted-foreground">{t('bookings.loading')}</p>
+            <div className="space-y-2 px-1 py-2" aria-busy aria-label={t('bookings.loading')}>
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+            </div>
           ) : isError ? (
-            <p className="px-2 py-4 text-sm text-destructive">{t('bookings.error')}</p>
+            <p role="alert" className="px-2 py-4 text-sm text-destructive">{t('bookings.error')}</p>
           ) : !items.length ? (
             <p className="px-2 py-4 text-sm text-muted-foreground">{t('bookings.empty')}</p>
           ) : (
@@ -309,7 +314,11 @@ export function TrajetBookings({
             {t('bookings.backToQueue')}
           </Button>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">{t('bookings.loading')}</p>
+            <div className="space-y-3" aria-busy aria-label={t('bookings.loading')}>
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-40 w-full" />
+            </div>
           ) : selected ? (
             <DriverBookingCard
               headingId="driver-case-heading"

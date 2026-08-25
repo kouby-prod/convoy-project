@@ -25,6 +25,10 @@ import { BookingStatusBadge } from '@/components/trajets/booking-status-badge';
 import { DueCountdown } from '@/components/paiement/due-countdown';
 import { driverFareCents, formatCad, isPastDue, koubyDueCents } from '@/lib/booking-money';
 import { cn } from '@/lib/utils';
+import { CardSkeleton } from '@/components/ui/list-skeleton';
+import { FormAlert } from '@/components/ui/form-alert';
+import { toast } from '@/components/ui/toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -187,16 +191,17 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
     }
     await queryClient.invalidateQueries({ queryKey: ['payments', 'by-booking', bookingId] });
     await queryClient.invalidateQueries({ queryKey: ['me', 'bookings'] });
-    await refetch();
-  }, [bookingId, queryClient, refetch]);
+    const next = await refetch();
+    if (isPaidInvoice(next.data)) toast(t('paidTitle'));
+  }, [bookingId, queryClient, refetch, t]);
 
-  if (isSessionPending) return <p className="text-muted-foreground">{t('loading')}</p>;
+  if (isSessionPending) return <CardSkeleton label={t('loading')} />;
   if (!session?.user) {
-    router.push('/sign-in');
-    return <p className="text-muted-foreground">{t('loading')}</p>;
+    router.push('/auth/signin');
+    return <CardSkeleton label={t('loading')} />;
   }
-  if (isLoading || !returnReady) return <p className="text-muted-foreground">{t('loading')}</p>;
-  if (isError) return <p className="text-destructive">{t('error')}</p>;
+  if (isLoading || !returnReady) return <CardSkeleton label={t('loading')} />;
+  if (isError) return <FormAlert>{t('error')}</FormAlert>;
 
   const booking = data?.booking ?? null;
   const invoice = data?.invoice ?? null;
@@ -363,6 +368,7 @@ function PaidState({
             onClick={() => {
               void navigator.clipboard.writeText(remainingLabel).then(() => {
                 setCopied(true);
+                toast(t('copied'));
                 window.setTimeout(() => setCopied(false), 2000);
               });
             }}
@@ -585,7 +591,7 @@ function InvoiceDownloads({ invoice }: { invoice: Invoice }) {
       >
         {t('viewHtml')}
       </a>
-      {downloadPdf.isError ? <p className="text-sm text-destructive">{t('downloadError')}</p> : null}
+      {downloadPdf.isError ? <FormAlert className="w-full">{t('downloadError')}</FormAlert> : null}
     </div>
   );
 }
@@ -648,7 +654,7 @@ function CheckoutRails({
         </div>
       ) : null}
       {!stripeEnabled && !paypalEnabled ? <p className="text-sm text-muted-foreground">{t('unavailable')}</p> : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FormAlert>{error}</FormAlert> : null}
     </div>
   );
 }
@@ -673,9 +679,9 @@ function StripeSection({
     queryFn: () => startCheckout(bookingId, invoice.id, 'stripe'),
   });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">{t('stripeLoading')}</p>;
+  if (isLoading) return <Skeleton className="h-40 w-full" />;
   if (isError || !data?.clientSecret) {
-    return <p className="text-sm text-destructive">{t('stripeError')}</p>;
+    return <FormAlert>{t('stripeError')}</FormAlert>;
   }
 
   return (

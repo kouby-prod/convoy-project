@@ -10,6 +10,7 @@ import { fetchConversations } from '@/lib/conversations';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageThread } from '@/components/messages/message-thread';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { cn } from '@/lib/utils';
 
 function formatDateTime(value: string) {
@@ -31,7 +32,7 @@ export function ConversationView({ bookingId }: { bookingId: string }) {
   const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   useEffect(() => {
-    if (!isSessionPending && !session?.user) router.push('/sign-in');
+    if (!isSessionPending && !session?.user) router.push('/auth/signin');
   }, [isSessionPending, router, session?.user]);
 
   const { data, isLoading, isError } = useQuery({
@@ -43,11 +44,11 @@ export function ConversationView({ bookingId }: { bookingId: string }) {
   const conversation = data?.find((item) => item.bookingId === bookingId);
 
   if (isSessionPending || !session?.user || isLoading) {
-    return <p className="text-muted-foreground">{t('loading')}</p>;
+    return <ListSkeleton rows={4} label={t('loading')} />;
   }
 
   if (isError) {
-    return <p className="text-destructive">{t('error')}</p>;
+    return <p role="alert" className="text-destructive">{t('error')}</p>;
   }
 
   const statusLabel =

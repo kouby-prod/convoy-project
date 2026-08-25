@@ -66,7 +66,7 @@ export function TrajetBookingForm({ trajetId, seatsAvailable }: TrajetBookingFor
         <CardContent className="flex flex-col items-center gap-3 p-8 pt-8 text-center">
           <p className="text-sm text-muted-foreground">{t('authRequired')}</p>
           <Link
-            href="/sign-in"
+            href="/auth/signin"
             className="text-sm font-semibold text-primary hover:underline"
           >
             {t('authCta')}

@@ -9,6 +9,7 @@ import { authClient } from '@/lib/auth-client';
 import { fetchConversations } from '@/lib/conversations';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -30,7 +31,7 @@ export function MessagesList() {
   const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   useEffect(() => {
-    if (!isSessionPending && !session?.user) router.push('/sign-in');
+    if (!isSessionPending && !session?.user) router.push('/auth/signin');
   }, [isSessionPending, router, session?.user]);
 
   const { data, isLoading, isError } = useQuery({
@@ -40,10 +41,10 @@ export function MessagesList() {
   });
 
   if (isSessionPending || !session?.user) {
-    return <p className="text-muted-foreground">{t('loading')}</p>;
+    return <ListSkeleton rows={5} label={t('loading')} />;
   }
-  if (isLoading) return <p className="text-muted-foreground">{t('loading')}</p>;
-  if (isError) return <p className="text-destructive">{t('error')}</p>;
+  if (isLoading) return <ListSkeleton rows={5} label={t('loading')} />;
+  if (isError) return <p role="alert" className="text-destructive">{t('error')}</p>;
   if (!data?.length) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-lg bg-muted/40 px-6 py-12 text-center ring-1 ring-foreground/5">

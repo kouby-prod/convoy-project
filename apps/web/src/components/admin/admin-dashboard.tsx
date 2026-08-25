@@ -77,7 +77,7 @@ export function AdminDashboard() {
   if (!session?.user) {
     return (
       <AccessCard Icon={ShieldCheck} tone="primary" message={t('authRequired')}>
-        <Link href="/sign-in" className={buttonVariants({ variant: 'primary' })}>
+        <Link href="/auth/signin" className={buttonVariants({ variant: 'primary' })}>
           {t('authCta')}
         </Link>
       </AccessCard>
