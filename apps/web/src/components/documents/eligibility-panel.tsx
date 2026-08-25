@@ -21,11 +21,11 @@ import { cn } from '@/lib/utils';
 /**
  * The eligibility rules, stated and scored.
  *
- * The four conditions are the actual product requirement, so the page shows
- * them as the requirement — not as an inferred by-product of three upload
- * cards. Each line is the rule in plain language next to whether this driver
- * meets it, which is also what makes the fourth condition visible at all: being
- * 18 is not a file, so without this panel it would have no home on the page.
+ * The conditions are the actual product requirement, so the page shows them
+ * as the requirement — not as an inferred by-product of an upload card. Each
+ * line is the rule in plain language next to whether this driver meets it,
+ * which is also what makes the age condition visible at all: being 18 is not
+ * a file, so without this panel it would have no home on the page.
  */
 export function EligibilityPanel({ verification }: { verification: DriverVerification }) {
   const t = useTranslations('Documents');
@@ -41,7 +41,7 @@ export function EligibilityPanel({ verification }: { verification: DriverVerific
         <p className="px-3 pb-2 text-xs text-muted-foreground">{t('eligibility.subtitle')}</p>
 
         <ul className="divide-y divide-border">
-          {/* The three documentary conditions, scored from their slot. */}
+          {/* The documentary condition(s), scored from their slot. */}
           {REQUIRED_DRIVER_DOCUMENT_TYPES.map((type) => (
             <ConditionRow
               key={type}

@@ -1,6 +1,6 @@
 import { Worker, type Job } from 'bullmq';
 import { MessageSchema } from '@carpool/schemas';
-import { notifyUser, trajetUrl, describeTrip } from '../modules/trajet/notifications';
+import { notifyUser, messagesUrl, describeTrip, describeTripShort, truncateForPreview } from '../modules/trajet/notifications';
 import { createRedisConnection } from './redis';
 import {
   MESSAGE_NOTIFY_QUEUE,
@@ -39,7 +39,12 @@ export async function processMessageNotifyJob(job: Job<MessageNotifyJob>): Promi
     data.recipientId,
     'New message on your Carpool trip',
     `You have a new message about the trip from ${describeTrip(trip)}: "${message.body}". ` +
-      `Reply here: ${trajetUrl(data.trajetId)}`,
+      `Reply here: ${messagesUrl(message.bookingId)}`,
+    {
+      type: 'message',
+      link: messagesUrl(message.bookingId),
+      inAppBody: `${describeTripShort(trip)}: "${truncateForPreview(message.body)}"`,
+    },
   );
 }
 

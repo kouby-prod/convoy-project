@@ -88,7 +88,7 @@ describe('geocodeAndStoreTrajetLocation', () => {
       { ok: true, json: async () => [{ lat: '46.8', lon: '-71.2' }] },
     );
 
-    await geocodeAndStoreTrajetLocation('trip_1', 'Montreal', 'Quebec');
+    await geocodeAndStoreTrajetLocation('trip_1', { city: 'Montreal' }, { city: 'Quebec' });
 
     expect(dbState.updateCalls).toEqual([
       { departureLat: '45.5', departureLng: '-73.5', arrivalLat: '46.8', arrivalLng: '-71.2' },
@@ -98,10 +98,28 @@ describe('geocodeAndStoreTrajetLocation', () => {
   it('stores a null pair for whichever city fails to geocode, without throwing', async () => {
     stubFetch({ ok: true, json: async () => [{ lat: '45.5', lon: '-73.5' }] }, { ok: false, json: async () => [] });
 
-    await expect(geocodeAndStoreTrajetLocation('trip_1', 'Montreal', 'Nowhereville')).resolves.toBeUndefined();
+    await expect(
+      geocodeAndStoreTrajetLocation('trip_1', { city: 'Montreal' }, { city: 'Nowhereville' }),
+    ).resolves.toBeUndefined();
 
     expect(dbState.updateCalls).toEqual([
       { departureLat: '45.5', departureLng: '-73.5', arrivalLat: null, arrivalLng: null },
+    ]);
+  });
+
+  it('writes back an already-known coordinate pair as-is, without calling Nominatim', async () => {
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy as unknown as typeof fetch;
+
+    await geocodeAndStoreTrajetLocation(
+      'trip_1',
+      { city: 'Montreal', lat: 45.5, lng: -73.5 },
+      { city: 'Quebec', lat: 46.8, lng: -71.2 },
+    );
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(dbState.updateCalls).toEqual([
+      { departureLat: '45.5', departureLng: '-73.5', arrivalLat: '46.8', arrivalLng: '-71.2' },
     ]);
   });
 });

@@ -11,6 +11,7 @@ import { env } from '@/lib/env';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { RatingStars } from '@/components/trajet/rating-stars';
 import { AmenityIcon, isAmenity } from '@/components/trajet/trajet-amenities';
 import { TrajetBookings } from '@/components/trajets/trajet-bookings';
@@ -130,7 +131,12 @@ export function TrajetDetail({ id }: { id: string }) {
                 {initials || '?'}
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">
-                <p className="font-semibold text-foreground">{driverName || '—'}</p>
+                <p className="flex items-center gap-2 font-semibold text-foreground">
+                  {driverName || '—'}
+                  <Badge variant={data.driver.verified ? 'success' : 'neutral'}>
+                    {tRide(data.driver.verified ? 'driverVerified.verified' : 'driverVerified.unverified')}
+                  </Badge>
+                </p>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                   {data.driver.rating !== null && (data.driver.reviewCount ?? 0) > 0 ? (
                     <span className="inline-flex items-center gap-1.5">

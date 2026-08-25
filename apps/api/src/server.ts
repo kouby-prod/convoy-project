@@ -3,8 +3,10 @@ import { serve } from '@hono/node-server';
 import { app } from './app';
 import { env } from './env';
 import { messageHub } from './realtime/hub';
+import { notificationHub } from './realtime/notification-hub';
 import { closeMessageQueue } from './queue/message-jobs';
 import { startMessageWorker, stopMessageWorker } from './queue/message-worker';
+import { closeNotificationPublisher } from './modules/notification/events';
 import { ensureBucket } from './storage/s3';
 
 // `ws` is CJS; Node ESM rejects `import { WebSocketServer } from 'ws'` at
@@ -27,6 +29,7 @@ await ensureBucket().catch((error: unknown) => {
 
 // Boot. `env` is validated at import time and will exit(1) on bad config.
 messageHub.start();
+notificationHub.start();
 startMessageWorker();
 
 const wss = new WebSocketServerCtor({ noServer: true });
@@ -42,6 +45,7 @@ const server = serve(
     console.log(`[api] Swagger UI:  http://localhost:${info.port}/docs`);
     console.log(`[api] OpenAPI doc: http://localhost:${info.port}/openapi.json`);
     console.log(`[api] Messages WS: ws://localhost:${info.port}/ws/messages`);
+    console.log(`[api] Notifications WS: ws://localhost:${info.port}/ws/notifications`);
   },
 );
 
@@ -56,6 +60,8 @@ async function shutdown(signal: string): Promise<void> {
     await stopMessageWorker();
     await closeMessageQueue();
     await messageHub.stop();
+    await notificationHub.stop();
+    await closeNotificationPublisher();
   } catch (err) {
     console.error('[api] error while stopping messaging infra', err);
   }

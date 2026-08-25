@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { BadgeCheck, Clock, CircleDashed, ShieldAlert } from 'lucide-react';
+import { BadgeCheck, Clock, CircleDashed, RotateCcw, ShieldAlert } from 'lucide-react';
 import type { DriverVerification, DriverVerificationStatus } from '@carpool/schemas';
 import { Badge } from '@/components/ui/badge';
 import type { BadgeProps } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ const CHIP_STYLES: Record<
   incomplete: { variant: 'neutral', Icon: CircleDashed },
   pending: { variant: 'warning', Icon: Clock },
   rejected: { variant: 'destructive', Icon: ShieldAlert },
+  expired: { variant: 'warning', Icon: RotateCcw },
   approved: { variant: 'success', Icon: BadgeCheck },
 };
 
