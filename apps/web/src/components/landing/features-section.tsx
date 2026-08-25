@@ -59,7 +59,7 @@ export function FeaturesSection() {
               <div className="flex justify-center px-6">
                 <Link
                   href={card.ctaHref}
-                  className={cn(buttonVariants({ variant: 'primary', size: 'default' }), 'gap-1.5 font-semibold')}
+                  className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'gap-1.5 font-semibold')}
                 >
                   {card.ctaLabel}
                   <ArrowRight className="size-4" strokeWidth={2.25} />

@@ -13,7 +13,7 @@ import { useMessageReadMap } from '@/hooks/use-message-read';
 import { toDateKey } from '@/lib/trip-when';
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { SegmentedTabs } from '@/components/ui/segmented-tabs';
+import { SegmentedTabs, TabPanel } from '@/components/ui/segmented-tabs';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { MessageThread } from '@/components/messages/message-thread';
 import { UnreadBadge } from '@/components/messages/unread-badge';
@@ -32,6 +32,7 @@ import {
 const BOOKING_STATUSES = new Set(['pending', 'awaiting_payment', 'confirmed', 'rejected', 'cancelled', 'expired']);
 
 type RoleFilter = 'all' | 'passenger' | 'driver';
+const TABS_ID = 'messages-inbox';
 
 /**
  * Split-pane inbox. Desktop: people list | thread. Mobile: list, or
@@ -46,7 +47,7 @@ export function MessagesInbox({ selectedId }: { selectedId?: string }) {
   const { userId, readMap, markRead } = useMessageReadMap();
 
   useEffect(() => {
-    if (!isSessionPending && !session?.user) router.push('/sign-in');
+    if (!isSessionPending && !session?.user) router.push('/auth/signin');
   }, [isSessionPending, router, session?.user]);
 
   useEffect(() => {
@@ -96,6 +97,7 @@ export function MessagesInbox({ selectedId }: { selectedId?: string }) {
         <div className="grid gap-3 border-b border-border px-4 py-4">
           <h1 className="font-display text-xl font-semibold tracking-tight">{t('title')}</h1>
           <SegmentedTabs
+            id={TABS_ID}
             label={t('filterLabel')}
             value={filter}
             onChange={setFilter}
@@ -107,10 +109,11 @@ export function MessagesInbox({ selectedId }: { selectedId?: string }) {
           />
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
+          <TabPanel tabsId={TABS_ID} tab={filter}>
           {isLoading ? <ListSkeleton rows={6} label={t('loading')} className="rounded-none ring-0" /> : null}
           {isError ? (
             <div className="grid gap-2 p-4">
-              <p className="text-sm text-destructive">{t('error')}</p>
+              <p role="alert" className="text-sm text-destructive">{t('error')}</p>
               <Button size="sm" variant="outline" className="w-fit" onClick={() => void refetch()}>
                 {t('retry')}
               </Button>
@@ -138,6 +141,7 @@ export function MessagesInbox({ selectedId }: { selectedId?: string }) {
               ))}
             </ul>
           ) : null}
+          </TabPanel>
         </div>
       </aside>
 

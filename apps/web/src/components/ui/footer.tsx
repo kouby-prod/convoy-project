@@ -16,7 +16,7 @@ function FooterColumn({
 }) {
   return (
     <div className={cn('flex flex-col gap-3', align === 'end' && 'sm:items-end sm:text-right')}>
-      <h2 className="font-display text-lg font-semibold tracking-tight text-white">{title}</h2>
+      <p className="font-display text-lg font-semibold tracking-tight text-white">{title}</p>
       <ul className="flex flex-col gap-1">
         {links.map(({ label, href }) => (
           <li key={href}>

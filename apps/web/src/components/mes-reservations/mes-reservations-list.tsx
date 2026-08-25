@@ -17,7 +17,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { LabelledField } from '@/components/ui/labelled-field';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
-import { SegmentedTabs } from '@/components/ui/segmented-tabs';
+import { FormAlert } from '@/components/ui/form-alert';
+import { SegmentedTabs, TabPanel } from '@/components/ui/segmented-tabs';
 import { BookingStatusBadge } from '@/components/trajets/booking-status-badge';
 import { RatingStarInput } from '@/components/trajet/rating-stars';
 import { ItineraryRow } from '@/components/trajet/itinerary-row';
@@ -30,6 +31,7 @@ const GROUP_HEADING =
   'border-b border-border bg-muted/70 px-4 py-2.5 text-sm font-semibold capitalize text-foreground sm:px-5';
 
 type BookingFilter = 'action' | 'upcoming' | 'past';
+const TABS_ID = 'mes-reservations';
 
 const ACTION_STATUSES = new Set<BookingStatus>(['pending', 'awaiting_payment']);
 
@@ -118,7 +120,7 @@ function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSubmitted
           disabled={mutation.isPending}
         />
       </LabelledField>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FormAlert>{error}</FormAlert> : null}
       <Button
         size="sm"
         className="w-fit font-semibold"
@@ -147,7 +149,7 @@ export function MesReservationsList() {
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!isSessionPending && !session?.user) router.push('/sign-in');
+    if (!isSessionPending && !session?.user) router.push('/auth/signin');
   }, [isSessionPending, router, session?.user]);
 
   const query = useInfiniteQuery({
@@ -245,6 +247,7 @@ export function MesReservationsList() {
   return (
     <div className="grid gap-5">
       <SegmentedTabs
+        id={TABS_ID}
         label={t('filters.label')}
         value={filter}
         onChange={setFilter}
@@ -255,6 +258,7 @@ export function MesReservationsList() {
         ]}
       />
 
+      <TabPanel tabsId={TABS_ID} tab={filter} className="grid gap-5">
       {query.isLoading ? (
         <ListSkeleton label={t('loading')} />
       ) : query.isError ? (
@@ -315,6 +319,7 @@ export function MesReservationsList() {
           {query.isFetchingNextPage ? t('loadingMore') : t('loadMore')}
         </Button>
       ) : null}
+      </TabPanel>
     </div>
   );
 }
@@ -457,7 +462,7 @@ function BookingRow({
               {t('cancelConfirm.keep')}
             </Button>
           </div>
-          {cancelError ? <p className="text-sm text-destructive">{cancelError}</p> : null}
+          {cancelError ? <p role="alert" className="text-sm text-destructive">{cancelError}</p> : null}
         </div>
       ) : (
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -542,7 +547,10 @@ function EmptyState({
         ) : (
           <Search className="size-8 text-muted-foreground" strokeWidth={1.75} aria-hidden />
         )}
-        <p className={cn('text-sm font-medium', tone === 'error' ? 'text-destructive' : 'text-foreground')}>
+        <p
+          role={tone === 'error' ? 'alert' : undefined}
+          className={cn('text-sm font-medium', tone === 'error' ? 'text-destructive' : 'text-foreground')}
+        >
           {title}
         </p>
         {body ? <p className="max-w-sm text-sm text-muted-foreground">{body}</p> : null}

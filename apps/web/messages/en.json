@@ -17,12 +17,18 @@
     "menu": "Menu",
     "documents": "My documents",
     "notifications": "Notifications",
+    "notificationsUnread": "{count, plural, one {# unread notification} other {# unread notifications}}",
+    "notificationsAllRead": "Notifications, all read",
     "admin": "Backoffice",
     "sections": {
       "search": "Search",
       "actions": "Actions",
       "account": "Account"
     }
+  },
+  "A11y": {
+    "skipToContent": "Skip to main content",
+    "dismiss": "Dismiss"
   },
   "LocaleSwitcher": {
     "label": "Language",
@@ -525,6 +531,7 @@
     "counterpartUnknown": "Contact",
     "contextMissing": "Trip context unavailable — you can still chat here.",
     "threadEmpty": "Start the conversation to coordinate this trip.",
+    "newMessage": "New message: {preview}",
     "filterLabel": "Filter conversations",
     "filterAll": "All",
     "filterPassenger": "Passenger",
@@ -606,13 +613,15 @@
     "seatsLeft": "{count, plural, =0 {Full} one {# seat left} other {# seats left}}",
     "ownerWorkspace": {
       "backToRides": "My rides",
+      "tabsLabel": "Ride workspace",
       "tabRequests": "Bookings",
       "tabTrip": "Ride"
     },
     "driverRating": {
       "label": "Driver rating",
       "none": "No reviews yet",
-      "summary": "★ {rating} ({count} reviews)"
+      "summary": "★ {rating} ({count} reviews)",
+      "value": "{rating} · {count, plural, one {# review} other {# reviews}}"
     },
     "distance": {
       "label": "Distance",
@@ -1255,6 +1264,7 @@
     "seatsAvailable": "{count, plural, =0 {Full} one {# seat} other {# seats}}",
     "perSeat": "per seat",
     "plusKoubyFee": "+ {amount} Kouby fee (GST + QST)",
+    "plusKoubyFeeShort": "+ {amount} Kouby",
     "driverBy": "with {name}",
     "authRequired": "Sign in to continue.",
     "authCta": "Sign in",
@@ -1279,6 +1289,11 @@
       "card": "Card (via Kouby)",
       "interac": "Interac (direct)",
       "cash": "Cash (direct)"
+    },
+    "paymentMethodsShort": {
+      "card": "Card",
+      "interac": "Interac",
+      "cash": "Cash"
     },
     "filters": {
       "title": "Search",
@@ -1357,6 +1372,7 @@
       "descriptionPlaceholder": "Meeting point, luggage, music…",
       "submit": "Publish the ride",
       "submitting": "Publishing…",
+      "success": "Ride published.",
       "failed": "Publishing failed. Please try again later.",
       "invalid": "Please check the form fields.",
       "baggage": "Baggage",
@@ -1427,6 +1443,7 @@
     "markAllRead": "Mark all as read",
     "markingAll": "Marking all...",
     "loadMore": "Load more",
+    "filterLabel": "Filter notifications",
     "tabAll": "All",
     "tabUnread": "Unread",
     "typeBookingRequest": "Booking request",

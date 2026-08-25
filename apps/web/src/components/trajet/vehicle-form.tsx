@@ -12,6 +12,7 @@ import { LabelledField } from '@/components/ui/labelled-field';
 import { fetchMyVehicle, fetchVehiclePhotoUrl, saveMyVehicle, uploadMyVehiclePhoto } from '@/lib/vehicles';
 import { isApiError } from '@/lib/api-error';
 import { useSessionDraft, clearSessionDraft } from '@/hooks/use-session-draft';
+import { cn } from '@/lib/utils';
 
 /** Same reasoning as `RideDraft` in `trajet-create-form.tsx`: these fields
  *  used to be plain `useState`, which a locale switch (remounts this whole
@@ -49,7 +50,7 @@ const VEHICLE_DRAFT_KEY = 'trajet-create-vehicle-draft';
  * and the photo are all optional, and are omitted from the ride card rather
  * than shown as invented data when left blank.
  */
-export function VehicleForm() {
+export function VehicleForm({ embedded = false }: { embedded?: boolean }) {
   const t = useTranslations('Trajet');
   const queryClient = useQueryClient();
 
@@ -151,9 +152,8 @@ export function VehicleForm() {
     photoMutation.mutate(file);
   }
 
-  return (
-    <Card>
-      <CardContent className="flex flex-col gap-4 p-5 pt-5">
+  const body = (
+      <div className={cn('flex flex-col gap-4', embedded ? undefined : 'p-5 pt-5')}>
         <div className="flex items-center gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
             <Car className="size-5" strokeWidth={2.25} aria-hidden />
@@ -280,7 +280,18 @@ export function VehicleForm() {
             </p>
           ) : null}
         </div>
-      </CardContent>
+      </div>
+  );
+
+  if (embedded) {
+    return (
+      <section className="rounded-lg bg-muted/40 p-5 ring-1 ring-border">{body}</section>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-0 pt-0">{body}</CardContent>
     </Card>
   );
 }

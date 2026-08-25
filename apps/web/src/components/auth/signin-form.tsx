@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { FormAlert } from '@/components/ui/form-alert';
 
 export function SignInForm() {
   const translateAuth = useTranslations('Auth');
@@ -84,9 +85,9 @@ export function SignInForm() {
           </div>
 
           {error ? (
-            <p className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive ring-1 ring-destructive/20">
+            <FormAlert className="rounded-md bg-destructive/10 px-4 py-3 ring-1 ring-destructive/20">
               {error}
-            </p>
+            </FormAlert>
           ) : null}
 
           <Button type="submit" size="lg" className="w-full" disabled={isLoading}>

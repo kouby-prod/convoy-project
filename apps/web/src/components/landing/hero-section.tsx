@@ -7,9 +7,9 @@ export function HeroSection() {
   const translateHero = useTranslations('Hero');
 
   return (
-    <section className="relative rounded-lg bg-canvas-glow ring-1 ring-foreground/5">
+    <section className="relative overflow-hidden rounded-lg bg-canvas-glow ring-1 ring-foreground/5">
       <div className="grid items-stretch lg:grid-cols-2">
-        <div className="relative min-h-64 overflow-hidden rounded-t-lg sm:min-h-80 lg:min-h-[32rem] lg:rounded-l-lg lg:rounded-tr-none">
+        <div className="relative order-2 min-h-64 overflow-hidden sm:min-h-80 lg:order-1 lg:min-h-[32rem]">
           <Image
             src="/images/hero.jpg"
             alt={translateHero('imageAlt')}
@@ -24,7 +24,7 @@ export function HeroSection() {
           />
         </div>
 
-        <div className="relative z-10 flex flex-col justify-center gap-7 px-6 py-10 sm:px-10 lg:gap-8 lg:py-14">
+        <div className="relative z-10 order-1 flex flex-col justify-center gap-7 px-6 py-10 sm:px-10 lg:order-2 lg:gap-8 lg:py-14">
           <div className="space-y-3">
             <p className="font-display text-4xl font-semibold tracking-tight text-brand-blue sm:text-5xl">
               {translateHero('brand')}

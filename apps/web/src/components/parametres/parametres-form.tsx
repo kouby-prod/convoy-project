@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { FormAlert, FormStatus } from '@/components/ui/form-alert';
+import { CardSkeleton } from '@/components/ui/list-skeleton';
+import { toast } from '@/components/ui/toast';
 
 /**
  * Account settings: profile (name) and password, the two mutations
@@ -23,7 +26,7 @@ export function ParametresForm() {
   const user = session?.user;
 
   useEffect(() => {
-    if (!isSessionPending && !user) router.push('/sign-in');
+    if (!isSessionPending && !user) router.push('/auth/signin');
   }, [isSessionPending, router, user]);
 
   const [name, setName] = useState('');
@@ -56,6 +59,7 @@ export function ParametresForm() {
       error: error ? (error.message ?? t('profile.error')) : null,
       success: !error,
     });
+    if (!error) toast(t('profile.success'));
   }
 
   async function handlePasswordSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -74,12 +78,13 @@ export function ParametresForm() {
       success: !error,
     });
     if (!error) {
+      toast(t('password.success'));
       setCurrentPassword('');
       setNewPassword('');
     }
   }
 
-  if (isSessionPending || !user) return <p className="text-muted-foreground">{t('loading')}</p>;
+  if (isSessionPending || !user) return <CardSkeleton rows={5} label={t('loading')} />;
 
   return (
     <div className="grid gap-6 md:max-w-lg">
@@ -114,11 +119,9 @@ export function ParametresForm() {
                 required
               />
             </div>
-            {profileState.error ? <p className="text-sm text-destructive">{profileState.error}</p> : null}
-            {profileState.success ? (
-              <p className="text-sm text-green-700">{t('profile.success')}</p>
-            ) : null}
-            <Button type="submit" size="sm" className="w-fit" disabled={profileState.loading || !name.trim()}>
+            {profileState.error ? <FormAlert>{profileState.error}</FormAlert> : null}
+            {profileState.success ? <FormStatus>{t('profile.success')}</FormStatus> : null}
+            <Button type="submit" className="w-fit" disabled={profileState.loading || !name.trim()}>
               {profileState.loading ? t('profile.saving') : t('profile.save')}
             </Button>
           </form>
@@ -152,13 +155,10 @@ export function ParametresForm() {
                 required
               />
             </div>
-            {passwordState.error ? <p className="text-sm text-destructive">{passwordState.error}</p> : null}
-            {passwordState.success ? (
-              <p className="text-sm text-green-700">{t('password.success')}</p>
-            ) : null}
+            {passwordState.error ? <FormAlert>{passwordState.error}</FormAlert> : null}
+            {passwordState.success ? <FormStatus>{t('password.success')}</FormStatus> : null}
             <Button
               type="submit"
-              size="sm"
               className="w-fit"
               disabled={passwordState.loading || !currentPassword || newPassword.length < 8}
             >

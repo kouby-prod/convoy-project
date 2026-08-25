@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { filterCities } from '@/lib/cities';
+import { fieldControlClassName } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 interface CityComboboxProps {
@@ -107,9 +108,8 @@ export function CityCombobox({
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
           className={cn(
-            'h-11 w-full rounded-md bg-card py-2 pl-10 pr-4 text-sm text-foreground shadow-sm ring-1 ring-border outline-none transition-all duration-200',
-            'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30',
-            'disabled:cursor-not-allowed disabled:opacity-50',
+            fieldControlClassName,
+            'py-2 pr-4 pl-10',
           )}
         />
       </div>

@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { FormAlert, FormStatus } from '@/components/ui/form-alert';
+import { toast } from '@/components/ui/toast';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -45,6 +47,7 @@ export function ContactForm() {
     onSuccess: () => {
       setSubject('');
       setMessage('');
+      toast(t('success'));
     },
   });
 
@@ -92,10 +95,10 @@ export function ContactForm() {
             />
           </div>
 
-          {mutation.isSuccess ? <p className="text-sm text-green-700">{t('success')}</p> : null}
-          {mutation.isError ? <p className="text-sm text-destructive">{t('errors.generic')}</p> : null}
+          {mutation.isSuccess ? <FormStatus>{t('success')}</FormStatus> : null}
+          {mutation.isError ? <FormAlert>{t('errors.generic')}</FormAlert> : null}
 
-          <Button type="submit" className="w-fit" disabled={mutation.isPending}>
+          <Button type="submit" size="lg" className="w-fit font-semibold" disabled={mutation.isPending}>
             {mutation.isPending ? t('form.submitting') : t('form.submit')}
           </Button>
         </form>

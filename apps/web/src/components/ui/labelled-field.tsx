@@ -22,7 +22,7 @@ export function LabelledField({
 }) {
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
-      <label htmlFor={htmlFor} className="px-1 text-xs font-medium text-muted-foreground">
+      <label htmlFor={htmlFor} className="text-sm font-medium leading-none text-foreground">
         {label}
       </label>
       {children}

@@ -12,7 +12,10 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CityCombobox } from '@/components/ui/city-combobox';
 import { LabelledField } from '@/components/ui/labelled-field';
-import { AmenityToggleGroup, isAmenity } from '@/components/trajet/trajet-amenities';
+import { DropdownDatePicker, dateToParam, paramToDate } from '@/components/ui/dropdown-date-picker';
+import { DropdownTimePicker } from '@/components/ui/dropdown-time-picker';
+import { formatTime, parseTime } from '@/components/ui/time-picker';
+import { AmenityToggleGroup, GENERAL_AMENITIES, isAmenity } from '@/components/trajet/trajet-amenities';
 
 /* Left-hand search rail on /trajet. Filters live in the URL so results are
    shareable and Back restores the previous search. */
@@ -131,7 +134,7 @@ export function TrajetSearchFilters() {
                 size="sm"
                 onClick={swapCities}
                 aria-label={t('filters.swap')}
-                className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground"
+                className="h-9 gap-1.5 px-3 text-xs text-muted-foreground"
               >
                 <ArrowUpDown className="size-3.5" strokeWidth={2.25} />
                 {t('filters.swapShort')}
@@ -148,21 +151,20 @@ export function TrajetSearchFilters() {
 
           <div className="grid grid-cols-2 gap-3">
             <LabelledField label={t('filters.date')} htmlFor="filter-date">
-              <Input
-                type="date"
+              <DropdownDatePicker
                 id="filter-date"
-                name="date"
-                value={date}
-                onChange={(event) => setDate(event.target.value)}
+                value={paramToDate(date)}
+                onChange={(next) => setDate(dateToParam(next))}
+                placeholder={t('filters.date')}
+                aria-label={t('filters.date')}
               />
             </LabelledField>
             <LabelledField label={t('filters.time')} htmlFor="filter-time">
-              <Input
-                type="time"
+              <DropdownTimePicker
                 id="filter-time"
-                name="time"
-                value={time}
-                onChange={(event) => setTime(event.target.value)}
+                value={parseTime(time)}
+                onChange={(next) => setTime(formatTime(next))}
+                ariaLabel={t('filters.time')}
               />
             </LabelledField>
           </div>
@@ -191,7 +193,6 @@ export function TrajetSearchFilters() {
                     name="seats"
                     value={seats}
                     onChange={(event) => setSeats(event.target.value)}
-                    className="h-10 px-4"
                   />
                 </LabelledField>
                 <LabelledField label={t('filters.maxPrice')} htmlFor="filter-max-price">
@@ -202,7 +203,6 @@ export function TrajetSearchFilters() {
                     name="maxPrice"
                     value={maxPrice}
                     onChange={(event) => setMaxPrice(event.target.value)}
-                    className="h-10 px-4"
                   />
                 </LabelledField>
               </div>
@@ -212,6 +212,7 @@ export function TrajetSearchFilters() {
                 onToggle={toggleAmenity}
                 label={(amenity) => t(`amenities.${amenity}`)}
                 legend={t('filters.amenitiesLegend')}
+                amenities={GENERAL_AMENITIES}
               />
 
               <div className="flex flex-col gap-2.5">

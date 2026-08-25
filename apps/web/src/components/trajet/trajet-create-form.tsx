@@ -6,9 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import {
   CreateTrajetRequestSchema,
-  PAYMENT_AMENITIES,
   RIDE_PAYMENT_METHODS,
-  TRAJET_AMENITIES,
   type CreateTrajetRequest,
   type RidePaymentMethod,
   type TrajetAmenity,
@@ -29,21 +27,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LabelledField } from '@/components/ui/labelled-field';
-import { AmenityToggleGroup } from '@/components/trajet/trajet-amenities';
+import { AmenityToggleGroup, GENERAL_AMENITIES } from '@/components/trajet/trajet-amenities';
+import { DropdownDatePicker, dateToParam, paramToDate } from '@/components/ui/dropdown-date-picker';
+import { DropdownTimePicker } from '@/components/ui/dropdown-time-picker';
+import { formatTime, parseTime } from '@/components/ui/time-picker';
 import { PublishChecklistStep } from '@/components/trajet/publish-checklist';
 import { VehicleForm } from '@/components/trajet/vehicle-form';
 import { createTrajet } from '@/lib/trajets';
 import { fetchMyVehicle } from '@/lib/vehicles';
 import { useSessionDraft, clearSessionDraft } from '@/hooks/use-session-draft';
 import { cn } from '@/lib/utils';
+import { CardSkeleton } from '@/components/ui/list-skeleton';
+import { toast } from '@/components/ui/toast';
 
 type Step = 'ride-vehicle' | 'license-insurance';
 const STEPS: Step[] = ['ride-vehicle', 'license-insurance'];
-
-/** Everything but the payment methods, which get their own toggle group below. */
-const GENERAL_AMENITIES = TRAJET_AMENITIES.filter(
-  (amenity) => !(PAYMENT_AMENITIES as readonly TrajetAmenity[]).includes(amenity),
-);
 
 /**
  * Every field on this form, in one persisted draft — see `useSessionDraft`.
@@ -150,6 +148,7 @@ export function TrajetCreateForm() {
       queryClient.invalidateQueries({ queryKey: ['trajets', created.id] });
       // The ride is published — nothing left to restore a draft for.
       clearSessionDraft(RIDE_DRAFT_KEY);
+      toast(t('create.success'));
       router.push(`/trajet/${created.id}`);
     },
     onError: () => setError(t('create.failed')),
@@ -242,12 +241,16 @@ export function TrajetCreateForm() {
     mutation.mutate(draft.ridePayload);
   }
 
-  if (!isSessionPending && !session?.user) {
+  if (isSessionPending) {
+    return <CardSkeleton rows={6} label={t('loading')} />;
+  }
+
+  if (!session?.user) {
     return (
       <Card className="mx-auto w-full max-w-md">
         <CardContent className="flex flex-col items-center gap-3 p-8 pt-8 text-center">
           <p className="text-sm text-muted-foreground">{t('authRequired')}</p>
-          <Link href="/sign-in" className="text-sm font-semibold text-primary hover:underline">
+          <Link href="/auth/signin" className="text-sm font-semibold text-primary hover:underline">
             {t('authCta')}
           </Link>
         </CardContent>
@@ -261,12 +264,7 @@ export function TrajetCreateForm() {
   };
 
   return (
-    <Card
-      className={cn(
-        'mx-auto w-full transition-[max-width] duration-500 ease-smooth',
-        draft.step === 'license-insurance' ? 'max-w-4xl' : 'max-w-2xl',
-      )}
-    >
+    <Card className="mx-auto w-full max-w-4xl">
       <CardContent className="p-6 pt-6 sm:p-8 sm:pt-8">
         <div className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           {STEPS.map((entry, index) => (
@@ -279,81 +277,81 @@ export function TrajetCreateForm() {
 
         <div className={cn('flex flex-col gap-6', draft.step !== 'ride-vehicle' && 'hidden')}>
           <form id="ride-details-form" onSubmit={handleStep1Submit} className="flex flex-col gap-6">
-            <Field label={t('create.departure')}>
-              <LocationPicker
-                name="departureCity"
-                value={{ city: draft.departureCity, lat: draft.departureLat, lng: draft.departureLng }}
-                onChange={(value: LocationValue) =>
-                  updateDraft({ departureCity: value.city, departureLat: value.lat, departureLng: value.lng })
-                }
-                placeholder={t('filters.from')}
-                aria-label={t('filters.from')}
-                useMyLocationLabel={t('create.useMyLocation')}
-                locationErrorLabel={t('create.locationError')}
-                mapColor="blue"
-                required
-              />
-              <Input
-                name="departurePlace"
-                value={draft.departurePlace}
-                onChange={(event) => updateDraft({ departurePlace: event.target.value })}
-                placeholder={t('create.departurePlace')}
-                required
-              />
-            </Field>
+            <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+              <Field label={t('create.departure')}>
+                <LocationPicker
+                  name="departureCity"
+                  value={{ city: draft.departureCity, lat: draft.departureLat, lng: draft.departureLng }}
+                  onChange={(value: LocationValue) =>
+                    updateDraft({ departureCity: value.city, departureLat: value.lat, departureLng: value.lng })
+                  }
+                  placeholder={t('filters.from')}
+                  aria-label={t('filters.from')}
+                  useMyLocationLabel={t('create.useMyLocation')}
+                  locationErrorLabel={t('create.locationError')}
+                  mapColor="blue"
+                  required
+                />
+                <Input
+                  name="departurePlace"
+                  value={draft.departurePlace}
+                  onChange={(event) => updateDraft({ departurePlace: event.target.value })}
+                  placeholder={t('create.departurePlace')}
+                  required
+                />
+              </Field>
 
-            <Field label={t('create.arrival')}>
-              <LocationPicker
-                name="arrivalCity"
-                value={{ city: draft.arrivalCity, lat: draft.arrivalLat, lng: draft.arrivalLng }}
-                onChange={(value: LocationValue) =>
-                  updateDraft({ arrivalCity: value.city, arrivalLat: value.lat, arrivalLng: value.lng })
-                }
-                placeholder={t('filters.to')}
-                aria-label={t('filters.to')}
-                useMyLocationLabel={t('create.useMyLocation')}
-                locationErrorLabel={t('create.locationError')}
-                mapColor="green"
-                required
-              />
-              <Input
-                name="arrivalPlace"
-                value={draft.arrivalPlace}
-                onChange={(event) => updateDraft({ arrivalPlace: event.target.value })}
-                placeholder={t('create.arrivalPlace')}
-                required
-              />
-            </Field>
+              <Field label={t('create.arrival')}>
+                <LocationPicker
+                  name="arrivalCity"
+                  value={{ city: draft.arrivalCity, lat: draft.arrivalLat, lng: draft.arrivalLng }}
+                  onChange={(value: LocationValue) =>
+                    updateDraft({ arrivalCity: value.city, arrivalLat: value.lat, arrivalLng: value.lng })
+                  }
+                  placeholder={t('filters.to')}
+                  aria-label={t('filters.to')}
+                  useMyLocationLabel={t('create.useMyLocation')}
+                  locationErrorLabel={t('create.locationError')}
+                  mapColor="green"
+                  required
+                />
+                <Input
+                  name="arrivalPlace"
+                  value={draft.arrivalPlace}
+                  onChange={(event) => updateDraft({ arrivalPlace: event.target.value })}
+                  placeholder={t('create.arrivalPlace')}
+                  required
+                />
+              </Field>
+            </div>
 
             <Field label={t('create.when')}>
               <LabelledField label={t('filters.date')} htmlFor="create-date">
-                <Input
-                  type="date"
+                <DropdownDatePicker
                   id="create-date"
-                  name="date"
-                  value={draft.date}
-                  onChange={(event) => updateDraft({ date: event.target.value })}
+                  value={paramToDate(draft.date)}
+                  onChange={(next) => updateDraft({ date: dateToParam(next) })}
+                  placeholder={t('filters.date')}
+                  aria-label={t('filters.date')}
                   required
                 />
               </LabelledField>
               <div className="grid grid-cols-2 gap-3">
                 <LabelledField label={t('create.departureTime')} htmlFor="create-departure-time">
-                  <Input
-                    type="time"
+                  <DropdownTimePicker
                     id="create-departure-time"
-                    name="departureTime"
-                    value={draft.departureTime}
-                    onChange={(event) => updateDraft({ departureTime: event.target.value })}
+                    value={parseTime(draft.departureTime)}
+                    onChange={(next) => updateDraft({ departureTime: formatTime(next) })}
+                    ariaLabel={t('create.departureTime')}
                     required
                   />
                 </LabelledField>
                 <LabelledField label={t('create.arrivalTime')} htmlFor="create-arrival-time">
-                  <Input
-                    type="time"
+                  <DropdownTimePicker
                     id="create-arrival-time"
-                    name="arrivalTime"
-                    value={draft.arrivalTime}
-                    onChange={(event) => updateDraft({ arrivalTime: event.target.value })}
+                    value={parseTime(draft.arrivalTime)}
+                    onChange={(next) => updateDraft({ arrivalTime: formatTime(next) })}
+                    ariaLabel={t('create.arrivalTime')}
                   />
                 </LabelledField>
               </div>
@@ -417,7 +415,7 @@ export function TrajetCreateForm() {
 
             <Field label={t('create.paymentMethods')}>
               <p className="text-xs text-muted-foreground">{t('create.paymentMethodsHint')}</p>
-              <div className="flex flex-col gap-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 {RIDE_PAYMENT_METHODS.map((method) => (
                   <Checkbox
                     key={method}
@@ -436,6 +434,7 @@ export function TrajetCreateForm() {
                 label={(amenity) => t(`amenities.${amenity}`)}
                 legend={t('filters.amenitiesLegend')}
                 amenities={GENERAL_AMENITIES}
+                className="justify-start"
               />
               <Checkbox
                 name="hasIntermediateStop"
@@ -460,7 +459,7 @@ export function TrajetCreateForm() {
               cannot nest. Its submit button stays independent; the outer
               "Suivant" below is linked to `ride-details-form` via `form=`
               rather than being inside it. */}
-          <VehicleForm />
+          <VehicleForm embedded />
           {!vehicleQuery.data ? (
             <p className="text-center text-xs text-muted-foreground">{t('create.step3.saveHint')}</p>
           ) : null}
@@ -503,7 +502,7 @@ export function TrajetCreateForm() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="mb-3 text-sm font-semibold text-foreground">{label}</legend>
+      <legend className="text-sm font-semibold text-foreground">{label}</legend>
       {children}
     </fieldset>
   );

@@ -1,36 +1,31 @@
-import { Suspense } from 'react';
-import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Link } from '@/i18n/navigation';
-import { TrajetsList } from '@/components/trajets/trajets-list';
-import { buttonVariants } from '@/components/ui/button';
-import { PageHeader } from '@/components/ui/page-header';
+import { redirect } from 'next/navigation';
 
+function localePath(locale: string, pathname: string) {
+  return locale === 'fr' ? pathname : `/${locale}${pathname}`;
+}
+
+function queryString(search: Record<string, string | string[] | undefined>) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(search)) {
+    if (Array.isArray(value)) {
+      for (const entry of value) params.append(key, entry);
+    } else if (value) {
+      params.set(key, value);
+    }
+  }
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+/** Legacy discovery URL — same product as `/trajet`. */
 export default async function SearchPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale } = await params;
-  setRequestLocale(locale);
-  const t = await getTranslations('Search');
-  const tTrajets = await getTranslations('Trajets');
-  const tNav = await getTranslations('Navbar');
-
-  return (
-    <section className="flex flex-col gap-8">
-      <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
-        actions={
-          <Link href="/trajet/nouveau" className={buttonVariants({ variant: 'primary', size: 'lg' })}>
-            {tNav('post')}
-          </Link>
-        }
-      />
-
-      <Suspense fallback={<p className="text-muted-foreground">{tTrajets('loading')}</p>}>
-        <TrajetsList />
-      </Suspense>
-    </section>
-  );
+  const query = await searchParams;
+  redirect(localePath(locale, `/trajet${queryString(query)}`));
 }

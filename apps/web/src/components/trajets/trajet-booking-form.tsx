@@ -18,6 +18,8 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BookingStatusBadge } from '@/components/trajets/booking-status-badge';
 import { DueCountdown } from '@/components/paiement/due-countdown';
+import { PanelSkeleton } from '@/components/ui/list-skeleton';
+import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
@@ -92,6 +94,13 @@ export function TrajetBookingForm({
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
       queryClient.invalidateQueries({ queryKey: ['trajet'] });
       queryClient.invalidateQueries({ queryKey: ['me', 'bookings'] });
+      toast(
+        data.status === 'awaiting_payment'
+          ? t('booking.awaitingTitle')
+          : data.status === 'pending'
+            ? t('booking.pendingTitle')
+            : t('booking.success'),
+      );
       if (data.status === 'awaiting_payment') {
         router.push(`/paiement/${data.id}`);
       }
@@ -141,6 +150,7 @@ export function TrajetBookingForm({
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
       queryClient.invalidateQueries({ queryKey: ['trajet'] });
       queryClient.invalidateQueries({ queryKey: ['me', 'bookings'] });
+      toast(t('booking.cancelledNotice'));
     },
   });
 
@@ -149,7 +159,7 @@ export function TrajetBookingForm({
   const canBookMore = !cancelled && seatsAvailable >= 1;
 
   if (isSessionPending) {
-    return <div className={cn(shell, 'text-sm text-muted-foreground')}>{t('loading')}</div>;
+    return <PanelSkeleton label={t('loading')} />;
   }
 
   if (!session?.user) {
@@ -168,7 +178,7 @@ export function TrajetBookingForm({
         ) : null}
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t('booking.signInPrompt')}</p>
         <Link
-          href="/sign-in"
+          href="/auth/signin"
           className={cn(buttonVariants({ variant: 'primary', size: 'default' }), 'mt-4 w-full font-semibold')}
         >
           {t('booking.signInLink')}
@@ -297,10 +307,10 @@ function NewBookingFields({
             const next = Number(e.target.value);
             onSeats(Number.isFinite(next) ? Math.min(Math.max(1, next), seatsAvailable) : 1);
           }}
-          className="h-9 w-20"
+          className="h-11 w-20"
         />
       </div>
-      <fieldset className="space-y-2">
+      <fieldset className="space-y-1.5">
         <legend className="text-sm text-muted-foreground">{t('booking.methodLabel')}</legend>
         {offered.map((methodOption) => {
           const fareCents = typeof pricePerSeat === 'number' ? Math.round(pricePerSeat * 100) * seats : 0;
@@ -311,7 +321,7 @@ function NewBookingFields({
             <label
               key={methodOption}
               className={cn(
-                'flex cursor-pointer flex-col gap-1 rounded-lg px-3 py-3 transition-all',
+                'flex cursor-pointer flex-col gap-0.5 rounded-lg px-3 py-2.5 transition-all',
                 selected
                   ? 'bg-primary/10 shadow-sm ring-2 ring-primary/40'
                   : 'bg-muted/50 ring-1 ring-foreground/5 hover:bg-muted',
@@ -324,13 +334,15 @@ function NewBookingFields({
                 checked={selected}
                 onChange={() => onMethod(methodOption)}
               />
-              <span className="text-sm font-medium text-foreground">
-                {t(`booking.methodCard.${methodOption}Title`)}
+              <span className="flex items-baseline justify-between gap-2">
+                <span className="text-sm font-medium text-foreground">
+                  {t(`booking.methodCard.${methodOption}Title`)}
+                </span>
+                <span className="font-display text-sm font-semibold tabular-nums tracking-tight text-foreground">
+                  {t(`booking.methodCard.${methodOption}Pay`, { amount: payNow })}
+                </span>
               </span>
-              <span className="font-display text-lg font-semibold tabular-nums tracking-tight text-foreground">
-                {t(`booking.methodCard.${methodOption}Pay`, { amount: payNow })}
-              </span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs leading-snug text-muted-foreground">
                 {methodOption === 'card'
                   ? t('booking.methodCard.cardBody')
                   : t(`booking.methodCard.${methodOption}Body`, { fare })}
@@ -339,10 +351,10 @@ function NewBookingFields({
           );
         })}
       </fieldset>
-      <Button onClick={onSubmit} disabled={pending} size="default" className="w-full font-semibold">
+      <Button onClick={onSubmit} disabled={pending} size="lg" className="w-full font-semibold">
         {pending ? t('booking.submitting') : t('booking.submit')}
       </Button>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
     </div>
   );
 }
@@ -414,7 +426,7 @@ function BookedPanel({
               {t('booking.cancelConfirm.keep')}
             </Button>
           </div>
-          {cancelError ? <p className="text-sm text-destructive">{cancelError}</p> : null}
+          {cancelError ? <p role="alert" className="text-sm text-destructive">{cancelError}</p> : null}
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
@@ -472,15 +484,15 @@ function PriceBlock({
   locale: string;
 }) {
   return (
-    <div>
+    <div className="space-y-1">
       <p className="font-display text-2xl font-semibold tabular-nums tracking-tight text-foreground">
         {format.number(pricePerSeat, { style: 'currency', currency: 'CAD' })}
       </p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{t('perSeat')}</p>
-      <p className="mt-1 text-xs font-medium text-foreground">
+      <p className="text-xs text-muted-foreground">{t('perSeat')}</p>
+      <p className="text-xs font-medium text-foreground">
         {tRide('plusKoubyFee', { amount: formatCad(koubyFeeCents(), locale) })}
       </p>
-      <p className="mt-2 text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         {typeof seatsTotal === 'number'
           ? t('seatsAvailable', { available: seatsAvailable, total: seatsTotal })
           : t('seatsLeft', { count: seatsAvailable })}

@@ -47,12 +47,16 @@ export function Navbar({ className }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const accountMenuId = useId();
+  const mobileNavId = useId();
   const accountRef = useRef<HTMLDivElement>(null);
+  const accountTriggerRef = useRef<HTMLButtonElement>(null);
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const user = session?.user;
   const api = createApiClient(env.NEXT_PUBLIC_API_URL);
   const queryClient = useQueryClient();
   const [bellPulse, setBellPulse] = useState(false);
+  const [unreadLive, setUnreadLive] = useState('');
+  const prevUnread = useRef<number | null>(null);
   const { status: socketStatus } = useNotificationsSocket({
     enabled: !!user,
     onNotification: () => {
@@ -80,6 +84,26 @@ export function Navbar({ className }: NavbarProps) {
     refetchInterval: socketStatus === 'connected' ? false : 1000 * 60,
   });
   const unreadCount = unreadCountData ?? 0;
+
+  useEffect(() => {
+    if (!user) {
+      prevUnread.current = null;
+      setUnreadLive('');
+      return;
+    }
+    if (unreadCountData === undefined) return;
+    if (prevUnread.current === null) {
+      prevUnread.current = unreadCount;
+      return;
+    }
+    if (prevUnread.current === unreadCount) return;
+    prevUnread.current = unreadCount;
+    setUnreadLive(
+      unreadCount > 0
+        ? translateNavbar('notificationsUnread', { count: unreadCount })
+        : translateNavbar('notificationsAllRead'),
+    );
+  }, [user, unreadCount, unreadCountData, translateNavbar]);
   const isAdmin = isAdminRole(user?.role);
   // List page only — not /trajet/nouveau or /trajet/:id.
   const isTrajetsActive = pathname === '/trajet';
@@ -93,15 +117,33 @@ export function Navbar({ className }: NavbarProps) {
       }
     }
 
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setIsAccountOpen(false);
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsAccountOpen(false);
+        accountTriggerRef.current?.focus();
+        return;
+      }
+      if (event.key !== 'Tab' || !accountRef.current) return;
+      const items = [
+        ...accountRef.current.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+      ];
+      if (!items.length) return;
+      const first = items[0]!;
+      const last = items[items.length - 1]!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isAccountOpen]);
 
@@ -124,6 +166,7 @@ export function Navbar({ className }: NavbarProps) {
 
   const accountLinks = [
     { href: '/parametres', label: translateNavbar('account'), Icon: UserRound },
+    { href: '/contact', label: translateNavbar('contact'), Icon: Headphones },
     ...(user
       ? [
           { href: '/notifications', label: translateNavbar('notifications'), Icon: Bell },
@@ -143,6 +186,9 @@ export function Navbar({ className }: NavbarProps) {
         className,
       )}
     >
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        {unreadLive}
+      </span>
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:gap-6">
         {/* ── 1. Brand ─────────────────────────────────────────────── */}
         <Link
@@ -170,7 +216,7 @@ export function Navbar({ className }: NavbarProps) {
           className={cn(
             'inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold outline-none transition-all duration-200 focus-visible:ring-3 focus-visible:ring-white/40',
             isTrajetsActive
-              ? 'bg-card/90 text-[#14532d] shadow-sm ring-1 ring-black/15'
+              ? 'bg-card/90 text-brand-green shadow-sm ring-1 ring-black/15'
               : 'bg-black/10 text-white/90 ring-1 ring-white/20 hover:bg-black/15 hover:text-white',
           )}
         >
@@ -184,7 +230,7 @@ export function Navbar({ className }: NavbarProps) {
           className="hidden min-w-0 flex-1 items-center justify-center gap-2 md:flex"
           aria-label={translateNavbar('sections.search')}
         >
-          <label className="flex h-10 w-full max-w-md items-center gap-2 rounded-md bg-card px-3.5 text-foreground shadow-sm ring-1 ring-black/10 transition-all duration-200 focus-within:ring-3 focus-within:ring-ring/40 xl:max-w-lg">
+          <label className="flex h-11 w-full max-w-md items-center gap-2 rounded-md bg-card px-3.5 text-foreground shadow-sm ring-1 ring-border transition-all duration-200 focus-within:ring-3 focus-within:ring-ring/30 xl:max-w-lg">
             <Search className="size-4 shrink-0 text-muted-foreground" strokeWidth={2.25} />
             <input
               type="search"
@@ -194,41 +240,40 @@ export function Navbar({ className }: NavbarProps) {
               className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
           </label>
-          <Button type="submit" size="default" className="shrink-0 px-4 font-semibold">
+          <Button type="submit" size="lg" className="shrink-0 px-4 font-semibold">
             {translateNavbar('search')}
           </Button>
         </form>
 
-        {/* ── 3. Actions ───────────────────────────────────────────── */}
-        <nav
-          className="ml-auto hidden shrink-0 items-center gap-2 lg:flex"
-          aria-label={translateNavbar('sections.actions')}
-        >
+        {/* ── 3. Trailing cluster: publish · alerts · account ──────── */}
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           <Link
             href="/trajet/nouveau"
-            className={cn(buttonVariants({ variant: 'primary', size: 'default' }), 'font-semibold')}
+            className={cn(
+              buttonVariants({ variant: 'primary', size: 'default' }),
+              'hidden font-semibold md:inline-flex',
+            )}
           >
             {translateNavbar('post')}
-          </Link>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-white/90 outline-none transition-all duration-200 hover:bg-white/15 hover:text-white focus-visible:ring-3 focus-visible:ring-white/40"
-          >
-            <Headphones className="size-4" strokeWidth={2.25} />
-            {translateNavbar('contact')}
           </Link>
           {user ? (
             <Link
               href="/notifications"
+              aria-label={
+                unreadCount > 0
+                  ? translateNavbar('notificationsUnread', { count: unreadCount })
+                  : translateNavbar('notifications')
+              }
               title={translateNavbar('notifications')}
-              className="relative inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-white/90 outline-none transition-all duration-200 hover:bg-white/15 hover:text-white focus-visible:ring-3 focus-visible:ring-white/40"
+              className="relative inline-flex size-10 items-center justify-center rounded-md text-white outline-none transition-all duration-200 hover:bg-white/15 focus-visible:ring-3 focus-visible:ring-white/40"
             >
-              <Bell className={cn('size-4', bellPulse && 'animate-bell-ring')} strokeWidth={2.25} />
+              <Bell className={cn('size-4', bellPulse && 'animate-bell-ring')} strokeWidth={2.25} aria-hidden />
               {unreadCount > 0 ? (
                 <Badge
                   variant="destructive"
+                  aria-hidden
                   className={cn(
-                    'absolute -right-2 -top-2 rounded-full px-1.5 text-[10px] font-semibold transition-transform',
+                    'absolute -right-0.5 -top-0.5 rounded-full px-1.5 text-[10px] font-semibold transition-transform',
                     bellPulse && 'scale-125',
                   )}
                 >
@@ -237,25 +282,19 @@ export function Navbar({ className }: NavbarProps) {
               ) : null}
             </Link>
           ) : null}
-        </nav>
+          {user ? <MessagesNavLink /> : null}
 
-        <div className="hidden h-8 w-px shrink-0 bg-white/25 lg:block" aria-hidden />
-
-        {user ? <MessagesNavLink className="ml-auto lg:ml-0" /> : null}
-
-        {/* ── 4. Account ───────────────────────────────────────────── */}
-        <div
-          ref={accountRef}
-          className={cn(
-            'relative flex shrink-0 items-center gap-1.5',
-            !user && 'ml-auto lg:ml-0',
-          )}
-          aria-label={translateNavbar('sections.account')}
-        >
+          <div
+            ref={accountRef}
+            className="relative flex shrink-0 items-center gap-1"
+            aria-label={translateNavbar('sections.account')}
+          >
           <button
+            ref={accountTriggerRef}
             type="button"
             aria-label={translateNavbar('account')}
             aria-expanded={isAccountOpen}
+            aria-haspopup="menu"
             aria-controls={accountMenuId}
             onClick={() => setIsAccountOpen((open) => !open)}
             className="inline-flex items-center gap-1 rounded-md bg-white/10 py-1 pl-1 pr-2 text-white outline-none transition-all duration-200 hover:bg-white/20 focus-visible:ring-3 focus-visible:ring-white/40"
@@ -324,18 +363,22 @@ export function Navbar({ className }: NavbarProps) {
             type="button"
             aria-label={translateNavbar('menu')}
             aria-expanded={isMobileMenuOpen}
+            aria-controls={mobileNavId}
             onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
-            className="flex size-10 items-center justify-center rounded-md text-white outline-none transition-all duration-200 hover:bg-white/15 active:translate-y-px focus-visible:ring-3 focus-visible:ring-white/40 lg:hidden"
+            className="flex size-10 items-center justify-center rounded-md text-white outline-none transition-all duration-200 hover:bg-white/15 active:translate-y-px focus-visible:ring-3 focus-visible:ring-white/40 md:hidden"
           >
             {isMobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile drawer — same sections, stacked */}
       <div
+        id={mobileNavId}
+        inert={!isMobileMenuOpen || undefined}
         className={cn(
-          'overflow-hidden border-t border-white/15 transition-all duration-500 ease-smooth lg:hidden',
+          'overflow-hidden border-t border-white/15 transition-all duration-500 ease-smooth md:hidden',
           isMobileMenuOpen ? 'max-h-[40rem] opacity-100' : 'max-h-0 opacity-0',
         )}
       >
@@ -345,7 +388,7 @@ export function Navbar({ className }: NavbarProps) {
               {translateNavbar('sections.search')}
             </p>
             <form onSubmit={handleQuickSearch} className="flex gap-2">
-              <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-md bg-card px-4 text-foreground ring-1 ring-black/10">
+              <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-md bg-card px-4 text-foreground ring-1 ring-border">
                 <Search className="size-4 text-muted-foreground" strokeWidth={2.25} />
                 <input
                   type="search"
@@ -371,7 +414,7 @@ export function Navbar({ className }: NavbarProps) {
               className={cn(
                 'inline-flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold outline-none transition-all',
                 isTrajetsActive
-                  ? 'bg-card/90 text-[#14532d] ring-1 ring-black/15'
+                  ? 'bg-card/90 text-brand-green ring-1 ring-black/15'
                   : 'bg-black/10 text-white/90 ring-1 ring-white/20',
               )}
             >

@@ -46,7 +46,7 @@ export function ItineraryRow({
         padded ? 'px-4 py-4 sm:px-5' : 'rounded-md',
       )}
     >
-      <div className="grid gap-2 sm:grid-cols-[4.5rem_minmax(0,1fr)_auto] sm:items-center sm:gap-6">
+      <div className="grid gap-3 sm:grid-cols-[5.5rem_minmax(0,1fr)_minmax(6.75rem,auto)] sm:items-start sm:gap-6">
         <TripWhen iso={departureIso} untilIso={arrivalIso} timeOnly />
         <div className="min-w-0 space-y-1.5">
           <TripRoute from={from} to={to} />
@@ -56,14 +56,14 @@ export function ItineraryRow({
           ) : null}
         </div>
         {aside ? (
-          <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end sm:gap-1.5">
+          <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end sm:gap-1">
             {priceLabel ? (
-              <div className="text-right">
+              <div className="sm:text-right">
                 <p className="font-display text-base font-semibold tabular-nums tracking-tight text-foreground sm:text-lg">
                   {priceLabel}
                 </p>
                 {priceHint ? (
-                  <p className="mt-0.5 max-w-[11rem] text-[11px] leading-tight text-muted-foreground sm:text-xs">
+                  <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground sm:max-w-[9.5rem] sm:text-xs">
                     {priceHint}
                   </p>
                 ) : null}

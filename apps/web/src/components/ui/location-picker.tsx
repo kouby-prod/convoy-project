@@ -5,6 +5,7 @@ import { LocateFixed, Loader2, MapPin } from 'lucide-react';
 import type { GeocodeResult } from '@carpool/schemas';
 import { searchPlaces, reverseGeocode } from '@/lib/geocode';
 import { cn } from '@/lib/utils';
+import { fieldControlClassName } from '@/components/ui/input';
 import { TripMap } from './trip-map';
 
 export interface LocationValue {
@@ -190,9 +191,8 @@ export function LocationPicker({
             onFocus={() => setOpen(true)}
             onKeyDown={handleKeyDown}
             className={cn(
-              'h-11 w-full rounded-md bg-card py-2 pr-11 pl-10 text-sm text-foreground shadow-sm ring-1 ring-border outline-none transition-all duration-200',
-              'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30',
-              'disabled:cursor-not-allowed disabled:opacity-50',
+              fieldControlClassName,
+              'py-2 pr-11 pl-10',
             )}
           />
           <button

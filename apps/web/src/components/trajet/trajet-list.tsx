@@ -91,7 +91,9 @@ export function TrajetList() {
 function ResultsToolbar({ label }: { label: string }) {
   return (
     <div className="flex items-center justify-between gap-3 px-0.5">
-      <p className="text-sm font-medium text-muted-foreground">{label}</p>
+      <p role="status" className="text-sm font-medium text-muted-foreground" aria-live="polite" aria-atomic="true">
+        {label}
+      </p>
     </div>
   );
 }
@@ -100,6 +102,7 @@ function StatusCard({ children, tone }: { children: string; tone?: 'error' }) {
   return (
     <Card>
       <CardContent
+        role={tone === 'error' ? 'alert' : undefined}
         className={cn(
           'p-8 pt-8 text-center text-sm',
           tone === 'error' ? 'text-destructive' : 'text-muted-foreground',

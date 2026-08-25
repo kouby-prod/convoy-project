@@ -3,15 +3,16 @@
 import { useState } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, BadgeCheck, Briefcase, Car, Sparkles, Users } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Briefcase, Car, CreditCard, Banknote, Sparkles, Users } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
-import type { RidePaymentMethod, Trajet, TrajetAmenity } from '@carpool/schemas';
+import { PAYMENT_AMENITIES, type RidePaymentMethod, type Trajet, type TrajetAmenity } from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import { cn } from '@/lib/utils';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SegmentedTabs, TabPanel } from '@/components/ui/segmented-tabs';
 import { RatingStars } from '@/components/trajet/rating-stars';
 import { AmenityIcon, isAmenity } from '@/components/trajet/trajet-amenities';
 import {
@@ -21,6 +22,8 @@ import {
 import { TrajetBookings } from '@/components/trajets/trajet-bookings';
 import { TrajetBookingForm } from '@/components/trajets/trajet-booking-form';
 import { TrajetOwnerActions } from '@/components/trajets/trajet-owner-actions';
+import { TripMap, type TripMapPin } from '@/components/ui/trip-map';
+import { DetailSkeleton } from '@/components/ui/list-skeleton';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -47,14 +50,14 @@ export function TrajetDetail({ id }: { id: string }) {
   });
 
   if (isLoading) {
-    return <p className="py-10 text-center text-sm text-muted-foreground">{t('loading')}</p>;
+    return <DetailSkeleton label={t('loading')} />;
   }
 
   if (isError || !data) {
     return (
       <div className="flex flex-col gap-4">
         <BackLink label={t('backToList')} />
-        <p className="text-sm text-destructive">{t('error')}</p>
+        <p role="alert" className="text-sm text-destructive">{t('error')}</p>
       </div>
     );
   }
@@ -105,34 +108,20 @@ function DriverRideWorkspace({ id, trajet }: { id: string; trajet: Trajet }) {
             {t('seatsAvailable', { available: trajet.seatsAvailable, total: trajet.seatsTotal })}
           </p>
         </div>
-        <div
-          role="tablist"
-          aria-label={t('bookings.title')}
-          className="inline-flex w-fit rounded-md bg-muted p-1"
-        >
-          <Button
-            type="button"
-            role="tab"
-            size="sm"
-            variant={tab === 'requests' ? 'secondary' : 'ghost'}
-            aria-selected={tab === 'requests'}
-            onClick={() => setTab('requests')}
-          >
-            {t('ownerWorkspace.tabRequests')}
-          </Button>
-          <Button
-            type="button"
-            role="tab"
-            size="sm"
-            variant={tab === 'trip' ? 'secondary' : 'ghost'}
-            aria-selected={tab === 'trip'}
-            onClick={() => setTab('trip')}
-          >
-            {t('ownerWorkspace.tabTrip')}
-          </Button>
-        </div>
+        <SegmentedTabs
+          id="owner-workspace"
+          size="compact"
+          label={t('ownerWorkspace.tabsLabel')}
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { id: 'requests', label: t('ownerWorkspace.tabRequests') },
+            { id: 'trip', label: t('ownerWorkspace.tabTrip') },
+          ]}
+        />
       </header>
 
+      <TabPanel tabsId="owner-workspace" tab={tab}>
       {tab === 'requests' ? (
         <TrajetBookings trajetId={id} departureDateTime={trajet.departureDateTime} />
       ) : (
@@ -172,6 +161,7 @@ function DriverRideWorkspace({ id, trajet }: { id: string; trajet: Trajet }) {
           <RideDescription description={trajet.description ?? null} />
         </div>
       )}
+      </TabPanel>
     </div>
   );
 }
@@ -187,6 +177,14 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
     .filter(Boolean)
     .join('')
     .toUpperCase();
+  const pins: TripMapPin[] = [
+    trajet.departureLat !== null && trajet.departureLng !== null
+      ? { id: 'departure', lat: trajet.departureLat, lng: trajet.departureLng, color: 'blue' as const }
+      : null,
+    trajet.arrivalLat !== null && trajet.arrivalLng !== null
+      ? { id: 'arrival', lat: trajet.arrivalLat, lng: trajet.arrivalLng, color: 'green' as const }
+      : null,
+  ].filter((pin): pin is TripMapPin => pin !== null);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
@@ -201,12 +199,13 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
         </p>
       ) : null}
 
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_17.5rem] lg:items-start lg:gap-12">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-12">
         <div className="flex flex-col gap-10">
           <h1 className="sr-only">
             {trajet.departureCity} → {trajet.destinationCity}
           </h1>
 
+          <div className="flex flex-col gap-4">
           <ItineraryTimeline
             dateLabel={format.dateTime(departure, {
               weekday: 'long',
@@ -237,6 +236,9 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
                 : null
             }
           />
+          </div>
+
+          {pins.length > 0 ? <TripMap pins={pins} className="h-52" /> : null}
 
           <section aria-labelledby="driver-heading" className="border-t border-border pt-8">
             <h2 id="driver-heading" className="text-sm font-semibold text-foreground">
@@ -257,9 +259,9 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
                     {tRide(trajet.driver.verified ? 'driverVerified.verified' : 'driverVerified.unverified')}
                   </Badge>
                 </p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                   {trajet.driver.rating !== null && (trajet.driver.reviewCount ?? 0) > 0 ? (
-                    <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-2">
                       <RatingStars
                         rating={trajet.driver.rating}
                         label={t('driverRating.summary', {
@@ -268,7 +270,7 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
                         })}
                       />
                       <span>
-                        {t('driverRating.summary', {
+                        {t('driverRating.value', {
                           rating: trajet.driver.rating.toFixed(1),
                           count: trajet.driver.reviewCount ?? 0,
                         })}
@@ -331,13 +333,16 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
 function RideOptions({ trajet }: { trajet: Trajet }) {
   const t = useTranslations('Trajets');
   const tRide = useTranslations('Trajet');
-  const amenities = (trajet.amenities ?? []).filter(isAmenity);
+  const amenities = (trajet.amenities ?? [])
+    .filter(isAmenity)
+    .filter((amenity) => !(PAYMENT_AMENITIES as readonly TrajetAmenity[]).includes(amenity));
+  const methods = trajet.paymentMethods ?? [];
 
   if (
     amenities.length === 0 &&
     !trajet.comfort &&
     !trajet.baggageAllowance &&
-    (trajet.paymentMethods?.length ?? 0) === 0
+    methods.length === 0
   ) {
     return null;
   }
@@ -366,12 +371,29 @@ function RideOptions({ trajet }: { trajet: Trajet }) {
             {tRide(`amenities.${amenity}`)}
           </li>
         ))}
-        {(trajet.paymentMethods ?? []).map((method) => (
-          <li key={method} className="flex items-center gap-2.5 text-sm text-foreground">
-            {tRide(`paymentMethods.${method}`)}
-          </li>
-        ))}
       </ul>
+      {methods.length > 0 ? (
+        <div className="mt-4">
+          <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            {tRide('create.paymentMethods')}
+          </h3>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {methods.map((method) => (
+              <li
+                key={method}
+                className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground"
+              >
+                {method === 'card' ? (
+                  <CreditCard className="size-3.5 text-muted-foreground" strokeWidth={2} aria-hidden />
+                ) : (
+                  <Banknote className="size-3.5 text-muted-foreground" strokeWidth={2} aria-hidden />
+                )}
+                {tRide(`paymentMethodsShort.${method}`)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -30,7 +30,7 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
       to={trajet.arrivalCity}
       place={place}
       priceLabel={format.number(trajet.pricePerSeat, { style: 'currency', currency: 'CAD' })}
-      priceHint={t('plusKoubyFee', { amount: formatCad(koubyFeeCents(), locale) })}
+      priceHint={t('plusKoubyFeeShort', { amount: formatCad(koubyFeeCents(), locale) })}
       occupancy={{
         taken,
         total: trajet.seatsTotal,
@@ -44,34 +44,38 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
         ) : null
       }
       footer={
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-          {driverName ? (
-            <span className="text-xs text-muted-foreground">{t('driverBy', { name: driverName })}</span>
-          ) : null}
-          {trajet.driver.rating !== null ? (
-            <RatingStars
-              rating={trajet.driver.rating}
-              label={t('ratingLabel', {
-                rating: trajet.driver.rating,
-                count: trajet.driver.reviewCount ?? 0,
-              })}
-            />
-          ) : null}
-          <Badge variant={trajet.driver.verified ? 'success' : 'neutral'}>
-            {t(trajet.driver.verified ? 'driverVerified.verified' : 'driverVerified.unverified')}
-          </Badge>
-          {trajet.amenities.length > 0 ? (
-            <TrajetAmenities
-              amenities={trajet.amenities}
-              label={(amenity: TrajetAmenity) => t(`amenities.${amenity}`)}
-              className="justify-start"
-            />
-          ) : null}
-          {trajet.paymentMethods.map((method) => (
-            <Badge key={method} variant="secondary" className="font-medium">
-              {t(`paymentMethods.${method}`)}
+        <div className="mt-3 flex flex-col gap-2 border-t border-border/80 pt-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {driverName ? (
+              <span className="text-xs text-muted-foreground">{t('driverBy', { name: driverName })}</span>
+            ) : null}
+            {trajet.driver.rating !== null ? (
+              <RatingStars
+                rating={trajet.driver.rating}
+                label={t('ratingLabel', {
+                  rating: trajet.driver.rating,
+                  count: trajet.driver.reviewCount ?? 0,
+                })}
+              />
+            ) : null}
+            <Badge variant={trajet.driver.verified ? 'success' : 'neutral'}>
+              {t(trajet.driver.verified ? 'driverVerified.verified' : 'driverVerified.unverified')}
             </Badge>
-          ))}
+          </div>
+          {trajet.amenities.length > 0 || trajet.paymentMethods.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <TrajetAmenities
+                amenities={trajet.amenities}
+                label={(amenity: TrajetAmenity) => t(`amenities.${amenity}`)}
+                className="justify-start"
+              />
+              {trajet.paymentMethods.length > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {trajet.paymentMethods.map((method) => t(`paymentMethodsShort.${method}`)).join(' · ')}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       }
     />

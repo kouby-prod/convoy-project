@@ -13,6 +13,7 @@ import { toDateKey, tripDayKind } from '@/lib/trip-when';
 import { useBookingMessagesSocket } from '@/hooks/use-booking-messages-socket';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { ThreadSkeleton } from '@/components/ui/list-skeleton';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -54,6 +55,8 @@ export function MessageThread({
   const [validationError, setValidationError] = useState<string | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const sendHintId = useId();
+  const lastAnnouncedId = useRef<string | null>(null);
+  const [liveIncoming, setLiveIncoming] = useState('');
 
   const queryKey = ['bookings', bookingId, 'messages'] as const;
   const enabled = isOpen;
@@ -152,6 +155,19 @@ export function MessageThread({
 
   const items = data?.items ?? [];
 
+  useEffect(() => {
+    const incoming = items.filter((item) => item.senderId !== session?.user?.id);
+    const latest = incoming.at(-1);
+    if (!latest) return;
+    if (lastAnnouncedId.current === null) {
+      lastAnnouncedId.current = latest.id;
+      return;
+    }
+    if (latest.id === lastAnnouncedId.current) return;
+    lastAnnouncedId.current = latest.id;
+    setLiveIncoming(t('newMessage', { preview: latest.body.slice(0, 80) }));
+  }, [items, session?.user?.id, t]);
+
   return (
     <div className={cn('flex min-h-0 flex-col', className)}>
       {variant === 'compact' ? (
@@ -168,14 +184,17 @@ export function MessageThread({
 
       {isOpen ? (
         <>
+          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {liveIncoming}
+          </p>
           <div
             className={cn(
               'flex min-h-0 flex-1 flex-col',
               variant === 'compact' && 'rounded-lg bg-card p-4 ring-1 ring-foreground/5',
             )}
           >
-            {isLoading ? <p className="p-3 text-sm text-muted-foreground">{t('loading')}</p> : null}
-            {isError ? <p className="p-3 text-sm text-destructive">{t('error')}</p> : null}
+            {isLoading ? <ThreadSkeleton label={t('loading')} /> : null}
+            {isError ? <p role="alert" className="p-3 text-sm text-destructive">{t('error')}</p> : null}
             {!isLoading && !isError && !items.length ? (
               <p className="m-auto p-6 text-center text-sm text-muted-foreground">{t('threadEmpty')}</p>
             ) : null}
@@ -275,8 +294,8 @@ export function MessageThread({
           <p id={sendHintId} className="sr-only">
             {t('sendHint')}
           </p>
-          {validationError ? <p className="px-3 pb-2 text-sm text-destructive">{validationError}</p> : null}
-          {mutation.isError ? <p className="px-3 pb-2 text-sm text-destructive">{t('sendError')}</p> : null}
+          {validationError ? <p role="alert" className="px-3 pb-2 text-sm text-destructive">{validationError}</p> : null}
+          {mutation.isError ? <p role="alert" className="px-3 pb-2 text-sm text-destructive">{t('sendError')}</p> : null}
         </>
       ) : null}
     </div>

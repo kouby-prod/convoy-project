@@ -17,12 +17,18 @@
     "menu": "Menu",
     "documents": "Mes documents",
     "notifications": "Notifications",
+    "notificationsUnread": "{count, plural, one {# notification non lue} other {# notifications non lues}}",
+    "notificationsAllRead": "Notifications, toutes lues",
     "admin": "Back-office",
     "sections": {
       "search": "Recherche",
       "actions": "Actions",
       "account": "Compte"
     }
+  },
+  "A11y": {
+    "skipToContent": "Aller au contenu principal",
+    "dismiss": "Fermer"
   },
   "LocaleSwitcher": {
     "label": "Langue",
@@ -525,6 +531,7 @@
     "counterpartUnknown": "Correspondant",
     "contextMissing": "Contexte du trajet indisponible — vous pouvez toujours échanger ici.",
     "threadEmpty": "Commencez la conversation pour vous coordonner sur ce trajet.",
+    "newMessage": "Nouveau message : {preview}",
     "filterLabel": "Filtrer les conversations",
     "filterAll": "Tous",
     "filterPassenger": "Passager",
@@ -606,13 +613,15 @@
     "seatsLeft": "{count, plural, =0 {Complet} one {# place restante} other {# places restantes}}",
     "ownerWorkspace": {
       "backToRides": "Mes trajets",
+      "tabsLabel": "Espace trajet",
       "tabRequests": "Réservations",
       "tabTrip": "Trajet"
     },
     "driverRating": {
       "label": "Note du conducteur",
       "none": "Pas encore d'avis",
-      "summary": "★ {rating} ({count} avis)"
+      "summary": "★ {rating} ({count} avis)",
+      "value": "{rating} · {count, plural, one {# avis} other {# avis}}"
     },
     "distance": {
       "label": "Distance",
@@ -1255,6 +1264,7 @@
     "seatsAvailable": "{count, plural, =0 {Complet} one {# place} other {# places}}",
     "perSeat": "par place",
     "plusKoubyFee": "+ {amount} de frais Kouby (TPS + TVQ)",
+    "plusKoubyFeeShort": "+ {amount} Kouby",
     "driverBy": "avec {name}",
     "authRequired": "Connectez-vous pour continuer.",
     "authCta": "Se connecter",
@@ -1279,6 +1289,11 @@
       "card": "Carte (via Kouby)",
       "interac": "Interac (direct)",
       "cash": "Espèces (direct)"
+    },
+    "paymentMethodsShort": {
+      "card": "Carte",
+      "interac": "Interac",
+      "cash": "Espèces"
     },
     "filters": {
       "title": "Recherche",
@@ -1357,6 +1372,7 @@
       "descriptionPlaceholder": "Point de rendez-vous, bagages, musique…",
       "submit": "Publier le trajet",
       "submitting": "Publication…",
+      "success": "Trajet publié.",
       "failed": "La publication a échoué. Réessayez plus tard.",
       "invalid": "Vérifiez les champs du formulaire.",
       "baggage": "Bagages",
@@ -1426,6 +1442,7 @@
     "markAllRead": "Tout marquer comme lu",
     "markingAll": "Marquage en cours...",
     "loadMore": "Charger plus",
+    "filterLabel": "Filtrer les notifications",
     "tabAll": "Toutes",
     "tabUnread": "Non lues",
     "noUnread": "Toutes les notifications ont été lues.",

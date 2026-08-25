@@ -12,7 +12,7 @@ import {
   Snowflake,
   type LucideIcon,
 } from 'lucide-react';
-import { TRAJET_AMENITIES, type TrajetAmenity } from '@carpool/schemas';
+import { PAYMENT_AMENITIES, TRAJET_AMENITIES, type TrajetAmenity } from '@carpool/schemas';
 import { cn } from '@/lib/utils';
 
 /**
@@ -35,6 +35,11 @@ const AMENITY_ICONS: Record<TrajetAmenity, { Icon: LucideIcon; struck?: boolean 
 
 /** Stable display order, so the same amenities always read the same way. */
 export const AMENITY_ORDER = TRAJET_AMENITIES;
+
+/** Comfort/policy amenities — payment is a real `paymentMethods` field, not icons. */
+export const GENERAL_AMENITIES = TRAJET_AMENITIES.filter(
+  (amenity) => !(PAYMENT_AMENITIES as readonly TrajetAmenity[]).includes(amenity),
+);
 
 /** Narrow an untrusted string (URL param, form value) to a known amenity. */
 export function isAmenity(value: string): value is TrajetAmenity {
@@ -76,6 +81,7 @@ interface AmenityToggleGroupProps {
   legend: string;
   /** Which amenities this instance offers — defaults to all of them. Lets a caller split amenities into separate groups (e.g. payment methods on their own). */
   amenities?: readonly TrajetAmenity[];
+  className?: string;
 }
 
 /** The amenity picker shared by the search rail and the publish form. */
@@ -85,11 +91,12 @@ export function AmenityToggleGroup({
   label,
   legend,
   amenities = AMENITY_ORDER,
+  className,
 }: AmenityToggleGroupProps) {
   return (
     <fieldset>
       <legend className="sr-only">{legend}</legend>
-      <div className="flex flex-wrap justify-center gap-2">
+      <div className={cn('flex flex-wrap gap-2', className)}>
         {amenities.map((amenity) => {
           const isSelected = selected.includes(amenity);
           return (
@@ -118,11 +125,15 @@ export function AmenityToggleGroup({
 
 /** The horizontal amenity strip shown under a result row and on the detail header. */
 export function TrajetAmenities({ amenities, label, className }: TrajetAmenitiesProps) {
-  if (amenities.length === 0) return null;
+  const visible = AMENITY_ORDER.filter(
+    (amenity) =>
+      amenities.includes(amenity) && !(PAYMENT_AMENITIES as readonly TrajetAmenity[]).includes(amenity),
+  );
+  if (visible.length === 0) return null;
 
   return (
     <ul className={cn('flex flex-wrap items-center gap-3 text-muted-foreground', className)}>
-      {AMENITY_ORDER.filter((amenity) => amenities.includes(amenity)).map((amenity) => (
+      {visible.map((amenity) => (
         <li key={amenity} title={label(amenity)}>
           <AmenityIcon amenity={amenity} className="size-5" />
           <span className="sr-only">{label(amenity)}</span>

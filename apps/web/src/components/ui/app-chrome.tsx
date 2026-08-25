@@ -7,8 +7,12 @@ import { ArrowLeft } from 'lucide-react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { Navbar } from '@/components/ui/navbar';
 import { Footer } from '@/components/ui/footer';
+import { SkipLink } from '@/components/ui/skip-link';
+import { Toaster } from '@/components/ui/toast';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+const MAIN_ID = 'main';
 
 /** Site chrome. Checkout drops marketing nav/footer so the pay clock owns the page. */
 export function AppChrome({ children }: { children: ReactNode }) {
@@ -19,34 +23,60 @@ export function AppChrome({ children }: { children: ReactNode }) {
 
   if (checkout) {
     return (
-      <>
+      <ChromeRoot>
         <CheckoutBar />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 sm:px-6 sm:py-6">{children}</main>
-      </>
+        <main
+          id={MAIN_ID}
+          tabIndex={-1}
+          className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 outline-none sm:px-6 sm:py-6"
+        >
+          {children}
+        </main>
+      </ChromeRoot>
     );
   }
 
   if (messages || admin) {
     return (
-      <>
+      <ChromeRoot>
         <Navbar />
         <main
+          id={MAIN_ID}
+          tabIndex={-1}
           className={cn(
-            'mx-auto flex min-h-0 w-full flex-1 flex-col px-0 py-0',
+            'mx-auto flex min-h-0 w-full flex-1 flex-col px-0 py-0 outline-none',
             admin ? 'max-w-[90rem] sm:px-4 sm:py-3' : 'max-w-7xl sm:px-6 sm:py-6',
           )}
         >
           {children}
         </main>
-      </>
+      </ChromeRoot>
     );
   }
 
   return (
-    <>
+    <ChromeRoot>
       <Navbar />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-4 sm:px-6 sm:py-8">{children}</main>
+      <main
+        id={MAIN_ID}
+        tabIndex={-1}
+        className="mx-auto w-full max-w-7xl flex-1 px-4 py-4 outline-none sm:px-6 sm:py-8"
+      >
+        {children}
+      </main>
       <Footer />
+    </ChromeRoot>
+  );
+}
+
+function ChromeRoot({ children }: { children: ReactNode }) {
+  const t = useTranslations('A11y');
+
+  return (
+    <>
+      <SkipLink />
+      {children}
+      <Toaster dismissLabel={t('dismiss')} />
     </>
   );
 }
