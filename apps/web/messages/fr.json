@@ -582,6 +582,7 @@
     "seats": "Places",
     "seatsAvailable": "{available}/{total} places",
     "perSeat": "par place",
+    "plusKoubyFee": "+ {amount} de frais Kouby (TPS + TVQ)",
     "price": "Prix",
     "description": "Description",
     "detailTitle": "Détail du trajet",

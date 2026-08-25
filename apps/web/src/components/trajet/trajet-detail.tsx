@@ -1,6 +1,7 @@
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { ArrowRight, BadgeCheck, Briefcase, Car, Image as ImageIcon, Sparkles, Users } from 'lucide-react';
 import type { TrajetListing, TrajetAmenity } from '@carpool/schemas';
+import { formatCad, koubyFeeCents } from '@/lib/booking-money';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TripMap, type TripMapPin } from '@/components/ui/trip-map';
@@ -16,6 +17,7 @@ interface TrajetDetailProps {
 export function TrajetDetail({ trajet }: TrajetDetailProps) {
   const t = useTranslations('Trajet');
   const format = useFormatter();
+  const locale = useLocale();
 
   const time = { hour: '2-digit', minute: '2-digit' } as const;
   const departure = new Date(trajet.departureAt);
@@ -73,9 +75,15 @@ export function TrajetDetail({ trajet }: TrajetDetailProps) {
             </div>
 
             <div className="flex items-center justify-between gap-4 lg:flex-col lg:items-end lg:gap-1.5">
-              <p className="text-lg font-semibold text-foreground">
-                {format.number(trajet.pricePerSeat, { style: 'currency', currency: 'CAD' })}
-              </p>
+              <div className="text-right">
+                <p className="text-lg font-semibold text-foreground">
+                  {format.number(trajet.pricePerSeat, { style: 'currency', currency: 'CAD' })}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{t('perSeat')}</p>
+                <p className="mt-1 text-xs font-medium text-foreground">
+                  {t('plusKoubyFee', { amount: formatCad(koubyFeeCents(), locale) })}
+                </p>
+              </div>
               {trajet.driver.rating !== null ? (
                 <RatingStars
                   rating={trajet.driver.rating}

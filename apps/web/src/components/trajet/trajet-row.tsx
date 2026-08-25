@@ -1,5 +1,6 @@
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import type { TrajetListing, TrajetAmenity } from '@carpool/schemas';
+import { formatCad, koubyFeeCents } from '@/lib/booking-money';
 import { RatingStars } from '@/components/trajet/rating-stars';
 import { TrajetAmenities } from '@/components/trajet/trajet-amenities';
 import { ItineraryRow } from '@/components/trajet/itinerary-row';
@@ -13,6 +14,7 @@ interface TrajetRowProps {
 export function TrajetRow({ trajet }: TrajetRowProps) {
   const t = useTranslations('Trajet');
   const format = useFormatter();
+  const locale = useLocale();
   const taken = Math.max(0, trajet.seatsTotal - trajet.seatsAvailable);
   const driverName = trajet.driver.firstName
     ? `${trajet.driver.firstName}${trajet.driver.lastName ? ` ${trajet.driver.lastName.charAt(0)}.` : ''}`
@@ -28,6 +30,7 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
       to={trajet.arrivalCity}
       place={place}
       priceLabel={format.number(trajet.pricePerSeat, { style: 'currency', currency: 'CAD' })}
+      priceHint={t('plusKoubyFee', { amount: formatCad(koubyFeeCents(), locale) })}
       occupancy={{
         taken,
         total: trajet.seatsTotal,

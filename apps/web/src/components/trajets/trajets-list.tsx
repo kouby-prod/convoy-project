@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { createApiClient } from '@carpool/api-client';
 import { useRouter, Link } from '@/i18n/navigation';
 import { env } from '@/lib/env';
+import { formatCad, koubyFeeCents } from '@/lib/booking-money';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -99,6 +100,7 @@ function formatDateTime(value: string) {
 
 export function TrajetsList() {
   const t = useTranslations('Trajets');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState<Filters>(() => filtersFromSearchParams(searchParams));
@@ -327,6 +329,9 @@ export function TrajetsList() {
                         currency: 'CAD',
                         maximumFractionDigits: 2,
                       }).format(item.pricePerSeat)}
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        {t('plusKoubyFee', { amount: formatCad(koubyFeeCents(), locale) })}
+                      </span>
                     </div>
                     {item.description ? <div>{item.description}</div> : null}
                   </CardContent>

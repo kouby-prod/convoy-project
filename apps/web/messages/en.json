@@ -582,6 +582,7 @@
     "seats": "Seats",
     "seatsAvailable": "{available}/{total} seats",
     "perSeat": "per seat",
+    "plusKoubyFee": "+ {amount} Kouby fee (GST + QST)",
     "price": "Price",
     "description": "Description",
     "detailTitle": "Ride details",

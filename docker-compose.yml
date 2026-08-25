@@ -208,7 +208,7 @@ services:
       # public URL baked in above.
       INTERNAL_API_URL: ${DOCKER_INTERNAL_API_URL}
     ports:
-      - '${WEB_PORT}:3000'
+      - '${WEB_PORT:-3000}:3000'
     depends_on:
       - api
 

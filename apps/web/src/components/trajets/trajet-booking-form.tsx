@@ -477,7 +477,7 @@ function PriceBlock({
         {format.number(pricePerSeat, { style: 'currency', currency: 'CAD' })}
       </p>
       <p className="mt-0.5 text-xs text-muted-foreground">{t('perSeat')}</p>
-      <p className="text-[11px] text-muted-foreground">
+      <p className="mt-1 text-xs font-medium text-foreground">
         {tRide('plusKoubyFee', { amount: formatCad(koubyFeeCents(), locale) })}
       </p>
       <p className="mt-2 text-xs text-muted-foreground">
