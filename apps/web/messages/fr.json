@@ -1077,19 +1077,8 @@
           "loading": "Chargement…",
           "loadError": "Impossible de charger vos informations."
         },
-        "licenseNumber": {
-          "label": "Numéro de permis de conduire",
-          "save": "Enregistrer",
-          "saving": "Enregistrement…",
-          "saveFailed": "L'enregistrement a échoué. Réessayez.",
-          "required": "Saisissez votre numéro de permis."
-        },
         "checklist": {
-          "licenseTitle": "Numéro de permis",
-          "licenseDone": "Numéro de permis renseigné.",
-          "licenseHint": "La photo de votre permis reste facultative ici — vous pouvez l'ajouter à tout moment depuis",
-          "licenseHintLink": "Mes documents",
-          "incomplete": "Complétez les deux éléments ci-dessus avant de publier votre trajet."
+          "incomplete": "Complétez les éléments ci-dessus avant de publier votre trajet."
         }
       },
       "step3": {

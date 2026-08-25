@@ -236,7 +236,12 @@ export function TrajetCreateForm() {
   };
 
   return (
-    <Card className="mx-auto w-full max-w-2xl">
+    <Card
+      className={cn(
+        'mx-auto w-full transition-[max-width] duration-500 ease-smooth',
+        draft.step === 'license-insurance' ? 'max-w-4xl' : 'max-w-2xl',
+      )}
+    >
       <CardContent className="p-6 pt-6 sm:p-8 sm:pt-8">
         <div className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           {STEPS.map((entry, index) => (
