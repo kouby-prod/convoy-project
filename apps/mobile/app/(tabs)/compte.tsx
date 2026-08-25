@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { authClient } from '@/lib/auth-client';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { Card } from '@/components/ui/Card';
@@ -112,6 +113,7 @@ export default function CompteScreen() {
           />
         </Card>
 
+        <Button label="Aide & contact" variant="outline" onPress={() => router.push('/contact')} />
         <Button label="Se déconnecter" variant="outline" onPress={() => authClient.signOut()} />
       </ScrollView>
     </ScreenContainer>

@@ -29,6 +29,7 @@ function RootNavigator() {
       <Stack.Protected guard={!!session?.user}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="trajets/[id]" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="contact" options={{ headerShown: true, title: 'Contact' }} />
       </Stack.Protected>
       <Stack.Protected guard={!session?.user}>
         <Stack.Screen name="(auth)" />
