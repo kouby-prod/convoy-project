@@ -173,6 +173,18 @@ describe('review module', () => {
       expect(res.status).toBe(400);
     });
 
+    it('returns 400 when the booking is still awaiting payment', async () => {
+      getSession.mockResolvedValue(sessionFor('u_1'));
+      dbState.selectResult = [makeBookingRow({ status: 'awaiting_payment' })];
+
+      const res = await reviewModule.request('/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: BOOKING_ID, rating: 5 }),
+      });
+      expect(res.status).toBe(400);
+    });
+
     it("returns 400 when the trip hasn't departed yet", async () => {
       getSession.mockResolvedValue(sessionFor('u_1'));
       dbState.selectQueue = [[makeBookingRow()], [makeTrajetRow({ departureAt: future })]];

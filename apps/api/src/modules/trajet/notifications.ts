@@ -3,7 +3,7 @@ import type { NotificationType } from '@carpool/schemas';
 import { db } from '../../db/client';
 import { notification } from '../../db/notification';
 import { user } from '../../db/auth-schema';
-import { sendEmail } from '../../auth/email';
+import { sendEmail, type EmailAttachment } from '../../auth/email';
 import { env } from '../../env';
 import { serializeNotification } from '../notification/serialize';
 import { publishNotificationCreated } from '../notification/events';
@@ -18,8 +18,22 @@ export function trajetUrl(trajetId: string): string {
   return `${webOrigin()}/trajet/${trajetId}`;
 }
 
+/** Human-readable due instant for emails (Eastern, English). */
+export function formatDueAt(dueAt: Date | string): string {
+  const date = dueAt instanceof Date ? dueAt : new Date(dueAt);
+  return date.toLocaleString('en-CA', {
+    timeZone: 'America/Toronto',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
+
 export function trajetSearchUrl(): string {
   return `${webOrigin()}/trajets`;
+}
+
+export function paymentUrl(bookingId: string): string {
+  return `${webOrigin()}/paiement/${bookingId}`;
 }
 
 /** The booking's chat thread — where a "new message" notification should land. */
@@ -63,6 +77,13 @@ export function truncateForPreview(text: string, maxLength = 80): string {
   return `${text.slice(0, maxLength).trimEnd()}…`;
 }
 
+export type NotifyUserOptions = {
+  type: NotificationType;
+  link?: string | null;
+  inAppBody?: string;
+  attachments?: EmailAttachment[];
+};
+
 /**
  * Looks up `userId`'s email, stores an in-app notification, publishes it for
  * live WebSocket fan-out, and sends a plain-text email. Storage/publish/email
@@ -74,13 +95,13 @@ export function truncateForPreview(text: string, maxLength = 80): string {
  * the recipient reads it standalone outside the app. `inAppBody` is what's
  * stored/shown in the notification list, which already has its own "View"
  * link and relative timestamp, so it should stay short and skip the raw URL.
- * Defaults to `text` if omitted.
+ * Defaults to `text` if omitted. Invoice PDFs go on `attachments`.
  */
 export async function notifyUser(
   userId: string,
   subject: string,
   text: string,
-  options: { type: NotificationType; link?: string | null; inAppBody?: string },
+  options: NotifyUserOptions,
 ): Promise<void> {
   const [recipient] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId));
   if (!recipient) return;
@@ -111,7 +132,12 @@ export async function notifyUser(
   }
 
   try {
-    await sendEmail({ to: recipient.email, subject, text });
+    await sendEmail({
+      to: recipient.email,
+      subject,
+      text,
+      ...(options.attachments ? { attachments: options.attachments } : {}),
+    });
   } catch (err) {
     console.error(`Failed to send "${subject}" notification to ${recipient.email}`, err);
   }

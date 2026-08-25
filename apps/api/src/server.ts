@@ -2,10 +2,13 @@ import { createRequire } from 'node:module';
 import { serve } from '@hono/node-server';
 import { app } from './app';
 import { env } from './env';
+import { initObservability } from './observability';
 import { messageHub } from './realtime/hub';
 import { notificationHub } from './realtime/notification-hub';
 import { closeMessageQueue } from './queue/message-jobs';
 import { startMessageWorker, stopMessageWorker } from './queue/message-worker';
+import { closePaymentQueues, schedulePaymentReconcile } from './queue/payment-jobs';
+import { startPaymentWorkers, stopPaymentWorkers } from './queue/payment-worker';
 import { closeNotificationPublisher } from './modules/notification/events';
 import { ensureBucket } from './storage/s3';
 
@@ -27,10 +30,20 @@ await ensureBucket().catch((error: unknown) => {
   console.error('[storage] bucket unavailable — document upload will fail:', error);
 });
 
+initObservability('api');
+
 // Boot. `env` is validated at import time and will exit(1) on bad config.
 messageHub.start();
 notificationHub.start();
 startMessageWorker();
+if (env.PAYMENT_WORKER_EMBEDDED) {
+  startPaymentWorkers();
+  void schedulePaymentReconcile().catch((err: unknown) => {
+    console.error('[payment] failed to schedule reconcile job', err);
+  });
+} else {
+  console.log('[api] payment workers are disabled in this process (PAYMENT_WORKER_EMBEDDED=false)');
+}
 
 const wss = new WebSocketServerCtor({ noServer: true });
 
@@ -59,6 +72,8 @@ async function shutdown(signal: string): Promise<void> {
   try {
     await stopMessageWorker();
     await closeMessageQueue();
+    await stopPaymentWorkers();
+    await closePaymentQueues();
     await messageHub.stop();
     await notificationHub.stop();
     await closeNotificationPublisher();

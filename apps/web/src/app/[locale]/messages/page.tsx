@@ -1,6 +1,5 @@
-import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { MessagesList } from '@/components/messages/messages-list';
-import { PageHeader } from '@/components/ui/page-header';
+import { setRequestLocale } from 'next-intl/server';
+import { MessagesInbox } from '@/components/messages/messages-inbox';
 
 export default async function MessagesPage({
   params,
@@ -9,12 +8,10 @@ export default async function MessagesPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations('Messages');
 
   return (
-    <section className="flex flex-col gap-8">
-      <PageHeader title={t('title')} subtitle={t('subtitle')} />
-      <MessagesList />
-    </section>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <MessagesInbox />
+    </div>
   );
 }

@@ -12,13 +12,16 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsup",
     "start": "node dist/server.js",
+    "worker:payment": "tsx src/workers/payment.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "auth:generate": "better-auth generate --config src/auth/auth.ts --output src/db/auth-schema.ts -y",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate:prod": "node dist/migrate.js",
     "seed:admin": "tsx src/seed-admin.ts",
+    "seed:dev-users": "tsx src/seed-dev-users.ts",
     "seed:trajets": "tsx src/seed-trajets.ts"
   },
   "dependencies": {
@@ -35,7 +38,9 @@
     "hono": "4.12.25",
     "ioredis": "6.0.0",
     "nodemailer": "9.0.1",
+    "pdf-lib": "^1.17.1",
     "pg": "8.21.0",
+    "stripe": "^22.5.0",
     "ws": "8.21.2",
     "zod": "4.4.3"
   },

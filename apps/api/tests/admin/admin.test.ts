@@ -29,8 +29,7 @@ function createChain(result: unknown, onSet?: (values: unknown) => void) {
 
 /**
  * `selectQueue` is consumed one entry per `db.select()` call, because
- * GET /admin/stats deliberately runs three separate aggregates — counting
- * documents and accounts over a single join would multiply the account rows.
+ * GET /admin/stats runs several separate aggregates rather than one wide join.
  * Queuing makes each test state that sequence explicitly.
  */
 const dbState = vi.hoisted(() => ({
@@ -146,6 +145,10 @@ describe('admin module', () => {
     ['/admin/stats'],
     ['/admin/documents'],
     ['/admin/users'],
+    ['/admin/trajets'],
+    ['/admin/bookings'],
+    ['/admin/invoices'],
+    ['/admin/payments/incidents'],
   ])('GET %s returns 401 without a session', async (path) => {
     getSession.mockResolvedValue(null);
     const res = await adminModule.request(path);
@@ -156,6 +159,10 @@ describe('admin module', () => {
     ['/admin/stats'],
     ['/admin/documents'],
     ['/admin/users'],
+    ['/admin/trajets'],
+    ['/admin/bookings'],
+    ['/admin/invoices'],
+    ['/admin/payments/incidents'],
   ])('GET %s returns 403 for a signed-in non-admin', async (path) => {
     getSession.mockResolvedValue(sessionFor('u_1', 'user'));
     const res = await adminModule.request(path);
@@ -441,13 +448,16 @@ describe('admin module', () => {
 
   /* ─────────────────────────────── Dashboard ──────────────────────────── */
 
-  it('GET /admin/stats aggregates documents and accounts', async () => {
+  it('GET /admin/stats aggregates documents, accounts, rides, bookings and invoices', async () => {
     getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
-    // Three queries, in the order the handler runs them.
     dbState.selectQueue = [
       [{ total: 7, pending: 3, approved: 3, rejected: 1 }],
       [{ total: 5, admins: 1 }],
       [{ value: 2 }],
+      [{ value: 0 }],
+      [{ upcoming: 4, cancelled: 1 }],
+      [{ pending: 1, awaitingPayment: 2, confirmed: 3 }],
+      [{ issued: 2, paid: 8 }],
     ];
 
     const res = await adminModule.request('/admin/stats');
@@ -456,13 +466,15 @@ describe('admin module', () => {
     expect(await res.json()).toEqual({
       documents: { total: 7, pending: 3, approved: 3, rejected: 1 },
       users: { total: 5, admins: 1, awaitingReview: 2 },
+      payments: { openIncidents: 0, invoicesIssued: 2, invoicesPaid: 8 },
+      rides: { upcoming: 4, cancelled: 1 },
+      bookings: { pending: 1, awaitingPayment: 2, confirmed: 3 },
     });
   });
 
   it('GET /admin/stats reports zeroes on an empty database', async () => {
     getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
-    // No aggregate rows at all — the handler must not emit nulls into the contract.
-    dbState.selectQueue = [[], [], []];
+    dbState.selectQueue = [[], [], [], [], [], [], []];
 
     const res = await adminModule.request('/admin/stats');
 
@@ -470,6 +482,9 @@ describe('admin module', () => {
     expect(await res.json()).toEqual({
       documents: { total: 0, pending: 0, approved: 0, rejected: 0 },
       users: { total: 0, admins: 0, awaitingReview: 0 },
+      payments: { openIncidents: 0, invoicesIssued: 0, invoicesPaid: 0 },
+      rides: { upcoming: 0, cancelled: 0 },
+      bookings: { pending: 0, awaitingPayment: 0, confirmed: 0 },
     });
   });
 
@@ -478,7 +493,7 @@ describe('admin module', () => {
   it('GET /admin/users returns accounts with their document tallies', async () => {
     getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
     dbState.selectQueue = [
-      [{ ...makeUserRow(), documentCount: 3, pendingCount: 1, approvedCount: 2 }],
+      [{ ...makeUserRow(), documentCount: 3, pendingCount: 1, approvedCount: 2, rideCount: 1, bookingCount: 4 }],
     ];
 
     const res = await adminModule.request('/admin/users');
@@ -491,8 +506,133 @@ describe('admin module', () => {
       documentCount: 3,
       pendingCount: 1,
       approvedCount: 2,
+      rideCount: 1,
+      bookingCount: 4,
     });
     // createdAt crosses the wire as an ISO string, not a Date.
     expect(typeof rows[0]?.createdAt).toBe('string');
+  });
+
+  it('GET /admin/trajets returns ride ads with the driver and booking count', async () => {
+    getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
+    const departureAt = now;
+    dbState.selectQueue = [
+      [
+        {
+          id: 't_1',
+          departureCity: 'Montréal',
+          arrivalCity: 'Québec',
+          departureAt,
+          seatsTotal: 3,
+          seatsAvailable: 1,
+          pricePerSeat: '25.00',
+          cancelledAt: null,
+          createdAt: now,
+          driverId: 'u_1',
+          driverName: 'Ada Lovelace',
+          driverEmail: 'ada@example.com',
+          bookingCount: 2,
+        },
+      ],
+    ];
+
+    const res = await adminModule.request('/admin/trajets?state=upcoming');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject([
+      {
+        id: 't_1',
+        departureCity: 'Montréal',
+        arrivalCity: 'Québec',
+        seatsTotal: 3,
+        bookingCount: 2,
+        driver: { email: 'ada@example.com' },
+        cancelledAt: null,
+      },
+    ]);
+  });
+
+  it('GET /admin/bookings returns reservations with trip, people and invoice', async () => {
+    getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
+    dbState.selectQueue = [
+      [
+        {
+          booking: {
+            id: 'b_1',
+            status: 'awaiting_payment',
+            paymentMethod: 'card',
+            seats: 2,
+            fareCents: 5000,
+            createdAt: now,
+          },
+          trajet: {
+            id: 't_1',
+            departureCity: 'Montréal',
+            arrivalCity: 'Québec',
+            departureAt: now,
+          },
+          passenger: { id: 'p_1', name: 'Jean', email: 'jean@example.com' },
+          driver: { id: 'd_1', name: 'Ada Lovelace', email: 'ada@example.com' },
+          invoice: {
+            id: 'inv_1',
+            number: 'KOU-2026-000001',
+            status: 'issued',
+            totalCents: 5550,
+          },
+        },
+      ],
+    ];
+
+    const res = await adminModule.request('/admin/bookings?from=2026-08-21');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject([
+      {
+        id: 'b_1',
+        status: 'awaiting_payment',
+        paymentMethod: 'card',
+        passenger: { email: 'jean@example.com' },
+        invoice: { status: 'issued', number: 'KOU-2026-000001' },
+      },
+    ]);
+  });
+
+  it('GET /admin/invoices returns invoices with the latest payment attempt', async () => {
+    getSession.mockResolvedValue(sessionFor('admin_1', 'admin'));
+    dbState.selectQueue = [
+      [
+        {
+          invoice: {
+            id: 'inv_1',
+            number: 'KOU-2026-000001',
+            status: 'issued',
+            totalCents: 5550,
+            currency: 'cad',
+            issuedAt: now,
+            dueAt: now,
+            paidAt: null,
+            buyerName: 'Jean',
+            buyerEmail: 'jean@example.com',
+          },
+          booking: { id: 'b_1', status: 'awaiting_payment', paymentMethod: 'card' },
+        },
+      ],
+      [
+        {
+          invoiceId: 'inv_1',
+          provider: 'stripe',
+          status: 'failed',
+          createdAt: now,
+        },
+      ],
+    ];
+
+    const res = await adminModule.request('/admin/invoices?status=issued');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject([
+      {
+        number: 'KOU-2026-000001',
+        status: 'issued',
+        payment: { provider: 'stripe', status: 'failed' },
+      },
+    ]);
   });
 });

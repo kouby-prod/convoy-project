@@ -7,8 +7,10 @@ import { ArrowRight } from 'lucide-react';
 import {
   CreateTrajetRequestSchema,
   PAYMENT_AMENITIES,
+  RIDE_PAYMENT_METHODS,
   TRAJET_AMENITIES,
   type CreateTrajetRequest,
+  type RidePaymentMethod,
   type TrajetAmenity,
 } from '@carpool/schemas';
 import { Link, useRouter } from '@/i18n/navigation';
@@ -56,6 +58,7 @@ interface RideDraft {
   step: Step;
   ridePayload: CreateTrajetRequest | null;
   amenities: TrajetAmenity[];
+  paymentMethods: RidePaymentMethod[];
   hasIntermediateStop: boolean;
   comfort: 'standard' | 'confort' | 'premium';
   departureCity: string;
@@ -79,6 +82,7 @@ const EMPTY_RIDE_DRAFT: RideDraft = {
   step: 'ride-vehicle',
   ridePayload: null,
   amenities: [],
+  paymentMethods: ['card', 'interac', 'cash'],
   hasIntermediateStop: false,
   comfort: 'standard',
   departureCity: '',
@@ -151,6 +155,14 @@ export function TrajetCreateForm() {
     onError: () => setError(t('create.failed')),
   });
 
+  function togglePaymentMethod(method: RidePaymentMethod) {
+    updateDraft({
+      paymentMethods: draft.paymentMethods.includes(method)
+        ? draft.paymentMethods.filter((entry) => entry !== method)
+        : [...draft.paymentMethods, method],
+    });
+  }
+
   function toggleAmenity(amenity: TrajetAmenity) {
     updateDraft({
       amenities: draft.amenities.includes(amenity)
@@ -195,6 +207,7 @@ export function TrajetCreateForm() {
       pricePerSeat: Number(draft.pricePerSeat),
       seatsTotal: Number(draft.seatsTotal),
       amenities: draft.amenities,
+      paymentMethods: draft.paymentMethods,
       hasIntermediateStop: draft.hasIntermediateStop,
       description: draft.description,
       comfort: draft.comfort,
@@ -403,13 +416,17 @@ export function TrajetCreateForm() {
             </Field>
 
             <Field label={t('create.paymentMethods')}>
-              <AmenityToggleGroup
-                selected={draft.amenities}
-                onToggle={toggleAmenity}
-                label={(amenity) => t(`amenities.${amenity}`)}
-                legend={t('create.paymentMethods')}
-                amenities={PAYMENT_AMENITIES}
-              />
+              <p className="text-xs text-muted-foreground">{t('create.paymentMethodsHint')}</p>
+              <div className="flex flex-col gap-2">
+                {RIDE_PAYMENT_METHODS.map((method) => (
+                  <Checkbox
+                    key={method}
+                    checked={draft.paymentMethods.includes(method)}
+                    onChange={() => togglePaymentMethod(method)}
+                    label={t(`paymentMethods.${method}`)}
+                  />
+                ))}
+              </div>
             </Field>
 
             <Field label={t('create.options')}>

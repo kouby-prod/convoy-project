@@ -1,33 +1,40 @@
 'use client';
 
+import { useState } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, BadgeCheck, Briefcase, Car, Sparkles, Users } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
-import type { TrajetAmenity } from '@carpool/schemas';
+import type { RidePaymentMethod, Trajet, TrajetAmenity } from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import { cn } from '@/lib/utils';
-import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RatingStars } from '@/components/trajet/rating-stars';
 import { AmenityIcon, isAmenity } from '@/components/trajet/trajet-amenities';
+import {
+  formatTripDuration,
+  ItineraryTimeline,
+} from '@/components/trajet/itinerary-timeline';
 import { TrajetBookings } from '@/components/trajets/trajet-bookings';
 import { TrajetBookingForm } from '@/components/trajets/trajet-booking-form';
 import { TrajetOwnerActions } from '@/components/trajets/trajet-owner-actions';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
+const clock = { hour: '2-digit', minute: '2-digit' } as const;
+
 /**
- * Ride detail — BlaBlaCar-inspired: itinerary timeline first, trust (driver),
- * then options. Booking stays a quiet side panel, not the visual hero.
+ * Ride detail — two jobs, two layouts.
+ *
+ * Passengers keep a BlaBlaCar listing (itinerary + quiet book panel).
+ * Drivers get an operational console: compact chrome, Bookings vs Ride tabs,
+ * and a master-detail inbox (Material list-detail / Airbnb host).
  */
 export function TrajetDetail({ id }: { id: string }) {
   const t = useTranslations('Trajets');
-  const tRide = useTranslations('Trajet');
-  const format = useFormatter();
   const { data: session } = authClient.useSession();
 
   const { data, isLoading, isError } = useQuery({
@@ -52,13 +59,131 @@ export function TrajetDetail({ id }: { id: string }) {
     );
   }
 
-  const departure = new Date(data.departureDateTime);
-  const arrival = data.arrivalDateTime ? new Date(data.arrivalDateTime) : null;
-  const clock = { hour: '2-digit', minute: '2-digit' } as const;
   const isOwner = session?.user?.id === data.driverId;
-  const amenities = (data.amenities ?? []).filter(isAmenity);
-  const driverName = [data.driver.firstName, data.driver.lastName].filter(Boolean).join(' ');
-  const initials = [data.driver.firstName?.[0], data.driver.lastName?.[0]]
+
+  if (isOwner) {
+    return <DriverRideWorkspace id={id} trajet={data} />;
+  }
+
+  return <PassengerRideView id={id} trajet={data} />;
+}
+
+function DriverRideWorkspace({ id, trajet }: { id: string; trajet: Trajet }) {
+  const t = useTranslations('Trajets');
+  const format = useFormatter();
+  const [tab, setTab] = useState<'requests' | 'trip'>('requests');
+  const departure = new Date(trajet.departureDateTime);
+  const arrival = trajet.arrivalDateTime ? new Date(trajet.arrivalDateTime) : null;
+
+  return (
+    <div className="flex w-full flex-col gap-4">
+      <BackLink href="/mes-trajets" label={t('ownerWorkspace.backToRides')} />
+
+      {trajet.cancelledAt ? (
+        <p
+          role="status"
+          className="rounded-md bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive ring-1 ring-destructive/20"
+        >
+          {t('cancelledBanner')}
+        </p>
+      ) : null}
+
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+            {trajet.departureCity} → {trajet.destinationCity}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {format.dateTime(departure, {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+            })}
+            {' · '}
+            {format.dateTime(departure, clock)}
+            {' · '}
+            {t('seatsAvailable', { available: trajet.seatsAvailable, total: trajet.seatsTotal })}
+          </p>
+        </div>
+        <div
+          role="tablist"
+          aria-label={t('bookings.title')}
+          className="inline-flex w-fit rounded-md bg-muted p-1"
+        >
+          <Button
+            type="button"
+            role="tab"
+            size="sm"
+            variant={tab === 'requests' ? 'secondary' : 'ghost'}
+            aria-selected={tab === 'requests'}
+            onClick={() => setTab('requests')}
+          >
+            {t('ownerWorkspace.tabRequests')}
+          </Button>
+          <Button
+            type="button"
+            role="tab"
+            size="sm"
+            variant={tab === 'trip' ? 'secondary' : 'ghost'}
+            aria-selected={tab === 'trip'}
+            onClick={() => setTab('trip')}
+          >
+            {t('ownerWorkspace.tabTrip')}
+          </Button>
+        </div>
+      </header>
+
+      {tab === 'requests' ? (
+        <TrajetBookings trajetId={id} departureDateTime={trajet.departureDateTime} />
+      ) : (
+        <div className="flex flex-col gap-6">
+          <TrajetOwnerActions trajet={trajet} />
+          <ItineraryTimeline
+            dateLabel={format.dateTime(departure, {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+            departure={{
+              timeLabel: format.dateTime(departure, clock),
+              city: trajet.departureCity,
+              place: trajet.departurePlace,
+            }}
+            arrival={{
+              timeLabel: arrival
+                ? format.dateTime(arrival, clock)
+                : t('itinerary.arrivalApprox'),
+              city: trajet.destinationCity,
+              place: trajet.arrivalPlace,
+              timeMuted: !arrival,
+            }}
+            durationLabel={
+              arrival
+                ? formatTripDuration(departure, arrival, {
+                    minutes: (n) => t('itinerary.durationMinutes', { count: n }),
+                    hours: (n) => t('itinerary.durationHours', { count: n }),
+                    full: (h, m) => t('itinerary.durationFull', { hours: h, minutes: m }),
+                  })
+                : null
+            }
+          />
+          <RideOptions trajet={trajet} />
+          <RideDescription description={trajet.description ?? null} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
+  const t = useTranslations('Trajets');
+  const tRide = useTranslations('Trajet');
+  const format = useFormatter();
+  const departure = new Date(trajet.departureDateTime);
+  const arrival = trajet.arrivalDateTime ? new Date(trajet.arrivalDateTime) : null;
+  const driverName = [trajet.driver.firstName, trajet.driver.lastName].filter(Boolean).join(' ');
+  const initials = [trajet.driver.firstName?.[0], trajet.driver.lastName?.[0]]
     .filter(Boolean)
     .join('')
     .toUpperCase();
@@ -67,7 +192,7 @@ export function TrajetDetail({ id }: { id: string }) {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       <BackLink label={t('backToList')} />
 
-      {data.cancelledAt ? (
+      {trajet.cancelledAt ? (
         <p
           role="status"
           className="rounded-md bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive ring-1 ring-destructive/20"
@@ -77,47 +202,42 @@ export function TrajetDetail({ id }: { id: string }) {
       ) : null}
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_17.5rem] lg:items-start lg:gap-12">
-        {/* ── Main column: itinerary → driver → options ─────────── */}
         <div className="flex flex-col gap-10">
-          {/* Date eyebrow + itinerary timeline */}
-          <section aria-labelledby="itinerary-heading">
-            <p className="text-sm capitalize text-muted-foreground">
-              {format.dateTime(departure, {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
-            <h1 id="itinerary-heading" className="sr-only">
-              {data.departureCity} → {data.destinationCity}
-            </h1>
+          <h1 className="sr-only">
+            {trajet.departureCity} → {trajet.destinationCity}
+          </h1>
 
-            <ol className="relative mt-6 space-y-0">
-              <ItineraryNode
-                time={format.dateTime(departure, clock)}
-                city={data.departureCity}
-                place={data.departurePlace}
-                kind="start"
-              />
-              <li aria-hidden className="flex gap-4 py-1 pl-[4.25rem]">
-                <div className="relative ml-[0.4375rem] h-8 w-px bg-border" />
-              </li>
-              <ItineraryNode
-                time={
-                  arrival
-                    ? format.dateTime(arrival, clock)
-                    : t('itinerary.arrivalApprox')
-                }
-                city={data.destinationCity}
-                place={data.arrivalPlace}
-                kind="end"
-                mutedTime={!arrival}
-              />
-            </ol>
-          </section>
+          <ItineraryTimeline
+            dateLabel={format.dateTime(departure, {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+            departure={{
+              timeLabel: format.dateTime(departure, clock),
+              city: trajet.departureCity,
+              place: trajet.departurePlace,
+            }}
+            arrival={{
+              timeLabel: arrival
+                ? format.dateTime(arrival, clock)
+                : t('itinerary.arrivalApprox'),
+              city: trajet.destinationCity,
+              place: trajet.arrivalPlace,
+              timeMuted: !arrival,
+            }}
+            durationLabel={
+              arrival
+                ? formatTripDuration(departure, arrival, {
+                    minutes: (n) => t('itinerary.durationMinutes', { count: n }),
+                    hours: (n) => t('itinerary.durationHours', { count: n }),
+                    full: (h, m) => t('itinerary.durationFull', { hours: h, minutes: m }),
+                  })
+                : null
+            }
+          />
 
-          {/* Driver — trust strip */}
           <section aria-labelledby="driver-heading" className="border-t border-border pt-8">
             <h2 id="driver-heading" className="text-sm font-semibold text-foreground">
               {t('driverTitle')}
@@ -133,53 +253,53 @@ export function TrajetDetail({ id }: { id: string }) {
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="flex items-center gap-2 font-semibold text-foreground">
                   {driverName || '—'}
-                  <Badge variant={data.driver.verified ? 'success' : 'neutral'}>
-                    {tRide(data.driver.verified ? 'driverVerified.verified' : 'driverVerified.unverified')}
+                  <Badge variant={trajet.driver.verified ? 'success' : 'neutral'}>
+                    {tRide(trajet.driver.verified ? 'driverVerified.verified' : 'driverVerified.unverified')}
                   </Badge>
                 </p>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                  {data.driver.rating !== null && (data.driver.reviewCount ?? 0) > 0 ? (
+                  {trajet.driver.rating !== null && (trajet.driver.reviewCount ?? 0) > 0 ? (
                     <span className="inline-flex items-center gap-1.5">
                       <RatingStars
-                        rating={data.driver.rating}
+                        rating={trajet.driver.rating}
                         label={t('driverRating.summary', {
-                          rating: data.driver.rating.toFixed(1),
-                          count: data.driver.reviewCount ?? 0,
+                          rating: trajet.driver.rating.toFixed(1),
+                          count: trajet.driver.reviewCount ?? 0,
                         })}
                       />
                       <span>
                         {t('driverRating.summary', {
-                          rating: data.driver.rating.toFixed(1),
-                          count: data.driver.reviewCount ?? 0,
+                          rating: trajet.driver.rating.toFixed(1),
+                          count: trajet.driver.reviewCount ?? 0,
                         })}
                       </span>
                     </span>
                   ) : (
                     <span>{t('driverRating.none')}</span>
                   )}
-                  {data.driver.licenceYears !== null ? (
+                  {trajet.driver.licenceYears !== null ? (
                     <span className="inline-flex items-center gap-1">
                       <BadgeCheck className="size-3.5 text-success" strokeWidth={2} aria-hidden />
-                      {t('licenceYears', { count: data.driver.licenceYears })}
+                      {t('licenceYears', { count: trajet.driver.licenceYears })}
                     </span>
                   ) : null}
                 </div>
 
-                {(data.driver.carMake || data.driver.carModel || data.driver.carSeats !== null) && (
+                {(trajet.driver.carMake || trajet.driver.carModel || trajet.driver.carSeats !== null) && (
                   <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-                    {data.driver.carMake || data.driver.carModel ? (
+                    {trajet.driver.carMake || trajet.driver.carModel ? (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Car className="size-4 shrink-0" strokeWidth={2} aria-hidden />
                         <span className="text-foreground">
-                          {[data.driver.carMake, data.driver.carModel].filter(Boolean).join(' ')}
+                          {[trajet.driver.carMake, trajet.driver.carModel].filter(Boolean).join(' ')}
                         </span>
                       </div>
                     ) : null}
-                    {data.driver.carSeats !== null ? (
+                    {trajet.driver.carSeats !== null ? (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Users className="size-4 shrink-0" strokeWidth={2} aria-hidden />
                         <span className="text-foreground">
-                          {t('carSeatsValue', { count: data.driver.carSeats })}
+                          {t('carSeatsValue', { count: trajet.driver.carSeats })}
                         </span>
                       </div>
                     ) : null}
@@ -189,120 +309,91 @@ export function TrajetDetail({ id }: { id: string }) {
             </div>
           </section>
 
-          {/* Ride options — secondary */}
-          {(amenities.length > 0 || data.comfort || data.baggageAllowance) && (
-            <section aria-labelledby="options-heading" className="border-t border-border pt-8">
-              <h2 id="options-heading" className="text-sm font-semibold text-foreground">
-                {t('rideOptions')}
-              </h2>
-              <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
-                {data.comfort ? (
-                  <li className="flex items-center gap-2.5 text-sm text-foreground">
-                    <Sparkles className="size-4 shrink-0 text-muted-foreground" strokeWidth={2} />
-                    {t('comfort')}: {tRide(`comfort.${data.comfort}`)}
-                  </li>
-                ) : null}
-                {data.baggageAllowance ? (
-                  <li className="flex items-center gap-2.5 text-sm text-foreground">
-                    <Briefcase className="size-4 shrink-0 text-muted-foreground" strokeWidth={2} />
-                    {data.baggageAllowance}
-                  </li>
-                ) : null}
-                {amenities.map((amenity) => (
-                  <li key={amenity} className="flex items-center gap-2.5 text-sm text-foreground">
-                    <AmenityIcon amenity={amenity as TrajetAmenity} className="size-4 shrink-0 text-muted-foreground" />
-                    {tRide(`amenities.${amenity}`)}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {data.description ? (
-            <section aria-labelledby="desc-heading" className="border-t border-border pt-8">
-              <h2 id="desc-heading" className="text-sm font-semibold text-foreground">
-                {t('description')}
-              </h2>
-              <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
-                {data.description}
-              </p>
-            </section>
-          ) : null}
-
-          {isOwner ? (
-            <div className="flex flex-col gap-6 border-t border-border pt-8">
-              <TrajetOwnerActions trajet={data} />
-              <TrajetBookings trajetId={id} departureDateTime={data.departureDateTime} />
-            </div>
-          ) : null}
+          <RideOptions trajet={trajet} />
+          <RideDescription description={trajet.description ?? null} />
         </div>
 
-        {/* ── Quiet booking panel ──────────────────────────────── */}
         <aside className="lg:sticky lg:top-20">
-          {isOwner ? (
-            <div className="rounded-md border border-border bg-card px-4 py-4 text-sm">
-              <p className="font-medium text-foreground">{t('ownerAside.title')}</p>
-              <p className="mt-1.5 leading-relaxed text-muted-foreground">{t('ownerAside.body')}</p>
-            </div>
-          ) : (
-            <TrajetBookingForm
-              trajetId={id}
-              seatsAvailable={data.seatsAvailable}
-              cancelled={!!data.cancelledAt}
-              pricePerSeat={data.pricePerSeat}
-              seatsTotal={data.seatsTotal}
-            />
-          )}
+          <TrajetBookingForm
+            trajetId={id}
+            seatsAvailable={trajet.seatsAvailable}
+            cancelled={!!trajet.cancelledAt}
+            pricePerSeat={trajet.pricePerSeat}
+            seatsTotal={trajet.seatsTotal}
+            paymentMethods={(trajet.paymentMethods ?? []) as RidePaymentMethod[]}
+          />
         </aside>
       </div>
     </div>
   );
 }
 
-function ItineraryNode({
-  time,
-  city,
-  place,
-  kind,
-  mutedTime,
-}: {
-  time: string;
-  city: string;
-  place?: string | null;
-  kind: 'start' | 'end';
-  mutedTime?: boolean;
-}) {
+function RideOptions({ trajet }: { trajet: Trajet }) {
+  const t = useTranslations('Trajets');
+  const tRide = useTranslations('Trajet');
+  const amenities = (trajet.amenities ?? []).filter(isAmenity);
+
+  if (
+    amenities.length === 0 &&
+    !trajet.comfort &&
+    !trajet.baggageAllowance &&
+    (trajet.paymentMethods?.length ?? 0) === 0
+  ) {
+    return null;
+  }
+
   return (
-    <li className="grid grid-cols-[4.25rem_1.25rem_minmax(0,1fr)] items-start gap-x-0">
-      <p
-        className={cn(
-          'pt-0.5 text-right text-sm font-semibold tabular-nums',
-          mutedTime ? 'font-normal text-muted-foreground' : 'text-foreground',
-        )}
-      >
-        {time}
-      </p>
-      <div className="relative flex justify-center pt-1.5">
-        <span
-          className={cn(
-            'size-2.5 rounded-full ring-4 ring-background',
-            kind === 'start' ? 'bg-brand-green' : 'bg-brand-blue',
-          )}
-          aria-hidden
-        />
-      </div>
-      <div className="min-w-0 pb-1">
-        <p className="text-base font-semibold tracking-tight text-foreground">{city}</p>
-        {place ? <p className="mt-0.5 text-sm text-muted-foreground">{place}</p> : null}
-      </div>
-    </li>
+    <section aria-labelledby="options-heading" className="border-t border-border pt-8">
+      <h2 id="options-heading" className="text-sm font-semibold text-foreground">
+        {t('rideOptions')}
+      </h2>
+      <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+        {trajet.comfort ? (
+          <li className="flex items-center gap-2.5 text-sm text-foreground">
+            <Sparkles className="size-4 shrink-0 text-muted-foreground" strokeWidth={2} />
+            {t('comfort')}: {tRide(`comfort.${trajet.comfort}`)}
+          </li>
+        ) : null}
+        {trajet.baggageAllowance ? (
+          <li className="flex items-center gap-2.5 text-sm text-foreground">
+            <Briefcase className="size-4 shrink-0 text-muted-foreground" strokeWidth={2} />
+            {trajet.baggageAllowance}
+          </li>
+        ) : null}
+        {amenities.map((amenity) => (
+          <li key={amenity} className="flex items-center gap-2.5 text-sm text-foreground">
+            <AmenityIcon amenity={amenity as TrajetAmenity} className="size-4 shrink-0 text-muted-foreground" />
+            {tRide(`amenities.${amenity}`)}
+          </li>
+        ))}
+        {(trajet.paymentMethods ?? []).map((method) => (
+          <li key={method} className="flex items-center gap-2.5 text-sm text-foreground">
+            {tRide(`paymentMethods.${method}`)}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
-function BackLink({ label }: { label: string }) {
+function RideDescription({ description }: { description: string | null }) {
+  const t = useTranslations('Trajets');
+  if (!description) return null;
+
+  return (
+    <section aria-labelledby="desc-heading" className="border-t border-border pt-8">
+      <h2 id="desc-heading" className="text-sm font-semibold text-foreground">
+        {t('description')}
+      </h2>
+      <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">{description}</p>
+    </section>
+  );
+}
+
+function BackLink({ href = '/trajet', label }: { href?: '/trajet' | '/mes-trajets'; label: string }) {
   return (
     <Link
-      href="/trajet"
+      href={href}
       className={cn(
         buttonVariants({ variant: 'ghost', size: 'sm' }),
         '-ml-2 w-fit gap-1.5 text-muted-foreground hover:text-foreground',

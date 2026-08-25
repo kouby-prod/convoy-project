@@ -47,9 +47,11 @@ import {
   trajetUrl,
   trajetSearchUrl,
   messagesUrl,
+  paymentUrl,
   describeTrip,
   describeTripShort,
   truncateForPreview,
+  formatDueAt,
 } from '../../src/modules/trajet/notifications';
 
 describe('notifyUser', () => {
@@ -191,7 +193,12 @@ describe('trajetUrl / trajetSearchUrl / messagesUrl / describeTrip', () => {
   it('builds links from the web app origin', () => {
     expect(trajetUrl('abc-123')).toBe('https://example.test/trajet/abc-123');
     expect(trajetSearchUrl()).toBe('https://example.test/trajets');
+    expect(paymentUrl('book-1')).toBe('https://example.test/paiement/book-1');
     expect(messagesUrl('booking-1')).toBe('https://example.test/messages/booking-1');
+  });
+
+  it('formats a due date in Eastern time', () => {
+    expect(formatDueAt('2026-08-21T16:00:00.000Z')).toMatch(/2026/);
   });
 
   it('describes a trip', () => {

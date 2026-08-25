@@ -2,13 +2,15 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { TrajetSearchQuerySchema, type TrajetListing, type TrajetSearchQuery } from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { isAmenity } from '@/components/trajet/trajet-amenities';
 import { TrajetRow } from '@/components/trajet/trajet-row';
+import { TripDayHeading } from '@/components/trajet/trip-when';
 import { fetchTrajets, toDateKey } from '@/lib/trajets';
 import { cn } from '@/lib/utils';
 
@@ -16,7 +18,6 @@ import { cn } from '@/lib/utils';
    matching rides under a date header. */
 export function TrajetList() {
   const t = useTranslations('Trajet');
-  const format = useFormatter();
   const searchParams = useSearchParams();
 
   const query = parseSearchQuery(searchParams);
@@ -40,7 +41,7 @@ export function TrajetList() {
     return (
       <div className="flex flex-col gap-4">
         <ResultsToolbar label={t('loading')} />
-        <StatusCard>{t('loading')}</StatusCard>
+        <ListSkeleton label={t('loading')} />
       </div>
     );
   }
@@ -71,14 +72,10 @@ export function TrajetList() {
 
       {groupByDay(data).map(([dayKey, trajets]) => (
         <Card key={dayKey} className="overflow-hidden gap-0 py-0">
-          <h2 className="border-b border-border bg-muted/70 px-5 py-2.5 text-sm font-semibold capitalize text-foreground">
-            {format.dateTime(new Date(trajets[0]!.departureAt), {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </h2>
+          <TripDayHeading
+            iso={trajets[0]!.departureAt}
+            className="border-b border-border bg-muted/70 px-4 py-2.5 text-sm font-semibold text-foreground sm:px-5"
+          />
 
           <CardContent className="divide-y divide-border p-0">
             {trajets.map((trajet) => (

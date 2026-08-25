@@ -5,6 +5,17 @@ import {
   DriverDocumentTypeSchema,
   DriverVerificationSchema,
 } from './document';
+import {
+  BookingStatusSchema,
+  RidePaymentMethodSchema,
+} from './trajet';
+import {
+  InvoiceStatusSchema,
+  PaymentProviderSchema,
+  PaymentStatusSchema,
+} from './payment';
+
+const IsoDateQuery = z.iso.date().optional();
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Backoffice contract — what the `/admin` panel reads and writes.
@@ -111,9 +122,33 @@ export const AdminStatsSchema = z
       /** Accounts with at least one document still awaiting a decision. */
       awaitingReview: z.number().int().nonnegative(),
     }),
+    payments: z.object({
+      openIncidents: z.number().int().nonnegative(),
+      invoicesIssued: z.number().int().nonnegative(),
+      invoicesPaid: z.number().int().nonnegative(),
+    }),
+    rides: z.object({
+      upcoming: z.number().int().nonnegative(),
+      cancelled: z.number().int().nonnegative(),
+    }),
+    bookings: z.object({
+      pending: z.number().int().nonnegative(),
+      awaitingPayment: z.number().int().nonnegative(),
+      confirmed: z.number().int().nonnegative(),
+    }),
   })
   .describe('AdminStats');
 export type AdminStats = z.infer<typeof AdminStatsSchema>;
+
+/** Identity on an admin ops row — never a credential. */
+export const AdminPersonSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string(),
+  })
+  .describe('AdminPerson');
+export type AdminPerson = z.infer<typeof AdminPersonSchema>;
 
 /* ────────────────────────────── The user list ──────────────────────────── */
 
@@ -133,6 +168,8 @@ export const AdminUserSchema = z
     documentCount: z.number().int().nonnegative(),
     pendingCount: z.number().int().nonnegative(),
     approvedCount: z.number().int().nonnegative(),
+    rideCount: z.number().int().nonnegative(),
+    bookingCount: z.number().int().nonnegative(),
     /**
      * The verdict, which the counts above cannot give: they tally every
      * submission, while verification looks only at the two required types.
@@ -143,3 +180,138 @@ export const AdminUserSchema = z
 export type AdminUser = z.infer<typeof AdminUserSchema>;
 
 export const AdminUserListSchema = z.array(AdminUserSchema).describe('AdminUserList');
+
+export const AdminUserQuerySchema = z
+  .object({
+    q: z.string().trim().optional(),
+  })
+  .describe('AdminUserQuery');
+export type AdminUserQuery = z.infer<typeof AdminUserQuerySchema>;
+
+export const AdminTrajetStateSchema = z.enum(['upcoming', 'past', 'cancelled', 'all']);
+export type AdminTrajetState = z.infer<typeof AdminTrajetStateSchema>;
+
+export const AdminTrajetQuerySchema = z
+  .object({
+    q: z.string().trim().optional(),
+    from: IsoDateQuery,
+    to: IsoDateQuery,
+    state: AdminTrajetStateSchema.optional(),
+  })
+  .describe('AdminTrajetQuery');
+export type AdminTrajetQuery = z.infer<typeof AdminTrajetQuerySchema>;
+
+export const AdminTrajetSchema = z
+  .object({
+    id: z.string(),
+    driver: AdminPersonSchema,
+    departureCity: z.string(),
+    arrivalCity: z.string(),
+    departureAt: z.string().describe('ISO-8601 timestamp'),
+    seatsTotal: z.number().int().nonnegative(),
+    seatsAvailable: z.number().int().nonnegative(),
+    pricePerSeat: z.number().nonnegative(),
+    cancelledAt: z.string().nullable().describe('ISO-8601 timestamp'),
+    bookingCount: z.number().int().nonnegative(),
+    createdAt: z.string().describe('ISO-8601 timestamp'),
+  })
+  .describe('AdminTrajet');
+export type AdminTrajet = z.infer<typeof AdminTrajetSchema>;
+
+export const AdminTrajetListSchema = z.array(AdminTrajetSchema).describe('AdminTrajetList');
+
+export const AdminBookingQuerySchema = z
+  .object({
+    q: z.string().trim().optional(),
+    status: BookingStatusSchema.optional(),
+    paymentMethod: RidePaymentMethodSchema.optional(),
+    invoiceStatus: InvoiceStatusSchema.optional(),
+    from: IsoDateQuery,
+    to: IsoDateQuery,
+  })
+  .describe('AdminBookingQuery');
+export type AdminBookingQuery = z.infer<typeof AdminBookingQuerySchema>;
+
+export const AdminBookingSchema = z
+  .object({
+    id: z.string(),
+    status: BookingStatusSchema,
+    paymentMethod: RidePaymentMethodSchema,
+    seats: z.number().int().min(1),
+    fareCents: z.number().int().nonnegative(),
+    createdAt: z.string().describe('ISO-8601 timestamp'),
+    passenger: AdminPersonSchema,
+    driver: AdminPersonSchema,
+    trajet: z.object({
+      id: z.string(),
+      departureCity: z.string(),
+      arrivalCity: z.string(),
+      departureAt: z.string().describe('ISO-8601 timestamp'),
+    }),
+    invoice: z
+      .object({
+        id: z.string(),
+        number: z.string(),
+        status: InvoiceStatusSchema,
+        totalCents: z.number().int().nonnegative(),
+      })
+      .nullable(),
+  })
+  .describe('AdminBooking');
+export type AdminBooking = z.infer<typeof AdminBookingSchema>;
+
+export const AdminBookingListSchema = z.array(AdminBookingSchema).describe('AdminBookingList');
+
+export const AdminInvoiceQuerySchema = z
+  .object({
+    q: z.string().trim().optional(),
+    status: InvoiceStatusSchema.optional(),
+    paymentStatus: PaymentStatusSchema.optional(),
+    from: IsoDateQuery,
+    to: IsoDateQuery,
+  })
+  .describe('AdminInvoiceQuery');
+export type AdminInvoiceQuery = z.infer<typeof AdminInvoiceQuerySchema>;
+
+export const AdminInvoiceRowSchema = z
+  .object({
+    id: z.string(),
+    number: z.string(),
+    status: InvoiceStatusSchema,
+    totalCents: z.number().int().nonnegative(),
+    currency: z.string(),
+    issuedAt: z.string().describe('ISO-8601 timestamp'),
+    dueAt: z.string().describe('ISO-8601 timestamp'),
+    paidAt: z.string().nullable().describe('ISO-8601 timestamp'),
+    buyerName: z.string(),
+    buyerEmail: z.string(),
+    booking: z.object({
+      id: z.string(),
+      status: BookingStatusSchema,
+      paymentMethod: RidePaymentMethodSchema,
+    }),
+    payment: z
+      .object({
+        provider: PaymentProviderSchema,
+        status: PaymentStatusSchema,
+      })
+      .nullable(),
+  })
+  .describe('AdminInvoiceRow');
+export type AdminInvoiceRow = z.infer<typeof AdminInvoiceRowSchema>;
+
+export const AdminInvoiceListSchema = z.array(AdminInvoiceRowSchema).describe('AdminInvoiceList');
+
+export const AdminMismatchQuerySchema = z
+  .object({
+    status: z.enum(['open', 'resolved']).optional(),
+  })
+  .describe('AdminMismatchQuery');
+export type AdminMismatchQuery = z.infer<typeof AdminMismatchQuerySchema>;
+
+export const AdminPayoutQuerySchema = z
+  .object({
+    status: z.enum(['held', 'due', 'paid', 'cancelled', 'frozen']).optional(),
+  })
+  .describe('AdminPayoutQuery');
+export type AdminPayoutQuery = z.infer<typeof AdminPayoutQuerySchema>;
