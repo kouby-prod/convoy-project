@@ -8,7 +8,6 @@ import { createApiClient } from '@carpool/api-client';
 import type { DriverBooking } from '@carpool/schemas';
 import { env } from '@/lib/env';
 import {
-  COMMISSION_AMOUNT_CENTS,
   formatCad,
   isPastDue,
   payableCents,
@@ -459,7 +458,6 @@ function DriverBookingCard({
     locale,
   );
   const driverGets = formatCad(booking.fareCents, locale);
-  const commission = formatCad(COMMISSION_AMOUNT_CENTS, locale);
   const methodLabel = tRide(`paymentMethods.${booking.paymentMethod}`);
   const offPlatform = booking.paymentMethod !== 'card';
   const payWindowExpired =
@@ -503,7 +501,7 @@ function DriverBookingCard({
             <div className="grid gap-3 rounded-lg bg-primary/10 p-4 ring-1 ring-primary/20">
               <p className="text-sm font-medium text-foreground">
                 {offPlatform
-                  ? t('bookings.confirmOffPlatform', { commission, driver: driverGets })
+                  ? t('bookings.confirmOffPlatform', { commission: passengerPays, driver: driverGets })
                   : t('bookings.confirmCard', { passenger: passengerPays, driver: driverGets })}
               </p>
               <div className="flex flex-col gap-2 sm:flex-row">

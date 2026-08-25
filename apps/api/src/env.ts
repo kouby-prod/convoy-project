@@ -117,7 +117,8 @@ const EnvSchema = z.object({
   INVOICE_ADDRESS: z.string().optional().transform((value) => value?.trim() || undefined),
   INVOICE_GST_NUMBER: optionalString,
   INVOICE_QST_NUMBER: optionalString,
-  TAX_MODE: z.enum(['none', 'gst', 'gst_qst']).default('none'),
+  // Quebec default: TPS 5 % + TVQ 9,975 % on the 4 CAD commission only.
+  TAX_MODE: z.enum(['none', 'gst', 'gst_qst']).default('gst_qst'),
 
   // --- Observability (optional — incidents still email + admin inbox) ---
   // GlitchTip (or Sentry) DSN — envelope ingest. Host vs Docker hosts differ.

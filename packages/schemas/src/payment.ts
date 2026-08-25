@@ -11,7 +11,7 @@ import {
  * Platform booking commission — the only amount Kouby charges. Copied onto
  * every invoice at issue time; never taken from the client.
  */
-export const COMMISSION_AMOUNT_CENTS = 500;
+export const COMMISSION_AMOUNT_CENTS = 400;
 export const COMMISSION_CURRENCY = 'cad';
 
 export const GST_RATE = 0.05;
@@ -19,6 +19,9 @@ export const QST_RATE = 0.09975;
 
 export const TaxModeSchema = z.enum(['none', 'gst', 'gst_qst']);
 export type TaxMode = z.infer<typeof TaxModeSchema>;
+
+/** Quebec: TPS 5 % + TVQ 9,975 % on the commission only (fare is a pass-through). */
+export const PRODUCT_TAX_MODE: TaxMode = 'gst_qst';
 
 export const PaymentProviderSchema = z.enum(['stripe', 'paypal']);
 export type PaymentProvider = z.infer<typeof PaymentProviderSchema>;
@@ -45,6 +48,35 @@ export const TaxLineSchema = z
   })
   .describe('TaxLine');
 export type TaxLine = z.infer<typeof TaxLineSchema>;
+
+export function roundTaxCents(baseCents: number, rate: number): number {
+  return Math.round(baseCents * rate);
+}
+
+export function commissionTaxLines(mode: TaxMode): TaxLine[] {
+  const lines: TaxLine[] = [];
+  if (mode === 'gst' || mode === 'gst_qst') {
+    lines.push({
+      code: 'gst',
+      label: 'TPS',
+      rate: GST_RATE,
+      amountCents: roundTaxCents(COMMISSION_AMOUNT_CENTS, GST_RATE),
+    });
+  }
+  if (mode === 'gst_qst') {
+    lines.push({
+      code: 'qst',
+      label: 'TVQ',
+      rate: QST_RATE,
+      amountCents: roundTaxCents(COMMISSION_AMOUNT_CENTS, QST_RATE),
+    });
+  }
+  return lines;
+}
+
+export function commissionTaxCents(mode: TaxMode): number {
+  return commissionTaxLines(mode).reduce((sum, line) => sum + line.amountCents, 0);
+}
 
 export const InvoiceSchema = z
   .object({

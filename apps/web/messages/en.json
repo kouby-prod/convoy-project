@@ -134,7 +134,7 @@
       },
       {
         "heading": "6.1 Booking commission",
-        "body": "Passengers pay a fixed commission of 5 CAD per booking."
+        "body": "Passengers pay a fixed commission of 4 CAD per booking."
       },
       {
         "heading": "6.2 Refund policy",
@@ -177,7 +177,7 @@
   "Cgv": {
     "title": "Terms of Sale",
     "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Kouby charges a 5 CAD booking commission, payable online by card (Stripe) or PayPal when you reserve a seat. If you pay the ride fare by card through Kouby, that fare is collected with the commission and paid out to the driver after the trip. Interac and cash fares are settled directly with the driver.",
+    "disclaimer": "Kouby charges a 4 CAD booking commission, payable online by card (Stripe) or PayPal when you reserve a seat. If you pay the ride fare by card through Kouby, that fare is collected with the commission and paid out to the driver after the trip. Interac and cash fares are settled directly with the driver.",
     "sections": [
       {
         "heading": "1. Purpose",
@@ -189,7 +189,7 @@
       },
       {
         "heading": "3.1 Booking commission",
-        "body": "• Each booking made by a passenger is subject to a fixed commission of 5 CAD.\n• This commission corresponds to the platform usage fee."
+        "body": "• Each booking made by a passenger is subject to a fixed commission of 4 CAD.\n• This commission corresponds to the platform usage fee."
       },
       {
         "heading": "3.2 Free for drivers",
@@ -197,7 +197,7 @@
       },
       {
         "heading": "4. Booking process",
-        "body": "1. The passenger selects a trip and a payment method the driver accepts (card, Interac, or cash).\n2. They confirm their booking through the platform.\n3. They pay Kouby online: 5 CAD commission only (Interac/cash), or the ride fare plus 5 CAD (card).\n4. The booking is considered firm and final once that payment is confirmed."
+        "body": "1. The passenger selects a trip and a payment method the driver accepts (card, Interac, or cash).\n2. They confirm their booking through the platform.\n3. They pay Kouby online: 4 CAD commission only (Interac/cash), or the ride fare plus 4 CAD (card).\n4. The booking is considered firm and final once that payment is confirmed."
       },
       {
         "heading": "5.1 Payment methods",
@@ -209,7 +209,7 @@
       },
       {
         "heading": "6.1 General principle",
-        "body": "• The booking commission is non-refundable once the booking is confirmed.\n• If the passenger cancels a confirmed card booking, Kouby refunds the ride fare and keeps the 5 CAD commission."
+        "body": "• The booking commission is non-refundable once the booking is confirmed.\n• If the passenger cancels a confirmed card booking, Kouby refunds the ride fare and keeps the 4 CAD commission."
       },
       {
         "heading": "6.2 Exception — Cancellation by the driver",
@@ -1253,7 +1253,7 @@
     "occupancy": "{taken}/{total} seats filled",
     "seatsAvailable": "{count, plural, =0 {Full} one {# seat} other {# seats}}",
     "perSeat": "per seat",
-    "plusKoubyFee": "+ {amount} Kouby fee",
+    "plusKoubyFee": "+ {amount} Kouby fee (GST + QST)",
     "driverBy": "with {name}",
     "authRequired": "Sign in to continue.",
     "authCta": "Sign in",
@@ -1442,7 +1442,7 @@
   },
   "Paiement": {
     "title": "Kouby payment",
-    "subtitle": "Pay Kouby to confirm your seat. Card bookings include the ride fare; Interac and cash pay only the 5 CAD commission, then settle the fare with the driver.",
+    "subtitle": "Pay Kouby to confirm your seat. Card bookings include the ride fare; Interac and cash pay only the 4 CAD commission, then settle the fare with the driver.",
     "loading": "Loading payment…",
     "empty": "No invoice is attached to this booking.",
     "error": "Unable to load payment. Please try again later.",
@@ -1528,6 +1528,8 @@
     "line": "Line items",
     "commissionLine": "Kouby booking commission",
     "fareLine": "Ride fare",
+    "taxGst": "GST 5%",
+    "taxQst": "QST 9.975%",
     "total": "Total",
     "fareNote": "The ride fare is paid directly to the driver and is not on this invoice.",
     "fareNoteCard": "The ride fare is collected by Kouby and paid out to the driver after the trip.",
@@ -1582,7 +1584,7 @@
       },
       {
         "heading": "4. After the trip",
-        "body": "If the passenger paid by card, Kouby holds the fare and pays it out after departure. Interac and cash fares are settled directly with you; Kouby only keeps the 5 CAD commission."
+        "body": "If the passenger paid by card, Kouby holds the fare and pays it out after departure. Interac and cash fares are settled directly with you; Kouby only keeps the 4 CAD commission."
       }
     ]
   },
@@ -1596,7 +1598,7 @@
       },
       {
         "heading": "2. Book a seat",
-        "body": "Choose how you will pay the driver: card (fare + 5 CAD commission to Kouby), Interac, or cash (5 CAD commission to Kouby, fare paid to the driver)."
+        "body": "Choose how you will pay the driver: card (fare + 4 CAD commission to Kouby), Interac, or cash (4 CAD commission to Kouby, fare paid to the driver)."
       },
       {
         "heading": "3. Pay to confirm",
@@ -1640,7 +1642,7 @@
       },
       {
         "heading": "Offer the right payment methods",
-        "body": "Card lets Kouby collect the fare and pay you after the trip. Interac and cash mean passengers settle the fare with you directly and only pay the 5 CAD commission on the platform."
+        "body": "Card lets Kouby collect the fare and pay you after the trip. Interac and cash mean passengers settle the fare with you directly and only pay the 4 CAD commission on the platform."
       },
       {
         "heading": "Keep documents ready",

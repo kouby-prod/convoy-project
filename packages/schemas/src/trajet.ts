@@ -44,7 +44,7 @@ export const TrajetAmenitySchema = z.enum(TRAJET_AMENITIES).describe('TrajetAmen
 export type TrajetAmenity = z.infer<typeof TrajetAmenitySchema>;
 
 /**
- * How the passenger pays the **ride fare**. Kouby's 5 CAD commission is always
+ * How the passenger pays the **ride fare**. Kouby's 4 CAD commission is always
  * collected on-platform. `card` also collects the fare through Stripe/PayPal;
  * `interac` and `cash` leave the fare between passenger and driver.
  */

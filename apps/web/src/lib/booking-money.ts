@@ -1,10 +1,21 @@
-import { COMMISSION_AMOUNT_CENTS, type RidePaymentMethod } from '@carpool/schemas';
+import {
+  COMMISSION_AMOUNT_CENTS,
+  PRODUCT_TAX_MODE,
+  commissionTaxCents,
+  type RidePaymentMethod,
+} from '@carpool/schemas';
 
 export { COMMISSION_AMOUNT_CENTS };
 
-/** Amount Kouby charges now: fare + commission on card, commission only otherwise. */
+/** Commission + Quebec tax, without the ride fare. */
+export function koubyFeeCents(): number {
+  return COMMISSION_AMOUNT_CENTS + commissionTaxCents(PRODUCT_TAX_MODE);
+}
+
+/** Amount Kouby charges now: fare + commission + tax on card, commission + tax otherwise. */
 export function koubyDueCents(method: RidePaymentMethod, fareCents: number): number {
-  return method === 'card' ? fareCents + COMMISSION_AMOUNT_CENTS : COMMISSION_AMOUNT_CENTS;
+  const koubyCents = koubyFeeCents();
+  return method === 'card' ? fareCents + koubyCents : koubyCents;
 }
 
 /** Prefer the issued invoice total (includes tax) over the tax-blind estimate. */

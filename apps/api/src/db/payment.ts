@@ -37,7 +37,7 @@ export const invoice = pgTable(
     currency: text('currency').notNull(),
     subtotalCents: integer('subtotal_cents').notNull(),
     fareCents: integer('fare_cents').notNull().default(0),
-    commissionCents: integer('commission_cents').notNull().default(500),
+    commissionCents: integer('commission_cents').notNull().default(400),
     taxCents: integer('tax_cents').notNull(),
     totalCents: integer('total_cents').notNull(),
     taxLines: jsonb('tax_lines').$type<TaxLine[]>().notNull(),

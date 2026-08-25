@@ -3,7 +3,7 @@ import { PaiementCheckout } from '@/components/paiement/paiement-checkout';
 
 /**
  * Checkout after the driver accepts. Card bookings collect fare + commission;
- * Interac/cash collect the 5 CAD commission only.
+ * Interac/cash collect the 4 CAD commission only.
  */
 export default async function PaiementPage({
   params,

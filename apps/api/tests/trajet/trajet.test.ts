@@ -116,7 +116,7 @@ vi.mock('../../src/modules/trajet/geocoding', () => ({
 const paymentHooks = vi.hoisted(() => ({
   issueInvoiceForBooking: vi.fn().mockResolvedValue({
     number: 'KOU-2026-000001',
-    totalCents: 500,
+    totalCents: 400,
     fareCents: 0,
     dueAt: '2026-08-21T12:00:00.000Z',
   }),
@@ -228,7 +228,7 @@ describe('trajet module', () => {
     paymentHooks.cancelOpenPaymentsForBooking.mockClear();
     paymentHooks.issueInvoiceForBooking.mockResolvedValue({
       number: 'KOU-2026-000001',
-      totalCents: 500,
+      totalCents: 400,
       fareCents: 0,
       dueAt: '2026-08-21T12:00:00.000Z',
     });

@@ -26,7 +26,7 @@ export async function refundPaidBooking(bookingId: string, reason: string): Prom
 
 /**
  * Passenger cancel of a confirmed card booking: refund the fare only, keep the
- * 5 CAD commission, and cancel the driver payout. The payment row stays
+ * 4 CAD commission, and cancel the driver payout. The payment row stays
  * `succeeded` because commission was kept.
  */
 export async function refundFareOnlyForBooking(bookingId: string): Promise<void> {

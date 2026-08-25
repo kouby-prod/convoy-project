@@ -1,7 +1,6 @@
 import {
   COMMISSION_AMOUNT_CENTS,
-  GST_RATE,
-  QST_RATE,
+  commissionTaxLines,
   type TaxLine,
   type TaxMode,
 } from '@carpool/schemas';
@@ -31,25 +30,7 @@ export function computeInvoiceAmounts(
   totalCents: number;
 } {
   const commissionCents = COMMISSION_AMOUNT_CENTS;
-  const taxLines: TaxLine[] = [];
-
-  if (mode === 'gst' || mode === 'gst_qst') {
-    taxLines.push({
-      code: 'gst',
-      label: 'GST',
-      rate: GST_RATE,
-      amountCents: Math.round(commissionCents * GST_RATE),
-    });
-  }
-  if (mode === 'gst_qst') {
-    taxLines.push({
-      code: 'qst',
-      label: 'QST',
-      rate: QST_RATE,
-      amountCents: Math.round(commissionCents * QST_RATE),
-    });
-  }
-
+  const taxLines = commissionTaxLines(mode);
   const taxCents = taxLines.reduce((sum, line) => sum + line.amountCents, 0);
   const subtotalCents = commissionCents + fareCents;
   return {

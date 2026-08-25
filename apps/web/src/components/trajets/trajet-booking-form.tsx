@@ -11,8 +11,8 @@ import { env } from '@/lib/env';
 import {
   formatCad,
   koubyDueCents,
+  koubyFeeCents,
   payableCents,
-  COMMISSION_AMOUNT_CENTS,
 } from '@/lib/booking-money';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -478,7 +478,7 @@ function PriceBlock({
       </p>
       <p className="mt-0.5 text-xs text-muted-foreground">{t('perSeat')}</p>
       <p className="text-[11px] text-muted-foreground">
-        {tRide('plusKoubyFee', { amount: formatCad(COMMISSION_AMOUNT_CENTS, locale) })}
+        {tRide('plusKoubyFee', { amount: formatCad(koubyFeeCents(), locale) })}
       </p>
       <p className="mt-2 text-xs text-muted-foreground">
         {typeof seatsTotal === 'number'

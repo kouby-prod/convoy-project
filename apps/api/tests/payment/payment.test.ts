@@ -140,11 +140,11 @@ function makeInvoice(overrides: Record<string, unknown> = {}) {
     number: 'KOU-2026-000001',
     status: 'issued',
     currency: 'cad',
-    subtotalCents: 500,
+    subtotalCents: COMMISSION_AMOUNT_CENTS,
     fareCents: 0,
-    commissionCents: 500,
+    commissionCents: COMMISSION_AMOUNT_CENTS,
     taxCents: 0,
-    totalCents: 500,
+    totalCents: COMMISSION_AMOUNT_CENTS,
     taxLines: [],
     buyerName: 'Ada',
     buyerEmail: 'ada@example.com',
@@ -182,7 +182,7 @@ function makePayment(overrides: Record<string, unknown> = {}) {
     invoiceId: INVOICE_ID,
     provider: 'stripe',
     providerPaymentId: 'pi_1',
-    amountCents: 500,
+    amountCents: COMMISSION_AMOUNT_CENTS,
     currency: 'cad',
     status: 'created',
     createdAt: now,
@@ -198,32 +198,36 @@ function balanced(lines: ReturnType<typeof issueLines>) {
 }
 
 describe('invoice amounts and ledger', () => {
-  it('issues 500 cents with no tax by default', () => {
+  it('issues 400 cents with no tax when TAX_MODE is none', () => {
     const amounts = computeInvoiceAmounts(0, 'none');
     expect(amounts.subtotalCents).toBe(COMMISSION_AMOUNT_CENTS);
-    expect(amounts.commissionCents).toBe(500);
+    expect(amounts.commissionCents).toBe(400);
     expect(amounts.fareCents).toBe(0);
     expect(amounts.taxCents).toBe(0);
-    expect(amounts.totalCents).toBe(500);
+    expect(amounts.totalCents).toBe(400);
     expect(amounts.taxLines).toEqual([]);
   });
 
   it('adds the ride fare to the subtotal and taxes commission only', () => {
     const amounts = computeInvoiceAmounts(2000, 'gst');
     expect(amounts.fareCents).toBe(2000);
-    expect(amounts.commissionCents).toBe(500);
-    expect(amounts.subtotalCents).toBe(2500);
-    expect(amounts.taxCents).toBe(25);
-    expect(amounts.totalCents).toBe(2525);
+    expect(amounts.commissionCents).toBe(400);
+    expect(amounts.subtotalCents).toBe(2400);
+    expect(amounts.taxCents).toBe(20);
+    expect(amounts.totalCents).toBe(2420);
   });
 
-  it('adds GST and QST when enabled', () => {
+  it('adds TPS 5 % and TVQ 9,975 % on the commission', () => {
     const gst = computeInvoiceAmounts(0, 'gst');
-    expect(gst.taxCents).toBe(25);
-    expect(gst.totalCents).toBe(525);
+    expect(gst.taxCents).toBe(20);
+    expect(gst.totalCents).toBe(420);
     const both = computeInvoiceAmounts(0, 'gst_qst');
-    expect(both.taxLines).toHaveLength(2);
-    expect(both.totalCents).toBe(500 + 25 + 50);
+    expect(both.taxLines).toEqual([
+      { code: 'gst', label: 'TPS', rate: 0.05, amountCents: 20 },
+      { code: 'qst', label: 'TVQ', rate: 0.09975, amountCents: 40 },
+    ]);
+    expect(both.taxCents).toBe(60);
+    expect(both.totalCents).toBe(460);
   });
 
   it('keeps every ledger txn balanced', () => {
@@ -269,7 +273,7 @@ describe('settlePaidInvoice', () => {
       invoiceId: INVOICE_ID,
       provider: 'stripe',
       providerPaymentId: 'pi_1',
-      amountCents: 500,
+      amountCents: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
     });
 
@@ -299,7 +303,7 @@ describe('settlePaidInvoice', () => {
       invoiceId: INVOICE_ID,
       provider: 'stripe',
       providerPaymentId: 'pi_1',
-      amountCents: 500,
+      amountCents: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
     });
     expect(result).toBe('already_paid');
@@ -318,7 +322,7 @@ describe('settlePaidInvoice', () => {
       invoiceId: INVOICE_ID,
       provider: 'paypal',
       providerPaymentId: 'order_loser',
-      amountCents: 500,
+      amountCents: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
     });
 
@@ -345,7 +349,7 @@ describe('monotonic payment status', () => {
     stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
       id: 'pi_1',
       status: 'succeeded',
-      amount: 500,
+      amount: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
       metadata: { invoiceId: INVOICE_ID },
       clientSecret: 'sec',
@@ -380,7 +384,7 @@ describe('Stripe test-card states', () => {
     stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
       id: 'pi_4242',
       status: 'succeeded',
-      amount: 500,
+      amount: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
       metadata: { invoiceId: INVOICE_ID },
       clientSecret: 'sec',
@@ -400,7 +404,7 @@ describe('Stripe test-card states', () => {
     stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
       id: 'pi_3ds',
       status: 'requires_action',
-      amount: 500,
+      amount: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
       metadata: { invoiceId: INVOICE_ID },
       clientSecret: 'sec',
@@ -621,7 +625,7 @@ describe('refund + credit note', () => {
               id: 'cn_1',
               invoiceId: INVOICE_ID,
               number: 'CN-2026-000001',
-              amountCents: 500,
+              amountCents: COMMISSION_AMOUNT_CENTS,
               currency: 'cad',
               reason: 'Driver cancelled the trip',
               createdAt: now,
@@ -641,7 +645,7 @@ describe('refund + credit note', () => {
       id: 'cn_1',
       invoiceId: INVOICE_ID,
       number: 'CN-2026-000001',
-      amountCents: 500,
+      amountCents: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
       reason: 'Driver cancelled the trip',
       createdAt: now,
@@ -712,7 +716,7 @@ describe('POST /payments', () => {
 
     expect(res.status).toBe(200);
     expect(stripeMocks.createStripePaymentIntent).toHaveBeenCalledWith(
-      expect.objectContaining({ amountCents: 500, invoiceId: INVOICE_ID }),
+      expect.objectContaining({ amountCents: COMMISSION_AMOUNT_CENTS, invoiceId: INVOICE_ID }),
     );
     const body = await res.json();
     expect(body).toMatchObject({ provider: 'stripe', clientSecret: 'sec_1' });
@@ -724,7 +728,7 @@ describe('POST /payments', () => {
     stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
       id: 'pi_1',
       status: 'requires_payment_method',
-      amount: 500,
+      amount: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
       metadata: { invoiceId: INVOICE_ID },
       clientSecret: 'sec_retry',
@@ -749,7 +753,7 @@ describe('POST /payments', () => {
     stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
       id: 'pi_1',
       status: 'requires_action',
-      amount: 500,
+      amount: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
       metadata: { invoiceId: INVOICE_ID },
       clientSecret: 'sec_3ds',
@@ -787,7 +791,7 @@ describe('POST /payments/stripe/confirm', () => {
     stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
       id: 'pi_1',
       status: 'succeeded',
-      amount: 500,
+      amount: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
       metadata: { invoiceId: INVOICE_ID },
       clientSecret: 'sec',
@@ -826,7 +830,7 @@ describe('POST /payments/stripe/confirm', () => {
     stripeMocks.retrieveStripePaymentIntent.mockResolvedValueOnce({
       id: 'pi_1',
       status: 'requires_action',
-      amount: 500,
+      amount: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
       metadata: { invoiceId: INVOICE_ID },
       clientSecret: 'sec',
@@ -867,7 +871,7 @@ describe('driver payouts', () => {
   });
 
   it('creates a held payout when a card invoice with fare settles', async () => {
-    const issued = makeInvoice({ fareCents: 2000, commissionCents: 500, subtotalCents: 2500, totalCents: 2500 });
+    const issued = makeInvoice({ fareCents: 2000, commissionCents: 400, subtotalCents: 2400, totalCents: 2400 });
     const paid = { ...issued, status: 'paid', paidAt: now };
     dbState.selectQueue = [
       [issued],
@@ -881,7 +885,7 @@ describe('driver payouts', () => {
       invoiceId: INVOICE_ID,
       provider: 'stripe',
       providerPaymentId: 'pi_1',
-      amountCents: 2500,
+      amountCents: 2400,
       currency: 'cad',
     });
 
@@ -898,7 +902,7 @@ describe('driver payouts', () => {
       invoiceId: INVOICE_ID,
       provider: 'stripe',
       providerPaymentId: 'pi_1',
-      amountCents: 500,
+      amountCents: COMMISSION_AMOUNT_CENTS,
       currency: 'cad',
     });
     expect(db.insert.mock.calls.length).toBeGreaterThan(0);
@@ -932,8 +936,8 @@ describe('driver payouts', () => {
 
   it('refunds fare only on a passenger cancel of a paid card booking', async () => {
     dbState.selectQueue = [
-      [makeInvoice({ status: 'paid', fareCents: 2000, commissionCents: 500, subtotalCents: 2500, totalCents: 2500 })],
-      [makePayment({ status: 'succeeded', amountCents: 2500 })],
+      [makeInvoice({ status: 'paid', fareCents: 2000, commissionCents: 400, subtotalCents: 2400, totalCents: 2400 })],
+      [makePayment({ status: 'succeeded', amountCents: 2400 })],
     ];
     db.transaction.mockImplementationOnce(async (cb: (tx: typeof db) => unknown) => {
       const tx = {

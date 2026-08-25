@@ -16,17 +16,25 @@ function money(cents: number, currency: string): string {
   );
 }
 
+function formatTaxRate(rate: number): string {
+  return new Intl.NumberFormat('fr-CA', {
+    style: 'percent',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  }).format(rate);
+}
+
 /** Printable HTML fallback when the PDF cannot be downloaded. */
 export function renderInvoiceHtml(doc: Invoice): string {
   const seller = invoiceSeller();
   const taxRows = doc.taxLines
     .map(
       (line) =>
-        `<tr><td>${escapeHtml(line.label)} (${(line.rate * 100).toFixed(3)}%)</td><td>${money(line.amountCents, doc.currency)}</td></tr>`,
+        `<tr><td>${escapeHtml(line.label)} (${formatTaxRate(line.rate)})</td><td>${money(line.amountCents, doc.currency)}</td></tr>`,
     )
     .join('');
-  const gst = seller.gstNumber ? `<p>GST: ${escapeHtml(seller.gstNumber)}</p>` : '';
-  const qst = seller.qstNumber ? `<p>QST: ${escapeHtml(seller.qstNumber)}</p>` : '';
+  const gst = seller.gstNumber ? `<p>Nº TPS : ${escapeHtml(seller.gstNumber)}</p>` : '';
+  const qst = seller.qstNumber ? `<p>Nº TVQ : ${escapeHtml(seller.qstNumber)}</p>` : '';
   const address = seller.address ? `<p>${escapeHtml(seller.address)}</p>` : '';
 
   return `<!doctype html>
@@ -54,7 +62,7 @@ export function renderInvoiceHtml(doc: Invoice): string {
   ${doc.buyerEmail ? `<p>${escapeHtml(doc.buyerEmail)}</p>` : ''}
   <table>
     ${doc.fareCents > 0 ? `<tr><td>Ride fare</td><td>${money(doc.fareCents, doc.currency)}</td></tr>` : ''}
-    <tr><td>Kouby booking commission</td><td>${money(doc.commissionCents, doc.currency)}</td></tr>
+    <tr><td>Commission de réservation Kouby</td><td>${money(doc.commissionCents, doc.currency)}</td></tr>
     ${taxRows}
     <tr><td><strong>Total</strong></td><td><strong>${money(doc.totalCents, doc.currency)}</strong></td></tr>
   </table>

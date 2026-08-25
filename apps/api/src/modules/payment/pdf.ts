@@ -1,11 +1,17 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import type { Invoice } from '@carpool/schemas';
+import { GST_RATE, QST_RATE, type Invoice } from '@carpool/schemas';
 import { formatInvoiceInstant, invoiceSeller } from './invoice';
 
 function money(cents: number, currency: string): string {
   return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: currency.toUpperCase() }).format(
     cents / 100,
   );
+}
+
+function formatTaxRate(rate: number): string {
+  if (rate === GST_RATE) return '5 %';
+  if (rate === QST_RATE) return '9,975 %';
+  return `${(rate * 100).toFixed(3)} %`;
 }
 
 export async function renderInvoicePdf(doc: Invoice): Promise<Buffer> {
@@ -25,8 +31,8 @@ export async function renderInvoicePdf(doc: Invoice): Promise<Buffer> {
 
   line(seller.legalName, 18, bold);
   if (seller.address) line(seller.address, 10, font);
-  if (seller.gstNumber) line(`GST: ${seller.gstNumber}`, 10, font);
-  if (seller.qstNumber) line(`QST: ${seller.qstNumber}`, 10, font);
+  if (seller.gstNumber) line(`No TPS: ${seller.gstNumber}`, 10, font);
+  if (seller.qstNumber) line(`No TVQ: ${seller.qstNumber}`, 10, font);
   y -= 8;
   line(`Invoice ${doc.number}`, 14, bold);
   line(`Status: ${doc.status}`, 11, font);
@@ -40,10 +46,10 @@ export async function renderInvoicePdf(doc: Invoice): Promise<Buffer> {
   if (doc.fareCents > 0) {
     line(`Ride fare  ${money(doc.fareCents, doc.currency)}`, 11, font);
   }
-  line(`Kouby booking commission  ${money(doc.commissionCents, doc.currency)}`, 11, font);
+  line(`Commission de reservation Kouby  ${money(doc.commissionCents, doc.currency)}`, 11, font);
   line(`Subtotal  ${money(doc.subtotalCents, doc.currency)}`, 11, font);
   for (const tax of doc.taxLines) {
-    line(`${tax.label} (${(tax.rate * 100).toFixed(3)}%)  ${money(tax.amountCents, doc.currency)}`, 11, font);
+    line(`${tax.label} (${formatTaxRate(tax.rate)})  ${money(tax.amountCents, doc.currency)}`, 11, font);
   }
   line(`Total  ${money(doc.totalCents, doc.currency)}`, 13, bold);
   y -= 16;

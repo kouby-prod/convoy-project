@@ -134,7 +134,7 @@
       },
       {
         "heading": "6.1 Commission de réservation",
-        "body": "Le passager paie une commission fixe de 5 CAD par réservation."
+        "body": "Le passager paie une commission fixe de 4 CAD par réservation."
       },
       {
         "heading": "6.2 Politique de remboursement",
@@ -177,7 +177,7 @@
   "Cgv": {
     "title": "Conditions Générales de Vente (CGV)",
     "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Kouby facture une commission de réservation de 5 CAD, payable en ligne par carte (Stripe) ou PayPal dès la réservation. Si vous payez le trajet par carte via Kouby, ce montant est encaissé avec la commission et reversé au conducteur après le trajet. Interac et espèces se règlent directement avec le conducteur.",
+    "disclaimer": "Kouby facture une commission de réservation de 4 CAD, payable en ligne par carte (Stripe) ou PayPal dès la réservation. Si vous payez le trajet par carte via Kouby, ce montant est encaissé avec la commission et reversé au conducteur après le trajet. Interac et espèces se règlent directement avec le conducteur.",
     "sections": [
       {
         "heading": "1. Objet",
@@ -189,7 +189,7 @@
       },
       {
         "heading": "3.1 Commission de réservation",
-        "body": "• Chaque réservation effectuée par un passager donne lieu au paiement d'une commission fixe de 5 CAD.\n• Cette commission correspond aux frais d'utilisation de la plateforme."
+        "body": "• Chaque réservation effectuée par un passager donne lieu au paiement d'une commission fixe de 4 CAD.\n• Cette commission correspond aux frais d'utilisation de la plateforme."
       },
       {
         "heading": "3.2 Gratuité pour les conducteurs",
@@ -197,7 +197,7 @@
       },
       {
         "heading": "4. Processus de réservation",
-        "body": "1. Le passager sélectionne un trajet et un moyen de paiement accepté par le conducteur (carte, Interac ou espèces).\n2. Il confirme sa réservation via la plateforme.\n3. Il paie Kouby en ligne : 5 CAD de commission seulement (Interac/espèces), ou le prix du trajet plus 5 CAD (carte).\n4. La réservation est considérée comme ferme et définitive après confirmation de ce paiement."
+        "body": "1. Le passager sélectionne un trajet et un moyen de paiement accepté par le conducteur (carte, Interac ou espèces).\n2. Il confirme sa réservation via la plateforme.\n3. Il paie Kouby en ligne : 4 CAD de commission seulement (Interac/espèces), ou le prix du trajet plus 4 CAD (carte).\n4. La réservation est considérée comme ferme et définitive après confirmation de ce paiement."
       },
       {
         "heading": "5.1 Moyens de paiement",
@@ -209,7 +209,7 @@
       },
       {
         "heading": "6.1 Principe général",
-        "body": "• La commission de réservation est non remboursable après confirmation de la réservation.\n• Si le passager annule une réservation carte confirmée, Kouby rembourse le prix du trajet et conserve la commission de 5 CAD."
+        "body": "• La commission de réservation est non remboursable après confirmation de la réservation.\n• Si le passager annule une réservation carte confirmée, Kouby rembourse le prix du trajet et conserve la commission de 4 CAD."
       },
       {
         "heading": "6.2 Exception – Annulation par le conducteur",
@@ -1253,7 +1253,7 @@
     "occupancy": "{taken}/{total} places occupées",
     "seatsAvailable": "{count, plural, =0 {Complet} one {# place} other {# places}}",
     "perSeat": "par place",
-    "plusKoubyFee": "+ {amount} de frais Kouby",
+    "plusKoubyFee": "+ {amount} de frais Kouby (TPS + TVQ)",
     "driverBy": "avec {name}",
     "authRequired": "Connectez-vous pour continuer.",
     "authCta": "Se connecter",
@@ -1442,7 +1442,7 @@
   },
   "Paiement": {
     "title": "Paiement Kouby",
-    "subtitle": "Réglez Kouby pour confirmer votre place. Une réservation par carte inclut le prix du trajet ; Interac et espèces ne paient que la commission de 5 CAD, puis le trajet au conducteur.",
+    "subtitle": "Réglez Kouby pour confirmer votre place. Une réservation par carte inclut le prix du trajet ; Interac et espèces ne paient que la commission de 4 CAD, puis le trajet au conducteur.",
     "loading": "Chargement du paiement…",
     "empty": "Aucune facture n'est associée à cette réservation.",
     "error": "Impossible de charger le paiement. Réessayez plus tard.",
@@ -1528,6 +1528,8 @@
     "line": "Lignes",
     "commissionLine": "Commission de réservation Kouby",
     "fareLine": "Prix du trajet",
+    "taxGst": "TPS 5 %",
+    "taxQst": "TVQ 9,975 %",
     "total": "Total",
     "fareNote": "Le prix du trajet est payé directement au conducteur et n'apparaît pas sur cette facture.",
     "fareNoteCard": "Le prix du trajet est encaissé par Kouby et reversé au conducteur après le départ.",
@@ -1582,7 +1584,7 @@
       },
       {
         "heading": "4. Après le trajet",
-        "body": "Si le passager a payé par carte, Kouby conserve le prix du trajet et vous le reverse après le départ. Interac et espèces se règlent directement avec vous ; Kouby ne conserve que la commission de 5 CAD."
+        "body": "Si le passager a payé par carte, Kouby conserve le prix du trajet et vous le reverse après le départ. Interac et espèces se règlent directement avec vous ; Kouby ne conserve que la commission de 4 CAD."
       }
     ]
   },
@@ -1596,7 +1598,7 @@
       },
       {
         "heading": "2. Réserver une place",
-        "body": "Choisissez comment vous paierez le conducteur : carte (trajet + commission de 5 CAD à Kouby), Interac ou espèces (commission de 5 CAD à Kouby, trajet payé au conducteur)."
+        "body": "Choisissez comment vous paierez le conducteur : carte (trajet + commission de 4 CAD à Kouby), Interac ou espèces (commission de 4 CAD à Kouby, trajet payé au conducteur)."
       },
       {
         "heading": "3. Payer pour confirmer",
@@ -1640,7 +1642,7 @@
       },
       {
         "heading": "Proposez les bons moyens de paiement",
-        "body": "La carte permet à Kouby d'encaisser le trajet et de vous le reverser après le départ. Interac et espèces signifient que les passagers règlent le trajet directement avec vous et ne paient que la commission de 5 CAD sur la plateforme."
+        "body": "La carte permet à Kouby d'encaisser le trajet et de vous le reverser après le départ. Interac et espèces signifient que les passagers règlent le trajet directement avec vous et ne paient que la commission de 4 CAD sur la plateforme."
       },
       {
         "heading": "Gardez vos documents à jour",

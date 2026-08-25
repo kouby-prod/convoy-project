@@ -483,7 +483,10 @@ function AmountBreakdown({ invoice, locale }: { invoice: Invoice; locale: string
   const rows = [
     ...(invoice.fareCents > 0 ? [{ label: t('fareLine'), cents: invoice.fareCents }] : []),
     { label: t('commissionLine'), cents: invoice.commissionCents },
-    ...invoice.taxLines.map((line) => ({ label: line.label, cents: line.amountCents })),
+    ...invoice.taxLines.map((line) => ({
+      label: line.code === 'qst' ? t('taxQst') : t('taxGst'),
+      cents: line.amountCents,
+    })),
   ];
 
   return (
