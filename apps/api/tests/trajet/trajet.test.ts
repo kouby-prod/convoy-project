@@ -20,7 +20,10 @@ function createChain(result: unknown) {
     leftJoin: () => chain,
     groupBy: () => chain,
     having: () => chain,
-    orderBy: () => chain,
+    orderBy: (...args: unknown[]) => {
+      dbState.orderByCalls.push(args);
+      return chain;
+    },
     limit: () => chain,
     offset: () => chain,
     returning: () => Promise.resolve(result),
@@ -47,6 +50,7 @@ const dbState = vi.hoisted(() => ({
   // Every `.update(...).set(values)` call, in order — lets a test assert
   // exactly what was written (e.g. a recalculated `seatsAvailable`).
   setCalls: [] as unknown[],
+  orderByCalls: [] as unknown[][],
 }));
 
 const db = vi.hoisted(() => {
@@ -85,6 +89,8 @@ vi.mock('../../src/modules/trajet/notifications', () => ({
   formatDueAt: (dueAt: Date | string) => String(dueAt),
   describeTrip: (trip: { departureCity: string; arrivalCity: string; departureAt: Date }) =>
     `${trip.departureCity} to ${trip.arrivalCity} (departing ${trip.departureAt.toUTCString()})`,
+  describeTripShort: (trip: { departureCity: string; arrivalCity: string }) =>
+    `${trip.departureCity} → ${trip.arrivalCity}`,
 }));
 
 // Mock the rate limiter entirely: its buckets persist for the lifetime of
@@ -131,6 +137,17 @@ vi.mock('../../src/modules/payment/pdf', () => ({
 }));
 vi.mock('../../src/auth/email', () => ({
   smtpEmailSender: null,
+}));
+
+// Mock the driver-verified lookup entirely: it is exercised on its own (real
+// db calls, real deriveDriverVerification) in verification-visibility.test.ts.
+// Mocked out here so it doesn't consume from `dbState.selectQueue` and shift
+// the ordering every other test in this file relies on. Defaults to "nobody
+// verified" — tests that care about the resulting `driver.verified` flag set
+// this explicitly.
+const getVerifiedDriverIds = vi.fn((_driverIds: string[]) => Promise.resolve<Set<string>>(new Set()));
+vi.mock('../../src/modules/trajet/verification-visibility', () => ({
+  getVerifiedDriverIds: (driverIds: string[]) => getVerifiedDriverIds(driverIds),
 }));
 
 import { trajetModule } from '../../src/modules/trajet';
@@ -225,6 +242,7 @@ describe('trajet module', () => {
     dbState.updateResult = [];
     dbState.updateQueue = [];
     dbState.setCalls = [];
+    dbState.orderByCalls = [];
   });
 
   it('GET /trajets returns a paginated, empty page by default', async () => {
@@ -232,6 +250,13 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets');
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ items: [], page: 1, limit: 20, hasMore: false });
+  });
+
+  it('GET /trajets defaults to sorting by departure time when no near filter is provided', async () => {
+    dbState.selectResult = [makeTrajetRow()];
+    const res = await trajetModule.request('/trajets');
+    expect(res.status).toBe(200);
+    expect(dbState.orderByCalls).toHaveLength(1);
   });
 
   describe('GET /trajets search/filter query', () => {
@@ -453,8 +478,8 @@ describe('trajet module', () => {
     // Fired without being awaited by the response — see createTrajetRoute.
     expect(geocodeAndStoreTrajetLocation).toHaveBeenCalledWith(
       '11111111-1111-4111-8111-111111111111',
-      'Montreal',
-      'Quebec',
+      { city: 'Montreal', lat: undefined, lng: undefined },
+      { city: 'Quebec', lat: undefined, lng: undefined },
     );
   });
 
@@ -583,8 +608,8 @@ describe('trajet module', () => {
       expect(res.status).toBe(200);
       expect(geocodeAndStoreTrajetLocation).toHaveBeenCalledWith(
         '11111111-1111-4111-8111-111111111111',
-        'Sherbrooke',
-        'Quebec',
+        { city: 'Sherbrooke', lat: undefined, lng: undefined },
+        { city: 'Quebec', lat: undefined, lng: undefined },
       );
     });
 
@@ -661,11 +686,13 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        expect.objectContaining({ type: 'trip_cancelled', link: expect.any(String) }),
       );
       expect(notifyUser).toHaveBeenCalledWith(
         'u_3',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        expect.objectContaining({ type: 'trip_cancelled', link: expect.any(String) }),
       );
     });
   });
@@ -727,12 +754,13 @@ describe('trajet module', () => {
       'u_1',
       expect.stringContaining('Pay Kouby'),
       expect.any(String),
-      undefined,
+      expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
     );
     expect(notifyUser).toHaveBeenCalledWith(
       'someone-else',
       expect.stringContaining('New booking'),
       expect.any(String),
+      expect.objectContaining({ type: 'booking_request', link: expect.any(String) }),
     );
   });
 
@@ -786,11 +814,13 @@ describe('trajet module', () => {
       'u_3',
       expect.stringContaining('expired'),
       expect.any(String),
+      expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
     );
     expect(notifyUser).toHaveBeenCalledWith(
       'someone-else',
       expect.stringContaining('New booking'),
       expect.any(String),
+      expect.objectContaining({ type: 'booking_request', link: expect.any(String) }),
     );
   });
 
@@ -957,7 +987,7 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('Pay Kouby'),
         expect.stringContaining('5.00 CAD'),
-        undefined,
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -986,6 +1016,7 @@ describe('trajet module', () => {
         'u_2',
         expect.stringContaining('rejected'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -1011,6 +1042,7 @@ describe('trajet module', () => {
         'u_3',
         expect.stringContaining('expired'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
   });
@@ -1080,6 +1112,7 @@ describe('trajet module', () => {
         'u_1',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -1104,6 +1137,7 @@ describe('trajet module', () => {
         'u_1',
         expect.stringContaining('cancelled'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
 
@@ -1125,6 +1159,7 @@ describe('trajet module', () => {
         'u_3',
         expect.stringContaining('expired'),
         expect.any(String),
+        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
   });

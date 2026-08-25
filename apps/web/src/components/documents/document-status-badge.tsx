@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, Clock, CircleDashed, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock, CircleDashed, RotateCcw, XCircle } from 'lucide-react';
 import type { DocumentSlotStatus } from '@carpool/schemas';
 import { Badge } from '@/components/ui/badge';
 
@@ -26,6 +26,10 @@ export const DOCUMENT_STATUS_STYLES = {
   pending: { variant: 'warning', Icon: Clock, tone: 'text-accent-foreground' },
   approved: { variant: 'success', Icon: CheckCircle2, tone: 'text-success' },
   rejected: { variant: 'destructive', Icon: XCircle, tone: 'text-destructive' },
+  // Was approved once, but past its one-year re-verification window — a
+  // renewal, not a refusal, so it gets its own icon rather than borrowing
+  // `rejected`'s.
+  expired: { variant: 'warning', Icon: RotateCcw, tone: 'text-accent-foreground' },
 } as const;
 
 const STATUS_STYLES = DOCUMENT_STATUS_STYLES;

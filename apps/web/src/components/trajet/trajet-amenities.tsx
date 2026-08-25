@@ -1,6 +1,7 @@
 import {
   Backpack,
   Ban,
+  Banknote,
   Bike,
   CreditCard,
   Cigarette,
@@ -29,6 +30,7 @@ const AMENITY_ICONS: Record<TrajetAmenity, { Icon: LucideIcon; struck?: boolean 
   insurance: { Icon: ShieldCheck },
   bikeRack: { Icon: Bike },
   cardPayment: { Icon: CreditCard },
+  cashOrInterac: { Icon: Banknote },
 };
 
 /** Stable display order, so the same amenities always read the same way. */
@@ -72,15 +74,23 @@ interface AmenityToggleGroupProps {
   label: (amenity: TrajetAmenity) => string;
   /** Group name for screen readers. */
   legend: string;
+  /** Which amenities this instance offers — defaults to all of them. Lets a caller split amenities into separate groups (e.g. payment methods on their own). */
+  amenities?: readonly TrajetAmenity[];
 }
 
 /** The amenity picker shared by the search rail and the publish form. */
-export function AmenityToggleGroup({ selected, onToggle, label, legend }: AmenityToggleGroupProps) {
+export function AmenityToggleGroup({
+  selected,
+  onToggle,
+  label,
+  legend,
+  amenities = AMENITY_ORDER,
+}: AmenityToggleGroupProps) {
   return (
     <fieldset>
       <legend className="sr-only">{legend}</legend>
       <div className="flex flex-wrap justify-center gap-2">
-        {AMENITY_ORDER.filter((amenity) => amenity !== 'cardPayment').map((amenity) => {
+        {amenities.map((amenity) => {
           const isSelected = selected.includes(amenity);
           return (
             <button

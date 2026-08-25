@@ -183,6 +183,10 @@ async function notifyBookingPaid(invoiceId: string): Promise<void> {
     bookingRow.passengerId,
     'Your Kouby booking is confirmed',
     `Invoice ${inv.number} is paid. Your booking for ${tripText} is confirmed. ${paymentUrl(bookingRow.id)}`,
+    {
+      type: 'booking_status',
+      link: paymentUrl(bookingRow.id),
+    },
   );
   if (trip) {
     const passengerName =
@@ -191,6 +195,10 @@ async function notifyBookingPaid(invoiceId: string): Promise<void> {
       trip.driverId,
       'Passenger paid — booking confirmed',
       `${passengerName} paid the Kouby invoice for ${tripText}. The seat is confirmed: ${trajetUrl(trip.id)}`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(trip.id),
+      },
     );
   }
 }

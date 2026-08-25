@@ -563,7 +563,7 @@ async function loadVerifications(ownerIds: string[]): Promise<Map<string, Driver
     string,
     { type: string; status: string; submittedAt: Date; ageConfirmed: boolean }[]
   >();
-  const birthDates = new Map<string, string>();
+  const birthDates = new Map<string, string | null>();
 
   // Guard the empty case: `inArray(col, [])` is a false constant in Drizzle, so
   // this is about skipping a pointless round trip, not about correctness.
@@ -579,6 +579,7 @@ async function loadVerifications(ownerIds: string[]): Promise<Map<string, Driver
           status: driverDocument.status,
           submittedAt: driverDocument.submittedAt,
           ageConfirmed: driverDocument.ageConfirmed,
+          reviewedAt: driverDocument.reviewedAt,
         })
         .from(driverDocument)
         .where(

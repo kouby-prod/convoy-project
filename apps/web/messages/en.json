@@ -16,6 +16,7 @@
     "account": "My account",
     "menu": "Menu",
     "documents": "My documents",
+    "notifications": "Notifications",
     "admin": "Backoffice",
     "sections": {
       "search": "Search",
@@ -854,6 +855,7 @@
     "pendingRequests": "{count, plural, one {# to review} other {# to review}}",
     "awaitingPayment": "{count, plural, one {# paying} other {# paying}}",
     "cancelledBadge": "Cancelled",
+    "pendingVerificationBadge": "Pending verification",
     "filters": {
       "label": "Ride status",
       "upcoming": "Upcoming",
@@ -1132,7 +1134,8 @@
       "missing": "To send",
       "pending": "Pending",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "expired": "Needs renewal"
     },
     "type": {
       "permis": "Driver's licence",
@@ -1192,6 +1195,11 @@
         "title": "A document was rejected",
         "body": "Fix the rejected document, then send it again."
       },
+      "expired": {
+        "chip": "Needs renewal",
+        "title": "Your licence needs to be re-verified",
+        "body": "Your licence was approved over a year ago. Send it again to keep publishing rides."
+      },
       "approved": {
         "chip": "Verified",
         "title": "Your account is verified",
@@ -1216,6 +1224,20 @@
       "required": "Enter your date of birth.",
       "tooYoung": "You must be {min} or older to drive.",
       "saveFailed": "Saving failed. Please try again."
+    },
+    "identity": {
+      "title": "Driver identity",
+      "subtitle": "This information is checked against your licence number during verification.",
+      "nameLabel": "Full name",
+      "firstNameLabel": "First name",
+      "lastNameLabel": "Last name",
+      "changeName": "Change my name",
+      "nameRequired": "Enter your first and last name.",
+      "nameSaveFailed": "Saving failed. Please try again.",
+      "licenseNumberLabel": "Licence number",
+      "changeLicenseNumber": "Change my licence number",
+      "licenseNumberRequired": "Enter your licence number.",
+      "licenseNumberSaveFailed": "Saving failed. Please try again."
     }
   },
   "Trajet": {
@@ -1235,6 +1257,10 @@
     "driverBy": "with {name}",
     "authRequired": "Sign in to continue.",
     "authCta": "Sign in",
+    "driverVerified": {
+      "verified": "Verified",
+      "unverified": "Not verified"
+    },
     "amenities": {
       "smoking": "Smoking allowed",
       "nonSmoking": "Non-smoking",
@@ -1245,7 +1271,8 @@
       "handLuggage": "Hand luggage",
       "insurance": "Insured ride",
       "bikeRack": "Bike rack",
-      "cardPayment": "Card payment"
+      "cardPayment": "Card payment",
+      "cashOrInterac": "Cash / Interac"
     },
     "paymentMethods": {
       "card": "Card (via Kouby)",
@@ -1313,6 +1340,8 @@
       "departurePlace": "Pick-up point",
       "arrival": "Arrival",
       "arrivalPlace": "Drop-off point",
+      "useMyLocation": "Use my current location",
+      "locationError": "Couldn't access your location. Check your browser's location permissions.",
       "when": "Date and times",
       "departureTime": "Departure time",
       "arrivalTime": "Arrival time (approximate)",
@@ -1320,6 +1349,7 @@
       "seatsAndPrice": "Seats and price",
       "seatsTotal": "Number of seats",
       "pricePerSeat": "Price per seat (€)",
+      "paymentMethods": "Payment methods",
       "options": "Options",
       "intermediateStop": "I accept an intermediate stop",
       "description": "Message for passengers",
@@ -1330,8 +1360,84 @@
       "invalid": "Please check the form fields.",
       "baggage": "Baggage",
       "baggagePlaceholder": "E.g. one cabin bag per person",
-      "paymentMethods": "Accepted payment methods",
-      "paymentMethodsHint": "Choose at least one. Card collects the fare through Kouby; Interac and cash are settled with you directly."
+      "paymentMethodsHint": "Choose at least one. Card collects the fare through Kouby; Interac and cash are settled with you directly.",
+      "yes": "Yes",
+      "no": "No",
+      "step1": {
+        "label": "Step 1: Ride and vehicle",
+        "next": "Next",
+        "vehicleRequired": "Save your vehicle before continuing."
+      },
+      "step2": {
+        "label": "Step 2: Licence and insurance",
+        "back": "Back",
+        "verification": {
+          "loading": "Loading…",
+          "loadError": "Failed to load your information."
+        },
+        "checklist": {
+          "incomplete": "Complete the items above before publishing your ride."
+        }
+      },
+      "step3": {
+        "label": "Step 3: Vehicle description",
+        "saveHint": "Save your vehicle to continue.",
+        "vehicle": {
+          "title": "Your vehicle",
+          "subtitle": "This information is shown to passengers.",
+          "make": "Make",
+          "model": "Model",
+          "color": "Colour",
+          "seats": "Seats",
+          "plate": "Licence plate",
+          "save": "Save vehicle",
+          "update": "Update vehicle",
+          "saving": "Saving…",
+          "saveFailed": "Saving failed. Please try again.",
+          "required": "Enter the licence plate.",
+          "photoLabel": "Vehicle photo (optional)",
+          "photoAdd": "Add a photo",
+          "photoReplace": "Replace photo",
+          "photoUploading": "Uploading…",
+          "photoNeedsVehicle": "Save your vehicle first to add a photo.",
+          "photoTooLarge": "The file is too large.",
+          "photoUnsupported": "This file type isn't supported.",
+          "photoFailed": "Uploading the photo failed. Please try again."
+        }
+      },
+      "step4": {
+        "title": "Insurance",
+        "question": "Do you hold valid insurance?",
+        "blockedBody": "Valid insurance is required to offer a ride as a driver.",
+        "saveFailed": "Saving failed. Please try again.",
+        "missingVehicle": "Go back to the previous step to save your vehicle."
+      }
+    }
+  },
+  "Notifications": {
+    "title": "My notifications",
+    "subtitle": "Stay updated with your bookings and messages.",
+    "loading": "Loading...",
+    "error": "Unable to load notifications. Please try again later.",
+    "empty": "No notifications yet. You'll see updates here when drivers respond to your requests.",
+    "noUnread": "All notifications have been read.",
+    "unread": "New",
+    "markRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "markingAll": "Marking all...",
+    "loadMore": "Load more",
+    "tabAll": "All",
+    "tabUnread": "Unread",
+    "typeBookingRequest": "Booking request",
+    "typeBookingStatus": "Booking update",
+    "typeTripCancelled": "Trip cancelled",
+    "typeMessage": "Message",
+    "typeSystem": "System",
+    "group": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This week",
+      "earlier": "Earlier"
     }
   },
   "Paiement": {

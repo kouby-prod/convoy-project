@@ -9,8 +9,10 @@ export * from './auth-schema';
 // the marker is what the generator anchors to, so keep it.
 // plop:tables
 export * from './payment';
+export * from './vehicle';
 export * from './document';
 export * from './eligibility';
 export * from './trajet-schema';
 export * from './review';
 export * from './message';
+export * from './notification';

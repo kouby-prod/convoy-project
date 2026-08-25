@@ -5,16 +5,20 @@ import { logger } from 'hono/logger';
 import { healthRoute, pingRoute, readyRoute, checkReady } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
 import { trajetModule } from './modules/trajet';
+import { geocodeModule } from './modules/geocode';
 import { documentModule } from './modules/document';
+import { vehicleModule } from './modules/vehicle';
 import { adminModule } from './modules/admin';
 import { reviewModule } from './modules/review';
 import { messageModule } from './modules/message';
 import { contactModule } from './modules/contact';
+import { notificationModule } from './modules/notification';
 import { paymentModule } from './modules/payment';
 import { stripeWebhookHandler, paypalWebhookHandler } from './modules/payment/webhooks';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
 import { messagesWebSocketHandler } from './realtime/messages-ws';
+import { notificationsWebSocketHandler } from './realtime/notifications-ws';
 // TODO: domain modules — mount feature routers from ./modules here.
 // import { rideRoutes } from './modules/rides';
 
@@ -88,14 +92,20 @@ const routes = app
   })
   // --- TRAJET domain routes ---
   .route('/', trajetModule)
+  // --- GEOCODE routes (place search/reverse-geocode for the location picker) ---
+  .route('/', geocodeModule)
   // --- DOCUMENT domain routes (a driver's own submissions) ---
   .route('/', documentModule)
+  // --- VEHICLE domain routes (a driver's own car description) ---
+  .route('/', vehicleModule)
   // --- ADMIN backoffice routes (review queue, stats, accounts) ---
   .route('/', adminModule)
   // --- REVIEW domain routes ---
   .route('/', reviewModule)
   // --- MESSAGE domain routes ---
   .route('/', messageModule)
+  // --- NOTIFICATION domain routes ---
+  .route('/', notificationModule)
   // --- CONTACT domain routes ---
   .route('/', contactModule)
   // --- PAYMENT / INVOICE domain routes ---
@@ -150,6 +160,14 @@ app.get('/docs', swaggerUI({ url: '/openapi.json' }));
 // After connect: `{ type: "subscribe", bookingId }`.
 // ---------------------------------------------------------------------------
 app.get('/ws/messages', messagesWebSocketHandler);
+
+// ---------------------------------------------------------------------------
+// WebSocket — live notification delivery. Same rationale as `/ws/messages`
+// above: kept off the `routes` chain so it doesn't pollute the typed RPC
+// client. No subscribe frame — a user's socket receives all of their own
+// notifications once the `ready` frame arrives.
+// ---------------------------------------------------------------------------
+app.get('/ws/notifications', notificationsWebSocketHandler);
 
 // ---------------------------------------------------------------------------
 // PROOF helper (dev only): one-click "Continue with Google" page to exercise

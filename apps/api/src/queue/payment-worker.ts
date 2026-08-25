@@ -55,6 +55,7 @@ export function startPaymentWorkers(): void {
             row.passengerId,
             'Your Kouby payment window expired',
             `Your booking for ${describeTrip(row.trip)} expired because the invoice was not paid in time. Search for another ride: ${trajetSearchUrl()}`,
+            { type: 'booking_status', link: trajetSearchUrl() },
           );
         }
         return;

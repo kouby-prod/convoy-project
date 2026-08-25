@@ -1,6 +1,6 @@
 {
-  "id": "5deddc95-e292-4595-a0ad-bdb39cac5897",
-  "prevId": "4cf1fc05-8261-48bb-b741-9c7d9a5b47de",
+  "id": "c7c3ce00-6bfe-4122-a482-a61f6030b9b8",
+  "prevId": "f23c89fa-8bcb-4a58-806e-97d1692108b1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -409,49 +409,56 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.credit_note": {
-      "name": "credit_note",
+    "public.vehicle": {
+      "name": "vehicle",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
+        "owner_id": {
+          "name": "owner_id",
           "type": "text",
           "primaryKey": true,
           "notNull": true
         },
-        "invoice_id": {
-          "name": "invoice_id",
+        "make": {
+          "name": "make",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "number": {
-          "name": "number",
+        "model": {
+          "name": "model",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "amount_cents": {
-          "name": "amount_cents",
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seats": {
+          "name": "seats",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "currency": {
-          "name": "currency",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
+        "plate": {
+          "name": "plate",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -459,159 +466,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "credit_note_invoice_id_invoice_id_fk": {
-          "name": "credit_note_invoice_id_invoice_id_fk",
-          "tableFrom": "credit_note",
-          "tableTo": "invoice",
-          "columnsFrom": [
-            "invoice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "credit_note_invoice_id_unique": {
-          "name": "credit_note_invoice_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "invoice_id"
-          ]
-        },
-        "credit_note_number_unique": {
-          "name": "credit_note_number_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "number"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.driver_payout": {
-      "name": "driver_payout",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "booking_id": {
-          "name": "booking_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "driver_id": {
-          "name": "driver_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "amount_cents": {
-          "name": "amount_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "currency": {
-          "name": "currency",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "due_at": {
-          "name": "due_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "paid_at": {
-          "name": "paid_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "paid_ref": {
-          "name": "paid_ref",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "driver_payout_status_idx": {
-          "name": "driver_payout_status_idx",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "driver_payout_driver_idx": {
-          "name": "driver_payout_driver_idx",
-          "columns": [
-            {
-              "expression": "driver_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "driver_payout_booking_id_booking_id_fk": {
-          "name": "driver_payout_booking_id_booking_id_fk",
-          "tableFrom": "driver_payout",
-          "tableTo": "booking",
-          "columnsFrom": [
-            "booking_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "driver_payout_driver_id_user_id_fk": {
-          "name": "driver_payout_driver_id_user_id_fk",
-          "tableFrom": "driver_payout",
+        "vehicle_owner_id_user_id_fk": {
+          "name": "vehicle_owner_id_user_id_fk",
+          "tableFrom": "vehicle",
           "tableTo": "user",
           "columnsFrom": [
-            "driver_id"
+            "owner_id"
           ],
           "columnsTo": [
             "id"
@@ -620,640 +480,6 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "driver_payout_booking_id_unique": {
-          "name": "driver_payout_booking_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "booking_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "driver_payout_status_check": {
-          "name": "driver_payout_status_check",
-          "value": "\"driver_payout\".\"status\" in ('held', 'due', 'paid', 'cancelled')"
-        },
-        "driver_payout_amount_check": {
-          "name": "driver_payout_amount_check",
-          "value": "\"driver_payout\".\"amount_cents\" > 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.idempotency_key": {
-      "name": "idempotency_key",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "key": {
-          "name": "key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "request_hash": {
-          "name": "request_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "response_json": {
-          "name": "response_json",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "idempotency_key_user_key_unique": {
-          "name": "idempotency_key_user_key_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "key"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.invoice": {
-      "name": "invoice",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "booking_id": {
-          "name": "booking_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "number": {
-          "name": "number",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "currency": {
-          "name": "currency",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "subtotal_cents": {
-          "name": "subtotal_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "fare_cents": {
-          "name": "fare_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "commission_cents": {
-          "name": "commission_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 500
-        },
-        "tax_cents": {
-          "name": "tax_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "total_cents": {
-          "name": "total_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "tax_lines": {
-          "name": "tax_lines",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "buyer_name": {
-          "name": "buyer_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "buyer_email": {
-          "name": "buyer_email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "pdf_storage_key": {
-          "name": "pdf_storage_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "issued_at": {
-          "name": "issued_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "due_at": {
-          "name": "due_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "paid_at": {
-          "name": "paid_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "invoice_status_idx": {
-          "name": "invoice_status_idx",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "invoice_booking_id_booking_id_fk": {
-          "name": "invoice_booking_id_booking_id_fk",
-          "tableFrom": "invoice",
-          "tableTo": "booking",
-          "columnsFrom": [
-            "booking_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "invoice_booking_id_unique": {
-          "name": "invoice_booking_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "booking_id"
-          ]
-        },
-        "invoice_number_unique": {
-          "name": "invoice_number_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "number"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "invoice_status_check": {
-          "name": "invoice_status_check",
-          "value": "\"invoice\".\"status\" in ('draft', 'issued', 'paid', 'voided')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.ledger_entry": {
-      "name": "ledger_entry",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "txn_id": {
-          "name": "txn_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "invoice_id": {
-          "name": "invoice_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "account": {
-          "name": "account",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "direction": {
-          "name": "direction",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "amount_cents": {
-          "name": "amount_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "currency": {
-          "name": "currency",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "ledger_entry_txn_idx": {
-          "name": "ledger_entry_txn_idx",
-          "columns": [
-            {
-              "expression": "txn_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "ledger_entry_invoice_idx": {
-          "name": "ledger_entry_invoice_idx",
-          "columns": [
-            {
-              "expression": "invoice_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "ledger_entry_invoice_id_invoice_id_fk": {
-          "name": "ledger_entry_invoice_id_invoice_id_fk",
-          "tableFrom": "ledger_entry",
-          "tableTo": "invoice",
-          "columnsFrom": [
-            "invoice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ledger_entry_account_check": {
-          "name": "ledger_entry_account_check",
-          "value": "\"ledger_entry\".\"account\" in ('accounts_receivable', 'processor_clearing', 'revenue', 'tax_payable', 'refunds', 'driver_payable')"
-        },
-        "ledger_entry_direction_check": {
-          "name": "ledger_entry_direction_check",
-          "value": "\"ledger_entry\".\"direction\" in ('debit', 'credit')"
-        },
-        "ledger_entry_amount_check": {
-          "name": "ledger_entry_amount_check",
-          "value": "\"ledger_entry\".\"amount_cents\" > 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.payment": {
-      "name": "payment",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "invoice_id": {
-          "name": "invoice_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "provider": {
-          "name": "provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "provider_payment_id": {
-          "name": "provider_payment_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "amount_cents": {
-          "name": "amount_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "currency": {
-          "name": "currency",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "payment_one_succeeded_per_invoice": {
-          "name": "payment_one_succeeded_per_invoice",
-          "columns": [
-            {
-              "expression": "invoice_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"payment\".\"status\" = 'succeeded'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "payment_invoice_idx": {
-          "name": "payment_invoice_idx",
-          "columns": [
-            {
-              "expression": "invoice_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "payment_invoice_id_invoice_id_fk": {
-          "name": "payment_invoice_id_invoice_id_fk",
-          "tableFrom": "payment",
-          "tableTo": "invoice",
-          "columnsFrom": [
-            "invoice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "payment_provider_payment_id_unique": {
-          "name": "payment_provider_payment_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "provider",
-            "provider_payment_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "payment_provider_check": {
-          "name": "payment_provider_check",
-          "value": "\"payment\".\"provider\" in ('stripe', 'paypal')"
-        },
-        "payment_status_check": {
-          "name": "payment_status_check",
-          "value": "\"payment\".\"status\" in ('created', 'processing', 'succeeded', 'failed', 'cancelled', 'refunded')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.processed_event": {
-      "name": "processed_event",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "provider": {
-          "name": "provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "event_id": {
-          "name": "event_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "processed_at": {
-          "name": "processed_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "processed_event_provider_event_unique": {
-          "name": "processed_event_provider_event_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "provider",
-            "event_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "processed_event_provider_check": {
-          "name": "processed_event_provider_check",
-          "value": "\"processed_event\".\"provider\" in ('stripe', 'paypal')"
-        },
-        "processed_event_status_check": {
-          "name": "processed_event_status_check",
-          "value": "\"processed_event\".\"status\" in ('received', 'processed')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.reconciliation_mismatch": {
-      "name": "reconciliation_mismatch",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "provider": {
-          "name": "provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "provider_payment_id": {
-          "name": "provider_payment_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "invoice_id": {
-          "name": "invoice_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "detail": {
-          "name": "detail",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1513,20 +739,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "payment_method": {
-          "name": "payment_method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'cash'"
-        },
-        "fare_cents": {
-          "name": "fare_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
         "first_name": {
           "name": "first_name",
           "type": "text",
@@ -1638,11 +850,7 @@
       "checkConstraints": {
         "booking_status_check": {
           "name": "booking_status_check",
-          "value": "\"booking\".\"status\" in ('pending', 'awaiting_payment', 'confirmed', 'rejected', 'cancelled', 'expired')"
-        },
-        "booking_payment_method_check": {
-          "name": "booking_payment_method_check",
-          "value": "\"booking\".\"payment_method\" in ('card', 'interac', 'cash')"
+          "value": "\"booking\".\"status\" in ('pending', 'confirmed', 'rejected', 'cancelled', 'expired')"
         }
       },
       "isRLSEnabled": false
@@ -1765,13 +973,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'"
-        },
-        "payment_methods": {
-          "name": "payment_methods",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{\"card\",\"interac\",\"cash\"}'"
         },
         "has_intermediate_stop": {
           "name": "has_intermediate_stop",
@@ -2076,32 +1277,119 @@
         }
       },
       "isRLSEnabled": false
+    },
+    "public.notification": {
+      "name": "notification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'email'"
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'system'"
+        },
+        "link": {
+          "name": "link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "read_at": {
+          "name": "read_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "notification_user_idx": {
+          "name": "notification_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "notification_user_id_user_id_fk": {
+          "name": "notification_user_id_user_id_fk",
+          "tableFrom": "notification",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {},
   "schemas": {},
-  "sequences": {
-    "public.credit_note_number_seq": {
-      "name": "credit_note_number_seq",
-      "schema": "public",
-      "increment": "1",
-      "startWith": "1",
-      "minValue": "1",
-      "maxValue": "9223372036854775807",
-      "cache": "1",
-      "cycle": false
-    },
-    "public.invoice_number_seq": {
-      "name": "invoice_number_seq",
-      "schema": "public",
-      "increment": "1",
-      "startWith": "1",
-      "minValue": "1",
-      "maxValue": "9223372036854775807",
-      "cache": "1",
-      "cycle": false
-    }
-  },
+  "sequences": {},
   "roles": {},
   "policies": {},
   "views": {},

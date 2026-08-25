@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Route } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
-import type { OwnedTrajet } from '@carpool/schemas';
+import { deriveDriverVerification, type OwnedTrajet } from '@carpool/schemas';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
+import { fetchMyDocuments, fetchMyEligibility } from '@/lib/documents';
 import { groupByDateKey } from '@/lib/trip-when';
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -78,6 +79,27 @@ export function MesTrajetsList() {
     getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
   });
 
+  // Same query keys as the ride-creation checklist and `/mes-documents` —
+  // used only to show a "pending verification" badge; a ride isn't gated on
+  // this, just hidden from public search server-side until it's `approved`.
+  const documentsQuery = useQuery({
+    queryKey: ['my-documents'],
+    queryFn: fetchMyDocuments,
+    enabled: !!session?.user,
+  });
+  const eligibilityQuery = useQuery({
+    queryKey: ['my-eligibility'],
+    queryFn: fetchMyEligibility,
+    enabled: !!session?.user,
+  });
+  const verification =
+    documentsQuery.data && eligibilityQuery.data
+      ? deriveDriverVerification(documentsQuery.data, {
+          dateOfBirth: eligibilityQuery.data.dateOfBirth,
+        })
+      : null;
+  const isPendingVerification = verification !== null && verification.status !== 'approved';
+
   const items = useMemo(
     () => query.data?.pages.flatMap((page) => page.items) ?? [],
     [query.data],
@@ -136,7 +158,7 @@ export function MesTrajetsList() {
           {action.length > 0 ? (
             <RideGroup heading={<h2 className={GROUP_HEADING}>{t('needsAction')}</h2>}>
               {action.map((item) => (
-                <RideRow key={item.id} item={item} />
+                <RideRow key={item.id} item={item} isPendingVerification={isPendingVerification} />
               ))}
             </RideGroup>
           ) : null}
@@ -146,7 +168,7 @@ export function MesTrajetsList() {
               heading={<TripDayHeading iso={rides[0]!.departureDateTime} className={GROUP_HEADING} />}
             >
               {rides.map((item) => (
-                <RideRow key={item.id} item={item} />
+                <RideRow key={item.id} item={item} isPendingVerification={isPendingVerification} />
               ))}
             </RideGroup>
           ))}
@@ -158,7 +180,7 @@ export function MesTrajetsList() {
             heading={<TripDayHeading iso={rides[0]!.departureDateTime} className={GROUP_HEADING} />}
           >
             {rides.map((item) => (
-              <RideRow key={item.id} item={item} />
+              <RideRow key={item.id} item={item} isPendingVerification={isPendingVerification} />
             ))}
           </RideGroup>
         ))
@@ -187,7 +209,13 @@ function RideGroup({ heading, children }: { heading: ReactNode; children: ReactN
   );
 }
 
-function RideRow({ item }: { item: OwnedTrajet }) {
+function RideRow({
+  item,
+  isPendingVerification,
+}: {
+  item: OwnedTrajet;
+  isPendingVerification: boolean;
+}) {
   const t = useTranslations('MesTrajets');
   const format = useFormatter();
   const taken = Math.max(0, item.seatsTotal - item.seatsAvailable);
@@ -206,6 +234,9 @@ function RideRow({ item }: { item: OwnedTrajet }) {
       trailing={
         <>
           {item.cancelledAt ? <Badge variant="destructive">{t('cancelledBadge')}</Badge> : null}
+          {!item.cancelledAt && isPendingVerification ? (
+            <Badge variant="warning">{t('pendingVerificationBadge')}</Badge>
+          ) : null}
           {!item.cancelledAt && item.pendingRequestCount > 0 ? (
             <Badge variant="warning">{t('pendingRequests', { count: item.pendingRequestCount })}</Badge>
           ) : null}

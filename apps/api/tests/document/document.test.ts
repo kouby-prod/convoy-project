@@ -16,6 +16,7 @@ function createChain(result: unknown) {
     where: () => chain,
     values: () => chain,
     set: () => chain,
+    onConflictDoUpdate: () => chain,
     returning: () => Promise.resolve(result),
     then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
       Promise.resolve(result).then(resolve, reject),
@@ -316,5 +317,115 @@ describe('document module', () => {
 
     const res = await documentModule.request(`/documents/${DOC_ID}/file`);
     expect(res.status).toBe(403);
+  });
+
+  /* ───────────────── The age + licence-number declarations ────────────── */
+
+  function putJson(path: string, body: unknown) {
+    return documentModule.request(path, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it('GET /eligibility returns 401 without a session', async () => {
+    getSession.mockResolvedValue(null);
+    const res = await documentModule.request('/eligibility');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /eligibility reports both the birth date and the licence number on file', async () => {
+    getSession.mockResolvedValue(sessionFor('u_1', 'user'));
+    dbState.selectResult = [{ dateOfBirth: '1994-03-12', licenseNumber: 'D1234-56789' }];
+
+    const res = await documentModule.request('/eligibility');
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ dateOfBirth: '1994-03-12', licenseNumber: 'D1234-56789', isAdult: true });
+  });
+
+  it('PUT /eligibility returns 401 without a session', async () => {
+    getSession.mockResolvedValue(null);
+    const res = await putJson('/eligibility', { dateOfBirth: '1994-03-12' });
+    expect(res.status).toBe(401);
+  });
+
+  it('PUT /eligibility refuses a birth date under the minimum age', async () => {
+    getSession.mockResolvedValue(sessionFor('u_1', 'user'));
+    const under18 = `${new Date().getFullYear() - 10}-01-01`;
+    const res = await putJson('/eligibility', { dateOfBirth: under18 });
+    expect(res.status).toBe(400);
+  });
+
+  it("PUT /eligibility saves the birth date without disturbing an existing licence number", async () => {
+    getSession.mockResolvedValue(sessionFor('u_1', 'user'));
+    // Upsert's `.returning()` reflects the row post-write, licenseNumber untouched.
+    dbState.insertResult = [{ dateOfBirth: '1994-03-12', licenseNumber: 'D1234-56789' }];
+
+    const res = await putJson('/eligibility', { dateOfBirth: '1994-03-12' });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ dateOfBirth: '1994-03-12', licenseNumber: 'D1234-56789' });
+  });
+
+  it('PUT /eligibility/license-number returns 401 without a session', async () => {
+    getSession.mockResolvedValue(null);
+    const res = await putJson('/eligibility/license-number', { licenseNumber: 'D1234-56789' });
+    expect(res.status).toBe(401);
+  });
+
+  it("PUT /eligibility/license-number saves the number without disturbing an existing birth date", async () => {
+    getSession.mockResolvedValue(sessionFor('u_1', 'user'));
+    dbState.insertResult = [{ dateOfBirth: '1994-03-12', licenseNumber: 'D1234-56789' }];
+
+    const res = await putJson('/eligibility/license-number', { licenseNumber: 'D1234-56789' });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ dateOfBirth: '1994-03-12', licenseNumber: 'D1234-56789' });
+  });
+
+  it('PUT /eligibility/license-number rejects an empty number', async () => {
+    getSession.mockResolvedValue(sessionFor('u_1', 'user'));
+    const res = await putJson('/eligibility/license-number', { licenseNumber: '' });
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT /eligibility/name returns 401 without a session', async () => {
+    getSession.mockResolvedValue(null);
+    const res = await putJson('/eligibility/name', { firstName: 'Ada', lastName: 'Lovelace' });
+    expect(res.status).toBe(401);
+  });
+
+  it("PUT /eligibility/name saves the name without disturbing an existing birth date or licence number", async () => {
+    getSession.mockResolvedValue(sessionFor('u_1', 'user'));
+    dbState.insertResult = [
+      {
+        dateOfBirth: '1994-03-12',
+        licenseNumber: 'D1234-56789',
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+      },
+    ];
+
+    const res = await putJson('/eligibility/name', { firstName: 'Ada', lastName: 'Lovelace' });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({
+      dateOfBirth: '1994-03-12',
+      licenseNumber: 'D1234-56789',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+    });
+  });
+
+  it('PUT /eligibility/name rejects an empty first or last name', async () => {
+    getSession.mockResolvedValue(sessionFor('u_1', 'user'));
+    const res = await putJson('/eligibility/name', { firstName: '', lastName: 'Lovelace' });
+    expect(res.status).toBe(400);
   });
 });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { BadgeCheck, Clock, FileWarning, ShieldAlert } from 'lucide-react';
+import { BadgeCheck, Clock, FileWarning, RotateCcw, ShieldAlert } from 'lucide-react';
 import type { DriverVerification, DriverVerificationStatus } from '@carpool/schemas';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +39,12 @@ const BANNER_STYLES: Record<
     icon: 'text-destructive',
     fill: 'bg-destructive',
   },
+  expired: {
+    Icon: RotateCcw,
+    wrapper: 'bg-warning/20 ring-warning-foreground/10',
+    icon: 'text-warning-foreground',
+    fill: 'bg-warning',
+  },
   approved: {
     Icon: BadgeCheck,
     wrapper: 'bg-success/10 ring-success/25',
@@ -53,6 +59,7 @@ const SEGMENT_FILL = {
   pending: 'bg-warning',
   approved: 'bg-success',
   rejected: 'bg-destructive',
+  expired: 'bg-warning',
 } as const;
 
 export function VerificationBanner({ verification }: { verification: DriverVerification }) {

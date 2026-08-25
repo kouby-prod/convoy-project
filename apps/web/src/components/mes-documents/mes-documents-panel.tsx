@@ -15,6 +15,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBanner } from '@/components/documents/verification-banner';
 import { EligibilityPanel } from '@/components/documents/eligibility-panel';
+import { DriverIdentityCard } from '@/components/documents/driver-identity-card';
 import { fetchMyDocuments, fetchMyEligibility } from '@/lib/documents';
 import { DocumentSlotCard } from './document-slot-card';
 import { MesDocumentsHistory } from './mes-documents-list';
@@ -78,22 +79,30 @@ export function MesDocumentsPanel() {
   const verification = deriveDriverVerification(documents, {
     dateOfBirth: eligibilityQuery.data?.dateOfBirth ?? null,
   });
+  const slotStatusByType = new Map(verification.slots.map((slot) => [slot.type, slot.status]));
 
   return (
     <div className="flex flex-col gap-6">
       <VerificationBanner verification={verification} />
 
+      <DriverIdentityCard />
+
       <EligibilityPanel verification={verification} />
 
-      {/* The three required documents, side by side — the whole ask, visible at
-          once, rather than one form the driver has to submit three times.
+      {/* The required document(s) — today, just the licence — side by side, the
+          whole ask visible at once rather than one form to submit repeatedly.
 
           `items-start` matters: grid items stretch to the tallest row by
           default, so a collapsed card next to an open one grew a large empty
           panel under its button. Each card should end where its content does. */}
       <div className="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
         {REQUIRED_DRIVER_DOCUMENT_TYPES.map((type) => (
-          <DocumentSlotCard key={type} type={type} latest={latestByType.get(type) ?? null} />
+          <DocumentSlotCard
+            key={type}
+            type={type}
+            latest={latestByType.get(type) ?? null}
+            slotStatus={slotStatusByType.get(type) ?? 'missing'}
+          />
         ))}
       </div>
 
@@ -124,7 +133,7 @@ function StatusCard({ children, tone }: { children: string; tone?: 'error' }) {
  * `deriveDriverVerification` applies, which is why the badge on a slot always
  * matches the banner above it.
  */
-function toLatestByType(
+export function toLatestByType(
   documents: DriverDocument[],
 ): Map<RequiredDriverDocumentType, DriverDocument> {
   const latest = new Map<RequiredDriverDocumentType, DriverDocument>();

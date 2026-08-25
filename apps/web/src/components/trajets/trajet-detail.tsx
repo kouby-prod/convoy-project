@@ -11,6 +11,7 @@ import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { RatingStars } from '@/components/trajet/rating-stars';
 import { AmenityIcon, isAmenity } from '@/components/trajet/trajet-amenities';
 import {
@@ -177,6 +178,7 @@ function DriverRideWorkspace({ id, trajet }: { id: string; trajet: Trajet }) {
 
 function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
   const t = useTranslations('Trajets');
+  const tRide = useTranslations('Trajet');
   const format = useFormatter();
   const departure = new Date(trajet.departureDateTime);
   const arrival = trajet.arrivalDateTime ? new Date(trajet.arrivalDateTime) : null;
@@ -249,7 +251,12 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
                 {initials || '?'}
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">
-                <p className="font-semibold text-foreground">{driverName || '—'}</p>
+                <p className="flex items-center gap-2 font-semibold text-foreground">
+                  {driverName || '—'}
+                  <Badge variant={trajet.driver.verified ? 'success' : 'neutral'}>
+                    {tRide(trajet.driver.verified ? 'driverVerified.verified' : 'driverVerified.unverified')}
+                  </Badge>
+                </p>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                   {trajet.driver.rating !== null && (trajet.driver.reviewCount ?? 0) > 0 ? (
                     <span className="inline-flex items-center gap-1.5">

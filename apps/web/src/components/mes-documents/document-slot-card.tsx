@@ -3,20 +3,11 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
-import {
-  Car,
-  CarFront,
-  FileText,
-  IdCard,
-  Info,
-  RotateCcw,
-  ShieldCheck,
-  UploadCloud,
-  X,
-} from 'lucide-react';
+import { FileText, IdCard, Info, RotateCcw, UploadCloud, X } from 'lucide-react';
 import {
   DOCUMENT_MAX_BYTES,
   DOCUMENT_MIME_TYPES,
+  type DocumentSlotStatus,
   type DriverDocument,
   type RequiredDriverDocumentType,
 } from '@carpool/schemas';
@@ -29,17 +20,22 @@ import { isApiError } from '@/lib/api-error';
 import { cn } from '@/lib/utils';
 import { ViewDocumentLink } from './view-document-link';
 
-/** One recognisable icon per required document, so the three cards read apart. */
-const SLOT_ICONS: Record<RequiredDriverDocumentType, typeof Car> = {
+/** One recognisable icon per required document — just the licence today. */
+const SLOT_ICONS: Record<RequiredDriverDocumentType, typeof IdCard> = {
   permis: IdCard,
-  assurance: ShieldCheck,
-  immatriculation: CarFront,
 };
 
 export interface DocumentSlotCardProps {
   type: RequiredDriverDocumentType;
   /** The driver's newest submission of this type, or null if they never sent one. */
   latest: DriverDocument | null;
+  /**
+   * The slot's status as rolled up by `deriveDriverVerification` — NOT
+   * `latest.status`. The two differ exactly once: a `permis` approved more
+   * than a year ago is still `approved` on the stored document but `expired`
+   * here, which is what should drive the badge and the re-upload prompt.
+   */
+  slotStatus: DocumentSlotStatus;
 }
 
 /**
@@ -57,17 +53,18 @@ export interface DocumentSlotCardProps {
  *   - a rejected card that looks rejected, because recovering from a refusal is
  *     the path that decides whether a driver finishes at all.
  */
-export function DocumentSlotCard({ type, latest }: DocumentSlotCardProps) {
+export function DocumentSlotCard({ type, latest, slotStatus }: DocumentSlotCardProps) {
   const t = useTranslations('Documents');
   const format = useFormatter();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fieldId = useId();
 
-  const status = latest?.status ?? 'missing';
   // Open when there is something to do, closed once the document is in. An
   // approved card that still showed a file picker would read as unfinished.
-  const [isOpen, setIsOpen] = useState(status === 'missing' || status === 'rejected');
+  const [isOpen, setIsOpen] = useState(
+    slotStatus === 'missing' || slotStatus === 'rejected' || slotStatus === 'expired',
+  );
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [expiresOn, setExpiresOn] = useState('');
@@ -136,7 +133,7 @@ export function DocumentSlotCard({ type, latest }: DocumentSlotCardProps) {
     <Card
       className={cn(
         'transition-all duration-500 ease-smooth',
-        status === 'rejected' && 'ring-destructive/30',
+        slotStatus === 'rejected' && 'ring-destructive/30',
       )}
     >
       <CardContent className="flex flex-col gap-4 p-5 pt-5">
@@ -151,7 +148,7 @@ export function DocumentSlotCard({ type, latest }: DocumentSlotCardProps) {
               <p className="text-xs text-muted-foreground">{t(`slot.${type}.hint`)}</p>
             </div>
           </div>
-          <DocumentStatusBadge status={status} />
+          <DocumentStatusBadge status={slotStatus} />
         </div>
 
         <p className="flex items-start gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
@@ -178,7 +175,7 @@ export function DocumentSlotCard({ type, latest }: DocumentSlotCardProps) {
         ) : null}
 
         {/* The reason is the only thing that makes a refusal actionable. */}
-        {status === 'rejected' && latest?.reviewNote ? (
+        {slotStatus === 'rejected' && latest?.reviewNote ? (
           <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
             {t('history.reason', { reason: latest.reviewNote })}
           </p>

@@ -25,6 +25,7 @@ import { trajet, booking } from '../../db/trajet-schema';
 import { invoice, driverPayout, payment } from '../../db/payment';
 import { review } from '../../db/review';
 import { user } from '../../db/auth-schema';
+import { vehicle } from '../../db/vehicle';
 import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet, DriverBooking, DriverProfile, OwnedTrajet, PaymentStatus, Invoice } from '@carpool/schemas';
 import {
   listTrajetsRoute,
@@ -39,8 +40,9 @@ import {
   myTrajetsRoute,
   myBookingsRoute,
 } from './trajet.routes';
-import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip, paymentUrl, formatDueAt } from './notifications';
+import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip, describeTripShort, paymentUrl, formatDueAt } from './notifications';
 import { geocodeAndStoreTrajetLocation } from './geocoding';
+import { getVerifiedDriverIds } from './verification-visibility';
 import {
   issueInvoiceForBooking,
   voidIssuedInvoiceForBooking,
@@ -53,7 +55,7 @@ import { recordPaymentIncident } from '../payment/incidents';
 import { fareCentsFromPrice } from '../payment/tax';
 import { cancelStripePaymentIntent } from '../payment/stripe';
 import { renderInvoicePdf } from '../payment/pdf';
-import { smtpEmailSender } from '../../auth/email';
+import { smtpEmailSender, type EmailAttachment } from '../../auth/email';
 import type { DbTx } from '../payment/ledger';
 
 /**
@@ -139,6 +141,7 @@ function namesFromAccount(name: string): { firstName: string | null; lastName: s
 async function notifyExpiredBookings(
   expired: ExpiredBooking[],
   trip: { departureCity: string; arrivalCity: string; departureAt: Date },
+  trajetId: string,
 ): Promise<void> {
   for (const { passengerId, reason } of expired) {
     if (reason === 'unpaid') {
@@ -146,13 +149,23 @@ async function notifyExpiredBookings(
         passengerId,
         'Your Kouby payment window expired',
         `Your booking for the trip from ${describeTrip(trip)} expired because the invoice was not paid in time. Search for another ride: ${trajetSearchUrl()}`,
+        {
+          type: 'booking_status',
+          link: trajetSearchUrl(),
+          inAppBody: `Your booking for ${describeTripShort(trip)} expired because it was not paid in time.`,
+        },
       );
       continue;
     }
     await notifyUser(
       passengerId,
       'Your Carpool booking request expired',
-      `Your request for the trip from ${describeTrip(trip)} expired because the driver didn't respond in time. Seats may still be available: ${trajetSearchUrl()}`,
+      `Your request for the trip from ${describeTrip(trip)} expired because the driver didn't respond in time. Seats may still be available: ${trajetUrl(trajetId)}`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(trajetId),
+        inAppBody: `Your request for ${describeTripShort(trip)} expired. Seats may still be available.`,
+      },
     );
   }
 }
@@ -164,7 +177,7 @@ async function notifyPassengerToPay(input: {
   issued?: Invoice;
   intro: string;
 }): Promise<void> {
-  let attachments: Parameters<typeof notifyUser>[3];
+  let attachments: EmailAttachment[] | undefined;
   if (smtpEmailSender && input.issued) {
     try {
       const pdf = await renderInvoicePdf(input.issued);
@@ -186,7 +199,12 @@ async function notifyPassengerToPay(input: {
     input.passengerId,
     'Pay Kouby to confirm your booking',
     `${input.intro} Pay ${amountLabel}${dueLabel} to confirm your seat. Unpaid seats are released after 5 minutes: ${paymentUrl(input.bookingId)}\n\n${fareNote}`,
-    attachments,
+    {
+      type: 'booking_status',
+      link: paymentUrl(input.bookingId),
+      inAppBody: `Pay ${amountLabel}${dueLabel} to confirm your seat on ${describeTripShort(input.trip)}.`,
+      attachments,
+    },
   );
 }
 
@@ -228,16 +246,27 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/** The subset of a declared vehicle a ride's driver profile shows. */
+interface DriverVehicle {
+  make: string | null;
+  model: string | null;
+  seats: number | null;
+}
+
 /**
  * Builds the `DriverProfile` embedded in every `Trajet`/`TrajetSearchResult`.
- * The platform has no vehicle table yet, so licence/vehicle fields are always
- * null — the UI hides them rather than showing invented data.
+ * `licenceYears` still has no source and stays null; `carMake`/`carModel`/
+ * `carSeats` come from the `vehicle` table when the driver declared one, and
+ * are null otherwise — the UI hides the block rather than showing invented
+ * data.
  */
 function buildDriverProfile(
   driverId: string,
   name: string,
   rating: number | null,
   reviewCount: number,
+  vehicle: DriverVehicle | null,
+  verified: boolean,
 ): DriverProfile {
   const [firstName, ...rest] = name.split(' ').filter(Boolean);
   return {
@@ -245,11 +274,12 @@ function buildDriverProfile(
     firstName: firstName ?? '',
     lastName: rest.join(' '),
     licenceYears: null,
-    carMake: null,
-    carModel: null,
-    carSeats: null,
+    carMake: vehicle?.make ?? null,
+    carModel: vehicle?.model ?? null,
+    carSeats: vehicle?.seats ?? null,
     rating,
     reviewCount,
+    verified,
   };
 }
 
@@ -260,11 +290,18 @@ async function getDriverProfile(driverId: string): Promise<DriverProfile> {
     .select({ averageRating: avg(review.rating), reviewCount: count(review.rating) })
     .from(review)
     .where(and(eq(review.driverId, driverId), eq(review.direction, 'passenger_to_driver')));
+  const [vehicleRow] = await db
+    .select({ make: vehicle.make, model: vehicle.model, seats: vehicle.seats })
+    .from(vehicle)
+    .where(eq(vehicle.ownerId, driverId));
+  const verifiedIds = await getVerifiedDriverIds([driverId]);
   return buildDriverProfile(
     driverId,
     driverRow?.name ?? '',
     ratingRow?.averageRating ? Number(ratingRow.averageRating) : null,
     ratingRow?.reviewCount ?? 0,
+    vehicleRow ?? null,
+    verifiedIds.has(driverId),
   );
 }
 
@@ -383,7 +420,9 @@ export const trajetModule = app
     }
 
     const offset = (query.page - 1) * query.limit;
-    const orderExprs = near ? [asc(departureDistanceKmSql(near.lat, near.lng))] : [];
+    const orderExprs = near
+      ? [asc(departureDistanceKmSql(near.lat, near.lng)), asc(trajet.departureAt)]
+      : [asc(trajet.departureAt)];
     const rows = await db
       .select()
       .from(trajet)
@@ -416,6 +455,13 @@ export const trajetModule = app
         departureAt: new Date(body.departureDateTime),
         departurePlace: body.departurePlace ?? null,
         arrivalPlace: body.arrivalPlace ?? null,
+        // Set directly when the driver picked a precise point (see
+        // LocationPicker) so the response already carries them — the
+        // fire-and-forget geocode below only fills in whatever's still null.
+        departureLat: body.departureLat != null ? body.departureLat.toString() : null,
+        departureLng: body.departureLng != null ? body.departureLng.toString() : null,
+        arrivalLat: body.arrivalLat != null ? body.arrivalLat.toString() : null,
+        arrivalLng: body.arrivalLng != null ? body.arrivalLng.toString() : null,
         arrivalAt: body.arrivalDateTime ? new Date(body.arrivalDateTime) : null,
         seatsTotal: body.seatsTotal,
         seatsAvailable: body.seatsTotal,
@@ -434,10 +480,17 @@ export const trajetModule = app
     // rate-limits to ~1 req/sec and this needs two lookups) — a trajet must
     // stay immediately bookable rather than wait on it. Coordinates land a
     // couple of seconds later via a background UPDATE, or never if geocoding
-    // fails.
-    geocodeAndStoreTrajetLocation(row.id, row.departureCity, row.arrivalCity).catch((err) => {
-      console.error(`Failed to geocode trajet ${row.id}`, err);
-    });
+    // fails. Skipped entirely when the picker already supplied both sides —
+    // nothing left to fill in.
+    if (row.departureLat === null || row.arrivalLat === null) {
+      geocodeAndStoreTrajetLocation(
+        row.id,
+        { city: row.departureCity, lat: body.departureLat, lng: body.departureLng },
+        { city: row.arrivalCity, lat: body.arrivalLat, lng: body.arrivalLng },
+      ).catch((err) => {
+        console.error(`Failed to geocode trajet ${row.id}`, err);
+      });
+    }
 
     const driver = await getDriverProfile(authUser.id);
     return c.json(serialize(row, driver), 201);
@@ -472,6 +525,10 @@ export const trajetModule = app
         .set({
           ...(body.departureCity !== undefined && { departureCity: body.departureCity }),
           ...(body.destinationCity !== undefined && { arrivalCity: body.destinationCity }),
+          ...(body.departureLat !== undefined && { departureLat: body.departureLat?.toString() ?? null }),
+          ...(body.departureLng !== undefined && { departureLng: body.departureLng?.toString() ?? null }),
+          ...(body.arrivalLat !== undefined && { arrivalLat: body.arrivalLat?.toString() ?? null }),
+          ...(body.arrivalLng !== undefined && { arrivalLng: body.arrivalLng?.toString() ?? null }),
           ...(body.departureDateTime !== undefined && {
             departureAt: new Date(body.departureDateTime),
           }),
@@ -501,14 +558,24 @@ export const trajetModule = app
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
 
-    // Only re-geocode when a city actually changed — same fire-and-forget
-    // reasoning as createTrajetRoute above.
-    if (body.departureCity !== undefined || body.destinationCity !== undefined) {
-      geocodeAndStoreTrajetLocation(result.trajet.id, result.trajet.departureCity, result.trajet.arrivalCity).catch(
-        (err) => {
-          console.error(`Failed to re-geocode trajet ${result.trajet.id}`, err);
-        },
-      );
+    // Re-geocode when a city changed (re-derive coordinates for whichever
+    // side has none of its own) or when the driver re-picked a precise point
+    // directly — same fire-and-forget reasoning as createTrajetRoute above.
+    if (
+      body.departureCity !== undefined ||
+      body.destinationCity !== undefined ||
+      body.departureLat !== undefined ||
+      body.departureLng !== undefined ||
+      body.arrivalLat !== undefined ||
+      body.arrivalLng !== undefined
+    ) {
+      geocodeAndStoreTrajetLocation(
+        result.trajet.id,
+        { city: result.trajet.departureCity, lat: body.departureLat, lng: body.departureLng },
+        { city: result.trajet.arrivalCity, lat: body.arrivalLat, lng: body.arrivalLng },
+      ).catch((err) => {
+        console.error(`Failed to re-geocode trajet ${result.trajet.id}`, err);
+      });
     }
 
     const driver = await getDriverProfile(result.trajet.driverId);
@@ -586,7 +653,12 @@ export const trajetModule = app
         notifyUser(
           passengerId,
           'Your Carpool trip was cancelled',
-          `The driver cancelled the trip from ${describeTrip(result.trajet)} you had booked. Search for another ride: ${trajetSearchUrl()}`,
+          `The driver cancelled the trip from ${describeTrip(result.trajet)} you had booked. View the trip: ${trajetUrl(id)}`,
+          {
+            type: 'trip_cancelled',
+            link: trajetUrl(id),
+            inAppBody: `The driver cancelled your trip ${describeTripShort(result.trajet)}.`,
+          },
         ),
       ),
     );
@@ -668,7 +740,7 @@ export const trajetModule = app
 
     // The sweep's writes commit whether or not the booking itself ultimately
     // succeeds, so its passengers must be notified either way.
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     await notifyPassengerToPay({
@@ -683,6 +755,11 @@ export const trajetModule = app
       'New booking on your Kouby trip',
       `A passenger reserved ${seats} seat(s) on your trip from ${describeTrip(result)}. ` +
         `They pay Kouby to confirm the seat: ${trajetUrl(id)}`,
+      {
+        type: 'booking_request',
+        link: trajetUrl(id),
+        inAppBody: `A passenger reserved ${seats} seat(s) on your trip ${describeTripShort(result)}.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 201);
   })
@@ -804,7 +881,7 @@ export const trajetModule = app
       };
     });
 
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     if (status === 'confirmed') {
@@ -820,6 +897,11 @@ export const trajetModule = app
         result.passengerId,
         'Your Carpool booking was rejected',
         `Your booking request for the trip from ${describeTrip(result)} was rejected by the driver. Search for another ride: ${trajetSearchUrl()}`,
+        {
+          type: 'booking_status',
+          link: trajetUrl(id),
+          inAppBody: `Your booking for ${describeTripShort(result)} was rejected by the driver.`,
+        },
       );
     }
     return c.json(serializeBooking(result.booking), 200);
@@ -892,7 +974,7 @@ export const trajetModule = app
       };
     });
 
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     for (const attempt of result.openAttempts) {
@@ -915,6 +997,11 @@ export const trajetModule = app
       result.driverId,
       'A passenger cancelled their Carpool booking',
       `A passenger cancelled their booking of ${result.seats} seat(s) on your trip from ${describeTrip(result)}. The seat(s) are available again.`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(id),
+        inAppBody: `A passenger cancelled their booking of ${result.seats} seat(s) on your trip ${describeTripShort(result)}. The seat(s) are available again.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 200);
   })
@@ -1010,7 +1097,7 @@ async function attachSearchMetadata(
   near: { lat: number; lng: number } | undefined,
 ): Promise<TrajetSearchResult[]> {
   const driverIds = [...new Set(rows.map((row) => row.driverId))];
-  const [ratingRows, nameRows] = await Promise.all([
+  const [ratingRows, nameRows, vehicleRows, verifiedIds] = await Promise.all([
     driverIds.length
       ? db
           .select({
@@ -1025,6 +1112,13 @@ async function attachSearchMetadata(
     driverIds.length
       ? db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, driverIds))
       : Promise.resolve([]),
+    driverIds.length
+      ? db
+          .select({ ownerId: vehicle.ownerId, make: vehicle.make, model: vehicle.model, seats: vehicle.seats })
+          .from(vehicle)
+          .where(inArray(vehicle.ownerId, driverIds))
+      : Promise.resolve([]),
+    getVerifiedDriverIds(driverIds),
   ]);
   const ratingByDriver = new Map(
     ratingRows.map((r) => [
@@ -1033,6 +1127,7 @@ async function attachSearchMetadata(
     ]),
   );
   const nameByDriver = new Map(nameRows.map((r) => [r.id, r.name]));
+  const vehicleByDriver = new Map(vehicleRows.map((v) => [v.ownerId, v]));
 
   return rows.map((row) => {
     const rating = ratingByDriver.get(row.driverId);
@@ -1045,6 +1140,8 @@ async function attachSearchMetadata(
       nameByDriver.get(row.driverId) ?? '',
       rating?.averageRating ?? null,
       rating?.reviewCount ?? 0,
+      vehicleByDriver.get(row.driverId) ?? null,
+      verifiedIds.has(row.driverId),
     );
     return {
       ...serialize(row, driver),

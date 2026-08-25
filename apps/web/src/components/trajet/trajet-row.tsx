@@ -18,11 +18,6 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
     ? `${trajet.driver.firstName}${trajet.driver.lastName ? ` ${trajet.driver.lastName.charAt(0)}.` : ''}`
     : '';
   const place = [trajet.departurePlace, trajet.arrivalPlace].filter(Boolean).join(' → ') || null;
-  const hasFooter =
-    Boolean(driverName) ||
-    trajet.driver.rating !== null ||
-    trajet.amenities.length > 0 ||
-    trajet.paymentMethods.length > 0;
 
   return (
     <ItineraryRow
@@ -46,34 +41,35 @@ export function TrajetRow({ trajet }: TrajetRowProps) {
         ) : null
       }
       footer={
-        hasFooter ? (
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-            {driverName ? (
-              <span className="text-xs text-muted-foreground">{t('driverBy', { name: driverName })}</span>
-            ) : null}
-            {trajet.driver.rating !== null ? (
-              <RatingStars
-                rating={trajet.driver.rating}
-                label={t('ratingLabel', {
-                  rating: trajet.driver.rating,
-                  count: trajet.driver.reviewCount ?? 0,
-                })}
-              />
-            ) : null}
-            {trajet.amenities.length > 0 ? (
-              <TrajetAmenities
-                amenities={trajet.amenities}
-                label={(amenity: TrajetAmenity) => t(`amenities.${amenity}`)}
-                className="justify-start"
-              />
-            ) : null}
-            {trajet.paymentMethods.map((method) => (
-              <Badge key={method} variant="secondary" className="font-medium">
-                {t(`paymentMethods.${method}`)}
-              </Badge>
-            ))}
-          </div>
-        ) : undefined
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          {driverName ? (
+            <span className="text-xs text-muted-foreground">{t('driverBy', { name: driverName })}</span>
+          ) : null}
+          {trajet.driver.rating !== null ? (
+            <RatingStars
+              rating={trajet.driver.rating}
+              label={t('ratingLabel', {
+                rating: trajet.driver.rating,
+                count: trajet.driver.reviewCount ?? 0,
+              })}
+            />
+          ) : null}
+          <Badge variant={trajet.driver.verified ? 'success' : 'neutral'}>
+            {t(trajet.driver.verified ? 'driverVerified.verified' : 'driverVerified.unverified')}
+          </Badge>
+          {trajet.amenities.length > 0 ? (
+            <TrajetAmenities
+              amenities={trajet.amenities}
+              label={(amenity: TrajetAmenity) => t(`amenities.${amenity}`)}
+              className="justify-start"
+            />
+          ) : null}
+          {trajet.paymentMethods.map((method) => (
+            <Badge key={method} variant="secondary" className="font-medium">
+              {t(`paymentMethods.${method}`)}
+            </Badge>
+          ))}
+        </div>
       }
     />
   );

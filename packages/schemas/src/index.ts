@@ -4,9 +4,12 @@ export * from './ping';
 // Domain schema exports are appended below by `pnpm gen backend-feature`.
 // plop:schemas
 export * from './payment';
+export * from './vehicle';
 export * from './admin';
 export * from './document';
 export * from './contact';
+export * from './geocode';
 export * from './message';
+export * from './notification';
 export * from './review';
 export * from './trajet';

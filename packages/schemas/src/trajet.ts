@@ -37,6 +37,7 @@ export const TRAJET_AMENITIES = [
   'insurance',
   'bikeRack',
   'cardPayment',
+  'cashOrInterac',
 ] as const;
 
 export const TrajetAmenitySchema = z.enum(TRAJET_AMENITIES).describe('TrajetAmenity');
@@ -58,6 +59,13 @@ export const RidePaymentMethodsSchema = z
     message: 'paymentMethods must not contain duplicates',
   })
   .describe('RidePaymentMethods');
+
+/**
+ * Decorative payment-method amenities kept for existing ride rows. New rides
+ * use `paymentMethods` (card / Interac / cash) for actual fare collection.
+ */
+export const PAYMENT_AMENITIES = ['cardPayment', 'cashOrInterac'] as const satisfies readonly TrajetAmenity[];
+export type PaymentAmenity = (typeof PAYMENT_AMENITIES)[number];
 
 /** Whether the ride runs straight through or picks up along the way. */
 export const StopPolicySchema = z.enum(['any', 'direct', 'withStops']).describe('StopPolicy');
@@ -84,6 +92,15 @@ export const DriverProfileSchema = z
     /** Average review score, 0–5. Rendered as the "Avis" stars. */
     rating: z.number().min(0).max(5).nullable(),
     reviewCount: z.number().int().nonnegative().nullable(),
+    /**
+     * Whether the driver's permis/assurance/immatriculation are all
+     * `approved` (and, for permis, still within its one-year re-verification
+     * window) — same rollup as `deriveDriverVerification(...).status ===
+     * 'approved'`. Drives the "Vérifié"/"Non vérifié" badge; it does NOT gate
+     * whether the ride shows up in search — an unverified driver's rides are
+     * still publicly listed, just badged accordingly.
+     */
+    verified: z.boolean(),
   })
   .describe('DriverProfile');
 
@@ -140,6 +157,14 @@ export const CreateTrajetSchema = z
   .object({
     departureCity: z.string().min(1),
     destinationCity: z.string().min(1),
+    // Client-supplied when the driver used the location picker (see
+    // apps/web's LocationPicker); left out otherwise, in which case the API
+    // falls back to a best-effort city-level geocode (see
+    // geocodeAndStoreTrajetLocation in apps/api/src/modules/trajet/geocoding.ts).
+    departureLat: z.number().min(-90).max(90).nullable().optional(),
+    departureLng: z.number().min(-180).max(180).nullable().optional(),
+    arrivalLat: z.number().min(-90).max(90).nullable().optional(),
+    arrivalLng: z.number().min(-180).max(180).nullable().optional(),
     departureDateTime: z.string().datetime(),
     seatsTotal: z.number().int().min(1),
     pricePerSeat: z.number().nonnegative(),
@@ -170,6 +195,12 @@ export const UpdateTrajetSchema = z
   .object({
     departureCity: z.string().min(1).optional(),
     destinationCity: z.string().min(1).optional(),
+    // Same as CreateTrajetSchema: supplied when the driver re-picked a
+    // location, absent otherwise.
+    departureLat: z.number().min(-90).max(90).nullable().optional(),
+    departureLng: z.number().min(-180).max(180).nullable().optional(),
+    arrivalLat: z.number().min(-90).max(90).nullable().optional(),
+    arrivalLng: z.number().min(-180).max(180).nullable().optional(),
     departureDateTime: z.string().datetime().optional(),
     seatsTotal: z.number().int().min(1).optional(),
     pricePerSeat: z.number().nonnegative().optional(),
@@ -435,6 +466,10 @@ export const TrajetListingSchema = z
     departurePlace: z.string(),
     arrivalCity: z.string(),
     arrivalPlace: z.string(),
+    departureLat: z.number().min(-90).max(90).nullable(),
+    departureLng: z.number().min(-180).max(180).nullable(),
+    arrivalLat: z.number().min(-90).max(90).nullable(),
+    arrivalLng: z.number().min(-180).max(180).nullable(),
     /** ISO-8601 departure instant. */
     departureAt: z.iso.datetime(),
     /** ISO-8601 estimated arrival instant, or null when unknown. */
@@ -484,8 +519,15 @@ export const CreateTrajetRequestSchema = z
     departurePlace: z.string().trim().min(1),
     arrivalCity: z.string().trim().min(1),
     arrivalPlace: z.string().trim().min(1),
+    // Set when the driver picked a precise point via the location picker
+    // (apps/web's LocationPicker); left null for a free-text-only entry.
+    departureLat: z.number().min(-90).max(90).nullable().optional(),
+    departureLng: z.number().min(-180).max(180).nullable().optional(),
+    arrivalLat: z.number().min(-90).max(90).nullable().optional(),
+    arrivalLng: z.number().min(-180).max(180).nullable().optional(),
     departureAt: z.iso.datetime(),
-    arrivalAt: z.iso.datetime(),
+    /** Optional — not every driver knows or wants to commit to an arrival time. */
+    arrivalAt: z.iso.datetime().nullable().optional(),
     pricePerSeat: z.number().nonnegative(),
     seatsTotal: z.number().int().min(1).max(8),
     amenities: z.array(TrajetAmenitySchema).default([]),
