@@ -3,14 +3,20 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { Check, CircleCheck, IdCard, ShieldCheck, X, type LucideIcon } from 'lucide-react';
-import type { Vehicle } from '@carpool/schemas';
+import { Check, CircleCheck, ShieldCheck, X, type LucideIcon } from 'lucide-react';
+import {
+  REQUIRED_DRIVER_DOCUMENT_TYPES,
+  deriveDriverVerification,
+  type DriverDocument,
+  type RequiredDriverDocumentType,
+  type Vehicle,
+} from '@carpool/schemas';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { LabelledField } from '@/components/ui/labelled-field';
-import { Link } from '@/i18n/navigation';
-import { fetchMyEligibility, saveMyLicenseNumber } from '@/lib/documents';
+import { DriverIdentityCard } from '@/components/documents/driver-identity-card';
+import { EligibilityPanel } from '@/components/documents/eligibility-panel';
+import { DocumentSlotCard } from '@/components/mes-documents/document-slot-card';
+import { fetchMyDocuments, fetchMyEligibility } from '@/lib/documents';
 import { fetchMyVehicle, saveMyVehicle } from '@/lib/vehicles';
 import { cn } from '@/lib/utils';
 
@@ -21,22 +27,19 @@ export interface PublishChecklistStepProps {
 }
 
 /**
- * Étape 2 — a two-item checklist of what's mandatory before publishing,
- * rather than a second copy of `/mes-documents`' full verification flow
- * (banner, eligibility panel, document upload). The two pages used to overlap
- * almost entirely; this step now only checks the two facts that actually
- * gate publishing:
- *
- *   - the licence NUMBER is on file — the scanned photo stays optional and
- *     lives entirely on `/mes-documents` (linked from here, not duplicated);
- *   - insurance was declared "oui".
- *
- * "Publier" — the action that actually creates the ride — stays disabled
- * until both are checked.
+ * Étape 2 — the same driver-identity, eligibility and licence sections shown
+ * on `/mes-documents`, reused here rather than duplicated, plus the insurance
+ * question. Reusing those components keeps the required/optional rules in
+ * one place (`REQUIRED_DRIVER_DOCUMENT_TYPES`, `LicenseNumberDeclarationSchema`
+ * in `packages/schemas/src/document.ts`): the licence NUMBER and an insurance
+ * answer of "oui" are what gate "Publier"; the scanned licence photo and the
+ * date of birth stay optional at this step, same as everywhere else they
+ * appear.
  */
 export function PublishChecklistStep({ onPublish, onBack, publishing }: PublishChecklistStepProps) {
   const t = useTranslations('Trajet');
 
+  const documentsQuery = useQuery({ queryKey: ['my-documents'], queryFn: fetchMyDocuments });
   const eligibilityQuery = useQuery({ queryKey: ['my-eligibility'], queryFn: fetchMyEligibility });
   const vehicleQuery = useQuery({ queryKey: ['my-vehicle'], queryFn: fetchMyVehicle });
 
@@ -55,14 +58,51 @@ export function PublishChecklistStep({ onPublish, onBack, publishing }: PublishC
     onPublish();
   }
 
+  const documents = documentsQuery.data ?? [];
+  const latestByType = toLatestByType(documents);
+  const verification = deriveDriverVerification(documents, {
+    dateOfBirth: eligibilityQuery.data?.dateOfBirth ?? null,
+  });
+  const slotStatusByType = new Map(verification.slots.map((slot) => [slot.type, slot.status]));
+  const isLoadingDriverInfo = documentsQuery.isLoading || eligibilityQuery.isLoading;
+
   return (
     <div className="flex flex-col gap-6">
-      <LicenseChecklistItem loading={eligibilityQuery.isLoading} done={licenseDone} />
-      <InsuranceChecklistItem
-        loading={vehicleQuery.isLoading}
-        done={insuranceDone}
-        vehicle={vehicleQuery.data ?? null}
-      />
+      {/* Two columns above `lg` rather than one long stack — identity and
+          eligibility read together on the left, the licence card and the
+          insurance question (the two things that actually gate "Publier")
+          together on the right. */}
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="flex flex-col gap-6">
+          {isLoadingDriverInfo ? (
+            <p className="text-sm text-muted-foreground">{t('create.step2.verification.loading')}</p>
+          ) : (
+            <>
+              <DriverIdentityCard />
+              <EligibilityPanel verification={verification} />
+            </>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-6">
+          {isLoadingDriverInfo
+            ? null
+            : REQUIRED_DRIVER_DOCUMENT_TYPES.map((type) => (
+                <DocumentSlotCard
+                  key={type}
+                  type={type}
+                  latest={latestByType.get(type) ?? null}
+                  slotStatus={slotStatusByType.get(type) ?? 'missing'}
+                />
+              ))}
+
+          <InsuranceChecklistItem
+            loading={vehicleQuery.isLoading}
+            done={insuranceDone}
+            vehicle={vehicleQuery.data ?? null}
+          />
+        </div>
+      </div>
 
       {error ? (
         <p className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -104,90 +144,6 @@ function ChecklistHeader({ Icon, title, done }: { Icon: LucideIcon; title: strin
       <h3 className="flex-1 text-sm font-semibold text-foreground">{title}</h3>
       {done ? <CircleCheck className="size-5 shrink-0 text-success" strokeWidth={2} aria-hidden /> : null}
     </div>
-  );
-}
-
-/**
- * The licence-number checklist item — done once `['my-eligibility']` carries
- * one, regardless of whether the scanned document was ever uploaded. Saved
- * via the same `PUT /eligibility/license-number` as before; the field just
- * lives in a checklist row now instead of behind a "do you have a licence?"
- * gate.
- */
-function LicenseChecklistItem({ loading, done }: { loading: boolean; done: boolean }) {
-  const t = useTranslations('Trajet');
-  const queryClient = useQueryClient();
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-
-  const mutation = useMutation({
-    mutationFn: saveMyLicenseNumber,
-    onSuccess: (saved) => {
-      queryClient.setQueryData(['my-eligibility'], saved);
-      setError('');
-      setValue('');
-    },
-    onError: () => setError(t('create.step2.licenseNumber.saveFailed')),
-  });
-
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = value.trim();
-    if (!trimmed) {
-      setError(t('create.step2.licenseNumber.required'));
-      return;
-    }
-    setError('');
-    mutation.mutate(trimmed);
-  }
-
-  return (
-    <Card>
-      <CardContent className="flex flex-col gap-4 p-5 pt-5">
-        <ChecklistHeader Icon={IdCard} title={t('create.step2.checklist.licenseTitle')} done={done} />
-
-        {loading ? (
-          <p className="text-sm text-muted-foreground">{t('create.step2.verification.loading')}</p>
-        ) : done ? (
-          <p className="text-sm text-muted-foreground">{t('create.step2.checklist.licenseDone')}</p>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <LabelledField label={t('create.step2.licenseNumber.label')} htmlFor="license-number">
-              <Input
-                id="license-number"
-                value={value}
-                onChange={(event) => {
-                  setValue(event.target.value);
-                  setError('');
-                }}
-                maxLength={50}
-                required
-              />
-            </LabelledField>
-
-            {error ? (
-              <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                {error}
-              </p>
-            ) : null}
-
-            <Button type="submit" variant="outline" disabled={mutation.isPending} className="self-start">
-              <Check className="size-4" strokeWidth={2.5} aria-hidden />
-              {mutation.isPending
-                ? t('create.step2.licenseNumber.saving')
-                : t('create.step2.licenseNumber.save')}
-            </Button>
-          </form>
-        )}
-
-        <p className="text-xs text-muted-foreground">
-          {t('create.step2.checklist.licenseHint')}{' '}
-          <Link href="/mes-documents" className="font-medium text-primary hover:underline">
-            {t('create.step2.checklist.licenseHintLink')}
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
   );
 }
 
@@ -279,4 +235,20 @@ function InsuranceChecklistItem({
       </CardContent>
     </Card>
   );
+}
+
+/**
+ * Newest submission per required type. Same rule `deriveDriverVerification`
+ * applies internally (the API returns newest first, so the first row seen for
+ * a type wins), so a slot's badge here always matches its status.
+ */
+function toLatestByType(
+  documents: DriverDocument[],
+): Map<RequiredDriverDocumentType, DriverDocument> {
+  const latest = new Map<RequiredDriverDocumentType, DriverDocument>();
+  for (const document of documents) {
+    const type = REQUIRED_DRIVER_DOCUMENT_TYPES.find((required) => required === document.type);
+    if (type && !latest.has(type)) latest.set(type, document);
+  }
+  return latest;
 }

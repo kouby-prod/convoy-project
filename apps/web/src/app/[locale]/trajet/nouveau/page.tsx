@@ -8,7 +8,7 @@ export default async function NewTrajetPage({ params }: { params: Promise<{ loca
   const t = await getTranslations('Trajet');
 
   return (
-    <section className="mx-auto flex w-full max-w-2xl flex-col gap-8">
+    <section className="mx-auto flex w-full max-w-4xl flex-col gap-8">
       <PageHeader title={t('create.title')} subtitle={t('create.subtitle')} className="sm:items-center sm:text-center" />
       <TrajetCreateForm />
     </section>

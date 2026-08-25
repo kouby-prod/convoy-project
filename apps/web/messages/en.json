@@ -1079,19 +1079,8 @@
           "loading": "Loading…",
           "loadError": "Failed to load your information."
         },
-        "licenseNumber": {
-          "label": "Driver's licence number",
-          "save": "Save",
-          "saving": "Saving…",
-          "saveFailed": "Saving failed. Please try again.",
-          "required": "Enter your licence number."
-        },
         "checklist": {
-          "licenseTitle": "Licence number",
-          "licenseDone": "Licence number on file.",
-          "licenseHint": "The photo of your licence stays optional here — you can add it anytime from",
-          "licenseHintLink": "My documents",
-          "incomplete": "Complete both items above before publishing your ride."
+          "incomplete": "Complete the items above before publishing your ride."
         }
       },
       "step3": {
