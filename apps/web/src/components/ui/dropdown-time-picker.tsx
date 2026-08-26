@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { parseTime, type TimeValue } from '@/components/ui/time-picker';
+import { cn } from '@/lib/utils';
 
 interface DropdownTimePickerProps {
   id?: string;
@@ -11,6 +12,7 @@ interface DropdownTimePickerProps {
   ariaLabel?: string;
   className?: string;
   required?: boolean;
+  invalid?: boolean;
 }
 
 function formatTime(value: TimeValue) {
@@ -24,6 +26,7 @@ export function DropdownTimePicker({
   ariaLabel,
   className,
   required,
+  invalid,
 }: DropdownTimePickerProps) {
   const [timeValue, setTimeValue] = useState<string>(value ? formatTime(value) : '');
 
@@ -45,9 +48,14 @@ export function DropdownTimePicker({
         type="time"
         aria-label={ariaLabel ?? 'Select time'}
         required={required}
+        aria-invalid={invalid || undefined}
+        aria-describedby={invalid && id ? `${id}-error` : undefined}
         value={timeValue}
         onChange={handleChange}
-        className="appearance-none [&::-webkit-calendar-picker-indicator]:opacity-60"
+        className={cn(
+          'appearance-none [&::-webkit-calendar-picker-indicator]:opacity-60',
+          invalid && 'ring-destructive focus-visible:ring-destructive/30',
+        )}
       />
     </div>
   );

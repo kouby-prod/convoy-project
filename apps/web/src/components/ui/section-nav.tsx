@@ -10,7 +10,11 @@ export type SectionNavItem = {
   title: string;
   icon: LucideIcon;
   tone?: 'default' | 'danger';
+  /** Hairline before this item — used to split a wizard into pages. */
+  rule?: boolean;
 };
+
+export type SectionNavSelectResult = void | 'skip' | 'block';
 
 function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -21,6 +25,8 @@ function easeInOutCubic(t: number) {
 }
 
 let scrollGeneration = 0;
+let spyFrozen = false;
+const afterProgrammaticScroll = new Set<() => void>();
 
 /** Desktop: below the sticky site nav (`lg:top-24`). Mobile: site nav + sticky chip bar. */
 function sectionOffset() {
@@ -61,16 +67,16 @@ function sectionAtMark(ids: string[]): string | null {
   return active;
 }
 
-/** Ease-in-out scroll. Avoids `behavior: smooth` (Chromium can drop it) and hash URLs (Next resets). */
-export function scrollToSection(id: string, onDone?: () => void) {
-  const el = document.getElementById(id);
+function releaseProgrammaticScroll() {
+  spyFrozen = false;
+  afterProgrammaticScroll.forEach((fn) => fn());
+}
+
+/** Scroll a node into view under the sticky nav, then run `onDone`. */
+export function scrollToElement(el: HTMLElement, onDone?: () => void, instant = false) {
   const scroller = scrollingElement();
   const html = document.documentElement;
-  if (!el) {
-    onDone?.();
-    return;
-  }
-
+  spyFrozen = true;
   const target = Math.max(0, el.getBoundingClientRect().top + scroller.scrollTop - sectionOffset());
   const previousBehavior = html.style.scrollBehavior;
   const previousAnchor = html.style.overflowAnchor;
@@ -80,18 +86,14 @@ export function scrollToSection(id: string, onDone?: () => void) {
   function finish() {
     html.style.scrollBehavior = previousBehavior;
     html.style.overflowAnchor = previousAnchor;
+    releaseProgrammaticScroll();
     onDone?.();
-  }
-
-  if (prefersReducedMotion()) {
-    scroller.scrollTop = target;
-    finish();
-    return;
   }
 
   const start = scroller.scrollTop;
   const distance = target - start;
-  if (Math.abs(distance) < 2) {
+  if (instant || prefersReducedMotion() || Math.abs(distance) < 2) {
+    scroller.scrollTop = target;
     finish();
     return;
   }
@@ -116,9 +118,28 @@ export function scrollToSection(id: string, onDone?: () => void) {
   requestAnimationFrame(step);
 }
 
+/** Ease-in-out scroll. Avoids `behavior: smooth` (Chromium can drop it) and hash URLs (Next resets). */
+export function scrollToSection(id: string, onDone?: () => void, attempt = 0) {
+  const el = document.getElementById(id);
+  if (!el) {
+    onDone?.();
+    return;
+  }
+  if (!isRendered(el) && attempt < 8) {
+    requestAnimationFrame(() => scrollToSection(id, onDone, attempt + 1));
+    return;
+  }
+  if (!isRendered(el)) {
+    onDone?.();
+    return;
+  }
+  scrollToElement(el, onDone);
+}
+
 /**
  * In-page rail: active pill, icons, and eased section scroll.
- * Return `'skip'` from `onSelect` when the parent will scroll after a layout change.
+ * `onSelect` may return `'skip'` (parent will scroll after a layout change) or
+ * `'block'` (stay on the current item — e.g. the next wizard page is not valid yet).
  */
 export function SectionNav({
   items,
@@ -132,7 +153,7 @@ export function SectionNav({
   className?: string;
   /** Re-bind the scroll spy when wizard steps show/hide sections. */
   observeKey?: string;
-  onSelect?: (id: string) => void | 'skip';
+  onSelect?: (id: string) => SectionNavSelectResult;
 }) {
   const listRef = useRef<HTMLUListElement>(null);
   const lockObserver = useRef(false);
@@ -154,7 +175,7 @@ export function SectionNav({
 
     let frame = 0;
     function sync() {
-      if (lockObserver.current) return;
+      if (lockObserver.current || spyFrozen) return;
       const next = sectionAtMark(ids);
       if (next) setActiveId(next);
     }
@@ -173,6 +194,8 @@ export function SectionNav({
     window.addEventListener('resize', sync);
     const unlock = () => {
       lockObserver.current = false;
+      spyFrozen = false;
+      scrollGeneration += 1;
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (
@@ -190,8 +213,10 @@ export function SectionNav({
     window.addEventListener('wheel', unlock, { passive: true });
     window.addEventListener('touchmove', unlock, { passive: true });
     window.addEventListener('keydown', onKeyDown);
+    afterProgrammaticScroll.add(sync);
     return () => {
       if (frame) cancelAnimationFrame(frame);
+      afterProgrammaticScroll.delete(sync);
       window.removeEventListener('scroll', onScroll, { capture: true });
       window.removeEventListener('resize', sync);
       window.removeEventListener('wheel', unlock);
@@ -223,9 +248,11 @@ export function SectionNav({
   }, [activeId, itemIds]);
 
   function onNavClick(id: string) {
+    const result = onSelect?.(id);
+    if (result === 'block') return;
     lockObserver.current = true;
     flushSync(() => setActiveId(id));
-    if (onSelect?.(id) === 'skip') return;
+    if (result === 'skip') return;
     scrollToSection(id);
   }
 
@@ -258,7 +285,14 @@ export function SectionNav({
               const active = item.id === activeId;
               const danger = item.tone === 'danger';
               return (
-                <li key={item.id} className="relative z-10 shrink-0">
+                <li
+                  key={item.id}
+                  className={cn(
+                    'relative z-10 shrink-0',
+                    item.rule &&
+                      'max-lg:ml-1 max-lg:border-l max-lg:border-border max-lg:pl-3 lg:mt-1 lg:border-t lg:border-border lg:pt-1',
+                  )}
+                >
                   <button
                     type="button"
                     data-nav-id={item.id}

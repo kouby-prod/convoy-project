@@ -1502,6 +1502,7 @@
       "success": "Trajet publié.",
       "failed": "La publication a échoué. Réessayez plus tard.",
       "invalid": "Vérifiez les champs du formulaire.",
+      "fieldRequired": "Ce champ est obligatoire",
       "baggage": "Bagages",
       "baggagePlaceholder": "Ex. : un bagage cabine par personne",
       "paymentMethodsHint": "Choisissez-en au moins un. La carte encaisse le trajet via Kouby ; Interac et espèces se règlent directement avec vous.",

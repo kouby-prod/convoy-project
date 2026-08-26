@@ -1502,6 +1502,7 @@
       "success": "Ride published.",
       "failed": "Publishing failed. Please try again later.",
       "invalid": "Please check the form fields.",
+      "fieldRequired": "This field is required",
       "baggage": "Baggage",
       "baggagePlaceholder": "E.g. one cabin bag per person",
       "paymentMethodsHint": "Choose at least one. Card collects the fare through Kouby; Interac and cash are settled with you directly.",

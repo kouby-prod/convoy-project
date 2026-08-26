@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, Car, Clock, MapPin, ShieldCheck, Sparkles, Wallet } from 'lucide-react';
+import { ArrowRight, Car, Clock, MapPin, Sparkles, Wallet } from 'lucide-react';
 import {
   CreateTrajetRequestSchema,
   RIDE_PAYMENT_METHODS,
@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LabelledField } from '@/components/ui/labelled-field';
+import { FormAlert } from '@/components/ui/form-alert';
 import { AmenityToggleGroup, GENERAL_AMENITIES } from '@/components/trajet/trajet-amenities';
 import { DropdownDatePicker, dateToParam, paramToDate } from '@/components/ui/dropdown-date-picker';
 import { DropdownTimePicker } from '@/components/ui/dropdown-time-picker';
@@ -41,17 +42,9 @@ import { CardSkeleton } from '@/components/ui/list-skeleton';
 import { toast } from '@/components/ui/toast';
 import { PageHeader } from '@/components/ui/page-header';
 import { SettingsSection } from '@/components/parametres/settings-section';
-import { SectionNav, scrollToSection, type SectionNavItem } from '@/components/ui/section-nav';
+import { SectionNav, scrollToElement, scrollToSection, type SectionNavItem } from '@/components/ui/section-nav';
 
 type Step = 'ride-vehicle' | 'license-insurance';
-
-const STEP1_SECTION_IDS = [
-  'create-route',
-  'create-when',
-  'create-fare',
-  'create-details',
-  'create-vehicle',
-] as const;
 
 const PUBLISH_SECTION_ID = 'create-publish';
 
@@ -114,8 +107,52 @@ const EMPTY_RIDE_DRAFT: RideDraft = {
 
 const RIDE_DRAFT_KEY = 'trajet-create-draft';
 
-function isStep1Section(id: string): boolean {
-  return (STEP1_SECTION_IDS as readonly string[]).includes(id);
+const SCHEMA_FIELD_IDS: Record<string, string> = {
+  departureCity: 'create-departure-city',
+  departurePlace: 'create-departure-place',
+  arrivalCity: 'create-arrival-city',
+  arrivalPlace: 'create-arrival-place',
+  departureAt: 'create-date',
+  pricePerSeat: 'create-price',
+  seatsTotal: 'create-seats',
+};
+
+function firstInvalidControl(form: HTMLFormElement) {
+  return form.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+    'input:invalid, select:invalid, textarea:invalid',
+  );
+}
+
+function isBlank(value: string) {
+  return value.trim() === '';
+}
+
+/** First empty required field, in page order — used to scroll after Next. */
+function missingRequiredFieldId(draft: RideDraft): string | null {
+  if (isBlank(draft.departureCity)) return 'create-departure-city';
+  if (isBlank(draft.departurePlace)) return 'create-departure-place';
+  if (isBlank(draft.arrivalCity)) return 'create-arrival-city';
+  if (isBlank(draft.arrivalPlace)) return 'create-arrival-place';
+  if (isBlank(draft.date)) return 'create-date';
+  if (isBlank(draft.departureTime)) return 'create-departure-time';
+  if (isBlank(draft.seatsTotal)) return 'create-seats';
+  if (isBlank(draft.pricePerSeat)) return 'create-price';
+  return null;
+}
+
+/** Jump to the first invalid control and show the browser's "fill this field" bubble. */
+function revealInvalid(control: HTMLElement) {
+  const visualId = control.dataset.focusTarget;
+  const visual = (visualId && document.getElementById(visualId)) || control;
+  scrollToElement(visual, undefined, true);
+  visual.focus({ preventScroll: true });
+  if (
+    control instanceof HTMLInputElement ||
+    control instanceof HTMLSelectElement ||
+    control instanceof HTMLTextAreaElement
+  ) {
+    control.reportValidity();
+  }
 }
 
 /**
@@ -126,12 +163,13 @@ function isStep1Section(id: string): boolean {
  * is backed by `RideDraft` (`useSessionDraft`) so it also survives a locale
  * switch, which remounts this whole component (see that hook's doc comment).
  *
- * Page 1 is a single native `<form>` for the ride fields (native
- * required-field validation), with `VehicleForm` — itself its own `<form>`,
- * hence a sibling rather than nested — rendered inside it. Its "Suivant" is
- * the ride form's submit button: it validates the ride fields AND requires
- * the vehicle to already be saved (`VehicleForm`'s own button, gated
- * separately) before advancing.
+ * Page 1 is a single native `<form>` for the ride fields. After Next, empty
+ * required fields show an inline “this field is required” message and the
+ * page jumps to the first one. `VehicleForm` is its own `<form>`, hence a
+ * sibling rather than nested — its submit stays independent; the outer
+ * “Suivant” is linked to `ride-details-form` via `form=` rather than sitting
+ * inside it, and it also requires the vehicle to already be saved before
+ * advancing.
  *
  * Page 2 is `PublishChecklistStep` — a two-item checklist (licence number
  * on file, insurance declared "oui") rather than a re-run of `/mes-documents`'
@@ -148,6 +186,7 @@ export function TrajetCreateForm() {
 
   const [draft, setDraft] = useSessionDraft<RideDraft>(RIDE_DRAFT_KEY, EMPTY_RIDE_DRAFT);
   const [error, setError] = useState('');
+  const [showFieldErrors, setShowFieldErrors] = useState(false);
   const pendingScrollId = useRef<string | null>(null);
 
   function updateDraft(patch: Partial<RideDraft>) {
@@ -162,10 +201,14 @@ export function TrajetCreateForm() {
     const id = pendingScrollId.current;
     if (!id) return;
     pendingScrollId.current = null;
-    const frame = requestAnimationFrame(() => {
-      requestAnimationFrame(() => scrollToSection(id));
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => scrollToSection(id));
     });
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(outer);
+      if (inner) cancelAnimationFrame(inner);
+    };
   }, [draft.step]);
 
   // Shares the `['my-vehicle']` cache with `VehicleForm`/`PublishChecklistStep`
@@ -210,13 +253,27 @@ export function TrajetCreateForm() {
   function handleStep1Submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
+    setShowFieldErrors(true);
 
+    const missingId = missingRequiredFieldId(draft);
+    if (missingId) {
+      const el = document.getElementById(missingId);
+      if (el) {
+        scrollToElement(el, undefined, true);
+        el.focus({ preventScroll: true });
+      }
+      return;
+    }
+
+    const form = event.currentTarget;
     const departureAt = combine(draft.date, draft.departureTime);
     // Optional: null when the driver leaves it blank, same as arrivalPlace.
     const arrivalAt = combine(draft.date, draft.arrivalTime);
 
     if (!departureAt) {
       setError(t('create.invalid'));
+      const fallback = document.getElementById(draft.date ? 'create-departure-time' : 'create-date');
+      if (fallback) revealInvalid(fallback);
       return;
     }
 
@@ -246,6 +303,10 @@ export function TrajetCreateForm() {
 
     if (!parsed.success) {
       setError(t('create.invalid'));
+      const key = parsed.error.issues[0]?.path[0];
+      const fieldId = typeof key === 'string' ? SCHEMA_FIELD_IDS[key] : undefined;
+      const fallback = (fieldId && document.getElementById(fieldId)) || firstInvalidControl(form);
+      if (fallback) revealInvalid(fallback);
       return;
     }
 
@@ -275,31 +336,20 @@ export function TrajetCreateForm() {
     mutation.mutate(draft.ridePayload);
   }
 
-  function handleNavSelect(id: string): void | 'skip' {
-    if (isStep1Section(id)) {
-      if (draft.step !== 'ride-vehicle') {
-        queueScroll(id);
-        updateDraft({ step: 'ride-vehicle' });
-        return 'skip';
-      }
-      return;
-    }
-    if (draft.step === 'license-insurance') return;
-    (document.getElementById('ride-details-form') as HTMLFormElement | null)?.requestSubmit();
-    return 'skip';
-  }
-
   const navItems: SectionNavItem[] = [
     { id: 'create-route', title: t('create.sections.route'), icon: MapPin },
     { id: 'create-when', title: t('create.sections.when'), icon: Clock },
     { id: 'create-fare', title: t('create.sections.fare'), icon: Wallet },
     { id: 'create-details', title: t('create.sections.details'), icon: Sparkles },
     { id: 'create-vehicle', title: t('create.sections.vehicle'), icon: Car },
-    { id: 'create-publish', title: t('create.sections.publish'), icon: ShieldCheck },
   ];
 
-  const layoutClass =
-    'flex min-w-0 flex-col gap-6 overflow-x-clip lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:items-start lg:gap-x-8 lg:gap-y-8 lg:overflow-visible';
+  const onFirstStep = draft.step === 'ride-vehicle';
+  const layoutClass = cn(
+    'flex min-w-0 flex-col gap-6 overflow-x-clip',
+    onFirstStep &&
+      'lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:items-start lg:gap-x-8 lg:gap-y-8 lg:overflow-visible',
+  );
 
   if (isSessionPending) {
     return (
@@ -332,73 +382,123 @@ export function TrajetCreateForm() {
   return (
     <div className={layoutClass}>
       <PageHeader className="mb-0 lg:col-span-2" title={t('create.title')} subtitle={t('create.subtitle')} />
-      <SectionNav
-        items={navItems}
-        label={t('create.navLabel')}
-        className="lg:col-start-1 lg:row-start-2"
-        observeKey={draft.step}
-        onSelect={handleNavSelect}
-      />
+      {onFirstStep ? (
+        <SectionNav
+          items={navItems}
+          label={t('create.navLabel')}
+          className="lg:col-start-1 lg:row-start-2"
+        />
+      ) : null}
 
-      <div className="grid gap-10 lg:col-start-2 lg:row-start-2">
+      <div className={cn('grid gap-10', onFirstStep && 'lg:col-start-2 lg:row-start-2')}>
         <div className={cn('grid gap-10', draft.step !== 'ride-vehicle' && 'hidden')}>
-          <form id="ride-details-form" onSubmit={handleStep1Submit} className="grid gap-10">
+          <form id="ride-details-form" noValidate onSubmit={handleStep1Submit} className="grid gap-10">
             <SettingsSection id="create-route" title={t('create.sections.route')}>
-              <Card>
+              <Card className="overflow-visible">
                 <CardContent className="grid gap-6 pt-0 lg:grid-cols-2 lg:items-start">
                   <Field label={t('create.departure')}>
-                    <LocationPicker
-                      name="departureCity"
-                      value={{ city: draft.departureCity, lat: draft.departureLat, lng: draft.departureLng }}
-                      onChange={(value: LocationValue) =>
-                        updateDraft({ departureCity: value.city, departureLat: value.lat, departureLng: value.lng })
-                      }
-                      placeholder={t('filters.from')}
-                      aria-label={t('filters.from')}
-                      useMyLocationLabel={t('create.useMyLocation')}
-                      locationErrorLabel={t('create.locationError')}
-                      mapColor="blue"
-                      required
-                    />
-                    <Input
-                      name="departurePlace"
-                      value={draft.departurePlace}
-                      onChange={(event) => updateDraft({ departurePlace: event.target.value })}
-                      placeholder={t('create.departurePlace')}
-                      required
-                    />
+                    <div className="flex flex-col gap-1.5">
+                      <LocationPicker
+                        id="create-departure-city"
+                        name="departureCity"
+                        value={{ city: draft.departureCity, lat: draft.departureLat, lng: draft.departureLng }}
+                        onChange={(value: LocationValue) =>
+                          updateDraft({ departureCity: value.city, departureLat: value.lat, departureLng: value.lng })
+                        }
+                        placeholder={t('filters.from')}
+                        aria-label={t('filters.from')}
+                        useMyLocationLabel={t('create.useMyLocation')}
+                        locationErrorLabel={t('create.locationError')}
+                        mapColor="blue"
+                        required
+                        invalid={showFieldErrors && isBlank(draft.departureCity)}
+                      />
+                      {showFieldErrors && isBlank(draft.departureCity) ? (
+                        <FormAlert id="create-departure-city-error">{t('create.fieldRequired')}</FormAlert>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Input
+                        id="create-departure-place"
+                        name="departurePlace"
+                        value={draft.departurePlace}
+                        onChange={(event) => updateDraft({ departurePlace: event.target.value })}
+                        placeholder={t('create.departurePlace')}
+                        required
+                        aria-invalid={showFieldErrors && isBlank(draft.departurePlace) ? true : undefined}
+                        aria-describedby={
+                          showFieldErrors && isBlank(draft.departurePlace)
+                            ? 'create-departure-place-error'
+                            : undefined
+                        }
+                        className={
+                          showFieldErrors && isBlank(draft.departurePlace)
+                            ? 'ring-destructive focus-visible:ring-destructive/30'
+                            : undefined
+                        }
+                      />
+                      {showFieldErrors && isBlank(draft.departurePlace) ? (
+                        <FormAlert id="create-departure-place-error">{t('create.fieldRequired')}</FormAlert>
+                      ) : null}
+                    </div>
                   </Field>
 
                   <Field label={t('create.arrival')}>
-                    <LocationPicker
-                      name="arrivalCity"
-                      value={{ city: draft.arrivalCity, lat: draft.arrivalLat, lng: draft.arrivalLng }}
-                      onChange={(value: LocationValue) =>
-                        updateDraft({ arrivalCity: value.city, arrivalLat: value.lat, arrivalLng: value.lng })
-                      }
-                      placeholder={t('filters.to')}
-                      aria-label={t('filters.to')}
-                      useMyLocationLabel={t('create.useMyLocation')}
-                      locationErrorLabel={t('create.locationError')}
-                      mapColor="green"
-                      required
-                    />
-                    <Input
-                      name="arrivalPlace"
-                      value={draft.arrivalPlace}
-                      onChange={(event) => updateDraft({ arrivalPlace: event.target.value })}
-                      placeholder={t('create.arrivalPlace')}
-                      required
-                    />
+                    <div className="flex flex-col gap-1.5">
+                      <LocationPicker
+                        id="create-arrival-city"
+                        name="arrivalCity"
+                        value={{ city: draft.arrivalCity, lat: draft.arrivalLat, lng: draft.arrivalLng }}
+                        onChange={(value: LocationValue) =>
+                          updateDraft({ arrivalCity: value.city, arrivalLat: value.lat, arrivalLng: value.lng })
+                        }
+                        placeholder={t('filters.to')}
+                        aria-label={t('filters.to')}
+                        useMyLocationLabel={t('create.useMyLocation')}
+                        locationErrorLabel={t('create.locationError')}
+                        mapColor="green"
+                        required
+                        invalid={showFieldErrors && isBlank(draft.arrivalCity)}
+                      />
+                      {showFieldErrors && isBlank(draft.arrivalCity) ? (
+                        <FormAlert id="create-arrival-city-error">{t('create.fieldRequired')}</FormAlert>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Input
+                        id="create-arrival-place"
+                        name="arrivalPlace"
+                        value={draft.arrivalPlace}
+                        onChange={(event) => updateDraft({ arrivalPlace: event.target.value })}
+                        placeholder={t('create.arrivalPlace')}
+                        required
+                        aria-invalid={showFieldErrors && isBlank(draft.arrivalPlace) ? true : undefined}
+                        aria-describedby={
+                          showFieldErrors && isBlank(draft.arrivalPlace) ? 'create-arrival-place-error' : undefined
+                        }
+                        className={
+                          showFieldErrors && isBlank(draft.arrivalPlace)
+                            ? 'ring-destructive focus-visible:ring-destructive/30'
+                            : undefined
+                        }
+                      />
+                      {showFieldErrors && isBlank(draft.arrivalPlace) ? (
+                        <FormAlert id="create-arrival-place-error">{t('create.fieldRequired')}</FormAlert>
+                      ) : null}
+                    </div>
                   </Field>
                 </CardContent>
               </Card>
             </SettingsSection>
 
             <SettingsSection id="create-when" title={t('create.sections.when')}>
-              <Card>
+              <Card className="overflow-visible">
                 <CardContent className="grid gap-3 pt-0">
-                  <LabelledField label={t('filters.date')} htmlFor="create-date">
+                  <LabelledField
+                    label={t('filters.date')}
+                    htmlFor="create-date"
+                    error={showFieldErrors && isBlank(draft.date) ? t('create.fieldRequired') : undefined}
+                  >
                     <DropdownDatePicker
                       id="create-date"
                       value={paramToDate(draft.date)}
@@ -406,16 +506,24 @@ export function TrajetCreateForm() {
                       placeholder={t('filters.date')}
                       aria-label={t('filters.date')}
                       required
+                      invalid={showFieldErrors && isBlank(draft.date)}
                     />
                   </LabelledField>
                   <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-                    <LabelledField label={t('create.departureTime')} htmlFor="create-departure-time">
+                    <LabelledField
+                      label={t('create.departureTime')}
+                      htmlFor="create-departure-time"
+                      error={
+                        showFieldErrors && isBlank(draft.departureTime) ? t('create.fieldRequired') : undefined
+                      }
+                    >
                       <DropdownTimePicker
                         id="create-departure-time"
                         value={parseTime(draft.departureTime)}
                         onChange={(next) => updateDraft({ departureTime: formatTime(next) })}
                         ariaLabel={t('create.departureTime')}
                         required
+                        invalid={showFieldErrors && isBlank(draft.departureTime)}
                       />
                     </LabelledField>
                     <LabelledField label={t('create.arrivalTime')} htmlFor="create-arrival-time">
@@ -433,9 +541,13 @@ export function TrajetCreateForm() {
             </SettingsSection>
 
             <SettingsSection id="create-fare" title={t('create.sections.fare')}>
-              <Card>
+              <Card className="overflow-visible">
                 <CardContent className="grid min-w-0 grid-cols-2 gap-3 pt-0">
-                  <LabelledField label={t('create.seatsTotal')} htmlFor="create-seats">
+                  <LabelledField
+                    label={t('create.seatsTotal')}
+                    htmlFor="create-seats"
+                    error={showFieldErrors && isBlank(draft.seatsTotal) ? t('create.fieldRequired') : undefined}
+                  >
                     <Input
                       type="number"
                       id="create-seats"
@@ -445,9 +557,22 @@ export function TrajetCreateForm() {
                       value={draft.seatsTotal}
                       onChange={(event) => updateDraft({ seatsTotal: event.target.value })}
                       required
+                      aria-invalid={showFieldErrors && isBlank(draft.seatsTotal) ? true : undefined}
+                      aria-describedby={
+                        showFieldErrors && isBlank(draft.seatsTotal) ? 'create-seats-error' : undefined
+                      }
+                      className={
+                        showFieldErrors && isBlank(draft.seatsTotal)
+                          ? 'ring-destructive focus-visible:ring-destructive/30'
+                          : undefined
+                      }
                     />
                   </LabelledField>
-                  <LabelledField label={t('create.pricePerSeat')} htmlFor="create-price">
+                  <LabelledField
+                    label={t('create.pricePerSeat')}
+                    htmlFor="create-price"
+                    error={showFieldErrors && isBlank(draft.pricePerSeat) ? t('create.fieldRequired') : undefined}
+                  >
                     <Input
                       type="number"
                       id="create-price"
@@ -457,6 +582,15 @@ export function TrajetCreateForm() {
                       value={draft.pricePerSeat}
                       onChange={(event) => updateDraft({ pricePerSeat: event.target.value })}
                       required
+                      aria-invalid={showFieldErrors && isBlank(draft.pricePerSeat) ? true : undefined}
+                      aria-describedby={
+                        showFieldErrors && isBlank(draft.pricePerSeat) ? 'create-price-error' : undefined
+                      }
+                      className={
+                        showFieldErrors && isBlank(draft.pricePerSeat)
+                          ? 'ring-destructive focus-visible:ring-destructive/30'
+                          : undefined
+                      }
                     />
                   </LabelledField>
                 </CardContent>
@@ -576,10 +710,7 @@ export function TrajetCreateForm() {
             </p>
           ) : null}
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
-            <Button type="button" variant="outline" size="lg" className="w-full sm:w-auto" onClick={() => router.push('/trajet')}>
-              {t('create.step2.back')}
-            </Button>
+          <div className="flex sm:justify-end">
             <Button type="submit" form="ride-details-form" variant="primary" size="lg" className="w-full px-10 sm:w-auto">
               {t('create.step1.next')}
               <ArrowRight className="size-5" strokeWidth={2.25} />

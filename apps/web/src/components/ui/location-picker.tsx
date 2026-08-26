@@ -21,9 +21,11 @@ interface LocationPickerProps {
   onChange: (value: LocationValue) => void;
   placeholder?: string;
   required?: boolean;
+  invalid?: boolean;
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
+  'aria-describedby'?: string;
   /** Accessible label for the icon-only "use my location" button. */
   useMyLocationLabel: string;
   /** Shown when the browser denies/fails a "use my location" request. */
@@ -48,9 +50,11 @@ export function LocationPicker({
   onChange,
   placeholder,
   required,
+  invalid,
   disabled,
   className,
   'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
   useMyLocationLabel,
   locationErrorLabel,
   mapColor,
@@ -182,6 +186,8 @@ export function LocationPicker({
             aria-controls={listboxId}
             aria-autocomplete="list"
             aria-label={ariaLabel}
+            aria-describedby={ariaDescribedBy ?? (invalid && id ? `${id}-error` : undefined)}
+            aria-invalid={invalid || undefined}
             autoComplete="off"
             required={required}
             disabled={disabled}
@@ -193,6 +199,7 @@ export function LocationPicker({
             className={cn(
               fieldControlClassName,
               'py-2 pr-11 pl-10',
+              invalid && 'ring-destructive focus-visible:ring-destructive/30',
             )}
           />
           <button

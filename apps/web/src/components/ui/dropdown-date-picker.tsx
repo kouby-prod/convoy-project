@@ -27,7 +27,9 @@ interface DropdownDatePickerProps {
   placeholder?: string;
   className?: string;
   'aria-label'?: string;
+  'aria-describedby'?: string;
   required?: boolean;
+  invalid?: boolean;
 }
 
 export function DropdownDatePicker({
@@ -37,7 +39,9 @@ export function DropdownDatePicker({
   placeholder,
   className,
   'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
   required,
+  invalid,
 }: DropdownDatePickerProps) {
   const locale = useLocale();
   const generatedId = useId();
@@ -61,7 +65,13 @@ export function DropdownDatePicker({
           aria-haspopup="dialog"
           aria-expanded={isOpen}
           aria-required={required || undefined}
-          className={cn(fieldControlClassName, 'flex items-center justify-between gap-2 text-left font-normal')}
+          aria-invalid={invalid || undefined}
+          aria-describedby={ariaDescribedBy ?? (invalid && triggerId ? `${triggerId}-error` : undefined)}
+          className={cn(
+            fieldControlClassName,
+            'flex items-center justify-between gap-2 text-left font-normal',
+            invalid && 'ring-destructive focus-visible:ring-destructive/30',
+          )}
           onClick={() => setIsOpen((open) => !open)}
         >
           <span className={cn('truncate', !formattedDate && 'text-muted-foreground')}>

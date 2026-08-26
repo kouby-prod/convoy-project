@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { FormAlert } from '@/components/ui/form-alert';
 
 /**
  * A visible label above a field.
@@ -13,11 +14,13 @@ export function LabelledField({
   label,
   htmlFor,
   className,
+  error,
   children,
 }: {
   label: string;
   htmlFor: string;
   className?: string;
+  error?: string;
   children: ReactNode;
 }) {
   return (
@@ -26,6 +29,7 @@ export function LabelledField({
         {label}
       </label>
       {children}
+      {error ? <FormAlert id={`${htmlFor}-error`}>{error}</FormAlert> : null}
     </div>
   );
 }
