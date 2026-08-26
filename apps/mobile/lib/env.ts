@@ -7,10 +7,14 @@ import { z } from 'zod';
  */
 const EnvSchema = z.object({
   EXPO_PUBLIC_API_URL: z.url().default('http://localhost:3001'),
+  // The web app's own origin — used to build the password-reset link mailed
+  // to the driver, since the reset screen itself only exists on web today.
+  EXPO_PUBLIC_WEB_URL: z.url().default('http://localhost:3000'),
 });
 
 const parsed = EnvSchema.safeParse({
   EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
+  EXPO_PUBLIC_WEB_URL: process.env.EXPO_PUBLIC_WEB_URL,
 });
 
 if (!parsed.success) {

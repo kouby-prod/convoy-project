@@ -56,6 +56,9 @@ export default function SignInScreen() {
           />
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <Button label={loading ? 'Connexion…' : 'Se connecter'} onPress={handleSubmit} loading={loading} />
+          <Link href="/forgot-password" style={styles.forgotLink}>
+            Mot de passe oublié ?
+          </Link>
         </View>
 
         <View style={styles.footer}>
@@ -75,6 +78,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: fontSize.sm, color: colors.mutedForeground, textAlign: 'center' },
   form: { gap: spacing.md },
   error: { fontSize: fontSize.sm, color: colors.destructive, textAlign: 'center' },
+  forgotLink: { fontSize: fontSize.sm, color: colors.primary, textAlign: 'center' },
   footer: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
   footerText: { fontSize: fontSize.sm, color: colors.mutedForeground },
   link: { fontSize: fontSize.sm, color: colors.primary, fontWeight: '700' },

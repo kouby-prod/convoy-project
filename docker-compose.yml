@@ -222,6 +222,7 @@ services:
     profiles: ['mobile']
     environment:
       EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL}
+      EXPO_PUBLIC_WEB_URL: ${EXPO_PUBLIC_WEB_URL:-http://localhost:3000}
     ports:
       - '${EXPO_PORT}:8081'
     depends_on:

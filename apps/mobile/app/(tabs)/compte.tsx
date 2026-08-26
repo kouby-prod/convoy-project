@@ -7,6 +7,9 @@ import { Card } from '@/components/ui/Card';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { LoadingState } from '@/components/ui/StateMessage';
+import { AvatarCard } from '@/components/account/AvatarCard';
+import { NotificationPrefsCard } from '@/components/account/NotificationPrefsCard';
+import { DeleteAccountCard } from '@/components/account/DeleteAccountCard';
 import { colors, spacing, fontSize } from '@/lib/theme';
 
 export default function CompteScreen() {
@@ -69,6 +72,8 @@ export default function CompteScreen() {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content}>
+        <AvatarCard userId={user.id} />
+
         <Card>
           <Text style={styles.cardTitle}>Profil</Text>
           <View>
@@ -113,9 +118,13 @@ export default function CompteScreen() {
           />
         </Card>
 
+        <NotificationPrefsCard />
+
         <Button label="Mon véhicule" variant="outline" onPress={() => router.push('/vehicle')} />
         <Button label="Aide & contact" variant="outline" onPress={() => router.push('/contact')} />
         <Button label="Se déconnecter" variant="outline" onPress={() => authClient.signOut()} />
+
+        <DeleteAccountCard />
       </ScrollView>
     </ScreenContainer>
   );
