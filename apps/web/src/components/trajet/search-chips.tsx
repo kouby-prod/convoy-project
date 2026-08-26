@@ -1,9 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Minus, Plus, UserRound } from 'lucide-react';
+import { useRouter } from '@/i18n/navigation';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { dateToParam } from '@/components/ui/dropdown-date-picker';
 import { cn } from '@/lib/utils';
+import { readRecentSearches, recentSearchHref, recentSearchKey, type RecentSearch } from '@/lib/recent-searches';
 
 export function startOfLocalDay(offsetDays = 0) {
   const date = new Date();
@@ -48,6 +51,36 @@ export function DateQuickChips({
         onClick={() => onChange(date === tomorrow ? '' : tomorrow)}
         label={tomorrowLabel}
       />
+    </div>
+  );
+}
+
+export function RecentSearchChips({
+  groupLabel,
+  refreshKey,
+}: {
+  groupLabel: string;
+  refreshKey?: string;
+}) {
+  const router = useRouter();
+  const [items, setItems] = useState<RecentSearch[]>([]);
+
+  useEffect(() => {
+    setItems(readRecentSearches());
+  }, [refreshKey]);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div role="group" aria-label={groupLabel} className="flex flex-wrap gap-2">
+      {items.map((item) => (
+        <Chip
+          key={recentSearchKey(item)}
+          pressed={false}
+          onClick={() => router.push(recentSearchHref(item))}
+          label={`${item.from} → ${item.to}`}
+        />
+      ))}
     </div>
   );
 }

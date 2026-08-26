@@ -17,7 +17,8 @@ import { DropdownTimePicker } from '@/components/ui/dropdown-time-picker';
 import { formatTime, parseTime } from '@/components/ui/time-picker';
 import { FilterSheet } from '@/components/ui/filter-sheet';
 import { AmenityToggleGroup, GENERAL_AMENITIES, isAmenity } from '@/components/trajet/trajet-amenities';
-import { DateQuickChips, SeatsStepper } from '@/components/trajet/search-chips';
+import { DateQuickChips, RecentSearchChips, SeatsStepper } from '@/components/trajet/search-chips';
+import { rememberSearch } from '@/lib/recent-searches';
 
 type Layout = 'rail' | 'sheet';
 
@@ -107,6 +108,8 @@ export function TrajetSearchFilters({ layout = 'rail' }: { layout?: Layout }) {
     for (const amenity of amenities) params.append('amenities', amenity);
     if (stopPolicy !== 'any') params.set('stopPolicy', stopPolicy);
 
+    rememberSearch({ from: from.trim(), to: to.trim(), date: date || undefined, seats: seats || undefined });
+
     const query = params.toString();
     router.push(query ? `/trajet?${query}` : '/trajet');
     setSheetOpen(false);
@@ -188,6 +191,7 @@ export function TrajetSearchFilters({ layout = 'rail' }: { layout?: Layout }) {
         tomorrowLabel={t('filters.tomorrow')}
         groupLabel={t('filters.dateChips')}
       />
+      <RecentSearchChips groupLabel={t('filters.recent')} refreshKey={searchParams.toString()} />
 
       <SeatsStepper
         value={seats}

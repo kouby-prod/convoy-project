@@ -144,9 +144,37 @@ export const CheckoutResponseSchema = z
     clientSecret: z.string().nullable(),
     orderId: z.string().nullable(),
     invoice: InvoiceSchema,
+    customerSessionClientSecret: z.string().nullable().optional(),
   })
   .describe('CheckoutResponse');
 export type CheckoutResponse = z.infer<typeof CheckoutResponseSchema>;
+
+export const SavedPaymentMethodSchema = z
+  .object({
+    id: z.string(),
+    brand: z.string(),
+    last4: z.string(),
+    expMonth: z.number().int(),
+    expYear: z.number().int(),
+    isDefault: z.boolean(),
+  })
+  .describe('SavedPaymentMethod');
+export type SavedPaymentMethod = z.infer<typeof SavedPaymentMethodSchema>;
+
+export const SavedPaymentMethodListSchema = z
+  .object({
+    configured: z.boolean(),
+    items: SavedPaymentMethodSchema.array(),
+  })
+  .describe('SavedPaymentMethodList');
+export type SavedPaymentMethodList = z.infer<typeof SavedPaymentMethodListSchema>;
+
+export const SetupIntentResponseSchema = z
+  .object({
+    clientSecret: z.string(),
+  })
+  .describe('SetupIntentResponse');
+export type SetupIntentResponse = z.infer<typeof SetupIntentResponseSchema>;
 
 export const CapturePayPalSchema = z
   .object({

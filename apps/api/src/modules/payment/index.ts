@@ -12,14 +12,21 @@ import { CheckoutBookingSummarySchema, CreditNoteSchema, InvoiceSchema, PaymentS
 import { requireAuth, getAuth, hasRole, type AuthEnv } from '../../auth';
 import { rateLimit } from '../../middleware/rate-limit';
 import { db } from '../../db/client';
-import { creditNote, invoice, payment } from '../../db/payment';
+import { creditNote, invoice, payment, stripeCustomer } from '../../db/payment';
 import { booking, trajet } from '../../db/trajet-schema';
+import { user } from '../../db/auth-schema';
 import { hashRequest, serializeInvoice } from './invoice';
 import { withIdempotency } from './idempotency';
 import {
   createStripePaymentIntent,
+  createStripeCustomer,
+  createStripeCustomerSession,
+  createStripeSetupIntent,
+  detachStripePaymentMethod,
   isStripeConfigured,
+  listStripeCardMethods,
   retrieveStripePaymentIntent,
+  setStripeDefaultPaymentMethod,
 } from './stripe';
 import {
   capturePayPalOrder,
@@ -35,9 +42,13 @@ import {
   capturePayPalRoute,
   confirmStripeRoute,
   createPaymentRoute,
+  createSetupIntentRoute,
+  defaultPaymentMethodRoute,
+  deletePaymentMethodRoute,
   getInvoiceByBookingRoute,
   getInvoiceRoute,
   getPaymentByBookingRoute,
+  listPaymentMethodsRoute,
 } from './payment.routes';
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -118,6 +129,27 @@ async function loadBookingAuth(bookingId: string, userId: string, isAdmin: boole
   return { ok: false as const, status: 403 as const, error: 'Not allowed' };
 }
 
+async function stripeCustomerFor(userId: string): Promise<{ customerId: string; defaultPaymentMethodId: string | null } | null> {
+  if (!isStripeConfigured()) return null;
+  const [existing] = await db.select().from(stripeCustomer).where(eq(stripeCustomer.userId, userId));
+  if (existing) {
+    return { customerId: existing.customerId, defaultPaymentMethodId: existing.defaultPaymentMethodId };
+  }
+  const [account] = await db.select({ email: user.email, name: user.name }).from(user).where(eq(user.id, userId));
+  if (!account) return null;
+  const customerId = await createStripeCustomer({ userId, email: account.email, name: account.name });
+  await db.insert(stripeCustomer).values({ userId, customerId });
+  return { customerId, defaultPaymentMethodId: null };
+}
+
+async function savedMethodsFor(userId: string) {
+  if (!isStripeConfigured()) return { configured: false, items: [] };
+  const [row] = await db.select().from(stripeCustomer).where(eq(stripeCustomer.userId, userId));
+  if (!row) return { configured: true, items: [] };
+  const items = await listStripeCardMethods(row.customerId, row.defaultPaymentMethodId);
+  return { configured: true, items };
+}
+
 async function paymentStateForInvoice(invoiceId: string) {
   const [inv] = await db.select().from(invoice).where(eq(invoice.id, invoiceId));
   const [pay] = await db
@@ -173,6 +205,10 @@ async function startCheckout(
   if (open) {
     if (provider === 'stripe') {
       const intent = await retrieveStripePaymentIntent(open.providerPaymentId);
+      const customer = await stripeCustomerFor(userId);
+      const customerSessionClientSecret = customer
+        ? await createStripeCustomerSession(customer.customerId)
+        : null;
       if (intent.status === 'succeeded') {
         await settlePaidInvoice({
           invoiceId: inv.id,
@@ -189,6 +225,7 @@ async function startCheckout(
             clientSecret: intent.clientSecret,
             orderId: null,
             invoice: serializeInvoice(paidInv ?? inv),
+            customerSessionClientSecret,
           },
         };
       }
@@ -203,6 +240,7 @@ async function startCheckout(
             clientSecret: intent.clientSecret,
             orderId: null,
             invoice: serializeInvoice(inv),
+            customerSessionClientSecret,
           },
         };
       }
@@ -220,6 +258,7 @@ async function startCheckout(
   }
 
   if (provider === 'stripe') {
+    const customer = await stripeCustomerFor(userId);
     const intent = await createStripePaymentIntent({
       invoiceId: inv.id,
       bookingId,
@@ -227,6 +266,7 @@ async function startCheckout(
       amountCents: inv.totalCents,
       currency: inv.currency,
       attemptKey: open ? randomUUID() : undefined,
+      customerId: customer?.customerId,
     });
     await db.insert(payment).values({
       id: randomUUID(),
@@ -244,6 +284,9 @@ async function startCheckout(
         clientSecret: intent.clientSecret,
         orderId: null,
         invoice: serializeInvoice(inv),
+        customerSessionClientSecret: customer
+          ? await createStripeCustomerSession(customer.customerId)
+          : null,
       },
     };
   }
@@ -413,6 +456,51 @@ export const paymentModule = app
     const authz = await loadBookingAuth(inv.bookingId, user.id, hasRole(user, 'admin'));
     if (!authz.ok) return c.json({ error: authz.error }, authz.status);
     return c.json(serializeInvoice(inv), 200);
+  })
+  .openapi(listPaymentMethodsRoute, async (c) => {
+    const { user: authUser } = getAuth(c);
+    return c.json(await savedMethodsFor(authUser.id), 200);
+  })
+  .openapi(createSetupIntentRoute, async (c) => {
+    const { user: authUser } = getAuth(c);
+    if (!isStripeConfigured()) return c.json({ error: 'Stripe is not configured' }, 503);
+    const customer = await stripeCustomerFor(authUser.id);
+    if (!customer) return c.json({ error: 'Stripe is not configured' }, 503);
+    const clientSecret = await createStripeSetupIntent(customer.customerId);
+    return c.json({ clientSecret }, 200);
+  })
+  .openapi(deletePaymentMethodRoute, async (c) => {
+    const { user: authUser } = getAuth(c);
+    if (!isStripeConfigured()) return c.json({ error: 'Stripe is not configured' }, 503);
+    const { id } = c.req.valid('param');
+    const [row] = await db.select().from(stripeCustomer).where(eq(stripeCustomer.userId, authUser.id));
+    if (!row) return c.json({ error: 'Card not found' }, 404);
+    const methods = await listStripeCardMethods(row.customerId, row.defaultPaymentMethodId);
+    if (!methods.some((method) => method.id === id)) return c.json({ error: 'Card not found' }, 404);
+    await detachStripePaymentMethod(id);
+    if (row.defaultPaymentMethodId === id) {
+      await db
+        .update(stripeCustomer)
+        .set({ defaultPaymentMethodId: null, updatedAt: new Date() })
+        .where(eq(stripeCustomer.userId, authUser.id));
+    }
+    return c.json(await savedMethodsFor(authUser.id), 200);
+  })
+  .openapi(defaultPaymentMethodRoute, async (c) => {
+    const { user: authUser } = getAuth(c);
+    if (!isStripeConfigured()) return c.json({ error: 'Stripe is not configured' }, 503);
+    const { id } = c.req.valid('param');
+    const [row] = await db.select().from(stripeCustomer).where(eq(stripeCustomer.userId, authUser.id));
+    if (!row) return c.json({ error: 'Card not found' }, 404);
+    const methods = await listStripeCardMethods(row.customerId, row.defaultPaymentMethodId);
+    const match = methods.find((method) => method.id === id);
+    if (!match) return c.json({ error: 'Card not found' }, 404);
+    await setStripeDefaultPaymentMethod(row.customerId, id);
+    await db
+      .update(stripeCustomer)
+      .set({ defaultPaymentMethodId: id, updatedAt: new Date() })
+      .where(eq(stripeCustomer.userId, authUser.id));
+    return c.json({ ...match, isDefault: true }, 200);
   });
 
 app.get('/invoices/:id/pdf', async (c) => {

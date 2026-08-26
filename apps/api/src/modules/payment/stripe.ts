@@ -28,6 +28,7 @@ export async function createStripePaymentIntent(input: {
   amountCents: number;
   currency: string;
   attemptKey?: string;
+  customerId?: string;
 }): Promise<{ id: string; clientSecret: string | null }> {
   const intent = await stripe().paymentIntents.create(
     {
@@ -39,6 +40,9 @@ export async function createStripePaymentIntent(input: {
         invoiceNumber: input.invoiceNumber,
       },
       automatic_payment_methods: { enabled: true },
+      ...(input.customerId
+        ? { customer: input.customerId, setup_future_usage: 'off_session' as const }
+        : {}),
     },
     { idempotencyKey: stripeIdempotencyKey(input.invoiceId, 'intent', input.attemptKey) },
   );
@@ -146,4 +150,67 @@ export async function listRecentStripePaymentIntents(createdGteUnix: number): Pr
     if (!startingAfter) break;
   }
   return collected;
+}
+
+export async function createStripeCustomer(input: {
+  email: string;
+  name: string;
+  userId: string;
+}): Promise<string> {
+  const customer = await stripe().customers.create({
+    email: input.email,
+    name: input.name,
+    metadata: { userId: input.userId },
+  });
+  return customer.id;
+}
+
+export async function createStripeSetupIntent(customerId: string): Promise<string> {
+  const intent = await stripe().setupIntents.create({
+    customer: customerId,
+    automatic_payment_methods: { enabled: true },
+    usage: 'off_session',
+  });
+  if (!intent.client_secret) throw new Error('Stripe SetupIntent is missing a client secret');
+  return intent.client_secret;
+}
+
+export async function createStripeCustomerSession(customerId: string): Promise<string | null> {
+  try {
+    const session = await stripe().customerSessions.create({
+      customer: customerId,
+      components: {
+        payment_element: {
+          enabled: true,
+          features: { payment_method_redisplay: 'enabled' },
+        },
+      },
+    });
+    return session.client_secret;
+  } catch (err) {
+    console.error('[stripe] customer session failed', err);
+    return null;
+  }
+}
+
+export async function listStripeCardMethods(customerId: string, defaultPaymentMethodId: string | null) {
+  const list = await stripe().paymentMethods.list({ customer: customerId, type: 'card' });
+  return list.data.map((method) => ({
+    id: method.id,
+    brand: method.card?.brand ?? 'card',
+    last4: method.card?.last4 ?? '••••',
+    expMonth: method.card?.exp_month ?? 0,
+    expYear: method.card?.exp_year ?? 0,
+    isDefault: method.id === defaultPaymentMethodId,
+  }));
+}
+
+export async function detachStripePaymentMethod(paymentMethodId: string): Promise<void> {
+  await stripe().paymentMethods.detach(paymentMethodId);
+}
+
+export async function setStripeDefaultPaymentMethod(customerId: string, paymentMethodId: string): Promise<void> {
+  await stripe().customers.update(customerId, {
+    invoice_settings: { default_payment_method: paymentMethodId },
+  });
 }

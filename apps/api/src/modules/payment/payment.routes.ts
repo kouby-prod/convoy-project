@@ -6,6 +6,9 @@ import {
   ConfirmStripeSchema,
   CreatePaymentSchema,
   InvoiceSchema,
+  SavedPaymentMethodListSchema,
+  SavedPaymentMethodSchema,
+  SetupIntentResponseSchema,
 } from '@carpool/schemas';
 
 const bearerAuth = [{ Bearer: [] }];
@@ -213,6 +216,100 @@ export const getInvoiceRoute = createRoute({
     },
     404: {
       description: 'Not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listPaymentMethodsRoute = createRoute({
+  method: 'get',
+  path: '/payments/methods',
+  tags: ['payment'],
+  summary: "List the authenticated user's saved Stripe cards",
+  security: bearerAuth,
+  responses: {
+    200: {
+      description: 'Saved cards (empty when Stripe is not configured)',
+      content: { 'application/json': { schema: SavedPaymentMethodListSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const createSetupIntentRoute = createRoute({
+  method: 'post',
+  path: '/payments/methods/setup',
+  tags: ['payment'],
+  summary: 'Create a Stripe SetupIntent to save a card',
+  security: bearerAuth,
+  responses: {
+    200: {
+      description: 'SetupIntent client secret',
+      content: { 'application/json': { schema: SetupIntentResponseSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    503: {
+      description: 'Stripe is not configured',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const deletePaymentMethodRoute = createRoute({
+  method: 'delete',
+  path: '/payments/methods/{id}',
+  tags: ['payment'],
+  summary: 'Detach a saved Stripe card',
+  security: bearerAuth,
+  request: { params: z.object({ id: z.string().min(1) }) },
+  responses: {
+    200: {
+      description: 'Updated list',
+      content: { 'application/json': { schema: SavedPaymentMethodListSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Card not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    503: {
+      description: 'Stripe is not configured',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const defaultPaymentMethodRoute = createRoute({
+  method: 'put',
+  path: '/payments/methods/{id}/default',
+  tags: ['payment'],
+  summary: 'Set the default saved Stripe card',
+  security: bearerAuth,
+  request: { params: z.object({ id: z.string().min(1) }) },
+  responses: {
+    200: {
+      description: 'Updated card',
+      content: { 'application/json': { schema: SavedPaymentMethodSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Card not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    503: {
+      description: 'Stripe is not configured',
       content: { 'application/json': { schema: errorSchema } },
     },
   },

@@ -63,6 +63,11 @@
       "noAccount": "Pas encore de compte ?",
       "createAccount": "Créer un compte"
     },
+    "or": "ou",
+    "google": {
+      "continue": "Continuer avec Google",
+      "pending": "Redirection…"
+    },
     "signUp": {
       "title": "Créer un compte Convoy",
       "subtitle": "Rejoignez la communauté et voyagez autrement.",
@@ -108,6 +113,7 @@
       "passwordMismatch": "Les mots de passe ne correspondent pas.",
       "signUpFailed": "Échec de l'inscription. Réessayez.",
       "signUpUnavailable": "Impossible de créer le compte. Réessayez plus tard.",
+      "googleFailed": "La connexion Google a échoué. Veuillez réessayer.",
       "resetFailed": "Impossible d’envoyer le lien. Réessayez plus tard.",
       "resetUnavailable": "Impossible de mettre à jour le mot de passe. Réessayez plus tard."
     }
@@ -505,7 +511,7 @@
   },
   "Parametres": {
     "title": "Paramètres du compte",
-    "subtitle": "Gérez votre profil, la langue, les notifications et l'apparence.",
+    "subtitle": "Gérez votre profil, votre photo, la langue, les notifications et l'apparence.",
     "loading": "Chargement...",
     "profile": {
       "title": "Profil",
@@ -549,6 +555,32 @@
       "success": "Préférences de notification enregistrées.",
       "error": "Impossible d'enregistrer les préférences. Veuillez réessayer.",
       "loadError": "Impossible de charger les préférences de notification."
+    },
+    "photo": {
+      "title": "Photo de profil",
+      "description": "Affichée dans le menu du compte. JPG, PNG ou WEBP.",
+      "upload": "Ajouter une photo",
+      "uploading": "Envoi…",
+      "success": "Photo de profil mise à jour.",
+      "error": "Impossible d'envoyer la photo. Essayez un JPG, PNG ou WEBP de moins de 5 Mo."
+    },
+    "cards": {
+      "title": "Cartes enregistrées",
+      "description": "Cartes enregistrées chez Stripe pour payer plus vite. Kouby ne stocke jamais le numéro.",
+      "loading": "Chargement des cartes…",
+      "empty": "Aucune carte enregistrée.",
+      "add": "Ajouter une carte",
+      "save": "Enregistrer la carte",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "remove": "Supprimer",
+      "removed": "Carte supprimée.",
+      "saved": "Carte enregistrée.",
+      "default": "Par défaut",
+      "setDefault": "Définir par défaut",
+      "defaulted": "Carte par défaut mise à jour.",
+      "expires": "Expire {month}/{year}",
+      "error": "Impossible de mettre à jour les cartes. Veuillez réessayer."
     },
     "deleteAccount": {
       "title": "Supprimer le compte",
@@ -1361,6 +1393,7 @@
       "today": "Aujourd'hui",
       "tomorrow": "Demain",
       "dateChips": "Dates rapides",
+      "recent": "Recherches récentes",
       "more": "Plus de filtres",
       "less": "Moins de filtres",
       "clear": "Effacer",

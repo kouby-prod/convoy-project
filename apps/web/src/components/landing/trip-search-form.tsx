@@ -9,7 +9,8 @@ import { CityCombobox } from '@/components/ui/city-combobox';
 import { DropdownDatePicker, dateToParam, paramToDate } from '@/components/ui/dropdown-date-picker';
 import { DropdownTimePicker } from '@/components/ui/dropdown-time-picker';
 import { formatTime, type TimeValue } from '@/components/ui/time-picker';
-import { DateQuickChips, SeatsStepper } from '@/components/trajet/search-chips';
+import { DateQuickChips, RecentSearchChips, SeatsStepper } from '@/components/trajet/search-chips';
+import { rememberSearch } from '@/lib/recent-searches';
 
 export function TripSearchForm() {
   const translateHero = useTranslations('Hero');
@@ -39,6 +40,8 @@ export function TripSearchForm() {
       if (departureTime) params.set('time', formatTime(departureTime));
     }
     if (seats) params.set('seats', seats);
+
+    rememberSearch({ from: departure, to: arrival, date: departureDate ? dateToParam(departureDate) : undefined, seats });
 
     const queryString = params.toString();
     router.push(`/trajet${queryString ? `?${queryString}` : ''}`);
@@ -102,6 +105,7 @@ export function TripSearchForm() {
         tomorrowLabel={tFilters('tomorrow')}
         groupLabel={tFilters('dateChips')}
       />
+      <RecentSearchChips groupLabel={tFilters('recent')} />
       <SeatsStepper
         value={seats}
         onChange={setSeats}

@@ -15,6 +15,8 @@ import { toast } from '@/components/ui/toast';
 import { AppearanceForm } from '@/components/parametres/appearance-form';
 import { LanguageForm } from '@/components/parametres/language-form';
 import { NotificationPrefsForm } from '@/components/parametres/notification-prefs-form';
+import { ProfilePhotoForm } from '@/components/parametres/profile-photo-form';
+import { SavedCardsForm } from '@/components/parametres/saved-cards-form';
 import { DeleteAccountForm } from '@/components/parametres/delete-account-form';
 
 /**
@@ -178,11 +180,15 @@ export function ParametresForm() {
         </CardContent>
       </Card>
 
+      <ProfilePhotoForm userId={user.id} image={user.image} />
+
       <LanguageForm />
 
       <AppearanceForm />
 
       <NotificationPrefsForm />
+
+      <SavedCardsForm />
 
       <DeleteAccountForm />
     </div>

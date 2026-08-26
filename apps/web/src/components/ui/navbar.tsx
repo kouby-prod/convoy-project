@@ -20,6 +20,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
+import { cn } from '@/lib/utils';
 import { authClient, isAdminRole } from '@/lib/auth-client';
 import { createApiClient } from '@carpool/api-client';
 import { env } from '@/lib/env';
@@ -27,7 +28,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { MessagesNavLink } from '@/components/messages/messages-nav-link';
 import { Badge } from '@/components/ui/badge';
 import { LocaleSwitcher } from '@/components/ui/locale-switcher';
-import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/ui/user-avatar';
 
 /**
  * Sectioned navbar (reduces clutter):
@@ -302,7 +303,12 @@ export function Navbar({ className }: NavbarProps) {
             className="inline-flex items-center gap-1 rounded-md bg-white/10 py-1 pl-1 pr-2 text-white outline-none transition-all duration-200 hover:bg-white/20 focus-visible:ring-3 focus-visible:ring-white/40"
           >
             <span className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-card text-brand-blue shadow-sm ring-1 ring-black/10">
-              <UserRound className="size-5" strokeWidth={2.25} />
+              <UserAvatar
+                userId={user?.id}
+                image={user?.image}
+                className="size-9"
+                iconClassName="size-5 text-brand-blue"
+              />
             </span>
             <ChevronDown
               className={cn('size-4 transition-transform duration-200', isAccountOpen && 'rotate-180')}

@@ -63,6 +63,11 @@
       "noAccount": "No account yet?",
       "createAccount": "Create an account"
     },
+    "or": "or",
+    "google": {
+      "continue": "Continue with Google",
+      "pending": "Redirecting…"
+    },
     "signUp": {
       "title": "Create a Convoy account",
       "subtitle": "Join the community and travel differently.",
@@ -108,6 +113,7 @@
       "passwordMismatch": "Passwords do not match.",
       "signUpFailed": "Sign-up failed. Please try again.",
       "signUpUnavailable": "Unable to create the account. Please try again later.",
+      "googleFailed": "Google sign-in failed. Please try again.",
       "resetFailed": "Unable to send the reset link. Please try again later.",
       "resetUnavailable": "Unable to update the password. Please try again later."
     }
@@ -505,7 +511,7 @@
   },
   "Parametres": {
     "title": "Account settings",
-    "subtitle": "Manage your profile, language, notifications, and appearance.",
+    "subtitle": "Manage your profile, photo, language, notifications, and appearance.",
     "loading": "Loading...",
     "profile": {
       "title": "Profile",
@@ -549,6 +555,32 @@
       "success": "Notification preferences saved.",
       "error": "Unable to save notification preferences. Please try again.",
       "loadError": "Unable to load notification preferences."
+    },
+    "photo": {
+      "title": "Profile photo",
+      "description": "Shown on your account menu. JPG, PNG, or WEBP.",
+      "upload": "Upload a photo",
+      "uploading": "Uploading…",
+      "success": "Profile photo updated.",
+      "error": "Unable to upload the photo. Try a JPG, PNG, or WEBP under 5 MB."
+    },
+    "cards": {
+      "title": "Saved cards",
+      "description": "Cards saved with Stripe for faster checkout. Kouby never stores the number.",
+      "loading": "Loading cards…",
+      "empty": "No saved cards yet.",
+      "add": "Add a card",
+      "save": "Save card",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "remove": "Remove",
+      "removed": "Card removed.",
+      "saved": "Card saved.",
+      "default": "Default",
+      "setDefault": "Set as default",
+      "defaulted": "Default card updated.",
+      "expires": "Expires {month}/{year}",
+      "error": "Unable to update saved cards. Please try again."
     },
     "deleteAccount": {
       "title": "Delete account",
@@ -1361,6 +1393,7 @@
       "today": "Today",
       "tomorrow": "Tomorrow",
       "dateChips": "Quick dates",
+      "recent": "Recent searches",
       "more": "More filters",
       "less": "Fewer filters",
       "clear": "Clear",

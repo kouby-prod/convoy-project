@@ -13,6 +13,7 @@ import { reviewModule } from './modules/review';
 import { messageModule } from './modules/message';
 import { contactModule } from './modules/contact';
 import { notificationModule } from './modules/notification';
+import { avatarModule } from './modules/avatar';
 import { paymentModule } from './modules/payment';
 import { stripeWebhookHandler, paypalWebhookHandler } from './modules/payment/webhooks';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
@@ -106,6 +107,7 @@ const routes = app
   .route('/', messageModule)
   // --- NOTIFICATION domain routes ---
   .route('/', notificationModule)
+  .route('/', avatarModule)
   // --- CONTACT domain routes ---
   .route('/', contactModule)
   // --- PAYMENT / INVOICE domain routes ---

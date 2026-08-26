@@ -691,6 +691,9 @@ function StripeSection({
         clientSecret: data.clientSecret,
         appearance: { theme: 'stripe' },
         locale: locale === 'en' ? 'en-CA' : 'fr-CA',
+        ...(data.customerSessionClientSecret
+          ? { customerSessionClientSecret: data.customerSessionClientSecret }
+          : {}),
       }}
     >
       <StripeForm amountLabel={amountLabel} onPaid={onPaid} onError={onError} />

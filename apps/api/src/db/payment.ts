@@ -253,3 +253,17 @@ export const creditNoteRelations = relations(creditNote, ({ one }) => ({
 export const ledgerEntryRelations = relations(ledgerEntry, ({ one }) => ({
   invoice: one(invoice, { fields: [ledgerEntry.invoiceId], references: [invoice.id] }),
 }));
+
+/** Stripe Customer id for saved cards. Cascade with the user; the PSP still holds the cards. */
+export const stripeCustomer = pgTable(
+  'stripe_customer',
+  {
+    userId: text('user_id')
+      .primaryKey()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    customerId: text('customer_id').notNull(),
+    defaultPaymentMethodId: text('default_payment_method_id'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  },
+  (t) => [uniqueIndex('stripe_customer_customer_id_uidx').on(t.customerId)],
+);

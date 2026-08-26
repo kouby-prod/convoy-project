@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { FormAlert } from '@/components/ui/form-alert';
 import { PasswordInput } from '@/components/ui/password-input';
+import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 
 export function SignInForm() {
   const translateAuth = useTranslations('Auth');
@@ -102,6 +103,8 @@ export function SignInForm() {
           <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
             {isLoading ? translateAuth('signIn.pending') : translateAuth('signIn.submit')}
           </Button>
+
+          <GoogleSignInButton />
 
           <p className="text-center text-sm text-muted-foreground">
             {translateAuth('signIn.noAccount')}{' '}
