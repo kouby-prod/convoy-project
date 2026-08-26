@@ -113,6 +113,7 @@ export default function CompteScreen() {
           />
         </Card>
 
+        <Button label="Mon véhicule" variant="outline" onPress={() => router.push('/vehicle')} />
         <Button label="Aide & contact" variant="outline" onPress={() => router.push('/contact')} />
         <Button label="Se déconnecter" variant="outline" onPress={() => authClient.signOut()} />
       </ScrollView>

@@ -67,31 +67,146 @@ export async function geocodeCity(city: string): Promise<Coordinates | null> {
   }
 }
 
+interface GeocodeSearchResult {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+interface NominatimAddress {
+  city?: string;
+  town?: string;
+  village?: string;
+  municipality?: string;
+  state?: string;
+  country?: string;
+}
+
 /**
- * Geocodes a trajet's departure/arrival cities and writes the resulting
+ * A concise "City, Region" label from Nominatim's structured address
+ * breakdown (requested via `addressdetails=1`), rather than its full
+ * `display_name` (often a whole street address + postal code + country) —
+ * keeps `departureCity`/`arrivalCity` readable in trajet listings, the same
+ * shape as a manually-typed `CityCombobox` entry ("Montreal"). The precise
+ * point the user actually picked still lives in `lat`/`lng`, not this label.
+ */
+function shortLabel(address: NominatimAddress | undefined, fallback: string): string {
+  const locality = address?.city ?? address?.town ?? address?.village ?? address?.municipality;
+  if (locality && address?.state) return `${locality}, ${address.state}`;
+  if (locality) return locality;
+  return fallback;
+}
+
+/**
+ * Free-text place search for the departure/arrival location picker
+ * (apps/web's `LocationPicker`). Best-effort like `geocodeCity`: returns an
+ * empty list rather than throwing on any failure.
+ */
+export async function searchPlaces(query: string, limit = 5): Promise<GeocodeSearchResult[]> {
+  try {
+    await throttle();
+    const url = new URL(NOMINATIM_URL);
+    url.searchParams.set('q', query);
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('limit', String(limit));
+    url.searchParams.set('addressdetails', '1');
+
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'CAN-VOITURAGE (carpool trip search, contact via project repo)',
+      },
+    });
+    if (!res.ok) return [];
+
+    const results = (await res.json()) as Array<{
+      display_name: string;
+      lat: string;
+      lon: string;
+      address?: NominatimAddress;
+    }>;
+    return results.map((r) => ({
+      label: shortLabel(r.address, r.display_name),
+      lat: Number(r.lat),
+      lng: Number(r.lon),
+    }));
+  } catch (err) {
+    console.error(`Failed to search places for "${query}"`, err);
+    return [];
+  }
+}
+
+/**
+ * Reverse-geocodes a coordinate pair to a human-readable label, for the
+ * picker's "use my location" button. Best-effort: `null` on any failure.
+ */
+export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  try {
+    await throttle();
+    const url = new URL('https://nominatim.openstreetmap.org/reverse');
+    url.searchParams.set('lat', String(lat));
+    url.searchParams.set('lon', String(lng));
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('addressdetails', '1');
+
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'CAN-VOITURAGE (carpool trip search, contact via project repo)',
+      },
+    });
+    if (!res.ok) return null;
+
+    const result = (await res.json()) as { display_name?: string; address?: NominatimAddress };
+    if (!result.display_name) return null;
+    return shortLabel(result.address, result.display_name);
+  } catch (err) {
+    console.error(`Failed to reverse-geocode (${lat}, ${lng})`, err);
+    return null;
+  }
+}
+
+/** A trajet endpoint (departure or arrival) as known by the caller. */
+interface TrajetEndpoint {
+  city: string;
+  lat?: number | null;
+  lng?: number | null;
+}
+
+/**
+ * Geocodes a trajet's departure/arrival endpoints and writes the resulting
  * coordinates back, without blocking whatever created/updated the trajet —
  * callers fire this and forget it (see createTrajetRoute/updateTrajetRoute
  * in ./index.ts), so a trajet is immediately bookable while its coordinates
  * fill in a couple of seconds later (or never, if geocoding fails).
+ *
+ * When a side already carries `lat`/`lng` (the driver picked a precise point
+ * via the location picker, rather than typing a free-text city), that side
+ * is written back as-is with no Nominatim call — a user-picked point must
+ * never be silently degraded to a city-center geocode.
  */
 export async function geocodeAndStoreTrajetLocation(
   trajetId: string,
-  departureCity: string,
-  arrivalCity: string,
+  departure: TrajetEndpoint,
+  arrival: TrajetEndpoint,
 ): Promise<void> {
   // Sequential, not Promise.all: the shared throttle queue already
   // serializes these, so running them "concurrently" would only add
   // Promise bookkeeping, not speed.
-  const departure = await geocodeCity(departureCity);
-  const arrival = await geocodeCity(arrivalCity);
+  const departureCoords =
+    departure.lat != null && departure.lng != null
+      ? { lat: departure.lat, lng: departure.lng }
+      : await geocodeCity(departure.city);
+  const arrivalCoords =
+    arrival.lat != null && arrival.lng != null
+      ? { lat: arrival.lat, lng: arrival.lng }
+      : await geocodeCity(arrival.city);
 
   await db
     .update(trajet)
     .set({
-      departureLat: departure ? departure.lat.toString() : null,
-      departureLng: departure ? departure.lng.toString() : null,
-      arrivalLat: arrival ? arrival.lat.toString() : null,
-      arrivalLng: arrival ? arrival.lng.toString() : null,
+      departureLat: departureCoords ? departureCoords.lat.toString() : null,
+      departureLng: departureCoords ? departureCoords.lng.toString() : null,
+      arrivalLat: arrivalCoords ? arrivalCoords.lat.toString() : null,
+      arrivalLng: arrivalCoords ? arrivalCoords.lng.toString() : null,
     })
     .where(eq(trajet.id, trajetId));
 }

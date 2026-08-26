@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, uuid, text, timestamp, integer, date, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, integer, date, index, boolean } from 'drizzle-orm/pg-core';
 import { user } from './auth-schema';
 
 /**
@@ -38,6 +38,13 @@ export const driverDocument = pgTable(
     expiresOn: date('expires_on'),
     /** Why it was rejected. Required on rejection (enforced by ReviewDocumentSchema). */
     reviewNote: text('review_note'),
+    /**
+     * Only meaningful on a `permis` row: the reviewer confirmed the driver's
+     * declared birth date against the one printed on the licence. This is the
+     * record that eligibility condition 4 was actually checked by a human, as
+     * opposed to merely declared by the driver.
+     */
+    ageConfirmed: boolean('age_confirmed').notNull().default(false),
     /** The reviewing admin. `set null` keeps the decision if that admin is deleted. */
     reviewedBy: text('reviewed_by').references(() => user.id, { onDelete: 'set null' }),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),

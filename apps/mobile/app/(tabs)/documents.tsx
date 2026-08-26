@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, UploadTask, UploadType } from 'expo-file-system';
@@ -8,15 +8,18 @@ import {
   DOCUMENT_MIME_TYPES,
   DRIVER_DOCUMENT_TYPES,
   DocumentMimeTypeSchema,
+  deriveDriverVerification,
   type DriverDocument,
   type DriverDocumentType,
 } from '@carpool/schemas';
 import { api } from '@/lib/api-client';
+import { fetchMyEligibility } from '@/lib/eligibility';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateMessage';
+import { EligibilityCard } from '@/components/documents/EligibilityCard';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
 
 const TYPE_LABELS: Record<DriverDocumentType, string> = {
@@ -24,6 +27,7 @@ const TYPE_LABELS: Record<DriverDocumentType, string> = {
   carteIdentite: "Carte d'identité",
   carteGrise: 'Carte grise',
   assurance: 'Assurance',
+  immatriculation: 'Immatriculation du véhicule',
 };
 
 const STATUS_LABELS: Record<DriverDocument['status'], string> = {
@@ -62,6 +66,16 @@ export default function DocumentsScreen() {
       return res.json();
     },
   });
+
+  const eligibilityQuery = useQuery({
+    queryKey: ['my-eligibility'],
+    queryFn: fetchMyEligibility,
+  });
+
+  const verification =
+    data && eligibilityQuery.data
+      ? deriveDriverVerification(data, { dateOfBirth: eligibilityQuery.data.dateOfBirth })
+      : null;
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -127,6 +141,11 @@ export default function DocumentsScreen() {
 
   return (
     <ScreenContainer>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      {verification && eligibilityQuery.data ? (
+        <EligibilityCard verification={verification} eligibility={eligibilityQuery.data} />
+      ) : null}
+
       <Card>
         <Text style={styles.cardTitle}>Soumettre un document</Text>
         <Text style={styles.label}>Type de document</Text>
@@ -187,11 +206,13 @@ export default function DocumentsScreen() {
           <Button label="Voir le fichier" variant="outline" size="sm" onPress={() => viewDocument(doc.id)} />
         </Card>
       ))}
+      </ScrollView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  content: { gap: spacing.md, paddingVertical: spacing.md, paddingBottom: spacing.xxl },
   cardTitle: { fontSize: fontSize.md, fontWeight: '700', color: colors.foreground },
   label: { fontSize: fontSize.sm, fontWeight: '600', color: colors.foreground },
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },

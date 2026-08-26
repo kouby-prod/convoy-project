@@ -1,12 +1,30 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, asc, avg, count, eq, gte, ilike, inArray, isNotNull, isNull, lt, lte, sql, type SQL } from 'drizzle-orm';
+import {
+  and,
+  arrayContains,
+  asc,
+  avg,
+  count,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { rateLimit } from '../../middleware/rate-limit';
 import { db } from '../../db/client';
 import { trajet, booking } from '../../db/trajet-schema';
 import { review } from '../../db/review';
-import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet } from '@carpool/schemas';
+import { user } from '../../db/auth-schema';
+import { vehicle } from '../../db/vehicle';
+import type { Trajet, TrajetSearchResult, Booking, BookingWithTrajet, DriverProfile } from '@carpool/schemas';
 import {
   listTrajetsRoute,
   getTrajetRoute,
@@ -20,8 +38,9 @@ import {
   myTrajetsRoute,
   myBookingsRoute,
 } from './trajet.routes';
-import { notifyUser, trajetUrl, trajetSearchUrl, describeTrip } from './notifications';
+import { notifyUser, trajetUrl, describeTrip, describeTripShort } from './notifications';
 import { geocodeAndStoreTrajetLocation } from './geocoding';
+import { getVerifiedDriverIds } from './verification-visibility';
 
 /**
  * Trajet module — an `OpenAPIHono` sub-app mounted by app.ts (see
@@ -78,12 +97,18 @@ async function expireStalePendingBookings(
 async function notifyExpiredBookings(
   expired: ExpiredBooking[],
   trip: { departureCity: string; arrivalCity: string; departureAt: Date },
+  trajetId: string,
 ): Promise<void> {
   for (const { passengerId } of expired) {
     await notifyUser(
       passengerId,
       'Your Carpool booking request expired',
-      `Your request for the trip from ${describeTrip(trip)} expired because the driver didn't respond in time. Seats may still be available: ${trajetSearchUrl()}`,
+      `Your request for the trip from ${describeTrip(trip)} expired because the driver didn't respond in time. Seats may still be available: ${trajetUrl(trajetId)}`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(trajetId),
+        inAppBody: `Your request for ${describeTripShort(trip)} expired. Seats may still be available.`,
+      },
     );
   }
 }
@@ -126,6 +151,65 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/** The subset of a declared vehicle a ride's driver profile shows. */
+interface DriverVehicle {
+  make: string | null;
+  model: string | null;
+  seats: number | null;
+}
+
+/**
+ * Builds the `DriverProfile` embedded in every `Trajet`/`TrajetSearchResult`.
+ * `licenceYears` still has no source and stays null; `carMake`/`carModel`/
+ * `carSeats` come from the `vehicle` table when the driver declared one, and
+ * are null otherwise — the UI hides the block rather than showing invented
+ * data.
+ */
+function buildDriverProfile(
+  driverId: string,
+  name: string,
+  rating: number | null,
+  reviewCount: number,
+  vehicle: DriverVehicle | null,
+  verified: boolean,
+): DriverProfile {
+  const [firstName, ...rest] = name.split(' ').filter(Boolean);
+  return {
+    id: driverId,
+    firstName: firstName ?? '',
+    lastName: rest.join(' '),
+    licenceYears: null,
+    carMake: vehicle?.make ?? null,
+    carModel: vehicle?.model ?? null,
+    carSeats: vehicle?.seats ?? null,
+    rating,
+    reviewCount,
+    verified,
+  };
+}
+
+/** Single-driver lookup — used wherever only one row's driver is needed. */
+async function getDriverProfile(driverId: string): Promise<DriverProfile> {
+  const [driverRow] = await db.select({ name: user.name }).from(user).where(eq(user.id, driverId));
+  const [ratingRow] = await db
+    .select({ averageRating: avg(review.rating), reviewCount: count(review.rating) })
+    .from(review)
+    .where(and(eq(review.driverId, driverId), eq(review.direction, 'passenger_to_driver')));
+  const [vehicleRow] = await db
+    .select({ make: vehicle.make, model: vehicle.model, seats: vehicle.seats })
+    .from(vehicle)
+    .where(eq(vehicle.ownerId, driverId));
+  const verifiedIds = await getVerifiedDriverIds([driverId]);
+  return buildDriverProfile(
+    driverId,
+    driverRow?.name ?? '',
+    ratingRow?.averageRating ? Number(ratingRow.averageRating) : null,
+    ratingRow?.reviewCount ?? 0,
+    vehicleRow ?? null,
+    verifiedIds.has(driverId),
+  );
+}
+
 // Reads are public; creating requires authentication. Adjust to your auth rules
 // (e.g. add `requireRole('admin')` from ../../auth for admin-only mutations).
 app.use('/trajets', async (c, next) =>
@@ -166,7 +250,10 @@ export const trajetModule = app
     if (query.date) {
       const dayStart = new Date(`${query.date}T00:00:00.000Z`);
       const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-      conditions.push(gte(trajet.departureAt, dayStart), lt(trajet.departureAt, dayEnd));
+      // `time` narrows the range's start (earliest departure that day) rather
+      // than requiring an exact match.
+      const rangeStart = query.time ? new Date(`${query.date}T${query.time}:00.000Z`) : dayStart;
+      conditions.push(gte(trajet.departureAt, rangeStart), lt(trajet.departureAt, dayEnd));
     }
     if (query.minSeats !== undefined) conditions.push(gte(trajet.seatsAvailable, query.minSeats));
     if (query.maxPrice !== undefined) conditions.push(lte(trajet.pricePerSeat, query.maxPrice.toString()));
@@ -174,6 +261,9 @@ export const trajetModule = app
     if (query.baggageAllowance) {
       conditions.push(ilike(trajet.baggageAllowance, `%${query.baggageAllowance}%`));
     }
+    if (query.amenities.length > 0) conditions.push(arrayContains(trajet.amenities, query.amenities));
+    if (query.stopPolicy === 'direct') conditions.push(eq(trajet.hasIntermediateStop, false));
+    if (query.stopPolicy === 'withStops') conditions.push(eq(trajet.hasIntermediateStop, true));
     if (query.minDriverRating !== undefined) {
       // Drivers with no reviews yet have no row here at all, so they never
       // qualify for a minDriverRating filter — that's the desired behavior.
@@ -207,7 +297,9 @@ export const trajetModule = app
     }
 
     const offset = (query.page - 1) * query.limit;
-    const orderExprs = near ? [asc(departureDistanceKmSql(near.lat, near.lng))] : [];
+    const orderExprs = near
+      ? [asc(departureDistanceKmSql(near.lat, near.lng)), asc(trajet.departureAt)]
+      : [asc(trajet.departureAt)];
     const rows = await db
       .select()
       .from(trajet)
@@ -224,25 +316,38 @@ export const trajetModule = app
     const { id } = c.req.valid('param');
     const [row] = await db.select().from(trajet).where(eq(trajet.id, id));
     if (!row) return c.json({ error: 'Not found' }, 404);
-    return c.json(serialize(row), 200);
+    const driver = await getDriverProfile(row.driverId);
+    return c.json(serialize(row, driver), 200);
   })
   .openapi(createTrajetRoute, async (c) => {
-    const { user } = getAuth(c); // throws if requireAuth did not run (programmer error, not 401)
+    const { user: authUser } = getAuth(c); // throws if requireAuth did not run (programmer error, not 401)
     const body = c.req.valid('json');
     const [row] = await db
       .insert(trajet)
       .values({
         id: randomUUID(),
-        driverId: user.id,
+        driverId: authUser.id,
         departureCity: body.departureCity,
         arrivalCity: body.destinationCity,
         departureAt: new Date(body.departureDateTime),
+        departurePlace: body.departurePlace ?? null,
+        arrivalPlace: body.arrivalPlace ?? null,
+        // Set directly when the driver picked a precise point (see
+        // LocationPicker) so the response already carries them — the
+        // fire-and-forget geocode below only fills in whatever's still null.
+        departureLat: body.departureLat != null ? body.departureLat.toString() : null,
+        departureLng: body.departureLng != null ? body.departureLng.toString() : null,
+        arrivalLat: body.arrivalLat != null ? body.arrivalLat.toString() : null,
+        arrivalLng: body.arrivalLng != null ? body.arrivalLng.toString() : null,
+        arrivalAt: body.arrivalDateTime ? new Date(body.arrivalDateTime) : null,
         seatsTotal: body.seatsTotal,
         seatsAvailable: body.seatsTotal,
         pricePerSeat: body.pricePerSeat.toString(),
         description: body.description ?? null,
         comfort: body.comfort ?? null,
         baggageAllowance: body.baggageAllowance ?? null,
+        amenities: body.amenities ?? [],
+        hasIntermediateStop: body.hasIntermediateStop ?? false,
       })
       .returning();
     if (!row) throw new Error('Insert returned no row'); // narrows away `undefined`
@@ -251,12 +356,20 @@ export const trajetModule = app
     // rate-limits to ~1 req/sec and this needs two lookups) — a trajet must
     // stay immediately bookable rather than wait on it. Coordinates land a
     // couple of seconds later via a background UPDATE, or never if geocoding
-    // fails.
-    geocodeAndStoreTrajetLocation(row.id, row.departureCity, row.arrivalCity).catch((err) => {
-      console.error(`Failed to geocode trajet ${row.id}`, err);
-    });
+    // fails. Skipped entirely when the picker already supplied both sides —
+    // nothing left to fill in.
+    if (row.departureLat === null || row.arrivalLat === null) {
+      geocodeAndStoreTrajetLocation(
+        row.id,
+        { city: row.departureCity, lat: body.departureLat, lng: body.departureLng },
+        { city: row.arrivalCity, lat: body.arrivalLat, lng: body.arrivalLng },
+      ).catch((err) => {
+        console.error(`Failed to geocode trajet ${row.id}`, err);
+      });
+    }
 
-    return c.json(serialize(row), 201);
+    const driver = await getDriverProfile(authUser.id);
+    return c.json(serialize(row, driver), 201);
   })
   .openapi(updateTrajetRoute, async (c) => {
     const { user } = getAuth(c);
@@ -288,6 +401,10 @@ export const trajetModule = app
         .set({
           ...(body.departureCity !== undefined && { departureCity: body.departureCity }),
           ...(body.destinationCity !== undefined && { arrivalCity: body.destinationCity }),
+          ...(body.departureLat !== undefined && { departureLat: body.departureLat?.toString() ?? null }),
+          ...(body.departureLng !== undefined && { departureLng: body.departureLng?.toString() ?? null }),
+          ...(body.arrivalLat !== undefined && { arrivalLat: body.arrivalLat?.toString() ?? null }),
+          ...(body.arrivalLng !== undefined && { arrivalLng: body.arrivalLng?.toString() ?? null }),
           ...(body.departureDateTime !== undefined && {
             departureAt: new Date(body.departureDateTime),
           }),
@@ -299,6 +416,13 @@ export const trajetModule = app
           ...(body.description !== undefined && { description: body.description }),
           ...(body.comfort !== undefined && { comfort: body.comfort }),
           ...(body.baggageAllowance !== undefined && { baggageAllowance: body.baggageAllowance }),
+          ...(body.departurePlace !== undefined && { departurePlace: body.departurePlace }),
+          ...(body.arrivalPlace !== undefined && { arrivalPlace: body.arrivalPlace }),
+          ...(body.arrivalDateTime !== undefined && {
+            arrivalAt: body.arrivalDateTime ? new Date(body.arrivalDateTime) : null,
+          }),
+          ...(body.amenities !== undefined && { amenities: body.amenities }),
+          ...(body.hasIntermediateStop !== undefined && { hasIntermediateStop: body.hasIntermediateStop }),
         })
         .where(eq(trajet.id, id))
         .returning();
@@ -309,17 +433,28 @@ export const trajetModule = app
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
 
-    // Only re-geocode when a city actually changed — same fire-and-forget
-    // reasoning as createTrajetRoute above.
-    if (body.departureCity !== undefined || body.destinationCity !== undefined) {
-      geocodeAndStoreTrajetLocation(result.trajet.id, result.trajet.departureCity, result.trajet.arrivalCity).catch(
-        (err) => {
-          console.error(`Failed to re-geocode trajet ${result.trajet.id}`, err);
-        },
-      );
+    // Re-geocode when a city changed (re-derive coordinates for whichever
+    // side has none of its own) or when the driver re-picked a precise point
+    // directly — same fire-and-forget reasoning as createTrajetRoute above.
+    if (
+      body.departureCity !== undefined ||
+      body.destinationCity !== undefined ||
+      body.departureLat !== undefined ||
+      body.departureLng !== undefined ||
+      body.arrivalLat !== undefined ||
+      body.arrivalLng !== undefined
+    ) {
+      geocodeAndStoreTrajetLocation(
+        result.trajet.id,
+        { city: result.trajet.departureCity, lat: body.departureLat, lng: body.departureLng },
+        { city: result.trajet.arrivalCity, lat: body.arrivalLat, lng: body.arrivalLng },
+      ).catch((err) => {
+        console.error(`Failed to re-geocode trajet ${result.trajet.id}`, err);
+      });
     }
 
-    return c.json(serialize(result.trajet), 200);
+    const driver = await getDriverProfile(result.trajet.driverId);
+    return c.json(serialize(result.trajet, driver), 200);
   })
   .openapi(cancelTrajetRoute, async (c) => {
     const { user } = getAuth(c);
@@ -359,16 +494,22 @@ export const trajetModule = app
         notifyUser(
           passengerId,
           'Your Carpool trip was cancelled',
-          `The driver cancelled the trip from ${describeTrip(result.trajet)} you had booked. Search for another ride: ${trajetSearchUrl()}`,
+          `The driver cancelled the trip from ${describeTrip(result.trajet)} you had booked. View the trip: ${trajetUrl(id)}`,
+          {
+            type: 'trip_cancelled',
+            link: trajetUrl(id),
+            inAppBody: `The driver cancelled your trip ${describeTripShort(result.trajet)}.`,
+          },
         ),
       ),
     );
-    return c.json(serialize(result.trajet), 200);
+    const cancelDriver = await getDriverProfile(result.trajet.driverId);
+    return c.json(serialize(result.trajet, cancelDriver), 200);
   })
   .openapi(bookTrajetRoute, async (c) => {
     const { user } = getAuth(c);
     const { id } = c.req.valid('param');
-    const { seats } = c.req.valid('json');
+    const { seats, firstName, lastName, email, phone, message } = c.req.valid('json');
 
     let expiredBookings: ExpiredBooking[] = [];
     let trip: { departureCity: string; arrivalCity: string; departureAt: Date } | undefined;
@@ -400,6 +541,11 @@ export const trajetModule = app
           // Seats are held immediately (below) so a booking always starts
           // `pending` — the driver still has to accept or reject it.
           status: 'pending',
+          firstName: firstName ?? null,
+          lastName: lastName ?? null,
+          email: email ?? null,
+          phone: phone ?? null,
+          message: message ?? null,
         })
         .returning();
       if (!created) throw new Error('Insert returned no row');
@@ -421,7 +567,7 @@ export const trajetModule = app
 
     // The sweep's writes commit whether or not the booking itself ultimately
     // succeeds, so its passengers must be notified either way.
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     await notifyUser(
@@ -429,6 +575,11 @@ export const trajetModule = app
       'New booking request on your Carpool trip',
       `A passenger requested ${seats} seat(s) on your trip from ${describeTrip(result)}. ` +
         `Sign in to accept or reject it: ${trajetUrl(id)}`,
+      {
+        type: 'booking_request',
+        link: trajetUrl(id),
+        inAppBody: `A passenger requested ${seats} seat(s) on your trip ${describeTripShort(result)}.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 201);
   })
@@ -511,7 +662,7 @@ export const trajetModule = app
       };
     });
 
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     await notifyUser(
@@ -519,7 +670,15 @@ export const trajetModule = app
       status === 'confirmed' ? 'Your Carpool booking was confirmed' : 'Your Carpool booking was rejected',
       status === 'confirmed'
         ? `Your booking request for the trip from ${describeTrip(result)} was confirmed by the driver. View the trip: ${trajetUrl(id)}`
-        : `Your booking request for the trip from ${describeTrip(result)} was rejected by the driver. Search for another ride: ${trajetSearchUrl()}`,
+        : `Your booking request for the trip from ${describeTrip(result)} was rejected by the driver. View the trip: ${trajetUrl(id)}`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(id),
+        inAppBody:
+          status === 'confirmed'
+            ? `Your booking for ${describeTripShort(result)} was confirmed by the driver.`
+            : `Your booking for ${describeTripShort(result)} was rejected by the driver.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 200);
   })
@@ -577,13 +736,18 @@ export const trajetModule = app
       };
     });
 
-    if (trip) await notifyExpiredBookings(expiredBookings, trip);
+    if (trip) await notifyExpiredBookings(expiredBookings, trip, id);
 
     if (!result.ok) return c.json({ error: result.error }, result.status);
     await notifyUser(
       result.driverId,
       'A passenger cancelled their Carpool booking',
       `A passenger cancelled their booking of ${result.seats} seat(s) on your trip from ${describeTrip(result)}. The seat(s) are available again.`,
+      {
+        type: 'booking_status',
+        link: trajetUrl(id),
+        inAppBody: `A passenger cancelled their booking of ${result.seats} seat(s) on your trip ${describeTripShort(result)}. The seat(s) are available again.`,
+      },
     );
     return c.json(serializeBooking(result.booking), 200);
   })
@@ -598,7 +762,9 @@ export const trajetModule = app
       .offset((page - 1) * limit);
 
     const { items, hasMore } = paginate(rows, limit);
-    return c.json({ items: items.map(serialize), page, limit, hasMore }, 200);
+    // Every row shares the same driver (the caller) — fetch the profile once.
+    const driver = await getDriverProfile(user.id);
+    return c.json({ items: items.map((row) => serialize(row, driver)), page, limit, hasMore }, 200);
   })
   .openapi(myBookingsRoute, async (c) => {
     const { user } = getAuth(c);
@@ -610,6 +776,11 @@ export const trajetModule = app
         passengerId: booking.passengerId,
         seats: booking.seats,
         status: booking.status,
+        firstName: booking.firstName,
+        lastName: booking.lastName,
+        email: booking.email,
+        phone: booking.phone,
+        message: booking.message,
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
         departureCity: trajet.departureCity,
@@ -641,23 +812,37 @@ async function attachSearchMetadata(
   near: { lat: number; lng: number } | undefined,
 ): Promise<TrajetSearchResult[]> {
   const driverIds = [...new Set(rows.map((row) => row.driverId))];
-  const ratingRows = driverIds.length
-    ? await db
-        .select({
-          driverId: review.driverId,
-          averageRating: avg(review.rating),
-          reviewCount: count(review.rating),
-        })
-        .from(review)
-        .where(and(inArray(review.driverId, driverIds), eq(review.direction, 'passenger_to_driver')))
-        .groupBy(review.driverId)
-    : [];
+  const [ratingRows, nameRows, vehicleRows, verifiedIds] = await Promise.all([
+    driverIds.length
+      ? db
+          .select({
+            driverId: review.driverId,
+            averageRating: avg(review.rating),
+            reviewCount: count(review.rating),
+          })
+          .from(review)
+          .where(and(inArray(review.driverId, driverIds), eq(review.direction, 'passenger_to_driver')))
+          .groupBy(review.driverId)
+      : Promise.resolve([]),
+    driverIds.length
+      ? db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, driverIds))
+      : Promise.resolve([]),
+    driverIds.length
+      ? db
+          .select({ ownerId: vehicle.ownerId, make: vehicle.make, model: vehicle.model, seats: vehicle.seats })
+          .from(vehicle)
+          .where(inArray(vehicle.ownerId, driverIds))
+      : Promise.resolve([]),
+    getVerifiedDriverIds(driverIds),
+  ]);
   const ratingByDriver = new Map(
     ratingRows.map((r) => [
       r.driverId,
       { averageRating: r.averageRating ? Number(r.averageRating) : null, reviewCount: r.reviewCount },
     ]),
   );
+  const nameByDriver = new Map(nameRows.map((r) => [r.id, r.name]));
+  const vehicleByDriver = new Map(vehicleRows.map((v) => [v.ownerId, v]));
 
   return rows.map((row) => {
     const rating = ratingByDriver.get(row.driverId);
@@ -665,8 +850,16 @@ async function attachSearchMetadata(
       near && row.departureLat !== null && row.departureLng !== null
         ? haversineKm(near.lat, near.lng, Number(row.departureLat), Number(row.departureLng))
         : null;
+    const driver = buildDriverProfile(
+      row.driverId,
+      nameByDriver.get(row.driverId) ?? '',
+      rating?.averageRating ?? null,
+      rating?.reviewCount ?? 0,
+      vehicleByDriver.get(row.driverId) ?? null,
+      verifiedIds.has(row.driverId),
+    );
     return {
-      ...serialize(row),
+      ...serialize(row, driver),
       driverRating: rating?.averageRating ?? null,
       driverReviewCount: rating?.reviewCount ?? 0,
       distanceKm,
@@ -675,7 +868,7 @@ async function attachSearchMetadata(
 }
 
 /** Map a DB row (Date columns, DB column names) to the Zod contract shape. */
-function serialize(row: typeof trajet.$inferSelect): Trajet {
+function serialize(row: typeof trajet.$inferSelect, driver: DriverProfile): Trajet {
   return {
     id: row.id,
     driverId: row.driverId,
@@ -686,12 +879,18 @@ function serialize(row: typeof trajet.$inferSelect): Trajet {
     arrivalLat: row.arrivalLat !== null ? Number(row.arrivalLat) : null,
     arrivalLng: row.arrivalLng !== null ? Number(row.arrivalLng) : null,
     departureDateTime: row.departureAt.toISOString(),
+    departurePlace: row.departurePlace,
+    arrivalPlace: row.arrivalPlace,
+    arrivalDateTime: row.arrivalAt ? row.arrivalAt.toISOString() : null,
     seatsTotal: row.seatsTotal,
     seatsAvailable: row.seatsAvailable,
     pricePerSeat: Number(row.pricePerSeat),
     description: row.description,
     comfort: row.comfort as Trajet['comfort'],
     baggageAllowance: row.baggageAllowance,
+    amenities: row.amenities as Trajet['amenities'],
+    hasIntermediateStop: row.hasIntermediateStop,
+    driver,
     cancelledAt: row.cancelledAt ? row.cancelledAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -705,6 +904,11 @@ function serializeBooking(row: typeof booking.$inferSelect): Booking {
     passengerId: row.passengerId,
     seats: row.seats,
     status: row.status as Booking['status'],
+    firstName: row.firstName,
+    lastName: row.lastName,
+    email: row.email,
+    phone: row.phone,
+    message: row.message,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -717,6 +921,11 @@ function serializeBookingWithTrajet(row: {
   passengerId: string;
   seats: number;
   status: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  message: string | null;
   createdAt: Date;
   updatedAt: Date;
   departureCity: string;
@@ -730,6 +939,11 @@ function serializeBookingWithTrajet(row: {
     passengerId: row.passengerId,
     seats: row.seats,
     status: row.status as BookingWithTrajet['status'],
+    firstName: row.firstName,
+    lastName: row.lastName,
+    email: row.email,
+    phone: row.phone,
+    message: row.message,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     trajet: {

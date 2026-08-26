@@ -9,6 +9,11 @@ import { env } from './env';
 // enough to call it without widening the rest of `authClient`'s real type.
 const authClientWithCookie = authClient as unknown as { getCookie: () => string };
 
+/** The persisted session cookie, for callers that need to attach it themselves (e.g. a WebSocket handshake). */
+export function getSessionCookie(): string {
+  return authClientWithCookie.getCookie();
+}
+
 /**
  * Shared, typed RPC client for every screen. React Native's `fetch` has no
  * cookie jar, so instead of `credentials: 'include'` (the web's approach) we

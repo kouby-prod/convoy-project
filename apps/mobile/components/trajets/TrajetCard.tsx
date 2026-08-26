@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { Trajet, TrajetSearchResult } from '@carpool/schemas';
 import { Card } from '@/components/ui/Card';
+import { AMENITY_LABELS } from '@/lib/amenities';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
 
 function formatDateTime(value: string) {
@@ -15,12 +16,14 @@ function formatPrice(value: number) {
 
 /**
  * Summary card for a trajet — used by both the search results list and "Mes
- * trajets". The rating row only renders when `driverRating`/`driverReviewCount`
- * are present (search results carry them, plain `Trajet` from `/me/trajets`
- * does not).
+ * trajets". `distanceKm` only renders when present (search results carry it,
+ * plain `Trajet` from `/me/trajets` does not).
  */
 export function TrajetCard({ trajet }: { trajet: Trajet | TrajetSearchResult }) {
-  const withRating = 'driverRating' in trajet ? trajet : null;
+  const distanceKm = 'distanceKm' in trajet ? trajet.distanceKm : null;
+  const { driver } = trajet;
+  const driverName = [driver.firstName, driver.lastName].filter(Boolean).join(' ') || 'Conducteur';
+  const vehicleLine = [driver.carMake, driver.carModel].filter(Boolean).join(' ');
 
   return (
     <Card>
@@ -38,12 +41,22 @@ export function TrajetCard({ trajet }: { trajet: Trajet | TrajetSearchResult }) 
       <Text style={styles.line}>
         {trajet.seatsAvailable}/{trajet.seatsTotal} places · {formatPrice(trajet.pricePerSeat)}
       </Text>
-      {withRating ? (
+      <View style={styles.driverRow}>
         <Text style={styles.line}>
-          {withRating.driverRating !== null
-            ? `★ ${withRating.driverRating.toFixed(1)} (${withRating.driverReviewCount})`
-            : 'Conducteur sans avis'}
-          {withRating.distanceKm !== null ? ` · ${withRating.distanceKm.toFixed(1)} km` : ''}
+          {driverName}
+          {driver.rating !== null ? ` · ★ ${driver.rating.toFixed(1)} (${driver.reviewCount})` : ' · Sans avis'}
+          {distanceKm !== null ? ` · ${distanceKm.toFixed(1)} km` : ''}
+        </Text>
+        {driver.verified ? (
+          <View style={styles.verifiedBadge}>
+            <Text style={styles.verifiedBadgeText}>Vérifié</Text>
+          </View>
+        ) : null}
+      </View>
+      {vehicleLine ? <Text style={styles.line}>{vehicleLine}</Text> : null}
+      {trajet.amenities.length > 0 ? (
+        <Text style={styles.amenitiesLine} numberOfLines={1}>
+          {trajet.amenities.map((amenity) => AMENITY_LABELS[amenity]).join(' · ')}
         </Text>
       ) : null}
     </Card>
@@ -61,4 +74,13 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   badgeText: { fontSize: fontSize.xs, color: colors.destructive, fontWeight: '600' },
+  driverRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  verifiedBadge: {
+    backgroundColor: colors.secondary + '26',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  verifiedBadgeText: { fontSize: fontSize.xs, color: colors.secondary, fontWeight: '600' },
+  amenitiesLine: { fontSize: fontSize.xs, color: colors.mutedForeground },
 });

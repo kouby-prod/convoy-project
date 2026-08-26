@@ -1,6 +1,7 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
 interface PopoverProps {
@@ -11,12 +12,16 @@ interface PopoverProps {
   /** Panel content shown while open. */
   children: ReactNode;
   align?: 'start' | 'end';
+  /** Classes on the trigger wrapper (not the floating panel). */
   className?: string;
+  /** Classes on the floating panel. */
+  panelClassName?: string;
 }
 
-/* Minimal popover: a relatively-positioned trigger with an absolutely-positioned
-   panel. Closes on outside pointer-down and Escape. On-system surface: heavy
-   radius, soft shadow over a hairline ring. */
+const PANEL_GAP = 8;
+const VIEWPORT_PAD = 8;
+
+/* Portal popover so calendars/menus are never clipped by overflow:hidden ancestors. */
 export function Popover({
   open,
   onOpenChange,
@@ -24,16 +29,63 @@ export function Popover({
   children,
   align = 'start',
   className,
+  panelClassName,
 }: PopoverProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setCoords(null);
+      return;
+    }
+
+    function place() {
+      const triggerEl = containerRef.current;
+      const panelEl = panelRef.current;
+      if (!triggerEl || !panelEl) return;
+
+      const triggerRect = triggerEl.getBoundingClientRect();
+      const panelRect = panelEl.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - triggerRect.bottom - VIEWPORT_PAD;
+      const spaceAbove = triggerRect.top - VIEWPORT_PAD;
+      const openUp = spaceBelow < panelRect.height + PANEL_GAP && spaceAbove > spaceBelow;
+
+      let top = openUp
+        ? triggerRect.top - panelRect.height - PANEL_GAP
+        : triggerRect.bottom + PANEL_GAP;
+      top = Math.max(VIEWPORT_PAD, Math.min(top, window.innerHeight - panelRect.height - VIEWPORT_PAD));
+
+      let left = align === 'end' ? triggerRect.right - panelRect.width : triggerRect.left;
+      left = Math.max(VIEWPORT_PAD, Math.min(left, window.innerWidth - panelRect.width - VIEWPORT_PAD));
+
+      setCoords({ top, left });
+    }
+
+    place();
+    const raf = requestAnimationFrame(place);
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, align]);
 
   useEffect(() => {
     if (!open) return;
 
     function handlePointerDown(event: PointerEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        onOpenChange(false);
-      }
+      const target = event.target as Node;
+      if (containerRef.current?.contains(target) || panelRef.current?.contains(target)) return;
+      onOpenChange(false);
     }
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onOpenChange(false);
@@ -48,20 +100,28 @@ export function Popover({
   }, [open, onOpenChange]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className={cn('relative', className)}>
       {trigger}
-      {open && (
-        <div
-          role="dialog"
-          className={cn(
-            'absolute top-full z-50 mt-2 rounded-3xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/5 dark:ring-foreground/10',
-            align === 'end' ? 'right-0' : 'left-0',
-            className,
-          )}
-        >
-          {children}
-        </div>
-      )}
+      {mounted && open
+        ? createPortal(
+            <div
+              ref={panelRef}
+              role="dialog"
+              style={
+                coords
+                  ? { position: 'fixed', top: coords.top, left: coords.left }
+                  : { position: 'fixed', top: 0, left: 0, opacity: 0, pointerEvents: 'none' }
+              }
+              className={cn(
+                'z-[80] w-max max-w-[calc(100vw-1rem)] rounded-md bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/5 dark:ring-foreground/10',
+                panelClassName,
+              )}
+            >
+              {children}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

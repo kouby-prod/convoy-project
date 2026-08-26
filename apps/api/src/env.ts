@@ -13,6 +13,11 @@ const EnvSchema = z.object({
     .string()
     .min(1, 'DATABASE_URL is required (e.g. postgres://user:pass@localhost:5432/carpool)'),
 
+  // --- Redis (BullMQ queues + WebSocket pub/sub fan-out) ---
+  // Host default matches the infra redis service published on REDIS_PORT.
+  // In Docker Compose the api service overrides this to redis://redis:6379.
+  REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
+
   // --- BetterAuth ---
   // A strong secret is required: it signs sessions, tokens and cookies.
   // Generate one with: `openssl rand -base64 32`.
@@ -73,11 +78,11 @@ const EnvSchema = z.object({
 
   // --- Object storage (MinIO, or any S3-compatible service) ---
   // Driver identity documents live here, never in Postgres. The API only ever
-  // signs URLs; the browser/mobile client transfers the bytes.
+  // signs URLs; the browser transfers the bytes.
   //
   // Two endpoints on purpose: S3_ENDPOINT is how THIS process reaches the
   // bucket (a compose service name in Docker), while S3_PUBLIC_ENDPOINT is the
-  // host embedded in presigned URLs, which the CLIENT has to resolve. They are
+  // host embedded in presigned URLs, which the BROWSER has to resolve. They are
   // the same value when everything runs on the host.
   S3_ENDPOINT: z.url().default('http://localhost:9000'),
   S3_PUBLIC_ENDPOINT: z.url().default('http://localhost:9000'),

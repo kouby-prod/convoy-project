@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
+import type { TrajetAmenity } from '@carpool/schemas';
 import { api } from '@/lib/api-client';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
+import { AMENITY_LABELS, AMENITY_ORDER } from '@/lib/amenities';
 import { colors, spacing, fontSize } from '@/lib/theme';
 
 type Comfort = 'standard' | 'confort' | 'premium';
@@ -26,6 +28,8 @@ interface FormState {
   comfort: Comfort;
   baggageAllowance: string;
   description: string;
+  amenities: TrajetAmenity[];
+  hasIntermediateStop: boolean;
 }
 
 const EMPTY_FORM: FormState = {
@@ -38,6 +42,8 @@ const EMPTY_FORM: FormState = {
   comfort: 'standard',
   baggageAllowance: '',
   description: '',
+  amenities: [],
+  hasIntermediateStop: false,
 };
 
 /**
@@ -56,6 +62,15 @@ export default function AnnoncerScreen() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  function toggleAmenity(amenity: TrajetAmenity) {
+    setForm((prev) => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter((a) => a !== amenity)
+        : [...prev.amenities, amenity],
+    }));
+  }
+
   const mutation = useMutation({
     mutationFn: async () => {
       const departureDateTime = new Date(`${form.date}T${form.time}`).toISOString();
@@ -69,6 +84,8 @@ export default function AnnoncerScreen() {
           comfort: form.comfort,
           baggageAllowance: form.baggageAllowance.trim() || undefined,
           description: form.description.trim() || undefined,
+          amenities: form.amenities,
+          hasIntermediateStop: form.hasIntermediateStop,
         },
       });
       if (!res.ok) throw new Error('Échec de la publication.');
@@ -180,6 +197,39 @@ export default function AnnoncerScreen() {
           value={form.baggageAllowance}
           onChangeText={(v) => updateField('baggageAllowance', v)}
         />
+
+        <View style={styles.comfortGroup}>
+          <Text style={styles.label}>Arrêt intermédiaire</Text>
+          <View style={styles.row}>
+            <Button
+              label="Sans arrêt"
+              size="sm"
+              variant={!form.hasIntermediateStop ? 'primary' : 'outline'}
+              onPress={() => updateField('hasIntermediateStop', false)}
+            />
+            <Button
+              label="Avec arrêt"
+              size="sm"
+              variant={form.hasIntermediateStop ? 'primary' : 'outline'}
+              onPress={() => updateField('hasIntermediateStop', true)}
+            />
+          </View>
+        </View>
+
+        <View style={styles.comfortGroup}>
+          <Text style={styles.label}>Options du trajet</Text>
+          <View style={styles.amenitiesGrid}>
+            {AMENITY_ORDER.map((amenity) => (
+              <Button
+                key={amenity}
+                label={AMENITY_LABELS[amenity]}
+                size="sm"
+                variant={form.amenities.includes(amenity) ? 'primary' : 'outline'}
+                onPress={() => toggleAmenity(amenity)}
+              />
+            ))}
+          </View>
+        </View>
         <TextField
           label="Description (optionnel)"
           value={form.description}
@@ -208,5 +258,6 @@ const styles = StyleSheet.create({
   rowItem: { flex: 1 },
   comfortGroup: { gap: spacing.xs },
   label: { fontSize: fontSize.sm, fontWeight: '600', color: colors.foreground },
+  amenitiesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   error: { fontSize: fontSize.sm, color: colors.destructive },
 });

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Message, MessagePage } from '@carpool/schemas';
 import { api } from '@/lib/api-client';
 import { authClient } from '@/lib/auth-client';
+import { useBookingMessagesSocket } from '@/hooks/useBookingMessagesSocket';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { colors, radius, spacing, fontSize } from '@/lib/theme';
@@ -52,6 +54,22 @@ export function BookingMessages({ bookingId }: { bookingId: string }) {
     onSuccess: () => {
       setBody('');
       queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  // Live updates while the thread is open — falls back to the invalidate
+  // above (and the next time the thread is reopened) when the socket is
+  // unavailable. Dedup by id since a message can otherwise arrive twice: once
+  // from this socket's own broadcast, once from the sender's own invalidate.
+  useBookingMessagesSocket({
+    bookingId,
+    enabled: isOpen,
+    onMessage: (message: Message) => {
+      queryClient.setQueryData<MessagePage>(queryKey, (current) => {
+        if (!current) return current;
+        if (current.items.some((item) => item.id === message.id)) return current;
+        return { ...current, items: [...current.items, message] };
+      });
     },
   });
 

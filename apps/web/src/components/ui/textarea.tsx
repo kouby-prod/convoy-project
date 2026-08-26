@@ -1,22 +1,23 @@
-import * as React from "react"
+import { type TextareaHTMLAttributes, forwardRef } from 'react';
+import { cn } from '@/lib/utils';
 
-import { cn } from "@/lib/utils"
+export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
 
-export type TextareaProps =
-  React.TextareaHTMLAttributes<HTMLTextAreaElement>
-
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => (
-    <textarea
-      className={cn(
-        "flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        className
-      )}
-      ref={ref}
-      {...props}
-    />
-  )
-)
-Textarea.displayName = "Textarea"
-
-export { Textarea }
+/* Multi-line field on-system: matches Input (hairline ring, 3px brand focus
+   ring) but with the heavy card radius rather than a pill. */
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  function Textarea({ className, rows = 4, ...textareaProps }, ref) {
+    return (
+      <textarea
+        ref={ref}
+        rows={rows}
+        className={cn(
+          'w-full resize-y rounded-md bg-card px-4 py-3 text-sm text-foreground shadow-sm ring-1 ring-border outline-none transition-all duration-200',
+          'placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/30',
+          className,
+        )}
+        {...textareaProps}
+      />
+    );
+  },
+);

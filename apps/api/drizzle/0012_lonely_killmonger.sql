@@ -1,0 +1,1 @@
+ALTER TABLE "vehicle" ADD COLUMN "has_insurance" boolean;

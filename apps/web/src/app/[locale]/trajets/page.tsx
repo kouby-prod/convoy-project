@@ -1,14 +1,10 @@
 import { Suspense } from 'react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { TrajetsList } from '@/components/trajets/trajets-list';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
+import { PageHeader } from '@/components/ui/page-header';
 
-/**
- * Trajets page. Server component: locale-aware, statically rendered.
- * All copy comes from the `Trajets` next-intl namespace — add the
- * keys to BOTH messages/fr.json (primary) and messages/en.json.
- */
 export default async function TrajetsPage({
   params,
 }: {
@@ -20,16 +16,16 @@ export default async function TrajetsPage({
   const tNav = await getTranslations('Navbar');
 
   return (
-    <section className="flex flex-col gap-8 py-12">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
-        </div>
-        <Link href={`/${locale}/annoncer`}>
-          <Button>{tNav('post')}</Button>
-        </Link>
-      </div>
+    <section className="flex flex-col gap-8">
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+        actions={
+          <Link href="/trajet/nouveau" className={buttonVariants({ variant: 'primary', size: 'lg' })}>
+            {tNav('post')}
+          </Link>
+        }
+      />
 
       <Suspense fallback={<p className="text-muted-foreground">{t('loading')}</p>}>
         <TrajetsList />

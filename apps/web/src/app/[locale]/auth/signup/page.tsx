@@ -2,18 +2,8 @@ import { SignUpForm } from '@/components/auth/signup-form';
 
 export default function SignUpPage() {
   return (
-    <section className="flex flex-col items-center gap-8 py-12 lg:py-20">
-      <div className="max-w-sm space-y-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Rejoignez Carpool
-        </h1>
-
-        <p className="text-sm text-muted-foreground">
-          Créez votre compte en quelques secondes et commencez à partager vos
-          trajets avec la communauté.
-        </p>
-      </div>
-
+    <section className="relative flex flex-col items-center justify-center py-10 lg:py-16">
+      <div className="pointer-events-none absolute inset-x-0 -top-8 -z-10 h-72 rounded-lg bg-canvas-glow" />
       <SignUpForm />
     </section>
   );

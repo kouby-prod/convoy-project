@@ -98,7 +98,7 @@ export function TimePicker({ value, onChange, ariaLabel, className }: TimePicker
       role="group"
       aria-label={ariaLabel}
       className={cn(
-        'flex h-12 w-full items-center gap-1 rounded-full bg-card px-5 text-sm text-foreground shadow-sm ring-1 ring-border',
+        'flex h-12 w-full items-center gap-1 rounded-md bg-card px-5 text-sm text-foreground shadow-sm ring-1 ring-border',
         className,
       )}
     >

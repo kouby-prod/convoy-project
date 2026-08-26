@@ -85,7 +85,7 @@ export function Calendar({
               aria-label="Month"
               value={month}
               onChange={(event) => setViewMonth(new Date(year, Number(event.target.value), 1))}
-              className="rounded-full border border-border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+              className="rounded-md border border-border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
             >
               {monthLabels.map((label, index) => (
                 <option key={label} value={index}>
@@ -97,7 +97,7 @@ export function Calendar({
               aria-label="Year"
               value={year}
               onChange={(event) => setViewMonth(new Date(Number(event.target.value), month, 1))}
-              className="rounded-full border border-border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+              className="rounded-md border border-border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
             >
               {Array.from({ length: 21 }, (_, index) => year - 10 + index).map((yearOption) => (
                 <option key={yearOption} value={yearOption}>

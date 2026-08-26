@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Trajet } from '@carpool/schemas';
 import { api } from '@/lib/api-client';
 import { authClient } from '@/lib/auth-client';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -12,6 +13,7 @@ import { LoadingState, ErrorState } from '@/components/ui/StateMessage';
 import { PaginationBar } from '@/components/ui/PaginationBar';
 import { BookingMessages } from '@/components/trajets/BookingMessages';
 import { ReviewForm } from '@/components/trajets/ReviewForm';
+import { AMENITY_LABELS } from '@/lib/amenities';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -32,23 +34,27 @@ function formatPrice(value: number) {
   );
 }
 
-function DriverRating({ driverId }: { driverId: string }) {
-  const { data } = useQuery({
-    queryKey: ['drivers', driverId, 'rating'],
-    queryFn: async () => {
-      const res = await api.drivers[':driverId'].rating.$get({ param: { driverId } });
-      if (!res.ok) throw new Error('Failed to load driver rating');
-      return res.json();
-    },
-  });
+/** Driver trust strip — built entirely from the trajet's embedded `driver` profile, no extra fetch. */
+function DriverProfile({ driver }: { driver: Trajet['driver'] }) {
+  const name = [driver.firstName, driver.lastName].filter(Boolean).join(' ') || '—';
+  const vehicleLine = [driver.carMake, driver.carModel].filter(Boolean).join(' ');
 
-  if (!data || data.reviewCount === 0 || data.averageRating === null) {
-    return <Text style={styles.value}>Aucun avis</Text>;
-  }
   return (
-    <Text style={styles.value}>
-      ★ {data.averageRating.toFixed(1)} ({data.reviewCount} avis)
-    </Text>
+    <Card>
+      <View style={styles.driverHeaderRow}>
+        <Text style={styles.cardTitle}>{name}</Text>
+        <View style={driver.verified ? styles.verifiedBadge : styles.unverifiedBadge}>
+          <Text style={driver.verified ? styles.verifiedBadgeText : styles.unverifiedBadgeText}>
+            {driver.verified ? 'Vérifié' : 'Non vérifié'}
+          </Text>
+        </View>
+      </View>
+      <Text style={styles.value}>
+        {driver.rating !== null ? `★ ${driver.rating.toFixed(1)} (${driver.reviewCount ?? 0} avis)` : 'Aucun avis'}
+      </Text>
+      {vehicleLine ? <Text style={styles.value}>{vehicleLine}</Text> : null}
+      {driver.carSeats !== null ? <Text style={styles.value}>{driver.carSeats} places dans le véhicule</Text> : null}
+    </Card>
   );
 }
 
@@ -349,10 +355,6 @@ export default function TrajetDetailScreen() {
             <Text style={styles.value}>{formatDateTime(data.departureDateTime)}</Text>
           </View>
           <View>
-            <Text style={styles.label}>Note du conducteur</Text>
-            <DriverRating driverId={data.driverId} />
-          </View>
-          <View>
             <Text style={styles.label}>Places</Text>
             <Text style={styles.value}>
               {data.seatsAvailable}/{data.seatsTotal}
@@ -374,6 +376,20 @@ export default function TrajetDetailScreen() {
               <Text style={styles.value}>{data.baggageAllowance}</Text>
             </View>
           ) : null}
+          <View>
+            <Text style={styles.label}>Trajet</Text>
+            <Text style={styles.value}>
+              {data.hasIntermediateStop ? 'Avec arrêt intermédiaire' : 'Sans arrêt intermédiaire'}
+            </Text>
+          </View>
+          {data.amenities.length > 0 ? (
+            <View>
+              <Text style={styles.label}>Options</Text>
+              <Text style={styles.value}>
+                {data.amenities.map((amenity) => AMENITY_LABELS[amenity]).join(' · ')}
+              </Text>
+            </View>
+          ) : null}
           {data.description ? (
             <View>
               <Text style={styles.label}>Description</Text>
@@ -381,6 +397,8 @@ export default function TrajetDetailScreen() {
             </View>
           ) : null}
         </Card>
+
+        <DriverProfile driver={data.driver} />
 
         {isOwner ? (
           <>
@@ -415,6 +433,21 @@ const styles = StyleSheet.create({
   label: { fontSize: fontSize.xs, color: colors.mutedForeground },
   value: { fontSize: fontSize.sm, color: colors.foreground },
   error: { fontSize: fontSize.sm, color: colors.destructive },
+  driverHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  verifiedBadge: {
+    backgroundColor: colors.secondary + '26',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  verifiedBadgeText: { fontSize: fontSize.xs, color: colors.secondary, fontWeight: '600' },
+  unverifiedBadge: {
+    backgroundColor: colors.mutedForeground + '1a',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  unverifiedBadgeText: { fontSize: fontSize.xs, color: colors.mutedForeground, fontWeight: '600' },
   banner: {
     backgroundColor: colors.destructive + '1a',
     borderRadius: radius.md,

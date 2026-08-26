@@ -23,6 +23,8 @@ services:
       PORT: ${API_PORT}
       # Container-side URL (host = the 'postgres' service). Defined in root .env.
       DATABASE_URL: ${DOCKER_DATABASE_URL}
+      # BullMQ + WS fan-out — container reaches the `redis` service by name.
+      REDIS_URL: ${DOCKER_REDIS_URL:-redis://redis:6379}
       # Required; compose fails fast with this message if it is unset in .env.
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?missing in root .env — copy .env.example to .env and set a 32+ char secret}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
@@ -47,7 +49,7 @@ services:
       SMS_GATEWAY_USER: ${SMS_GATEWAY_USER}
       SMS_GATEWAY_PASSWORD: ${SMS_GATEWAY_PASSWORD}
       # Object storage. The container talks to MinIO by service name, but signs
-      # presigned URLs with the PUBLIC endpoint — the client follows those and
+      # presigned URLs with the PUBLIC endpoint — the browser follows those and
       # cannot resolve `minio`. Same host/container split as DATABASE_URL.
       S3_ENDPOINT: ${DOCKER_S3_ENDPOINT}
       S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT}
@@ -61,6 +63,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       minio:
         condition: service_healthy
 
@@ -72,6 +76,10 @@ services:
         # Inlined into the browser bundle at build time (from root .env).
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     restart: unless-stopped
+    environment:
+      # Read at runtime by server components; the browser bundle keeps using the
+      # public URL baked in above.
+      INTERNAL_API_URL: ${DOCKER_INTERNAL_API_URL}
     ports:
       - '${WEB_PORT}:3000'
     depends_on:

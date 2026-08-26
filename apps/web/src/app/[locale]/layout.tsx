@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { Geist, Geist_Mono, Inter } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
@@ -7,14 +8,18 @@ import { routing } from '@/i18n/routing';
 import { Providers } from './providers';
 import { Navbar } from '@/components/ui/navbar';
 import { Footer } from '@/components/ui/footer';
+import { cn } from '@/lib/utils';
 import '../globals.css';
 
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' });
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' });
+
 export const metadata: Metadata = {
-  title: 'Carpool — web',
-  description: 'Base skeleton: /ping proof',
+  title: 'Convoy — covoiturage',
+  description: 'Réservez, proposez et partagez vos trajets en toute confiance.',
 };
 
-// Pre-render both locales at build time.
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
@@ -29,19 +34,20 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
 
-  // Enable static rendering for this locale.
   setRequestLocale(locale);
 
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <body className="flex min-h-screen flex-col bg-background text-foreground antialiased">
-        {/* NextIntlClientProvider hands the active locale + messages to Client Components. */}
+    <html
+      lang={locale}
+      className={cn(inter.variable, geistSans.variable, geistMono.variable)}
+      suppressHydrationWarning
+    >
+      <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
         <NextIntlClientProvider>
           <Providers>
-            {/* Shared chrome — renders once, wraps every route. */}
-            <Navbar theme="vibrant" cartCount={3} />
+            <Navbar />
             <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">{children}</main>
-            <Footer theme="vibrant" />
+            <Footer />
           </Providers>
         </NextIntlClientProvider>
       </body>

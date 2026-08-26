@@ -4,15 +4,25 @@
     "searchPlaceholder": "Search for a ride, a city…",
     "search": "Search",
     "trajets": "Rides",
+    "trajetsHint": "Browse all available rides",
     "post": "Offer a ride",
     "myTrajets": "My rides",
     "myBookings": "My bookings",
+    "messages": "Messages",
     "contact": "Contact",
     "signIn": "Sign in",
     "signOut": "Sign out",
     "cart": "Cart",
     "account": "My account",
-    "menu": "Menu"
+    "menu": "Menu",
+    "documents": "My documents",
+    "notifications": "Notifications",
+    "admin": "Backoffice",
+    "sections": {
+      "search": "Search",
+      "actions": "Actions",
+      "account": "Account"
+    }
   },
   "LocaleSwitcher": {
     "label": "Language",
@@ -26,14 +36,52 @@
     "contratConducteur": "Driver agreement",
     "responsibility": "Responsibility charter",
     "privacy": "Privacy",
-    "mentionsLegales": "Legal notice",
     "contact": "Contact us",
     "infoTitle": "Information",
     "becomeDriver": "How to become a driver?",
     "becomePassenger": "How to become a passenger?",
     "passengerTips": "Tips for passengers",
     "driverTips": "Tips for drivers",
-    "copyright": "© {year} Kouby Drive carpooling — all rights reserved"
+    "copyright": "© {year} Convoy carpooling — all rights reserved."
+  },
+  "Auth": {
+    "signIn": {
+      "title": "Sign in and start carpooling",
+      "subtitle": "Access your rides, bookings, and messages.",
+      "submit": "Sign in",
+      "pending": "Signing in…",
+      "noAccount": "No account yet?",
+      "createAccount": "Create an account"
+    },
+    "signUp": {
+      "title": "Create a Convoy account",
+      "subtitle": "Join the community and travel differently.",
+      "submit": "Sign up",
+      "pending": "Creating…",
+      "hasAccount": "Already registered?",
+      "signIn": "Sign in"
+    },
+    "fields": {
+      "email": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "Your password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Repeat your password",
+      "firstName": "First name",
+      "firstNamePlaceholder": "Your first name",
+      "lastName": "Last name",
+      "lastNamePlaceholder": "Your last name"
+    },
+    "errors": {
+      "missingCredentials": "Please enter your email and password.",
+      "signInFailed": "Sign-in failed. Check your credentials.",
+      "signInUnavailable": "Unable to sign in. Please try again later.",
+      "missingFields": "Please fill in all fields.",
+      "passwordMismatch": "Passwords do not match.",
+      "signUpFailed": "Sign-up failed. Please try again.",
+      "signUpUnavailable": "Unable to create the account. Please try again later."
+    }
   },
   "Terms": {
     "title": "Terms of Service",
@@ -351,68 +399,11 @@
       }
     ]
   },
-  "MentionsLegales": {
-    "title": "Legal notice",
-    "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Many fields still need to be completed before publishing (legal form, address, business numbers NEQ/BN, hosting provider, publication manager, contact details) — see the \"[to be completed]\" markers below. A legal notice page with these fields left blank is not compliant.",
-    "sections": [
-      {
-        "heading": "1. Platform publisher",
-        "body": "The Kouby platform is published by:\n\nLegal name: Kouby\nLegal form: [to be completed – e.g. business corporation (Canada) / sole proprietorship]\nRegistered address: [to be completed]\nPhone: [to be completed]\nEmail: [to be completed]\n\nQuebec enterprise number (NEQ): [to be completed]\nCanada business number (BN): [to be completed]"
-      },
-      {
-        "heading": "2. Publication manager",
-        "body": "Name: [to be completed]\nRole: [to be completed]\nEmail: [to be completed]"
-      },
-      {
-        "heading": "3. Hosting",
-        "body": "Host: [hosting provider name – e.g. AWS, Google Cloud, OVH, etc.]\nAddress: [to be completed]\nContact: [to be completed]"
-      },
-      {
-        "heading": "4. Nature of the service",
-        "body": "The Kouby platform is a digital service connecting:\n• drivers offering rides,\n• passengers looking to book a seat.\n\nKouby acts exclusively as an intermediary platform.\n\nKouby is not a carrier."
-      },
-      {
-        "heading": "5.1 Kouby's liability",
-        "body": "Kouby cannot be held liable for:\n• trips carried out between users,\n• incidents, accidents, or damages,\n• drivers' or passengers' failure to comply with the law."
-      },
-      {
-        "heading": "5.2 Users' liability",
-        "body": "Drivers and passengers are solely responsible for:\n• their legal obligations,\n• their conduct,\n• the compliance of their activities."
-      },
-      {
-        "heading": "6. Regulatory compliance",
-        "body": "Users must comply with:\n• Canadian federal laws,\n• provincial laws (notably Quebec),\n• the Highway Safety Code,\n• automobile insurance obligations.\n\nThe driver is solely responsible for their legal compliance."
-      },
-      {
-        "heading": "7. Intellectual property",
-        "body": "All content on the platform (text, logos, images, software) is the exclusive property of Kouby, unless otherwise stated.\n\nAny reproduction or use without authorization is prohibited."
-      },
-      {
-        "heading": "8. Personal data",
-        "body": "Kouby collects and processes personal data in accordance with:\n• PIPEDA at the federal level,\n• Quebec's Law 25.\n\nThe details are set out in the Privacy Policy."
-      },
-      {
-        "heading": "9. Cookies",
-        "body": "The platform uses cookies and similar technologies necessary for it to function properly (authentication, language preferences, audience measurement).\n\nFor more details on the cookies used and consent management, see the Privacy Policy."
-      },
-      {
-        "heading": "10. Governing law and jurisdiction",
-        "body": "This legal notice is governed by Canadian law and, where applicable, by the law of the province of [to be completed].\n\nAny dispute relating to the use of the platform falls under the exclusive jurisdiction of the courts of [to be completed]."
-      },
-      {
-        "heading": "11. Changes to this legal notice",
-        "body": "Kouby reserves the right to modify this legal notice at any time, in particular to comply with regulatory changes.\n\nThe version in effect is the one published on the platform at the time of consultation."
-      },
-      {
-        "heading": "12. Final clause",
-        "body": "If any provision of this legal notice is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect."
-      }
-    ]
-  },
   "Hero": {
+    "brand": "Convoy",
     "title": "More than a ride, a meeting!",
-    "illustrationPlaceholder": "Illustration",
+    "subtitle": "Search for a ride, book in a few taps, and travel with peace of mind.",
+    "imageAlt": "Travelers sharing a car ride",
     "departurePlaceholder": "Departure city",
     "arrivalPlaceholder": "Arrival city",
     "dateLabel": "Date",
@@ -420,31 +411,32 @@
     "search": "Search"
   },
   "Testimonials": {
+    "eyebrow": "Community",
     "title": "Testimonials",
-    "seeMore": "See more testimonials",
     "items": [
       {
         "quote": "Guaranteed safety",
-        "author": "Kouby Drive member",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "author": "Camille, Convoy member",
+        "body": "Drivers' documents are checked before every trip. I feel confident from the moment I book."
       },
       {
         "quote": "Top-notch service",
-        "author": "Kouby Drive member",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "author": "Karim, Convoy member",
+        "body": "Booking a seat takes two minutes, and trip tracking stays clear from departure to arrival."
       },
       {
         "quote": "The community is a family",
-        "author": "Kouby Drive member",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "author": "Léa, Convoy member",
+        "body": "I've met wonderful people on the road. Convoy makes sharing simple and enjoyable."
       }
     ]
   },
   "Guarantees": {
+    "eyebrow": "Trust",
     "title": "Our guarantees",
     "columns": [
       {
-        "title": "A structured, professional framework",
+        "title": "A clear, secure framework",
         "points": [
           "Verification of mandatory documents (licence, insurance, registration).",
           "Secured payments and transactions.",
@@ -454,10 +446,10 @@
         ]
       },
       {
-        "title": "We're here for you, anytime.",
+        "title": "We're here for you, anytime",
         "points": [
-          "Phone support available 7 days a week, all year round without interruption.",
-          "KoubyDrive grows with you. Your suggestions inspire us."
+          "Support available 7 days a week to help you along the way.",
+          "Convoy grows with you — your feedback shapes what we improve next."
         ]
       }
     ]
@@ -508,15 +500,36 @@
     }
   },
   "Messages": {
+    "title": "Messages",
+    "subtitle": "Chat with your drivers and passengers about your trips.",
+    "threadTitle": "Conversation",
+    "threadSubtitle": "Coordinate safely around your booking.",
+    "loading": "Loading messages...",
+    "empty": "No conversations yet. Chats linked to your bookings and rides will show up here.",
+    "error": "Unable to load messages.",
     "show": "Messages",
     "hide": "Hide messages",
-    "loading": "Loading messages...",
-    "empty": "No messages yet.",
-    "error": "Unable to load messages.",
     "placeholder": "Write a message...",
     "send": "Send",
     "sending": "Sending...",
-    "sendError": "Unable to send the message. Please try again."
+    "sendError": "Unable to send the message. Please try again.",
+    "validationError": "Messages must be between 1 and 2000 characters.",
+    "openFull": "Open conversation",
+    "backToInbox": "Back to messages",
+    "route": "{from} → {to}",
+    "departureAt": "Departure",
+    "status": "Status",
+    "viewTrajet": "View ride",
+    "counterpartUnknown": "Contact",
+    "contextMissing": "Trip context unavailable — you can still chat here.",
+    "threadEmpty": "Start the conversation to coordinate this trip.",
+    "live": "Live",
+    "reconnecting": "Reconnecting…",
+    "offline": "Periodic refresh",
+    "role": {
+      "passenger": "Driver",
+      "driver": "Passenger"
+    }
   },
   "Trajets": {
     "title": "Find your next ride",
@@ -530,7 +543,10 @@
       "page": "Page {page}"
     },
     "departureAt": "Departure",
+    "arrivalAt": "Arrival",
     "seats": "Seats",
+    "seatsAvailable": "{available}/{total} seats",
+    "perSeat": "per seat",
     "price": "Price",
     "description": "Description",
     "detailTitle": "Ride details",
@@ -539,6 +555,20 @@
     "comfort": "Comfort",
     "baggageAllowance": "Baggage",
     "cancelledBanner": "This ride has been cancelled by the driver.",
+    "driverTitle": "Driver",
+    "vehicle": "Vehicle",
+    "carSeats": "Car seats",
+    "carSeatsValue": "{count, plural, one {# seat} other {# seats}}",
+    "licenceYears": "Licence for {count, plural, one {# year} other {# years}}",
+    "rideOptions": "Ride options",
+    "itinerary": {
+      "arrivalApprox": "—"
+    },
+    "seatsLeft": "{count, plural, =0 {Full} one {# seat left} other {# seats left}}",
+    "ownerAside": {
+      "title": "You are the driver",
+      "body": "Manage your listing and booking requests below."
+    },
     "driverRating": {
       "label": "Driver rating",
       "none": "No reviews yet",
@@ -589,6 +619,7 @@
     "booking": {
       "title": "Book a seat",
       "seatsLabel": "Number of seats",
+      "estimatedTotal": "Estimated total: {amount}",
       "submit": "Book",
       "submitting": "Booking...",
       "success": "Your booking request has been sent to the driver.",
@@ -631,19 +662,33 @@
     }
   },
   "Features": {
-    "title": "What you can do on the site",
-    "howItWorks": "How does it work?",
-    "videoPlaceholder": "Video",
+    "eyebrow": "For everyone",
+    "title": "How does it work?",
     "cards": [
       {
         "title": "Travel without driving",
-        "description": "Choose your ride, book online and travel with peace of mind."
+        "description": "Choose your ride, book online and travel with peace of mind.",
+        "steps": [
+          "Enter departure, arrival, and date.",
+          "Compare rides and book a seat.",
+          "Chat with the driver and go."
+        ],
+        "ctaHref": "/trajet",
+        "ctaLabel": "Find a ride"
       },
       {
         "title": "Drive and share",
-        "description": "Got free seats in your car? Turn them into an opportunity."
+        "description": "Got free seats in your car? Turn them into an opportunity.",
+        "steps": [
+          "Publish your ride in a few minutes.",
+          "Review booking requests.",
+          "Share costs and the journey."
+        ],
+        "ctaHref": "/trajet/nouveau",
+        "ctaLabel": "Offer a ride"
       }
-    ]  },
+    ]
+  },
   "Annoncer": {
     "title": "Announce a ride",
     "subtitle": "Publish your ride and start traveling with passengers",
@@ -652,9 +697,9 @@
     "error": "Error loading the form.",
     "form": {
       "departureCity": "Departure city",
-      "departureCityPlaceholder": "e.g. Paris",
+      "departureCityPlaceholder": "e.g. Montréal",
       "destinationCity": "Destination city",
-      "destinationCityPlaceholder": "e.g. Lyon",
+      "destinationCityPlaceholder": "e.g. Québec",
       "departureDateTime": "Departure date and time",
       "seatsTotal": "Number of seats",
       "seatsTotalPlaceholder": "e.g. 4",
@@ -680,7 +725,8 @@
         "apiError": "Error publishing ride. Please try again."
       },
       "success": "Ride published successfully!"
-    }  },
+    }
+  },
   "MesTrajets": {
     "title": "My rides",
     "subtitle": "Find the rides you've published and manage booking requests.",
@@ -691,6 +737,7 @@
     "seats": "Seats",
     "price": "Price",
     "cancelledBadge": "Cancelled",
+    "pendingVerificationBadge": "Pending verification",
     "pagination": {
       "previous": "Previous",
       "next": "Next",
@@ -722,6 +769,379 @@
       "previous": "Previous",
       "next": "Next",
       "page": "Page {page}"
+    }
+  },
+  "Admin": {
+    "title": "Backoffice",
+    "subtitle": "Track and approve the documents sent by drivers.",
+    "loading": "Loading…",
+    "error": "Could not load the data.",
+    "authRequired": "Sign in to open the backoffice.",
+    "authCta": "Sign in",
+    "forbidden": "This page is for administrators only.",
+    "backHome": "Back to home",
+    "stats": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "users": "Accounts"
+    },
+    "tabs": {
+      "label": "Backoffice views",
+      "queue": "Documents",
+      "users": "Accounts"
+    },
+    "filters": {
+      "status": "Status",
+      "type": "Document type",
+      "search": "Search",
+      "searchPlaceholder": "Driver name or email",
+      "allStatuses": "All statuses",
+      "allTypes": "All types"
+    },
+    "queue": {
+      "empty": "No document matches these filters.",
+      "view": "View",
+      "approve": "Approve",
+      "reject": "Reject",
+      "confirmReject": "Confirm rejection",
+      "cancel": "Cancel",
+      "submitting": "Saving…",
+      "reasonLabel": "Reason for rejection",
+      "reasonPlaceholder": "Explain what is wrong: blurry photo, expired document…",
+      "reasonRequired": "Give a reason to reject this document.",
+      "currentReason": "Current reason: {reason}",
+      "reviewFailed": "The decision could not be saved.",
+      "showPreview": "Preview",
+      "hidePreview": "Hide preview",
+      "previewFailed": "The preview could not be loaded.",
+      "previewUnsupported": "This format cannot be displayed here.",
+      "declaredBirthDate": "Declared date of birth: {date} · {age} years old",
+      "noBirthDate": "This driver has not declared a date of birth yet.",
+      "confirmAge": "I confirm the date of birth matches the licence and the driver is {min} or older."
+    },
+    "users": {
+      "empty": "No account yet.",
+      "name": "Driver",
+      "role": "Role",
+      "joined": "Joined",
+      "documents": "Documents",
+      "pending": "Pending",
+      "approved": "Approved",
+      "admin": "Admin",
+      "driver": "Driver",
+      "verification": "Verification"
+    }
+  },
+  "Documents": {
+    "title": "My documents",
+    "subtitle": "Send your three documents. Our team reviews them before your account is approved.",
+    "loading": "Loading…",
+    "empty": "You have not sent any document yet.",
+    "error": "Could not load your documents.",
+    "view": "View",
+    "authRequired": "Sign in to send your documents.",
+    "authCta": "Sign in",
+    "status": {
+      "missing": "To send",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Needs renewal"
+    },
+    "type": {
+      "permis": "Driver's licence",
+      "carteIdentite": "ID card",
+      "carteGrise": "Vehicle registration (legacy)",
+      "assurance": "Auto insurance",
+      "immatriculation": "Vehicle registration"
+    },
+    "history": {
+      "title": "My submissions",
+      "reason": "Reason for rejection: {reason}"
+    },
+    "upload": {
+      "expiryLabel": "Expiry date (optional)",
+      "hint": "JPG, PNG, WEBP or PDF. {max} MB maximum.",
+      "submit": "Send document",
+      "submitting": "Sending…",
+      "noFile": "Choose a file first.",
+      "tooLarge": "The file is larger than {max} MB.",
+      "unsupported": "This file format is not accepted.",
+      "failed": "The upload failed. Please try again.",
+      "dropzone": "Drag a file here, or click to choose one",
+      "replace": "Replace document",
+      "cancel": "Cancel",
+      "remove": "Remove this file",
+      "ready": "Ready to send"
+    },
+    "viewFailed": "Link unavailable",
+    "slot": {
+      "permis": {
+        "hint": "Valid Canadian licence, front and back.",
+        "why": "We check that you are allowed to drive in Canada."
+      },
+      "assurance": {
+        "hint": "Proof of insurance, still in force.",
+        "why": "We check that your vehicle is properly insured."
+      },
+      "immatriculation": {
+        "hint": "Vehicle registration certificate.",
+        "why": "We check that the vehicle is compliant and roadworthy."
+      }
+    },
+    "verification": {
+      "progress": "{approved}/{total} approved",
+      "incomplete": {
+        "chip": "Incomplete",
+        "title": "Something is still missing",
+        "body": "Complete the requirements below to get your account approved."
+      },
+      "pending": {
+        "chip": "Pending",
+        "title": "Review in progress",
+        "body": "We received your documents. Our team is reviewing them."
+      },
+      "rejected": {
+        "chip": "Rejected",
+        "title": "A document was rejected",
+        "body": "Fix the rejected document, then send it again."
+      },
+      "expired": {
+        "chip": "Needs renewal",
+        "title": "Your licence needs to be re-verified",
+        "body": "Your licence was approved over a year ago. Send it again to keep publishing rides."
+      },
+      "approved": {
+        "chip": "Verified",
+        "title": "Your account is verified",
+        "body": "You meet every requirement. You can publish your rides."
+      },
+      "label": "Verification progress"
+    },
+    "eligibility": {
+      "title": "Eligibility requirements",
+      "subtitle": "You must meet these four requirements to offer a ride.",
+      "condition": {
+        "permis": "Hold a valid Canadian driver's licence",
+        "assurance": "Have valid auto insurance",
+        "immatriculation": "Operate a compliant and roadworthy vehicle",
+        "age": "Be at least {min} years old"
+      },
+      "bornOn": "Born {date} · {age} years old",
+      "dateOfBirthLabel": "Your date of birth",
+      "save": "Save",
+      "saving": "Saving…",
+      "change": "Change my date of birth",
+      "required": "Enter your date of birth.",
+      "tooYoung": "You must be {min} or older to drive.",
+      "saveFailed": "Saving failed. Please try again."
+    },
+    "identity": {
+      "title": "Driver identity",
+      "subtitle": "This information is checked against your licence number during verification.",
+      "nameLabel": "Full name",
+      "firstNameLabel": "First name",
+      "lastNameLabel": "Last name",
+      "changeName": "Change my name",
+      "nameRequired": "Enter your first and last name.",
+      "nameSaveFailed": "Saving failed. Please try again.",
+      "licenseNumberLabel": "Licence number",
+      "changeLicenseNumber": "Change my licence number",
+      "licenseNumberRequired": "Enter your licence number.",
+      "licenseNumberSaveFailed": "Saving failed. Please try again."
+    }
+  },
+  "Trajet": {
+    "title": "Available rides",
+    "subtitle": "Pick a ride, then book your seat online.",
+    "loading": "Loading rides…",
+    "empty": "No ride matches your search.",
+    "emptyHint": "Widen your criteria or clear filters to see all rides.",
+    "emptyClear": "See all rides",
+    "resultsCount": "{count, plural, =0 {No rides} one {# ride} other {# rides}}",
+    "error": "Could not load the rides. Please try again later.",
+    "ratingLabel": "{rating} out of 5 — {count} reviews",
+    "seatsAvailable": "{count, plural, =0 {Full} one {# seat} other {# seats}}",
+    "perSeat": "per seat",
+    "driverBy": "with {name}",
+    "authRequired": "Sign in to continue.",
+    "authCta": "Sign in",
+    "driverVerified": {
+      "verified": "Verified",
+      "unverified": "Not verified"
+    },
+    "amenities": {
+      "smoking": "Smoking allowed",
+      "nonSmoking": "Non-smoking",
+      "pets": "Pets allowed",
+      "noPets": "No pets",
+      "skiRack": "Ski rack",
+      "luggage": "Large suitcase",
+      "handLuggage": "Hand luggage",
+      "insurance": "Insured ride",
+      "bikeRack": "Bike rack",
+      "cardPayment": "Card payment",
+      "cashOrInterac": "Cash / Interac"
+    },
+    "filters": {
+      "title": "Search",
+      "from": "Departure city",
+      "to": "Arrival city",
+      "date": "Date",
+      "time": "Time",
+      "more": "More filters",
+      "less": "Fewer filters",
+      "clear": "Clear",
+      "swap": "Swap departure and arrival",
+      "swapShort": "Swap",
+      "seats": "Seats",
+      "maxPrice": "Max price",
+      "amenitiesLegend": "Ride options",
+      "direct": "No intermediate stop",
+      "withStops": "With an intermediate stop",
+      "submit": "Search"
+    },
+    "comfort": {
+      "legend": "Comfort",
+      "standard": "Standard",
+      "confort": "Comfort",
+      "premium": "Premium"
+    },
+    "detail": {
+      "departureAt": "Departs at {time}",
+      "arrivalAt": "Arrives around {time}",
+      "driverTitle": "Driver profile",
+      "driverName": "Full name",
+      "licenceYears": "Licence held for",
+      "licenceYearsValue": "{count, plural, one {# year} other {# years}}",
+      "vehicle": "Make and model",
+      "carSeats": "Seats in the car",
+      "carSeatsValue": "{count, plural, one {# seat} other {# seats}}",
+      "carPhoto": "Photo",
+      "comfort": "Comfort",
+      "baggage": "Baggage"
+    },
+    "booking": {
+      "title": "Book this ride",
+      "lastName": "Last name",
+      "firstName": "First name",
+      "email": "Email",
+      "phone": "Phone",
+      "message": "Important message:",
+      "submit": "Book",
+      "submitting": "Booking…",
+      "back": "Back",
+      "success": "Your request has been sent. The driver will get back to you.",
+      "failed": "The booking failed. Please try again later.",
+      "invalid": "Please check your details before booking.",
+      "full": "This ride is full."
+    },
+    "create": {
+      "cta": "Offer a ride",
+      "title": "Offer a ride",
+      "subtitle": "Fill in this form to publish your free seats.",
+      "departure": "Departure",
+      "departurePlace": "Pick-up point",
+      "arrival": "Arrival",
+      "arrivalPlace": "Drop-off point",
+      "useMyLocation": "Use my current location",
+      "locationError": "Couldn't access your location. Check your browser's location permissions.",
+      "when": "Date and times",
+      "departureTime": "Departure time",
+      "arrivalTime": "Arrival time (approximate)",
+      "timesHint": "If the arrival time is before the departure time, arrival is the next day.",
+      "seatsAndPrice": "Seats and price",
+      "seatsTotal": "Number of seats",
+      "pricePerSeat": "Price per seat (€)",
+      "paymentMethods": "Payment methods",
+      "options": "Options",
+      "intermediateStop": "I accept an intermediate stop",
+      "description": "Message for passengers",
+      "descriptionPlaceholder": "Meeting point, luggage, music…",
+      "submit": "Publish the ride",
+      "submitting": "Publishing…",
+      "failed": "Publishing failed. Please try again later.",
+      "invalid": "Please check the form fields.",
+      "baggage": "Baggage",
+      "baggagePlaceholder": "E.g. one cabin bag per person",
+      "yes": "Yes",
+      "no": "No",
+      "step1": {
+        "label": "Step 1: Ride and vehicle",
+        "next": "Next",
+        "vehicleRequired": "Save your vehicle before continuing."
+      },
+      "step2": {
+        "label": "Step 2: Licence and insurance",
+        "back": "Back",
+        "verification": {
+          "loading": "Loading…",
+          "loadError": "Failed to load your information."
+        },
+        "checklist": {
+          "incomplete": "Complete the items above before publishing your ride."
+        }
+      },
+      "step3": {
+        "label": "Step 3: Vehicle description",
+        "saveHint": "Save your vehicle to continue.",
+        "vehicle": {
+          "title": "Your vehicle",
+          "subtitle": "This information is shown to passengers.",
+          "make": "Make",
+          "model": "Model",
+          "color": "Colour",
+          "seats": "Seats",
+          "plate": "Licence plate",
+          "save": "Save vehicle",
+          "update": "Update vehicle",
+          "saving": "Saving…",
+          "saveFailed": "Saving failed. Please try again.",
+          "required": "Enter the licence plate.",
+          "photoLabel": "Vehicle photo (optional)",
+          "photoAdd": "Add a photo",
+          "photoReplace": "Replace photo",
+          "photoUploading": "Uploading…",
+          "photoNeedsVehicle": "Save your vehicle first to add a photo.",
+          "photoTooLarge": "The file is too large.",
+          "photoUnsupported": "This file type isn't supported.",
+          "photoFailed": "Uploading the photo failed. Please try again."
+        }
+      },
+      "step4": {
+        "title": "Insurance",
+        "question": "Do you hold valid insurance?",
+        "blockedBody": "Valid insurance is required to offer a ride as a driver.",
+        "saveFailed": "Saving failed. Please try again.",
+        "missingVehicle": "Go back to the previous step to save your vehicle."
+      }
+    }
+  },
+  "Notifications": {
+    "title": "My notifications",
+    "subtitle": "Stay updated with your bookings and messages.",
+    "loading": "Loading...",
+    "error": "Unable to load notifications. Please try again later.",
+    "empty": "No notifications yet. You'll see updates here when drivers respond to your requests.",
+    "noUnread": "All notifications have been read.",
+    "unread": "New",
+    "markRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "markingAll": "Marking all...",
+    "loadMore": "Load more",
+    "tabAll": "All",
+    "tabUnread": "Unread",
+    "typeBookingRequest": "Booking request",
+    "typeBookingStatus": "Booking update",
+    "typeTripCancelled": "Trip cancelled",
+    "typeMessage": "Message",
+    "typeSystem": "System",
+    "group": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This week",
+      "earlier": "Earlier"
     }
   }
 }

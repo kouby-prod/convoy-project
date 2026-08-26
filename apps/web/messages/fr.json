@@ -4,15 +4,25 @@
     "searchPlaceholder": "Rechercher un trajet, une ville…",
     "search": "Rechercher",
     "trajets": "Trajets",
+    "trajetsHint": "Voir tous les trajets disponibles",
     "post": "Annoncer",
     "myTrajets": "Mes trajets",
     "myBookings": "Mes réservations",
+    "messages": "Messages",
     "contact": "Contact",
     "signIn": "Connexion",
     "signOut": "Déconnexion",
     "cart": "Panier",
     "account": "Mon compte",
-    "menu": "Menu"
+    "menu": "Menu",
+    "documents": "Mes documents",
+    "notifications": "Notifications",
+    "admin": "Back-office",
+    "sections": {
+      "search": "Recherche",
+      "actions": "Actions",
+      "account": "Compte"
+    }
   },
   "LocaleSwitcher": {
     "label": "Langue",
@@ -26,14 +36,52 @@
     "contratConducteur": "Contrat conducteur",
     "responsibility": "Charte de responsabilité",
     "privacy": "Vie privée",
-    "mentionsLegales": "Mentions légales",
     "contact": "Contactez-nous",
     "infoTitle": "Informations",
     "becomeDriver": "Comment devenir chauffeur ?",
     "becomePassenger": "Comment devenir passager ?",
     "passengerTips": "Conseils passagers",
     "driverTips": "Conseils conducteurs",
-    "copyright": "© {year} covoiturage Kouby Drive tous droits réservés"
+    "copyright": "© {year} Convoy — covoiturage. Tous droits réservés."
+  },
+  "Auth": {
+    "signIn": {
+      "title": "Connectez-vous et commencez à covoiturer",
+      "subtitle": "Accédez à vos trajets, réservations et messages.",
+      "submit": "Se connecter",
+      "pending": "Connexion…",
+      "noAccount": "Pas encore de compte ?",
+      "createAccount": "Créer un compte"
+    },
+    "signUp": {
+      "title": "Créer un compte Convoy",
+      "subtitle": "Rejoignez la communauté et voyagez autrement.",
+      "submit": "S'inscrire",
+      "pending": "Création…",
+      "hasAccount": "Déjà inscrit ?",
+      "signIn": "Se connecter"
+    },
+    "fields": {
+      "email": "Adresse e-mail",
+      "emailPlaceholder": "vous@exemple.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Votre mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "confirmPasswordPlaceholder": "Répétez le mot de passe",
+      "firstName": "Prénom",
+      "firstNamePlaceholder": "Votre prénom",
+      "lastName": "Nom",
+      "lastNamePlaceholder": "Votre nom"
+    },
+    "errors": {
+      "missingCredentials": "Veuillez renseigner votre e-mail et votre mot de passe.",
+      "signInFailed": "Échec de la connexion. Vérifiez vos identifiants.",
+      "signInUnavailable": "Impossible de se connecter. Réessayez ultérieurement.",
+      "missingFields": "Veuillez remplir tous les champs.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
+      "signUpFailed": "Échec de l'inscription. Réessayez.",
+      "signUpUnavailable": "Impossible de créer le compte. Réessayez plus tard."
+    }
   },
   "Terms": {
     "title": "Conditions Générales d'Utilisation",
@@ -351,68 +399,11 @@
       }
     ]
   },
-  "MentionsLegales": {
-    "title": "Mentions légales",
-    "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "De nombreux champs restent à compléter avant publication (forme juridique, adresse, numéros d'entreprise NEQ/BN, hébergeur, responsable de la publication, coordonnées de contact) — voir les indications « [à compléter] » ci-dessous. Une page de mentions légales avec ces champs vides n'est pas conforme.",
-    "sections": [
-      {
-        "heading": "1. Éditeur de la plateforme",
-        "body": "La plateforme Kouby est éditée par :\n\nRaison sociale : Kouby\nForme juridique : [à compléter – ex. société par actions (Canada) / entreprise individuelle]\nAdresse du siège : [à compléter]\nTéléphone : [à compléter]\nEmail : [à compléter]\n\nNuméro d'entreprise (NEQ – Québec) : [à compléter]\nNuméro d'entreprise du Canada (BN) : [à compléter]"
-      },
-      {
-        "heading": "2. Responsable de la publication",
-        "body": "Nom : [à compléter]\nFonction : [à compléter]\nEmail : [à compléter]"
-      },
-      {
-        "heading": "3. Hébergement",
-        "body": "Hébergeur : [nom de l'hébergeur – ex. AWS, Google Cloud, OVH, etc.]\nAdresse : [à compléter]\nContact : [à compléter]"
-      },
-      {
-        "heading": "4. Nature du service",
-        "body": "La plateforme Kouby est un service numérique permettant la mise en relation entre :\n• des conducteurs proposant des trajets,\n• des passagers souhaitant réserver une place.\n\nKouby agit exclusivement en tant que plateforme d'intermédiation.\n\nKouby n'est pas un transporteur."
-      },
-      {
-        "heading": "5.1 Responsabilité de Kouby",
-        "body": "Kouby ne peut être tenu responsable :\n• des trajets effectués entre utilisateurs,\n• des incidents, accidents ou dommages,\n• du non-respect des lois par les conducteurs ou passagers."
-      },
-      {
-        "heading": "5.2 Responsabilité des utilisateurs",
-        "body": "Les conducteurs et passagers sont seuls responsables :\n• de leurs obligations légales,\n• de leurs comportements,\n• de la conformité de leurs activités."
-      },
-      {
-        "heading": "6. Conformité réglementaire",
-        "body": "Les utilisateurs doivent respecter :\n• les lois fédérales canadiennes,\n• les lois provinciales (notamment Québec),\n• le Code de la sécurité routière,\n• les obligations d'assurance automobile.\n\nLe conducteur est seul responsable de sa conformité légale."
-      },
-      {
-        "heading": "7. Propriété intellectuelle",
-        "body": "Tous les contenus présents sur la plateforme (textes, logos, images, logiciels) sont la propriété exclusive de Kouby, sauf mention contraire.\n\nToute reproduction ou utilisation sans autorisation est interdite."
-      },
-      {
-        "heading": "8. Données personnelles",
-        "body": "Kouby collecte et traite les données personnelles conformément :\n• à la LPRPDE (PIPEDA) au niveau fédéral,\n• à la Loi 25 du Québec.\n\nLes modalités sont détaillées dans la Politique de confidentialité."
-      },
-      {
-        "heading": "9. Cookies",
-        "body": "La plateforme utilise des cookies et technologies similaires nécessaires à son bon fonctionnement (authentification, préférences de langue, mesure d'audience).\n\nPour plus de détails sur les cookies utilisés et la gestion du consentement, voir la Politique de confidentialité."
-      },
-      {
-        "heading": "10. Droit applicable et juridiction compétente",
-        "body": "Les présentes mentions légales sont régies par le droit canadien et, le cas échéant, par le droit applicable dans la province de [à compléter].\n\nTout litige relatif à l'utilisation de la plateforme relève de la compétence exclusive des tribunaux de [à compléter]."
-      },
-      {
-        "heading": "11. Modification des mentions légales",
-        "body": "Kouby se réserve le droit de modifier les présentes mentions légales à tout moment, notamment pour se conformer à l'évolution de la réglementation.\n\nLa version en vigueur est celle publiée sur la plateforme à la date de consultation."
-      },
-      {
-        "heading": "12. Clause finale",
-        "body": "Si l'une des dispositions des présentes mentions légales est jugée invalide ou inapplicable, les autres dispositions demeurent pleinement en vigueur."
-      }
-    ]
-  },
   "Hero": {
+    "brand": "Convoy",
     "title": "Plus qu'un trajet, une rencontre !",
-    "illustrationPlaceholder": "Illustration",
+    "subtitle": "Recherchez un trajet, réservez en quelques clics et voyagez l'esprit tranquille.",
+    "imageAlt": "Voyageurs partageant un trajet en voiture",
     "departurePlaceholder": "Ville de départ",
     "arrivalPlaceholder": "Ville d'arrivée",
     "dateLabel": "Date",
@@ -420,31 +411,32 @@
     "search": "Rechercher"
   },
   "Testimonials": {
+    "eyebrow": "Communauté",
     "title": "Témoignages",
-    "seeMore": "Voir plus de témoignages",
     "items": [
       {
         "quote": "Une sécurité garantie",
-        "author": "Membre Kouby Drive",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "author": "Camille, membre Convoy",
+        "body": "Les documents des conducteurs sont vérifiés avant chaque trajet. Je me sens en confiance dès la réservation."
       },
       {
         "quote": "Un service au top",
-        "author": "Membre Kouby Drive",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "author": "Karim, membre Convoy",
+        "body": "Réserver une place prend deux minutes, et le suivi des trajets est clair du départ à l'arrivée."
       },
       {
-        "quote": "La communauté = une famille",
-        "author": "Membre Kouby Drive",
-        "body": "Lorem ipsum dolor sit amet. Sed odit vero non libero aliquid eum possimus maxime vel distinctio quas eos adipisci sunt hic excepturi quia quo fugiat unde."
+        "quote": "La communauté, une famille",
+        "author": "Léa, membre Convoy",
+        "body": "J'ai rencontré des personnes formidables sur la route. Convoy rend le partage simple et agréable."
       }
     ]
   },
   "Guarantees": {
+    "eyebrow": "Confiance",
     "title": "Nos garanties",
     "columns": [
       {
-        "title": "Un cadre de travail encadré et professionnalisant",
+        "title": "Un cadre clair et sécurisé",
         "points": [
           "Contrôle des documents obligatoires (permis, assurance, carte grise).",
           "Sécurisation des paiements et des transactions.",
@@ -454,10 +446,10 @@
         ]
       },
       {
-        "title": "On est là pour vous, à tout moment.",
+        "title": "On est là pour vous, à tout moment",
         "points": [
-          "Support téléphonique assuré 7j/7, sans interruption tout au long de l'année.",
-          "KoubyDrive évolue avec vous. Vos suggestions nous inspirent."
+          "Support disponible 7j/7 pour vous accompagner sur vos trajets.",
+          "Convoy évolue avec vous — vos retours guident nos améliorations."
         ]
       }
     ]
@@ -508,15 +500,36 @@
     }
   },
   "Messages": {
+    "title": "Messages",
+    "subtitle": "Échangez avec vos conducteurs et passagers à propos de vos trajets.",
+    "threadTitle": "Conversation",
+    "threadSubtitle": "Coordonnez-vous en toute confiance autour de votre réservation.",
+    "loading": "Chargement des messages...",
+    "empty": "Aucune conversation pour le moment. Les échanges liés à vos réservations et trajets apparaîtront ici.",
+    "error": "Impossible de charger les messages.",
     "show": "Messages",
     "hide": "Masquer les messages",
-    "loading": "Chargement des messages...",
-    "empty": "Aucun message pour le moment.",
-    "error": "Impossible de charger les messages.",
     "placeholder": "Écrire un message...",
     "send": "Envoyer",
     "sending": "Envoi en cours...",
-    "sendError": "Impossible d'envoyer le message. Veuillez réessayer."
+    "sendError": "Impossible d'envoyer le message. Veuillez réessayer.",
+    "validationError": "Le message doit contenir entre 1 et 2000 caractères.",
+    "openFull": "Ouvrir la conversation",
+    "backToInbox": "Retour aux messages",
+    "route": "{from} → {to}",
+    "departureAt": "Départ",
+    "status": "Statut",
+    "viewTrajet": "Voir le trajet",
+    "counterpartUnknown": "Correspondant",
+    "contextMissing": "Contexte du trajet indisponible — vous pouvez toujours échanger ici.",
+    "threadEmpty": "Commencez la conversation pour vous coordonner sur ce trajet.",
+    "live": "En direct",
+    "reconnecting": "Reconnexion…",
+    "offline": "Actualisation périodique",
+    "role": {
+      "passenger": "Conducteur",
+      "driver": "Passager"
+    }
   },
   "Trajets": {
     "title": "Trouvez votre prochain trajet",
@@ -530,7 +543,10 @@
       "page": "Page {page}"
     },
     "departureAt": "Départ",
+    "arrivalAt": "Arrivée",
     "seats": "Places",
+    "seatsAvailable": "{available}/{total} places",
+    "perSeat": "par place",
     "price": "Prix",
     "description": "Description",
     "detailTitle": "Détail du trajet",
@@ -539,6 +555,20 @@
     "comfort": "Confort",
     "baggageAllowance": "Bagages",
     "cancelledBanner": "Ce trajet a été annulé par le conducteur.",
+    "driverTitle": "Conducteur",
+    "vehicle": "Véhicule",
+    "carSeats": "Places dans la voiture",
+    "carSeatsValue": "{count, plural, one {# place} other {# places}}",
+    "licenceYears": "Permis depuis {count, plural, one {# an} other {# ans}}",
+    "rideOptions": "Options du trajet",
+    "itinerary": {
+      "arrivalApprox": "—"
+    },
+    "seatsLeft": "{count, plural, =0 {Complet} one {# place restante} other {# places restantes}}",
+    "ownerAside": {
+      "title": "Vous êtes le conducteur",
+      "body": "Gérez votre annonce et les demandes de réservation ci-dessous."
+    },
     "driverRating": {
       "label": "Note du conducteur",
       "none": "Pas encore d'avis",
@@ -589,6 +619,7 @@
     "booking": {
       "title": "Réserver une place",
       "seatsLabel": "Nombre de places",
+      "estimatedTotal": "Total estimé : {amount}",
       "submit": "Réserver",
       "submitting": "Réservation en cours...",
       "success": "Votre demande de réservation a été envoyée au conducteur.",
@@ -631,17 +662,30 @@
     }
   },
   "Features": {
-    "title": "Les fonctionnalités possibles du site",
-    "howItWorks": "Comment ça marche ?",
-    "videoPlaceholder": "Vidéo",
+    "eyebrow": "Pour chacun",
+    "title": "Comment ça marche ?",
     "cards": [
       {
         "title": "Voyagez sans conduire",
-        "description": "Choisissez votre trajet, réservez en ligne et partez l'esprit tranquille."
+        "description": "Choisissez votre trajet, réservez en ligne et partez l'esprit tranquille.",
+        "steps": [
+          "Indiquez départ, arrivée et date.",
+          "Comparez les trajets et réservez une place.",
+          "Échangez avec le conducteur et voyagez."
+        ],
+        "ctaHref": "/trajet",
+        "ctaLabel": "Trouver un trajet"
       },
       {
         "title": "Roulez et partagez",
-        "description": "Votre voiture a des places libres ? Faites-en une opportunité."
+        "description": "Votre voiture a des places libres ? Faites-en une opportunité.",
+        "steps": [
+          "Publiez votre trajet en quelques minutes.",
+          "Validez les demandes de réservation.",
+          "Partagez les frais et la route."
+        ],
+        "ctaHref": "/trajet/nouveau",
+        "ctaLabel": "Annoncer un trajet"
       }
     ]
   },
@@ -653,9 +697,9 @@
     "error": "Erreur lors du chargement du formulaire.",
     "form": {
       "departureCity": "Ville de départ",
-      "departureCityPlaceholder": "ex. Paris",
+      "departureCityPlaceholder": "ex. Montréal",
       "destinationCity": "Ville d'arrivée",
-      "destinationCityPlaceholder": "ex. Lyon",
+      "destinationCityPlaceholder": "ex. Québec",
       "departureDateTime": "Date et heure de départ",
       "seatsTotal": "Nombre de places",
       "seatsTotalPlaceholder": "ex. 4",
@@ -693,6 +737,7 @@
     "seats": "Places",
     "price": "Prix",
     "cancelledBadge": "Annulé",
+    "pendingVerificationBadge": "En attente de vérification",
     "pagination": {
       "previous": "Précédent",
       "next": "Suivant",
@@ -724,6 +769,379 @@
       "previous": "Précédent",
       "next": "Suivant",
       "page": "Page {page}"
+    }
+  },
+  "Admin": {
+    "title": "Back-office",
+    "subtitle": "Suivez et validez les documents envoyés par les conducteurs.",
+    "loading": "Chargement…",
+    "error": "Impossible de charger les données.",
+    "authRequired": "Connectez-vous pour accéder au back-office.",
+    "authCta": "Se connecter",
+    "forbidden": "Cette page est réservée aux administrateurs.",
+    "backHome": "Retour à l'accueil",
+    "stats": {
+      "pending": "En attente",
+      "approved": "Validés",
+      "rejected": "Refusés",
+      "users": "Comptes"
+    },
+    "tabs": {
+      "label": "Vues du back-office",
+      "queue": "Documents",
+      "users": "Comptes"
+    },
+    "filters": {
+      "status": "Statut",
+      "type": "Type de document",
+      "search": "Rechercher",
+      "searchPlaceholder": "Nom ou e-mail du conducteur",
+      "allStatuses": "Tous les statuts",
+      "allTypes": "Tous les types"
+    },
+    "queue": {
+      "empty": "Aucun document ne correspond à ces filtres.",
+      "view": "Voir",
+      "approve": "Valider",
+      "reject": "Refuser",
+      "confirmReject": "Confirmer le refus",
+      "cancel": "Annuler",
+      "submitting": "Envoi…",
+      "reasonLabel": "Motif du refus",
+      "reasonPlaceholder": "Expliquez ce qui ne va pas : photo floue, document expiré…",
+      "reasonRequired": "Indiquez un motif pour refuser ce document.",
+      "currentReason": "Motif actuel : {reason}",
+      "reviewFailed": "La décision n'a pas pu être enregistrée.",
+      "showPreview": "Aperçu",
+      "hidePreview": "Masquer l'aperçu",
+      "previewFailed": "L'aperçu n'a pas pu être chargé.",
+      "previewUnsupported": "Ce format ne peut pas être affiché ici.",
+      "declaredBirthDate": "Date de naissance déclarée : {date} · {age} ans",
+      "noBirthDate": "Ce conducteur n'a pas encore déclaré sa date de naissance.",
+      "confirmAge": "Je confirme que la date de naissance correspond au permis et que le conducteur a {min} ans ou plus."
+    },
+    "users": {
+      "empty": "Aucun compte pour le moment.",
+      "name": "Conducteur",
+      "role": "Rôle",
+      "joined": "Inscrit le",
+      "documents": "Documents",
+      "pending": "En attente",
+      "approved": "Validés",
+      "admin": "Admin",
+      "driver": "Conducteur",
+      "verification": "Vérification"
+    }
+  },
+  "Documents": {
+    "title": "Mes documents",
+    "subtitle": "Envoyez vos trois documents. Notre équipe les vérifie avant de valider votre compte.",
+    "loading": "Chargement…",
+    "empty": "Vous n'avez encore envoyé aucun document.",
+    "error": "Impossible de charger vos documents.",
+    "view": "Voir",
+    "authRequired": "Connectez-vous pour envoyer vos documents.",
+    "authCta": "Se connecter",
+    "status": {
+      "missing": "À envoyer",
+      "pending": "En attente",
+      "approved": "Validé",
+      "rejected": "Refusé",
+      "expired": "À renouveler"
+    },
+    "type": {
+      "permis": "Permis de conduire",
+      "carteIdentite": "Carte d'identité",
+      "carteGrise": "Carte grise",
+      "assurance": "Assurance automobile",
+      "immatriculation": "Immatriculation du véhicule"
+    },
+    "history": {
+      "title": "Mes envois",
+      "reason": "Motif du refus : {reason}"
+    },
+    "upload": {
+      "expiryLabel": "Date d'expiration (facultatif)",
+      "hint": "JPG, PNG, WEBP ou PDF. {max} Mo maximum.",
+      "submit": "Envoyer le document",
+      "submitting": "Envoi en cours…",
+      "noFile": "Choisissez d'abord un fichier.",
+      "tooLarge": "Le fichier dépasse {max} Mo.",
+      "unsupported": "Ce format de fichier n'est pas accepté.",
+      "failed": "L'envoi a échoué. Réessayez.",
+      "dropzone": "Glissez un fichier ici ou cliquez pour choisir",
+      "replace": "Remplacer le document",
+      "cancel": "Annuler",
+      "remove": "Retirer ce fichier",
+      "ready": "Prêt à envoyer"
+    },
+    "viewFailed": "Lien indisponible",
+    "slot": {
+      "permis": {
+        "hint": "Permis canadien valide, recto et verso.",
+        "why": "Nous vérifions que vous avez le droit de conduire au Canada."
+      },
+      "assurance": {
+        "hint": "Attestation d'assurance en cours de validité.",
+        "why": "Nous vérifions que votre véhicule est bien assuré."
+      },
+      "immatriculation": {
+        "hint": "Certificat d’immatriculation du véhicule.",
+        "why": "Nous vérifions que le véhicule est conforme et en bon état."
+      }
+    },
+    "verification": {
+      "progress": "{approved}/{total} validés",
+      "incomplete": {
+        "chip": "Incomplet",
+        "title": "Il vous manque un document",
+        "body": "Complétez les conditions ci-dessous pour valider votre compte."
+      },
+      "pending": {
+        "chip": "En attente",
+        "title": "Vérification en cours",
+        "body": "Nous avons bien reçu vos documents. Notre équipe les vérifie."
+      },
+      "rejected": {
+        "chip": "Refusé",
+        "title": "Un document a été refusé",
+        "body": "Corrigez le document refusé, puis envoyez-le à nouveau."
+      },
+      "expired": {
+        "chip": "À renouveler",
+        "title": "Votre permis doit être vérifié à nouveau",
+        "body": "Votre permis a été validé il y a plus d'un an. Envoyez-le à nouveau pour continuer à publier des trajets."
+      },
+      "approved": {
+        "chip": "Vérifié",
+        "title": "Votre compte est vérifié",
+        "body": "Vous remplissez toutes les conditions. Vous pouvez publier vos trajets."
+      },
+      "label": "Avancement de la vérification"
+    },
+    "eligibility": {
+      "title": "Conditions d'éligibilité",
+      "subtitle": "Vous devez remplir ces quatre conditions pour proposer un trajet.",
+      "condition": {
+        "permis": "Détenir un permis de conduire valide au Canada",
+        "assurance": "Disposer d'une assurance automobile conforme",
+        "immatriculation": "Utiliser un véhicule en bon état et conforme à la réglementation",
+        "age": "Être majeur ({min} ans et plus)"
+      },
+      "bornOn": "Né(e) le {date} · {age} ans",
+      "dateOfBirthLabel": "Votre date de naissance",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "change": "Modifier ma date de naissance",
+      "required": "Indiquez votre date de naissance.",
+      "tooYoung": "Vous devez avoir {min} ans ou plus pour conduire.",
+      "saveFailed": "L'enregistrement a échoué. Réessayez."
+    },
+    "identity": {
+      "title": "Identité du conducteur",
+      "subtitle": "Ces informations sont comparées au numéro de permis lors de la vérification.",
+      "nameLabel": "Nom et prénom",
+      "firstNameLabel": "Prénom",
+      "lastNameLabel": "Nom",
+      "changeName": "Modifier mon nom",
+      "nameRequired": "Indiquez votre prénom et votre nom.",
+      "nameSaveFailed": "L'enregistrement a échoué. Réessayez.",
+      "licenseNumberLabel": "Numéro de permis",
+      "changeLicenseNumber": "Modifier mon numéro de permis",
+      "licenseNumberRequired": "Indiquez votre numéro de permis.",
+      "licenseNumberSaveFailed": "L'enregistrement a échoué. Réessayez."
+    }
+  },
+  "Trajet": {
+    "title": "Trajets disponibles",
+    "subtitle": "Choisissez un trajet, puis réservez votre place en ligne.",
+    "loading": "Chargement des trajets…",
+    "empty": "Aucun trajet ne correspond à votre recherche.",
+    "emptyHint": "Élargissez vos critères ou effacez les filtres pour voir tous les trajets.",
+    "emptyClear": "Voir tous les trajets",
+    "resultsCount": "{count, plural, =0 {Aucun trajet} one {# trajet} other {# trajets}}",
+    "error": "Impossible de charger les trajets. Réessayez plus tard.",
+    "ratingLabel": "{rating} sur 5 — {count} avis",
+    "seatsAvailable": "{count, plural, =0 {Complet} one {# place} other {# places}}",
+    "perSeat": "par place",
+    "driverBy": "avec {name}",
+    "authRequired": "Connectez-vous pour continuer.",
+    "authCta": "Se connecter",
+    "driverVerified": {
+      "verified": "Vérifié",
+      "unverified": "Non vérifié"
+    },
+    "amenities": {
+      "smoking": "Fumeur accepté",
+      "nonSmoking": "Non-fumeur",
+      "pets": "Animaux acceptés",
+      "noPets": "Animaux non acceptés",
+      "skiRack": "Porte-skis",
+      "luggage": "Grande valise",
+      "handLuggage": "Bagage à main",
+      "insurance": "Trajet assuré",
+      "bikeRack": "Porte-vélos",
+      "cardPayment": "Paiement par carte",
+      "cashOrInterac": "Cash / Interac"
+    },
+    "filters": {
+      "title": "Recherche",
+      "from": "Ville de départ",
+      "to": "Ville d'arrivée",
+      "date": "Date",
+      "time": "Heure",
+      "more": "Plus de filtres",
+      "less": "Moins de filtres",
+      "clear": "Effacer",
+      "swap": "Inverser départ et arrivée",
+      "swapShort": "Inverser",
+      "seats": "Places",
+      "maxPrice": "Prix max.",
+      "amenitiesLegend": "Options du trajet",
+      "direct": "Sans arrêt intermédiaire",
+      "withStops": "Avec arrêt intermédiaire",
+      "submit": "Rechercher"
+    },
+    "comfort": {
+      "legend": "Confort",
+      "standard": "Standard",
+      "confort": "Confort",
+      "premium": "Premium"
+    },
+    "detail": {
+      "departureAt": "Départ à {time}",
+      "arrivalAt": "Arrivée vers {time}",
+      "driverTitle": "Profil du conducteur",
+      "driverName": "Nom et prénom",
+      "licenceYears": "Permis depuis",
+      "licenceYearsValue": "{count, plural, one {# an} other {# ans}}",
+      "vehicle": "Marque et modèle",
+      "carSeats": "Places dans la voiture",
+      "carSeatsValue": "{count, plural, one {# place} other {# places}}",
+      "carPhoto": "Photo",
+      "comfort": "Confort",
+      "baggage": "Bagages"
+    },
+    "booking": {
+      "title": "Réserver ce trajet",
+      "lastName": "Nom",
+      "firstName": "Prénom",
+      "email": "Email",
+      "phone": "Téléphone",
+      "message": "Message important :",
+      "submit": "Réserver",
+      "submitting": "Réservation…",
+      "back": "Précédent",
+      "success": "Votre demande est envoyée. Le conducteur va vous répondre.",
+      "failed": "La réservation a échoué. Réessayez plus tard.",
+      "invalid": "Vérifiez vos informations avant de réserver.",
+      "full": "Ce trajet est complet."
+    },
+    "create": {
+      "cta": "Proposer un trajet",
+      "title": "Proposer un trajet",
+      "subtitle": "Remplissez ce formulaire pour publier vos places libres.",
+      "departure": "Départ",
+      "departurePlace": "Lieu de départ",
+      "arrival": "Arrivée",
+      "arrivalPlace": "Lieu d'arrivée",
+      "useMyLocation": "Utiliser ma position actuelle",
+      "locationError": "Impossible d'accéder à votre position. Vérifiez les autorisations de localisation de votre navigateur.",
+      "when": "Date et heures",
+      "departureTime": "Heure de départ",
+      "arrivalTime": "Heure d'arrivée (environ)",
+      "timesHint": "Si l'heure d'arrivée est avant l'heure de départ, l'arrivée est le lendemain.",
+      "seatsAndPrice": "Places et prix",
+      "seatsTotal": "Nombre de places",
+      "pricePerSeat": "Prix par place (€)",
+      "paymentMethods": "Moyens de paiement",
+      "options": "Options",
+      "intermediateStop": "J'accepte un arrêt intermédiaire",
+      "description": "Message pour les passagers",
+      "descriptionPlaceholder": "Point de rendez-vous, bagages, musique…",
+      "submit": "Publier le trajet",
+      "submitting": "Publication…",
+      "failed": "La publication a échoué. Réessayez plus tard.",
+      "invalid": "Vérifiez les champs du formulaire.",
+      "baggage": "Bagages",
+      "baggagePlaceholder": "Ex. : un bagage cabine par personne",
+      "yes": "Oui",
+      "no": "Non",
+      "step1": {
+        "label": "Étape 1 : Trajet et véhicule",
+        "next": "Suivant",
+        "vehicleRequired": "Enregistrez votre véhicule avant de continuer."
+      },
+      "step2": {
+        "label": "Étape 2 : Permis et assurance",
+        "back": "Retour",
+        "verification": {
+          "loading": "Chargement…",
+          "loadError": "Impossible de charger vos informations."
+        },
+        "checklist": {
+          "incomplete": "Complétez les éléments ci-dessus avant de publier votre trajet."
+        }
+      },
+      "step3": {
+        "label": "Étape 3 : Description du véhicule",
+        "saveHint": "Enregistrez votre véhicule pour continuer.",
+        "vehicle": {
+          "title": "Votre véhicule",
+          "subtitle": "Ces informations sont affichées aux passagers.",
+          "make": "Marque",
+          "model": "Modèle",
+          "color": "Couleur",
+          "seats": "Places",
+          "plate": "Plaque d'immatriculation",
+          "save": "Enregistrer le véhicule",
+          "update": "Mettre à jour le véhicule",
+          "saving": "Enregistrement…",
+          "saveFailed": "L'enregistrement a échoué. Réessayez.",
+          "required": "Saisissez la plaque d'immatriculation.",
+          "photoLabel": "Photo du véhicule (facultatif)",
+          "photoAdd": "Ajouter une photo",
+          "photoReplace": "Remplacer la photo",
+          "photoUploading": "Envoi…",
+          "photoNeedsVehicle": "Enregistrez d'abord votre véhicule pour ajouter une photo.",
+          "photoTooLarge": "Le fichier est trop volumineux.",
+          "photoUnsupported": "Ce type de fichier n'est pas pris en charge.",
+          "photoFailed": "L'envoi de la photo a échoué. Réessayez."
+        }
+      },
+      "step4": {
+        "title": "Assurance",
+        "question": "Disposez-vous d'une assurance valide ?",
+        "blockedBody": "Une assurance valide est nécessaire pour proposer un trajet en tant que conducteur.",
+        "saveFailed": "L'enregistrement a échoué. Réessayez.",
+        "missingVehicle": "Retournez à l'étape précédente pour enregistrer votre véhicule."
+      }
+    }
+  },
+  "Notifications": {
+    "title": "Mes notifications",
+    "subtitle": "Restez informé de vos réservations et messages.",
+    "loading": "Chargement...",
+    "error": "Impossible de charger les notifications. Réessayez plus tard.",
+    "empty": "Aucune notification pour le moment. Vous verrez les mises à jour ici lorsque les conducteurs répondront à vos demandes.",
+    "unread": "Nouveau",
+    "markRead": "Marquer comme lu",
+    "markAllRead": "Tout marquer comme lu",
+    "markingAll": "Marquage en cours...",
+    "loadMore": "Charger plus",
+    "tabAll": "Toutes",
+    "tabUnread": "Non lues",
+    "noUnread": "Toutes les notifications ont été lues.",
+    "typeBookingRequest": "Demande de réservation",
+    "typeBookingStatus": "Mise à jour de réservation",
+    "typeTripCancelled": "Trajet annulé",
+    "typeMessage": "Message",
+    "typeSystem": "Système",
+    "group": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "thisWeek": "Cette semaine",
+      "earlier": "Plus ancien"
     }
   }
 }

@@ -32,7 +32,8 @@
   },
   "pnpm": {
     "overrides": {
-      "@better-auth/core": "1.6.26"
+      "@better-auth/core": "1.6.26",
+      "ws": "8.21.2"
     }
   }
 }
