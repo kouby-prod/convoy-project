@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { NotificationType } from '@carpool/schemas';
 import { db } from '../../db/client';
-import { notification } from '../../db/notification';
+import { notification, notificationPreference } from '../../db/notification';
 import { user } from '../../db/auth-schema';
 import { sendEmail, type EmailAttachment } from '../../auth/email';
 import { env } from '../../env';
@@ -86,10 +86,11 @@ export type NotifyUserOptions = {
 
 /**
  * Looks up `userId`'s email, stores an in-app notification, publishes it for
- * live WebSocket fan-out, and sends a plain-text email. Storage/publish/email
- * failures are all logged, not thrown — there's no retry queue in this
- * codebase, so a dead SMTP server (or Redis) must never fail the booking
- * action that triggered the notification.
+ * live WebSocket fan-out, and sends a plain-text email. Channel switches in
+ * `notification_preference` skip insert/WS and/or email (missing row = both
+ * on). Storage/publish/email failures are all logged, not thrown — there's no
+ * retry queue in this codebase, so a dead SMTP server (or Redis) must never
+ * fail the booking action that triggered the notification.
  *
  * `text` is the email body — it can be as detailed as it needs to be, since
  * the recipient reads it standalone outside the app. `inAppBody` is what's
@@ -103,42 +104,57 @@ export async function notifyUser(
   text: string,
   options: NotifyUserOptions,
 ): Promise<void> {
+  const [prefs] = await db
+    .select({
+      emailEnabled: notificationPreference.emailEnabled,
+      inAppEnabled: notificationPreference.inAppEnabled,
+    })
+    .from(notificationPreference)
+    .where(eq(notificationPreference.userId, userId));
+  const emailEnabled = prefs?.emailEnabled ?? true;
+  const inAppEnabled = prefs?.inAppEnabled ?? true;
+  if (!emailEnabled && !inAppEnabled) return;
+
   const [recipient] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId));
   if (!recipient) return;
 
-  let row: typeof notification.$inferSelect | undefined;
-  try {
-    [row] = await db
-      .insert(notification)
-      .values({
-        userId,
-        title: subject,
-        body: options.inAppBody ?? text,
-        channel: 'email',
-        type: options.type,
-        link: options.link ?? null,
-      })
-      .returning();
-  } catch (err) {
-    console.error(`Failed to store notification for ${recipient.email}`, err);
-  }
-
-  if (row) {
+  if (inAppEnabled) {
+    let row: typeof notification.$inferSelect | undefined;
     try {
-      await publishNotificationCreated(serializeNotification(row));
+      [row] = await db
+        .insert(notification)
+        .values({
+          userId,
+          title: subject,
+          body: options.inAppBody ?? text,
+          channel: 'email',
+          type: options.type,
+          link: options.link ?? null,
+        })
+        .returning();
     } catch (err) {
-      console.error(`Failed to publish notification event for ${recipient.email}`, err);
+      console.error(`Failed to store notification for ${recipient.email}`, err);
+    }
+
+    if (row) {
+      try {
+        await publishNotificationCreated(serializeNotification(row));
+      } catch (err) {
+        console.error(`Failed to publish notification event for ${recipient.email}`, err);
+      }
     }
   }
 
-  try {
-    await sendEmail({
-      to: recipient.email,
-      subject,
-      text,
-      ...(options.attachments ? { attachments: options.attachments } : {}),
-    });
-  } catch (err) {
-    console.error(`Failed to send "${subject}" notification to ${recipient.email}`, err);
+  if (emailEnabled) {
+    try {
+      await sendEmail({
+        to: recipient.email,
+        subject,
+        text,
+        ...(options.attachments ? { attachments: options.attachments } : {}),
+      });
+    } catch (err) {
+      console.error(`Failed to send "${subject}" notification to ${recipient.email}`, err);
+    }
   }
 }

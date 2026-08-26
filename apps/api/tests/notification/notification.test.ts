@@ -8,7 +8,9 @@ function createChain(result: unknown) {
   const chain: Record<string, unknown> = {
     from: () => chain,
     where: () => chain,
+    values: () => chain,
     set: () => chain,
+    onConflictDoUpdate: () => chain,
     orderBy: () => chain,
     limit: () => chain,
     offset: () => chain,
@@ -24,6 +26,7 @@ const dbState = vi.hoisted(() => ({
   // Queue for tests where the handler issues more than one `select` (e.g. the
   // list route also queries the unread count) — each call shifts one entry.
   selectQueue: [] as unknown[][],
+  insertResult: [] as unknown[],
   updateResult: [] as unknown[],
 }));
 
@@ -31,6 +34,7 @@ const db = vi.hoisted(() => ({
   select: vi.fn(() =>
     createChain(dbState.selectQueue.length ? dbState.selectQueue.shift() : dbState.selectResult),
   ),
+  insert: vi.fn(() => createChain(dbState.insertResult)),
   update: vi.fn(() => createChain(dbState.updateResult)),
 }));
 
@@ -80,10 +84,12 @@ function makeNotificationRow(overrides: Partial<Record<string, unknown>> = {}) {
 describe('notification module', () => {
   beforeEach(() => {
     db.select.mockClear();
+    db.insert.mockClear();
     db.update.mockClear();
     getSession.mockReset();
     dbState.selectResult = [];
     dbState.selectQueue = [];
+    dbState.insertResult = [];
     dbState.updateResult = [];
   });
 
@@ -211,6 +217,57 @@ describe('notification module', () => {
 
       const res = await notificationModule.request(`/notifications/${id}/read`, { method: 'PATCH' });
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe('GET /notifications/preferences', () => {
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await notificationModule.request('/notifications/preferences');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns both channels on when the caller has no saved row', async () => {
+      getSession.mockResolvedValue(sessionFor('u_1'));
+      dbState.selectResult = [];
+
+      const res = await notificationModule.request('/notifications/preferences');
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ emailEnabled: true, inAppEnabled: true });
+    });
+
+    it('returns the saved channel switches', async () => {
+      getSession.mockResolvedValue(sessionFor('u_1'));
+      dbState.selectResult = [{ userId: 'u_1', emailEnabled: false, inAppEnabled: true }];
+
+      const res = await notificationModule.request('/notifications/preferences');
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ emailEnabled: false, inAppEnabled: true });
+    });
+  });
+
+  describe('PUT /notifications/preferences', () => {
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await notificationModule.request('/notifications/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailEnabled: false, inAppEnabled: true }),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('upserts and returns the saved switches', async () => {
+      getSession.mockResolvedValue(sessionFor('u_1'));
+      dbState.insertResult = [{ userId: 'u_1', emailEnabled: false, inAppEnabled: true }];
+
+      const res = await notificationModule.request('/notifications/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailEnabled: false, inAppEnabled: true }),
+      });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ emailEnabled: false, inAppEnabled: true });
     });
   });
 });

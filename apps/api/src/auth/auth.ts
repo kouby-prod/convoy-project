@@ -123,6 +123,13 @@ export const auth = betterAuth({
       '/sign-up/email': { window: 60, max: 5 },
       '/request-password-reset': { window: 60, max: 3 },
       '/phone-number/send-otp': { window: 60, max: 3 },
+      '/delete-user': { window: 60, max: 3 },
+    },
+  },
+
+  user: {
+    deleteUser: {
+      enabled: true,
     },
   },
 

@@ -1,14 +1,17 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { DEFAULT_NOTIFICATION_PREFERENCE } from '@carpool/schemas';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { db } from '../../db/client';
-import { notification } from '../../db/notification';
-import { serializeNotification } from './serialize';
+import { notification, notificationPreference } from '../../db/notification';
+import { serializeNotification, serializeNotificationPreference } from './serialize';
 import {
   listNotificationsRoute,
   markNotificationReadRoute,
   markAllNotificationsReadRoute,
   unreadNotificationCountRoute,
+  getNotificationPreferenceRoute,
+  putNotificationPreferenceRoute,
 } from './notification.routes';
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -16,6 +19,7 @@ app.use('/notifications', requireAuth);
 app.use('/notifications/unread-count', requireAuth);
 app.use('/notifications/read-all', requireAuth);
 app.use('/notifications/:id/read', requireAuth);
+app.use('/notifications/preferences', requireAuth);
 
 async function unreadCountFor(userId: string): Promise<number> {
   const [row] = await db
@@ -70,4 +74,29 @@ export const notificationModule = app
       .returning();
     if (!row) return c.json({ error: 'Notification not found' }, 404);
     return c.json(serializeNotification(row), 200);
+  })
+  .openapi(getNotificationPreferenceRoute, async (c) => {
+    const { user } = getAuth(c);
+    const [row] = await db
+      .select()
+      .from(notificationPreference)
+      .where(eq(notificationPreference.userId, user.id));
+    return c.json(
+      row ? serializeNotificationPreference(row) : DEFAULT_NOTIFICATION_PREFERENCE,
+      200,
+    );
+  })
+  .openapi(putNotificationPreferenceRoute, async (c) => {
+    const { user } = getAuth(c);
+    const body = c.req.valid('json');
+    const [row] = await db
+      .insert(notificationPreference)
+      .values({ userId: user.id, ...body })
+      .onConflictDoUpdate({
+        target: notificationPreference.userId,
+        set: { ...body, updatedAt: new Date() },
+      })
+      .returning();
+    if (!row) throw new Error('Upsert returned no row');
+    return c.json(serializeNotificationPreference(row), 200);
   });

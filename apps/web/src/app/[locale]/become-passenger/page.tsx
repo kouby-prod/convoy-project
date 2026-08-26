@@ -1,4 +1,6 @@
-import { InfoRoutePage } from '@/components/legal/info-route-page';
+import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { PageHeader } from '@/components/ui/page-header';
+import { BecomePassengerChecklist } from '@/components/onboarding/become-passenger-checklist';
 
 export default async function BecomePassengerPage({
   params,
@@ -6,5 +8,13 @@ export default async function BecomePassengerPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  return <InfoRoutePage locale={locale} namespace="BecomePassenger" />;
+  setRequestLocale(locale);
+  const t = await getTranslations('BecomePassenger');
+
+  return (
+    <section className="mx-auto flex w-full max-w-2xl flex-col gap-8">
+      <PageHeader title={t('title')} subtitle={t('lastUpdated')} />
+      <BecomePassengerChecklist />
+    </section>
+  );
 }

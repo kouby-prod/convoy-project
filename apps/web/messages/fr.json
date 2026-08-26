@@ -505,7 +505,7 @@
   },
   "Parametres": {
     "title": "Paramètres du compte",
-    "subtitle": "Gérez votre profil, votre mot de passe et l'apparence.",
+    "subtitle": "Gérez votre profil, la langue, les notifications et l'apparence.",
     "loading": "Chargement...",
     "profile": {
       "title": "Profil",
@@ -534,6 +534,32 @@
       "light": "Clair",
       "dark": "Sombre",
       "system": "Système"
+    },
+    "language": {
+      "title": "Langue",
+      "description": "Choisissez la langue du site.",
+      "label": "Langue"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Choisissez comment Kouby vous contacte. Les canaux décochés sont ignorés.",
+      "email": "E-mail",
+      "inApp": "Dans l'application",
+      "loading": "Chargement des préférences de notification...",
+      "success": "Préférences de notification enregistrées.",
+      "error": "Impossible d'enregistrer les préférences. Veuillez réessayer.",
+      "loadError": "Impossible de charger les préférences de notification."
+    },
+    "deleteAccount": {
+      "title": "Supprimer le compte",
+      "description": "Cela supprime définitivement votre compte. L'historique de paiement ne peut pas être effacé ici — contactez le support si vous avez des versements ou des factures.",
+      "password": "Mot de passe actuel",
+      "confirm": "Je comprends que cette action est irréversible",
+      "submit": "Supprimer mon compte",
+      "submitting": "Suppression...",
+      "success": "Votre compte a été supprimé.",
+      "error": "Impossible de supprimer le compte. Vérifiez votre mot de passe et réessayez.",
+      "restricted": "Ce compte a un historique de paiement et ne peut pas être supprimé ici. Contactez le support."
     }
   },
   "Messages": {
@@ -1629,6 +1655,35 @@
   "BecomeDriver": {
     "title": "Comment devenir chauffeur",
     "lastUpdated": "Publier un trajet sur Kouby en quelques étapes.",
+    "checklist": {
+      "loading": "Chargement de votre liste de tâches chauffeur...",
+      "progress": "{done} sur {total} terminé(s)",
+      "guide": "Lire le guide complet",
+      "account": {
+        "title": "Créer un compte",
+        "description": "Connectez-vous ou inscrivez-vous pour publier des trajets.",
+        "signIn": "Se connecter",
+        "signUp": "Créer un compte"
+      },
+      "documents": {
+        "title": "Ajouter votre numéro de permis",
+        "description": "Déclarez le numéro imprimé sur votre permis depuis Mes documents. Le scan est facultatif.",
+        "cta": "Ouvrir Mes documents",
+        "doneCta": "Mettre à jour les documents"
+      },
+      "vehicle": {
+        "title": "Décrire votre véhicule",
+        "description": "Ajoutez votre voiture en publiant un trajet. La plaque et l'assurance sont requises pour publier.",
+        "cta": "Ajouter un véhicule",
+        "doneCta": "Mettre à jour le véhicule"
+      },
+      "publish": {
+        "title": "Publier un trajet",
+        "description": "Indiquez l'itinéraire, les places et le prix. Les passagers pourront alors réserver.",
+        "cta": "Publier un trajet",
+        "doneCta": "Voir mes trajets"
+      }
+    },
     "sections": [
       {
         "heading": "1. Créer un compte",
@@ -1651,6 +1706,28 @@
   "BecomePassenger": {
     "title": "Comment devenir passager",
     "lastUpdated": "Réserver une place sur Kouby en quelques étapes.",
+    "checklist": {
+      "loading": "Chargement de votre liste de tâches passager...",
+      "progress": "{done} sur {total} terminé(s)",
+      "guide": "Lire le guide complet",
+      "account": {
+        "title": "Créer un compte",
+        "description": "Connectez-vous ou inscrivez-vous pour chercher et réserver.",
+        "signIn": "Se connecter",
+        "signUp": "Créer un compte"
+      },
+      "search": {
+        "title": "Trouver un trajet",
+        "description": "Cherchez par ville et par date, puis choisissez un trajet.",
+        "cta": "Chercher un trajet"
+      },
+      "booking": {
+        "title": "Réserver une place",
+        "description": "Réservez une place et payez dans les 5 minutes pour confirmer.",
+        "cta": "Chercher un trajet",
+        "doneCta": "Voir mes réservations"
+      }
+    },
     "sections": [
       {
         "heading": "1. Créer un compte",

@@ -505,7 +505,7 @@
   },
   "Parametres": {
     "title": "Account settings",
-    "subtitle": "Manage your profile, password, and appearance.",
+    "subtitle": "Manage your profile, language, notifications, and appearance.",
     "loading": "Loading...",
     "profile": {
       "title": "Profile",
@@ -534,6 +534,32 @@
       "light": "Light",
       "dark": "Dark",
       "system": "System"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose the language for this site.",
+      "label": "Language"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Choose how Kouby reaches you. Unchecked channels are skipped.",
+      "email": "Email",
+      "inApp": "In the app",
+      "loading": "Loading notification preferences...",
+      "success": "Notification preferences saved.",
+      "error": "Unable to save notification preferences. Please try again.",
+      "loadError": "Unable to load notification preferences."
+    },
+    "deleteAccount": {
+      "title": "Delete account",
+      "description": "This permanently removes your account. Payment history cannot be deleted this way — contact support if you have payouts or invoices.",
+      "password": "Current password",
+      "confirm": "I understand this cannot be undone",
+      "submit": "Delete my account",
+      "submitting": "Deleting...",
+      "success": "Your account has been deleted.",
+      "error": "Unable to delete the account. Check your password and try again.",
+      "restricted": "This account has payment history and cannot be deleted here. Contact support."
     }
   },
   "Messages": {
@@ -1629,6 +1655,35 @@
   "BecomeDriver": {
     "title": "How to become a driver",
     "lastUpdated": "Publish a trip on Kouby in a few steps.",
+    "checklist": {
+      "loading": "Loading your driver checklist...",
+      "progress": "{done} of {total} done",
+      "guide": "Read the full guide",
+      "account": {
+        "title": "Create an account",
+        "description": "Sign in or sign up to start publishing trips.",
+        "signIn": "Sign in",
+        "signUp": "Create an account"
+      },
+      "documents": {
+        "title": "Add your licence number",
+        "description": "Declare the number printed on your licence from My documents. A scan is optional.",
+        "cta": "Open My documents",
+        "doneCta": "Update documents"
+      },
+      "vehicle": {
+        "title": "Describe your vehicle",
+        "description": "Add your car when you publish a trip. Plate and insurance are required to go live.",
+        "cta": "Add a vehicle",
+        "doneCta": "Update vehicle"
+      },
+      "publish": {
+        "title": "Publish a trip",
+        "description": "Set the route, seats, and price. Passengers can then book a seat.",
+        "cta": "Publish a trip",
+        "doneCta": "View my trips"
+      }
+    },
     "sections": [
       {
         "heading": "1. Create an account",
@@ -1651,6 +1706,28 @@
   "BecomePassenger": {
     "title": "How to become a passenger",
     "lastUpdated": "Book a seat on Kouby in a few steps.",
+    "checklist": {
+      "loading": "Loading your passenger checklist...",
+      "progress": "{done} of {total} done",
+      "guide": "Read the full guide",
+      "account": {
+        "title": "Create an account",
+        "description": "Sign in or sign up to search and book rides.",
+        "signIn": "Sign in",
+        "signUp": "Create an account"
+      },
+      "search": {
+        "title": "Find a ride",
+        "description": "Search by city and date, then pick a trip that fits.",
+        "cta": "Search rides"
+      },
+      "booking": {
+        "title": "Book a seat",
+        "description": "Reserve a seat and pay within 5 minutes to confirm.",
+        "cta": "Search rides",
+        "doneCta": "View my bookings"
+      }
+    },
     "sections": [
       {
         "heading": "1. Create an account",

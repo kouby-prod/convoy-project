@@ -4,6 +4,8 @@ import {
   NotificationSchema,
   UnreadCountSchema,
   MarkAllReadResponseSchema,
+  NotificationPreferenceSchema,
+  UpdateNotificationPreferenceSchema,
 } from '@carpool/schemas';
 
 const bearerAuth = [{ Bearer: [] }];
@@ -88,6 +90,45 @@ export const markNotificationReadRoute = createRoute({
     },
     404: {
       description: 'Notification not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const getNotificationPreferenceRoute = createRoute({
+  method: 'get',
+  path: '/notifications/preferences',
+  tags: ['notification'],
+  summary: "Get the authenticated user's notification channel preferences",
+  security: bearerAuth,
+  responses: {
+    200: {
+      description: 'Channel preferences (defaults to both on when no row exists)',
+      content: { 'application/json': { schema: NotificationPreferenceSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const putNotificationPreferenceRoute = createRoute({
+  method: 'put',
+  path: '/notifications/preferences',
+  tags: ['notification'],
+  summary: "Update the authenticated user's notification channel preferences",
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: UpdateNotificationPreferenceSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Saved preferences',
+      content: { 'application/json': { schema: NotificationPreferenceSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
       content: { 'application/json': { schema: errorSchema } },
     },
   },

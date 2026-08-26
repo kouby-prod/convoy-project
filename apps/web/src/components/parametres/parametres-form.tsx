@@ -13,6 +13,9 @@ import { CardSkeleton } from '@/components/ui/list-skeleton';
 import { PasswordInput } from '@/components/ui/password-input';
 import { toast } from '@/components/ui/toast';
 import { AppearanceForm } from '@/components/parametres/appearance-form';
+import { LanguageForm } from '@/components/parametres/language-form';
+import { NotificationPrefsForm } from '@/components/parametres/notification-prefs-form';
+import { DeleteAccountForm } from '@/components/parametres/delete-account-form';
 
 /**
  * Account settings: profile (name) and password, the two mutations
@@ -175,7 +178,13 @@ export function ParametresForm() {
         </CardContent>
       </Card>
 
+      <LanguageForm />
+
       <AppearanceForm />
+
+      <NotificationPrefsForm />
+
+      <DeleteAccountForm />
     </div>
   );
 }
