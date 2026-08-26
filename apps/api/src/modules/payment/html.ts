@@ -1,0 +1,72 @@
+import type { Invoice } from '@carpool/schemas';
+import { formatInvoiceInstant, invoiceSeller } from './invoice';
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function money(cents: number, currency: string): string {
+  return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: currency.toUpperCase() }).format(
+    cents / 100,
+  );
+}
+
+function formatTaxRate(rate: number): string {
+  return new Intl.NumberFormat('fr-CA', {
+    style: 'percent',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  }).format(rate);
+}
+
+/** Printable HTML fallback when the PDF cannot be downloaded. */
+export function renderInvoiceHtml(doc: Invoice): string {
+  const seller = invoiceSeller();
+  const taxRows = doc.taxLines
+    .map(
+      (line) =>
+        `<tr><td>${escapeHtml(line.label)} (${formatTaxRate(line.rate)})</td><td>${money(line.amountCents, doc.currency)}</td></tr>`,
+    )
+    .join('');
+  const gst = seller.gstNumber ? `<p>Nº TPS : ${escapeHtml(seller.gstNumber)}</p>` : '';
+  const qst = seller.qstNumber ? `<p>Nº TVQ : ${escapeHtml(seller.qstNumber)}</p>` : '';
+  const address = seller.address ? `<p>${escapeHtml(seller.address)}</p>` : '';
+
+  return `<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <title>${escapeHtml(doc.number)}</title>
+  <style>
+    body { font-family: Georgia, serif; color: #1a1a1a; max-width: 720px; margin: 40px auto; padding: 0 24px; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+    td { padding: 8px 0; border-bottom: 1px solid #ddd; }
+    td:last-child { text-align: right; }
+    .muted { color: #555; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(seller.legalName)}</h1>
+  ${address}${gst}${qst}
+  <h2>Invoice ${escapeHtml(doc.number)}</h2>
+  <p>Status: ${escapeHtml(doc.status)}</p>
+  <p>Issued: ${escapeHtml(formatInvoiceInstant(doc.issuedAt))} · Due: ${escapeHtml(formatInvoiceInstant(doc.dueAt))}</p>
+  <h3>Bill to</h3>
+  <p>${escapeHtml(doc.buyerName)}</p>
+  ${doc.buyerEmail ? `<p>${escapeHtml(doc.buyerEmail)}</p>` : ''}
+  <table>
+    ${doc.fareCents > 0 ? `<tr><td>Ride fare</td><td>${money(doc.fareCents, doc.currency)}</td></tr>` : ''}
+    <tr><td>Commission de réservation Kouby</td><td>${money(doc.commissionCents, doc.currency)}</td></tr>
+    ${taxRows}
+    <tr><td><strong>Total</strong></td><td><strong>${money(doc.totalCents, doc.currency)}</strong></td></tr>
+  </table>
+  <p class="muted">${doc.fareCents > 0 ? 'The ride fare is collected by Kouby and paid out to the driver after the trip.' : 'Ride fare is paid directly to the driver and is not on this invoice.'}</p>
+</body>
+</html>`;
+}

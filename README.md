@@ -357,11 +357,30 @@ pnpm db:migrate
 > et `apps/api/drizzle/*`) sont **déjà commités** : il suffit donc de lancer
 > Postgres puis `pnpm db:migrate`.
 
+### Comptes de démo (dev uniquement)
+
+Trois comptes déjà vérifiés, mot de passe commun `DevPass123!`. Le script
+refuse de tourner si `NODE_ENV=production` ou si Postgres / BetterAuth ne
+sont pas en localhost :
+
+```bash
+pnpm seed:dev-users
+```
+
+| Rôle        | Email                     | Mot de passe   |
+| ----------- | ------------------------- | -------------- |
+| Admin       | `admin@kouby.local`       | `DevPass123!`  |
+| Conducteur  | `driver@kouby.local`      | `DevPass123!`  |
+| Passager    | `passenger@kouby.local`   | `DevPass123!`  |
+
+Le conducteur a aussi deux trajets d'exemple (Montréal ↔ Québec) pour tester
+une réservation. Idempotent : relancer remet le mot de passe documenté.
+
 ### Créer le premier admin
 
 Un système de rôles sans admin est inutilisable, et l'API d'admin de BetterAuth
-exige déjà un admin (problème de l'œuf et la poule). Ce script promeut un
-utilisateur **existant** directement en base :
+exige déjà un admin (problème de l'œuf et la poule). En local, `pnpm seed:dev-users`
+crée déjà `admin@kouby.local`. Sinon, promeuvez un utilisateur **existant** :
 
 ```bash
 # 1. inscrivez-vous normalement (voir « Tester l'auth » ci-dessous)
@@ -419,6 +438,11 @@ toujours **aucune table métier** (rides, bookings, …).
 pnpm db:migrate
 # (équivaut à : pnpm --filter @carpool/api db:migrate)
 ```
+
+`pnpm docker:up` fait cette étape tout seul via `api-migrate`. En production,
+lancez le même binaire **avant** de basculer le trafic : `node dist/migrate.js`
+(script `db:migrate:prod` sur `@carpool/api`). Ne l'appelez pas depuis le
+processus HTTP de l'API.
 
 Plus tard, quand vous ajouterez des tables métier dans
 `apps/api/src/db/schema.ts`, générez une nouvelle migration avec
@@ -489,16 +513,19 @@ pnpm docker:down
   au démarrage de l'API** — aucune étape manuelle.
 - **api** : `localhost:${API_PORT}` (défaut `3001`). Dans le conteneur, l'API
   parle à Postgres via `DOCKER_DATABASE_URL` (hôte = le service `postgres`) et à
-  MinIO via `DOCKER_S3_ENDPOINT` (hôte = le service `minio`).
+  MinIO via `DOCKER_S3_ENDPOINT` (hôte = le service `minio`). Un service
+  `api-migrate` (même image) applique les migrations Drizzle au démarrage, puis
+  s'arrête.
 - **web** : `localhost:${WEB_PORT}` (défaut `3000`).
 - **mobile** : fourni mais optionnel (`pnpm docker:up --profile mobile`). Le dev
   mobile se fait normalement sur la machine hôte, pas dans un conteneur. Voir
   `infra/Dockerfile.mobile`.
 
-> **Migrations** : les conteneurs n'appliquent pas les migrations
-> automatiquement. Une fois la stack démarrée, lancez-les depuis la machine hôte
-> contre le port publié : `pnpm db:migrate` (utilise `DATABASE_URL` =
-> `localhost`, voir `.env`).
+> **Migrations** : `pnpm docker:up` runs a one-shot `api-migrate` container
+> (same image as the API, `node dist/migrate.js`) **before** the API starts.
+> It only needs `DOCKER_DATABASE_URL`. If migrate fails, Compose does not
+> start `api`. Host-side `pnpm db:migrate` is still the command when you run
+> the API on the machine against `pnpm docker:infra`.
 
 ---
 

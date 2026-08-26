@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
-import { CalendarDays, Check, FileText, Search, X } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Check, ChevronDown, ChevronUp, FileText, X } from 'lucide-react';
 import {
   DOCUMENT_STATUSES,
   MIN_DRIVER_AGE,
@@ -14,9 +14,7 @@ import {
   type DriverDocumentType,
   type DriverVerification,
 } from '@carpool/schemas';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -34,30 +32,32 @@ import { VerificationChip } from '@/components/documents/verification-chip';
 import { ViewDocumentLink } from '@/components/mes-documents/view-document-link';
 import { fetchAdminDocuments, reviewDocument } from '@/lib/admin';
 import { cn } from '@/lib/utils';
+import { ADMIN_FILTER_TRIGGER, AdminFilterBar, AdminQueueState, AdminSearch } from './admin-queue-state';
 
-/** Sentinel for the "no filter" option — a Radix SelectItem cannot hold ''. */
 const ANY = 'any';
 
-const triggerClass = 'h-12 rounded-full border-0 bg-card px-5 shadow-sm ring-1 ring-border';
+type StatusFilter = DocumentStatus | typeof ANY;
 
 /**
- * The review queue: filters on top, one row per submission underneath.
- *
- * Filter state is local rather than in the URL. Unlike the public ride search, a
- * reviewer's half-finished filter is not something anyone shares a link to.
+ * Review queue as list-detail: compact file list, selected submission as a
+ * case pane. j/k (or next/prev) moves between files.
  */
-export function AdminDocumentQueue() {
+export function AdminDocumentQueue({
+  initialQuery = '',
+  initialStatus = 'pending',
+}: {
+  initialQuery?: string;
+  initialStatus?: StatusFilter;
+}) {
   const t = useTranslations('Admin');
-  // Type and status labels come from the driver-facing namespace on purpose:
-  // one wording for "Refusé", whichever side of the review is reading it.
   const tDocument = useTranslations('Documents');
   const format = useFormatter();
 
-  // Defaults to `pending`, because that is the only bucket that means work.
-  const [status, setStatus] = useState<DocumentStatus | typeof ANY>('pending');
+  const [status, setStatus] = useState<StatusFilter>(initialStatus);
   const [type, setType] = useState<DriverDocumentType | typeof ANY>(ANY);
-  const [search, setSearch] = useState('');
-  const [submittedSearch, setSubmittedSearch] = useState('');
+  const [search, setSearch] = useState(initialQuery);
+  const [submittedSearch, setSubmittedSearch] = useState(initialQuery);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const query: AdminDocumentQuery = {
     ...(status === ANY ? {} : { status }),
@@ -65,19 +65,62 @@ export function AdminDocumentQueue() {
     ...(submittedSearch ? { q: submittedSearch } : {}),
   };
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin', 'documents', query],
     queryFn: () => fetchAdminDocuments(query),
     retry: false,
   });
 
+  const items = data ?? [];
+  const selectedIndex = items.findIndex((item) => item.id === selectedId);
+  const selected = selectedIndex >= 0 ? items[selectedIndex] : undefined;
+
+  useEffect(() => {
+    if (!items.length) {
+      setSelectedId(null);
+      return;
+    }
+    if (!selectedId || !items.some((item) => item.id === selectedId)) {
+      setSelectedId(items[0]!.id);
+    }
+  }, [items, selectedId]);
+
+  const move = useCallback(
+    (delta: number) => {
+      setSelectedId((current) => {
+        if (!items.length) return current;
+        const index = items.findIndex((item) => item.id === current);
+        const from = index < 0 ? 0 : index;
+        const next = Math.min(items.length - 1, Math.max(0, from + delta));
+        return items[next]!.id;
+      });
+    },
+    [items],
+  );
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLInputElement) {
+        return;
+      }
+      if (event.key === 'j') {
+        event.preventDefault();
+        move(1);
+      }
+      if (event.key === 'k') {
+        event.preventDefault();
+        move(-1);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [move]);
+
   return (
-    <div className="flex flex-col gap-5">
-      {/* ── Filters ──────────────────────────────────────────────────────── */}
-      <Card>
-        <CardContent className="grid gap-3 p-4 pt-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_2fr]">
-          <Select value={status} onValueChange={(v) => setStatus(v as DocumentStatus | typeof ANY)}>
-            <SelectTrigger className={triggerClass} aria-label={t('filters.status')}>
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <AdminFilterBar>
+          <Select value={status} onValueChange={(value) => setStatus(value as StatusFilter)}>
+            <SelectTrigger className={ADMIN_FILTER_TRIGGER} aria-label={t('filters.status')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -90,15 +133,12 @@ export function AdminDocumentQueue() {
             </SelectContent>
           </Select>
 
-          <Select value={type} onValueChange={(v) => setType(v as DriverDocumentType | typeof ANY)}>
-            <SelectTrigger className={triggerClass} aria-label={t('filters.type')}>
+          <Select value={type} onValueChange={(value) => setType(value as DriverDocumentType | typeof ANY)}>
+            <SelectTrigger className={ADMIN_FILTER_TRIGGER} aria-label={t('filters.type')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ANY}>{t('filters.allTypes')}</SelectItem>
-              {/* Only the types a driver can still submit. The legacy ones are
-                  renderable but nobody sends them, so they would be dead
-                  options in a filter. */}
               {REQUIRED_DRIVER_DOCUMENT_TYPES.map((value) => (
                 <SelectItem key={value} value={value}>
                   {tDocument(`type.${value}`)}
@@ -107,64 +147,102 @@ export function AdminDocumentQueue() {
             </SelectContent>
           </Select>
 
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              setSubmittedSearch(search.trim());
-            }}
-            className="flex gap-2"
-          >
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t('filters.searchPlaceholder')}
-              aria-label={t('filters.search')}
-            />
-            <Button type="submit" variant="outline" size="icon" aria-label={t('filters.search')}>
-              <Search className="size-4" strokeWidth={2.5} aria-hidden />
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <AdminSearch
+            value={search}
+            onChange={setSearch}
+            onSubmit={() => setSubmittedSearch(search.trim())}
+            placeholder={t('filters.searchPlaceholder')}
+            label={t('filters.search')}
+          />
+      </AdminFilterBar>
 
-      {/* ── Queue ────────────────────────────────────────────────────────── */}
-      {isLoading ? (
-        <StatusCard>{t('loading')}</StatusCard>
-      ) : isError ? (
-        <StatusCard tone="error">{t('error')}</StatusCard>
-      ) : !data?.length ? (
-        <StatusCard>{t('queue.empty')}</StatusCard>
-      ) : (
-        <Card>
-          <CardContent className="p-2 pt-2">
-            <ul className="divide-y divide-border">
-              {data.map((document) => (
-                <QueueRow
-                  key={document.id}
-                  document={document}
-                  submittedOn={format.dateTime(new Date(document.submittedAt), {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                />
+      <AdminQueueState
+        isLoading={isLoading}
+        isError={isError}
+        empty={!items.length}
+        loadingLabel={t('loading')}
+        errorLabel={t('error')}
+        emptyLabel={t('queue.empty')}
+        retryLabel={t('retry')}
+        onRetry={() => void refetch()}
+      >
+        <div className="flex min-h-[28rem] flex-1 overflow-hidden rounded-lg bg-muted/40 ring-1 ring-foreground/10 lg:min-h-0">
+          <aside
+            className={cn(
+              'flex w-full shrink-0 flex-col border-border lg:w-80 lg:border-r',
+              selectedId ? 'hidden lg:flex' : 'flex',
+            )}
+          >
+            <ul className="min-h-0 flex-1 overflow-y-auto">
+              {items.map((document) => (
+                <li key={document.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(document.id)}
+                    className={cn(
+                      'flex w-full items-start gap-3 px-4 py-3 text-left outline-none transition-all duration-200',
+                      'focus-visible:ring-3 focus-visible:ring-ring/30',
+                      document.id === selectedId
+                        ? 'bg-primary/15 ring-1 ring-inset ring-primary/25'
+                        : 'hover:bg-muted/60',
+                    )}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-foreground">
+                        {document.owner.name}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {tDocument(`type.${document.type}`)}
+                        {' · '}
+                        {format.dateTime(new Date(document.submittedAt), {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </span>
+                    </span>
+                    <DocumentStatusBadge status={document.status} />
+                  </button>
+                </li>
               ))}
             </ul>
-          </CardContent>
-        </Card>
-      )}
+          </aside>
+
+          <section className={cn('min-w-0 flex-1 flex-col', selectedId ? 'flex' : 'hidden lg:flex')}>
+            {selected ? (
+              <DocumentCase
+                key={selected.id}
+                document={selected}
+                canPrev={selectedIndex > 0}
+                canNext={selectedIndex < items.length - 1}
+                onPrev={() => move(-1)}
+                onNext={() => move(1)}
+                onBack={() => setSelectedId(null)}
+              />
+            ) : (
+              <p className="m-auto p-6 text-center text-sm text-muted-foreground">{t('queue.select')}</p>
+            )}
+          </section>
+        </div>
+      </AdminQueueState>
     </div>
   );
 }
 
-/**
- * One submission, with its decision controls.
- *
- * Rejecting expands a reason field instead of firing immediately: the contract
- * refuses a rejection without a note, so asking for it up front is the only way
- * the button can succeed.
- */
-function QueueRow({ document, submittedOn }: { document: AdminDocument; submittedOn: string }) {
+function DocumentCase({
+  document,
+  canPrev,
+  canNext,
+  onPrev,
+  onNext,
+  onBack,
+}: {
+  document: AdminDocument;
+  canPrev: boolean;
+  canNext: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+  onBack: () => void;
+}) {
   const t = useTranslations('Admin');
   const tDocument = useTranslations('Documents');
   const format = useFormatter();
@@ -173,18 +251,17 @@ function QueueRow({ document, submittedOn }: { document: AdminDocument; submitte
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [ageConfirmed, setAgeConfirmed] = useState(false);
-
-  // Only a licence carries a birth date, so only a licence can settle the
-  // minimum-age rule. The API refuses to approve one without this confirmation;
-  // the checkbox is how the reviewer gives it, and gating the button here means
-  // they are never bounced by a 400 they could not have anticipated.
   const isLicence = document.type === 'permis';
   const { age } = document.owner.verification;
+  const submittedOn = format.dateTime(new Date(document.submittedAt), {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
   const mutation = useMutation({
     mutationFn: reviewDocument,
     onSuccess: () => {
-      // The queue and the counters both move on a decision.
       queryClient.invalidateQueries({ queryKey: ['admin'] });
       setIsRejecting(false);
       setNote('');
@@ -202,194 +279,187 @@ function QueueRow({ document, submittedOn }: { document: AdminDocument; submitte
   }
 
   return (
-    /* Three zones, in the order a decision is actually made: WHO is this driver,
-       WHAT am I looking at, and only then the decision. The previous single
-       column mixed all three and put the driver's overall progress under the
-       filename, where it read as a property of the file rather than the person. */
-    <li className="flex flex-col gap-4 px-4 py-5">
-      {/* ── Zone 1: who ───────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-sm font-semibold text-foreground">{document.owner.name}</p>
-            {/* Approving this file may or may not complete the driver, and the
-                row should not make the reviewer guess which. */}
-            <VerificationChip verification={document.owner.verification} />
-          </div>
-          <p className="truncate text-xs text-muted-foreground">{document.owner.email}</p>
-        </div>
-
-        <SlotSummary verification={document.owner.verification} />
-      </div>
-
-      {/* ── Zone 2: what is being judged ──────────────────────────────── */}
-      <div className="flex flex-col gap-3 rounded-md bg-muted p-3">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <FileText
-              className="size-4 shrink-0 text-muted-foreground"
-              strokeWidth={2.25}
-              aria-hidden
-            />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">
-                {tDocument(`type.${document.type}`)}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {document.fileName} · {submittedOn}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1">
-            <DocumentStatusBadge status={document.status} />
-            <ViewDocumentLink id={document.id} label={t('queue.view')} />
-          </div>
-        </div>
-
-        {/* On its own line rather than in the cluster above: expanded, the image
-            needs the full width of the well, not a flex item's share of it. */}
-        <DocumentPreview
-          id={document.id}
-          mimeType={document.mimeType}
-          fileName={document.fileName}
-        />
-      </div>
-
-      {/* The reviewer's existing decision, so a re-review has context. */}
-      {document.status === 'rejected' && document.reviewNote ? (
-        <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {t('queue.currentReason', { reason: document.reviewNote })}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <header className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2 sm:px-4">
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="lg:hidden"
+          onClick={onBack}
+        >
+          <ArrowLeft className="size-4" strokeWidth={2.25} />
+          <span className="sr-only">{t('queue.back')}</span>
+        </Button>
+        <p className="hidden min-w-0 flex-1 truncate text-xs text-muted-foreground lg:block">
+          {t('queue.shortcut')}
         </p>
-      ) : null}
+        <div className="ml-auto flex items-center gap-1">
+          <Button size="sm" variant="outline" disabled={!canPrev} onClick={onPrev} aria-label={t('queue.previous')}>
+            <ChevronUp className="size-4" strokeWidth={2.25} />
+          </Button>
+          <Button size="sm" variant="outline" disabled={!canNext} onClick={onNext} aria-label={t('queue.next')}>
+            <ChevronDown className="size-4" strokeWidth={2.25} />
+          </Button>
+        </div>
+      </header>
 
-      {/* ── Zone 3: the decision ──────────────────────────────────────── */}
-      {isRejecting ? (
-        <div className="flex flex-col gap-2 rounded-md border border-destructive/20 bg-destructive/5 p-3">
-          <label
-            htmlFor={`reject-note-${document.id}`}
-            className="text-sm font-medium text-foreground"
-          >
-            {t('queue.reasonLabel')}
-          </label>
-          <Textarea
-            id={`reject-note-${document.id}`}
-            value={note}
-            maxLength={500}
-            onChange={(event) => setNote(event.target.value)}
-            placeholder={t('queue.reasonPlaceholder')}
-          />
-          {error ? (
-            <p role="alert" className="text-sm text-destructive">
-              {error}
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="truncate text-sm font-semibold text-foreground">{document.owner.name}</p>
+                <VerificationChip verification={document.owner.verification} />
+              </div>
+              <p className="truncate text-xs text-muted-foreground">{document.owner.email}</p>
+            </div>
+            <SlotSummary verification={document.owner.verification} />
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-md bg-muted p-3">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <FileText className="size-4 shrink-0 text-muted-foreground" strokeWidth={2.25} aria-hidden />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {tDocument(`type.${document.type}`)}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {document.fileName} · {submittedOn}
+                  </p>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <DocumentStatusBadge status={document.status} />
+                <ViewDocumentLink id={document.id} label={t('queue.view')} />
+              </div>
+            </div>
+            <DocumentPreview
+              id={document.id}
+              mimeType={document.mimeType}
+              fileName={document.fileName}
+              defaultOpen
+            />
+          </div>
+
+          {document.status === 'rejected' && document.reviewNote ? (
+            <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {t('queue.currentReason', { reason: document.reviewNote })}
             </p>
           ) : null}
-          <div className="flex gap-2">
-            <Button size="sm" variant="primary" disabled={mutation.isPending} onClick={handleReject}>
-              {mutation.isPending ? t('queue.submitting') : t('queue.confirmReject')}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={mutation.isPending}
-              onClick={() => {
-                setError('');
-                setIsRejecting(false);
-              }}
-            >
-              {t('queue.cancel')}
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {/* The minimum-age check, on the only document that can answer it. */}
-          {isLicence && document.status !== 'approved' ? (
-            <div className="flex flex-col gap-2 rounded-md bg-muted p-3">
-              <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                <CalendarDays className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
-                {age.dateOfBirth
-                  ? t('queue.declaredBirthDate', {
-                      date: format.dateTime(new Date(`${age.dateOfBirth}T00:00:00`), {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                      }),
-                      age: age.age ?? 0,
-                    })
-                  : t('queue.noBirthDate')}
-              </p>
 
-              <label className="flex cursor-pointer items-start gap-2 text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  checked={ageConfirmed}
-                  disabled={!age.dateOfBirth}
-                  onChange={(event) => {
-                    setAgeConfirmed(event.target.checked);
-                    setError('');
-                  }}
-                  className="mt-0.5 size-4 shrink-0 cursor-pointer accent-primary disabled:cursor-not-allowed"
-                />
-                {t('queue.confirmAge', { min: MIN_DRIVER_AGE })}
+          {isRejecting ? (
+            <div className="flex flex-col gap-2 rounded-md border border-destructive/20 bg-destructive/5 p-3">
+              <label htmlFor={`reject-note-${document.id}`} className="text-sm font-medium text-foreground">
+                {t('queue.reasonLabel')}
               </label>
+              <Textarea
+                id={`reject-note-${document.id}`}
+                value={note}
+                maxLength={500}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder={t('queue.reasonPlaceholder')}
+              />
+              {error ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {error}
+                </p>
+              ) : null}
+              <div className="flex gap-2">
+                <Button size="sm" variant="primary" disabled={mutation.isPending} onClick={handleReject}>
+                  {mutation.isPending ? t('queue.submitting') : t('queue.confirmReject')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={mutation.isPending}
+                  onClick={() => {
+                    setError('');
+                    setIsRejecting(false);
+                  }}
+                >
+                  {t('queue.cancel')}
+                </Button>
+              </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="flex flex-col gap-3">
+              {isLicence && document.status !== 'approved' ? (
+                <div className="flex flex-col gap-2 rounded-md bg-muted p-3">
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CalendarDays className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
+                    {age.dateOfBirth
+                      ? t('queue.declaredBirthDate', {
+                          date: format.dateTime(new Date(`${age.dateOfBirth}T00:00:00`), {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          }),
+                          age: age.age ?? 0,
+                        })
+                      : t('queue.noBirthDate')}
+                  </p>
+                  <label className="flex cursor-pointer items-start gap-2 text-sm text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={ageConfirmed}
+                      disabled={!age.dateOfBirth}
+                      onChange={(event) => {
+                        setAgeConfirmed(event.target.checked);
+                        setError('');
+                      }}
+                      className="mt-0.5 size-4 shrink-0 cursor-pointer accent-primary disabled:cursor-not-allowed"
+                    />
+                    {t('queue.confirmAge', { min: MIN_DRIVER_AGE })}
+                  </label>
+                </div>
+              ) : null}
 
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {error ? (
-              <p role="alert" className="mr-auto text-sm text-destructive">
-                {error}
-              </p>
-            ) : null}
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={mutation.isPending}
-              onClick={() => {
-                setError('');
-                setIsRejecting(true);
-              }}
-            >
-              <X className="size-4" strokeWidth={2.5} aria-hidden />
-              {t('queue.reject')}
-            </Button>
-            <Button
-              size="sm"
-              variant="primary"
-              disabled={
-                mutation.isPending ||
-                document.status === 'approved' ||
-                (isLicence && !ageConfirmed)
-              }
-              onClick={() =>
-                mutation.mutate({
-                  id: document.id,
-                  status: 'approved',
-                  ...(isLicence ? { ageConfirmed: true } : {}),
-                })
-              }
-            >
-              <Check className="size-4" strokeWidth={2.5} aria-hidden />
-              {t('queue.approve')}
-            </Button>
-          </div>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {error ? (
+                  <p role="alert" className="mr-auto text-sm text-destructive">
+                    {error}
+                  </p>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={mutation.isPending}
+                  onClick={() => {
+                    setError('');
+                    setIsRejecting(true);
+                  }}
+                >
+                  <X className="size-4" strokeWidth={2.5} aria-hidden />
+                  {t('queue.reject')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  disabled={
+                    mutation.isPending || document.status === 'approved' || (isLicence && !ageConfirmed)
+                  }
+                  onClick={() =>
+                    mutation.mutate({
+                      id: document.id,
+                      status: 'approved',
+                      ...(isLicence ? { ageConfirmed: true } : {}),
+                    })
+                  }
+                >
+                  <Check className="size-4" strokeWidth={2.5} aria-hidden />
+                  {t('queue.approve')}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
-    </li>
+      </div>
+    </div>
   );
 }
 
-/**
- * Both required documents at a glance, so the reviewer can see what is still
- * outstanding without leaving the row or searching for the driver again.
- *
- * These were coloured dots. A dot encodes status in colour and nothing else,
- * which is unreadable to a colour-blind reviewer and easy to skip past for
- * everyone else — and at 6px it was low-contrast on top of that. Each slot now
- * carries the status icon, its tint AND the translated word, the same triple the
- * badge uses, so nothing depends on distinguishing amber from green.
- */
 function SlotSummary({ verification }: { verification: DriverVerification }) {
   const tDocument = useTranslations('Documents');
 
@@ -406,21 +476,5 @@ function SlotSummary({ verification }: { verification: DriverVerification }) {
         );
       })}
     </ul>
-  );
-}
-
-function StatusCard({ children, tone }: { children: string; tone?: 'error' }) {
-  return (
-    <Card>
-      <CardContent
-        className={
-          tone === 'error'
-            ? 'p-8 pt-8 text-center text-sm text-destructive'
-            : 'p-8 pt-8 text-center text-sm text-muted-foreground'
-        }
-      >
-        {children}
-      </CardContent>
-    </Card>
   );
 }

@@ -19,6 +19,31 @@ const EnvSchema = z.object({
       const trimmed = value?.trim();
       return trimmed && trimmed.length > 0 ? trimmed : undefined;
     }),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z
+    .string()
+    .optional()
+    .transform((value) => {
+      const trimmed = value?.trim();
+      return trimmed && trimmed.length > 0 ? trimmed : undefined;
+    }),
+  NEXT_PUBLIC_PAYPAL_CLIENT_ID: z
+    .string()
+    .optional()
+    .transform((value) => {
+      const trimmed = value?.trim();
+      return trimmed && trimmed.length > 0 ? trimmed : undefined;
+    }),
+  /**
+   * Truthy when Google OAuth is configured on the API. Docker passes the
+   * server `GOOGLE_CLIENT_ID` here so the button appears without a second flag.
+   */
+  NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: z
+    .string()
+    .optional()
+    .transform((value) => {
+      const trimmed = value?.trim();
+      return Boolean(trimmed && trimmed !== 'false' && trimmed !== '0');
+    }),
   /**
    * Base URL used by server components. Not `NEXT_PUBLIC_`, so it is never
    * inlined into the browser bundle — it reads as undefined there and falls
@@ -33,6 +58,9 @@ const EnvSchema = z.object({
 const parsed = EnvSchema.safeParse({
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  NEXT_PUBLIC_PAYPAL_CLIENT_ID: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID,
+  NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED,
   INTERNAL_API_URL: process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL,
 });
 

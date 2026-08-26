@@ -14,6 +14,15 @@ export interface TimeValue {
 /** Sensible default shown before the user edits: 00:00. */
 export const DEFAULT_TIME: TimeValue = { hour: 0, minute: 0 };
 
+export function parseTime(value: string): TimeValue | undefined {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!match) return undefined;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour > 23 || minute > 59) return undefined;
+  return { hour, minute };
+}
+
 export function formatTime({ hour, minute }: TimeValue) {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
@@ -98,7 +107,7 @@ export function TimePicker({ value, onChange, ariaLabel, className }: TimePicker
       role="group"
       aria-label={ariaLabel}
       className={cn(
-        'flex h-12 w-full items-center gap-1 rounded-md bg-card px-5 text-sm text-foreground shadow-sm ring-1 ring-border',
+        'flex h-11 w-full items-center gap-1 rounded-md bg-card px-4 text-sm text-foreground shadow-sm ring-1 ring-border',
         className,
       )}
     >

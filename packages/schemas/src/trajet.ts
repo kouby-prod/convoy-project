@@ -44,10 +44,25 @@ export const TrajetAmenitySchema = z.enum(TRAJET_AMENITIES).describe('TrajetAmen
 export type TrajetAmenity = z.infer<typeof TrajetAmenitySchema>;
 
 /**
- * The two payment-method amenities, shown in their own "Moyens de paiement"
- * group on ride creation — separate from the general amenities toggle group,
- * since how a rider pays is a different kind of choice than what the ride
- * offers (pets, luggage, …).
+ * How the passenger pays the **ride fare**. Kouby's 4 CAD commission is always
+ * collected on-platform. `card` also collects the fare through Stripe/PayPal;
+ * `interac` and `cash` leave the fare between passenger and driver.
+ */
+export const RIDE_PAYMENT_METHODS = ['card', 'interac', 'cash'] as const;
+export const RidePaymentMethodSchema = z.enum(RIDE_PAYMENT_METHODS).describe('RidePaymentMethod');
+export type RidePaymentMethod = z.infer<typeof RidePaymentMethodSchema>;
+
+export const RidePaymentMethodsSchema = z
+  .array(RidePaymentMethodSchema)
+  .min(1)
+  .refine((methods) => new Set(methods).size === methods.length, {
+    message: 'paymentMethods must not contain duplicates',
+  })
+  .describe('RidePaymentMethods');
+
+/**
+ * Decorative payment-method amenities kept for existing ride rows. New rides
+ * use `paymentMethods` (card / Interac / cash) for actual fare collection.
  */
 export const PAYMENT_AMENITIES = ['cardPayment', 'cashOrInterac'] as const satisfies readonly TrajetAmenity[];
 export type PaymentAmenity = (typeof PAYMENT_AMENITIES)[number];
@@ -127,6 +142,8 @@ export const TrajetSchema = z
     baggageAllowance: z.string().max(500).optional().nullable(),
     /** Advertised options. */
     amenities: z.array(TrajetAmenitySchema),
+    /** Methods the driver accepts for the ride fare. */
+    paymentMethods: RidePaymentMethodsSchema,
     hasIntermediateStop: z.boolean(),
     driver: DriverProfileSchema,
     cancelledAt: z.string().nullable().describe('ISO-8601 timestamp, null while the trajet is active'),
@@ -158,6 +175,7 @@ export const CreateTrajetSchema = z
     arrivalPlace: z.string().max(200).optional().nullable(),
     arrivalDateTime: z.string().datetime().optional().nullable(),
     amenities: z.array(TrajetAmenitySchema).optional(),
+    paymentMethods: RidePaymentMethodsSchema,
     hasIntermediateStop: z.boolean().optional(),
   })
   .refine((data) => new Date(data.departureDateTime).getTime() > Date.now(), {
@@ -193,6 +211,7 @@ export const UpdateTrajetSchema = z
     arrivalPlace: z.string().max(200).optional().nullable(),
     arrivalDateTime: z.string().datetime().optional().nullable(),
     amenities: z.array(TrajetAmenitySchema).optional(),
+    paymentMethods: RidePaymentMethodsSchema.optional(),
     hasIntermediateStop: z.boolean().optional(),
   })
   .refine(
@@ -232,6 +251,19 @@ export function paginatedSchema<Item extends z.ZodTypeAny>(itemSchema: Item) {
 }
 
 export const TrajetPageSchema = paginatedSchema(TrajetSchema).describe('TrajetPage');
+
+/**
+ * A driver's own ride on `GET /me/trajets`. Same as `Trajet`. Count fields
+ * stay on the contract at zero — drivers are not shown unpaid holds or
+ * leftover accept/reject queues.
+ */
+export const OwnedTrajetSchema = TrajetSchema.extend({
+  pendingRequestCount: z.number().int().nonnegative(),
+  awaitingPaymentCount: z.number().int().nonnegative(),
+}).describe('OwnedTrajet');
+export type OwnedTrajet = z.infer<typeof OwnedTrajetSchema>;
+
+export const OwnedTrajetPageSchema = paginatedSchema(OwnedTrajetSchema).describe('OwnedTrajetPage');
 
 /**
  * A trajet as returned by search, with the driver's rating summary (also
@@ -317,15 +349,17 @@ export type TrajetApiSearchQuery = z.infer<typeof TrajetApiSearchQuerySchema>;
  * Booking contract — a passenger reserving seats on a trajet. The passenger is
  * the authenticated user; the contact fields are what they typed on the ride
  * detail form and are stored alongside the reservation for the driver to see.
- * A booking starts `pending` (seats are provisionally held) and either:
- * - the driver moves it to `confirmed` or `rejected` via UpdateBookingStatusSchema,
+ * A booking starts `awaiting_payment` (seats held, Kouby invoice issued) and:
+ * - Stripe/PayPal settlement moves `awaiting_payment` → `confirmed`,
  * - the passenger moves it to `cancelled` (POST .../cancel), or
- * - the system moves it to `expired` once it has sat `pending` past the TTL
- *   (see PENDING_BOOKING_TTL_MS in the trajet module) without a driver response.
+ * - the system moves it to `expired` (unpaid invoice TTL, 5 minutes).
+ * Legacy `pending` rows can still be accepted/rejected via
+ * `UpdateBookingStatusSchema` (`confirmed` still means "I accept").
  */
 export const CreateBookingSchema = z
   .object({
     seats: z.number().int().min(1),
+    paymentMethod: RidePaymentMethodSchema,
     firstName: z.string().trim().max(100).optional().nullable(),
     lastName: z.string().trim().max(100).optional().nullable(),
     email: z.string().trim().max(200).optional().nullable(),
@@ -335,7 +369,14 @@ export const CreateBookingSchema = z
   .describe('CreateBooking');
 export type CreateBooking = z.infer<typeof CreateBookingSchema>;
 
-export const BookingStatusSchema = z.enum(['pending', 'confirmed', 'rejected', 'cancelled', 'expired']);
+export const BookingStatusSchema = z.enum([
+  'pending',
+  'awaiting_payment',
+  'confirmed',
+  'rejected',
+  'cancelled',
+  'expired',
+]);
 export type BookingStatus = z.infer<typeof BookingStatusSchema>;
 
 export const BookingSchema = z
@@ -345,6 +386,8 @@ export const BookingSchema = z
     passengerId: z.string(),
     seats: z.number().int().min(1),
     status: BookingStatusSchema,
+    paymentMethod: RidePaymentMethodSchema,
+    fareCents: z.number().int().nonnegative(),
     firstName: z.string().nullable(),
     lastName: z.string().nullable(),
     email: z.string().nullable(),
@@ -368,11 +411,29 @@ export const BookingTrajetSummarySchema = z
     destinationCity: z.string(),
     departureDateTime: z.string(),
     pricePerSeat: z.number(),
+    /** Pickup point within the city. Absent on older checkout payloads. */
+    departurePlace: z.string().nullable().optional(),
+    arrivalPlace: z.string().nullable().optional(),
+    driverFirstName: z.string().optional(),
+    driverLastName: z.string().optional(),
   })
   .describe('BookingTrajetSummary');
 
 export const BookingWithTrajetSchema = BookingSchema.extend({
   trajet: BookingTrajetSummarySchema,
+  invoiceDueAt: z
+    .string()
+    .nullable()
+    .describe('ISO-8601 due date of the issued invoice, if any'),
+  invoiceTotalCents: z
+    .number()
+    .int()
+    .nonnegative()
+    .nullable()
+    .describe('Issued invoice total in cents, if any'),
+  reviewedByPassenger: z
+    .boolean()
+    .describe('True when this passenger already left a passenger_to_driver review'),
 }).describe('BookingWithTrajet');
 export type BookingWithTrajet = z.infer<typeof BookingWithTrajetSchema>;
 
@@ -381,7 +442,8 @@ export const BookingWithTrajetPageSchema = paginatedSchema(BookingWithTrajetSche
 );
 
 /**
- * Driver-only action: accept or reject a pending booking request.
+ * Driver-only action on a leftover `pending` booking (instant book is the
+ * default; this remains for rows created before that change).
  */
 export const UpdateBookingStatusSchema = z
   .object({
@@ -418,6 +480,7 @@ export const TrajetListingSchema = z
     seatsTotal: z.number().int().positive(),
     seatsAvailable: z.number().int().nonnegative(),
     amenities: z.array(TrajetAmenitySchema),
+    paymentMethods: RidePaymentMethodsSchema,
     hasIntermediateStop: z.boolean(),
     description: z.string(),
     /** Comfort tier and baggage policy — null when the driver left them out. */
@@ -469,6 +532,7 @@ export const CreateTrajetRequestSchema = z
     pricePerSeat: z.number().nonnegative(),
     seatsTotal: z.number().int().min(1).max(8),
     amenities: z.array(TrajetAmenitySchema).default([]),
+    paymentMethods: RidePaymentMethodsSchema,
     hasIntermediateStop: z.boolean().default(false),
     description: z.string().trim().max(500).default(''),
     comfort: z.enum(['standard', 'confort', 'premium']).optional().nullable(),
@@ -487,6 +551,7 @@ export const CreateBookingRequestSchema = z
     email: z.email(),
     phone: z.string().trim().min(6),
     message: z.string().trim().max(500).default(''),
+    paymentMethod: RidePaymentMethodSchema,
   })
   .describe('CreateBookingRequest');
 

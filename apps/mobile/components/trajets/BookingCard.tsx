@@ -9,6 +9,7 @@ import { colors, spacing, fontSize } from '@/lib/theme';
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
   pending: 'En attente',
+  awaiting_payment: 'En attente de paiement',
   confirmed: 'Confirmée',
   rejected: 'Refusée',
   cancelled: 'Annulée',

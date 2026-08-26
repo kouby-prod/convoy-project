@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Trajet } from '@carpool/schemas';
+import type { RidePaymentMethod, Trajet } from '@carpool/schemas';
 import { api } from '@/lib/api-client';
 import { authClient } from '@/lib/auth-client';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -18,10 +18,17 @@ import { colors, spacing, fontSize, radius } from '@/lib/theme';
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'En attente',
+  awaiting_payment: 'En attente de paiement',
   confirmed: 'Confirmée',
   rejected: 'Refusée',
   cancelled: 'Annulée',
   expired: 'Expirée',
+};
+
+const PAYMENT_METHOD_LABELS: Record<RidePaymentMethod, string> = {
+  card: 'Carte',
+  interac: 'Interac',
+  cash: 'Comptant',
 };
 
 function formatDateTime(value: string) {
@@ -219,16 +226,31 @@ function TrajetBookingsList({ trajetId, departureDateTime }: { trajetId: string;
   );
 }
 
-function BookingSection({ trajetId, seatsAvailable, cancelled }: { trajetId: string; seatsAvailable: number; cancelled: boolean }) {
+function BookingSection({
+  trajetId,
+  seatsAvailable,
+  cancelled,
+  paymentMethods,
+}: {
+  trajetId: string;
+  seatsAvailable: number;
+  cancelled: boolean;
+  paymentMethods: RidePaymentMethod[];
+}) {
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [seats, setSeats] = useState('1');
+  const [paymentMethod, setPaymentMethod] = useState<RidePaymentMethod | null>(paymentMethods[0] ?? null);
   const [myBooking, setMyBooking] = useState<{ id: string; status: string } | null>(null);
 
   const bookMutation = useMutation({
     mutationFn: async () => {
+      if (!paymentMethod) throw new Error('Choisissez un moyen de paiement.');
       const seatsNumber = Math.max(1, Math.min(seatsAvailable, Number(seats) || 1));
-      const res = await api.trajets[':id'].book.$post({ param: { id: trajetId }, json: { seats: seatsNumber } });
+      const res = await api.trajets[':id'].book.$post({
+        param: { id: trajetId },
+        json: { seats: seatsNumber, paymentMethod },
+      });
       if (!res.ok) throw new Error('Failed to book');
       return res.json();
     },
@@ -294,9 +316,25 @@ function BookingSection({ trajetId, seatsAvailable, cancelled }: { trajetId: str
       ) : (
         <>
           <TextField label="Nombre de places" value={seats} onChangeText={setSeats} keyboardType="number-pad" />
+          {paymentMethods.length > 0 ? (
+            <View>
+              <Text style={styles.label}>Moyen de paiement</Text>
+              <View style={styles.row}>
+                {paymentMethods.map((method) => (
+                  <Button
+                    key={method}
+                    label={PAYMENT_METHOD_LABELS[method]}
+                    size="sm"
+                    variant={paymentMethod === method ? 'primary' : 'outline'}
+                    onPress={() => setPaymentMethod(method)}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : null}
           <Button
             label={bookMutation.isPending ? 'Réservation…' : 'Réserver'}
-            disabled={bookMutation.isPending}
+            disabled={bookMutation.isPending || !paymentMethod}
             onPress={() => bookMutation.mutate()}
           />
           {bookMutation.isError ? <Text style={styles.error}>Échec de la réservation.</Text> : null}
@@ -406,7 +444,12 @@ export default function TrajetDetailScreen() {
             <TrajetBookingsList trajetId={id} departureDateTime={data.departureDateTime} />
           </>
         ) : (
-          <BookingSection trajetId={id} seatsAvailable={data.seatsAvailable} cancelled={!!data.cancelledAt} />
+          <BookingSection
+            trajetId={id}
+            seatsAvailable={data.seatsAvailable}
+            cancelled={!!data.cancelledAt}
+            paymentMethods={data.paymentMethods}
+          />
         )}
       </ScrollView>
     </ScreenContainer>

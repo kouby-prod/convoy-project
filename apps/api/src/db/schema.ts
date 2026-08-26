@@ -8,6 +8,7 @@ export * from './auth-schema';
 // Domain tables. New ones are appended below by `pnpm gen backend-feature` —
 // the marker is what the generator anchors to, so keep it.
 // plop:tables
+export * from './payment';
 export * from './vehicle';
 export * from './document';
 export * from './eligibility';
@@ -15,3 +16,5 @@ export * from './trajet-schema';
 export * from './review';
 export * from './message';
 export * from './notification';
+export * from './avatar';
+export * from './account-deletion';

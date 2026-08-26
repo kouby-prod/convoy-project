@@ -3,6 +3,15 @@
 import './load-env';
 import { z } from 'zod';
 
+/** Empty / whitespace env values mean "unset" so optional secrets stay optional. */
+const optionalString = z
+  .string()
+  .optional()
+  .transform((value) => {
+    const trimmed = value?.trim();
+    return trimmed && trimmed.length > 0 ? trimmed : undefined;
+  });
+
 /**
  * Typed, validated environment. The process fails fast at boot if anything is
  * missing or malformed, instead of blowing up later at the first DB call.
@@ -93,6 +102,41 @@ const EnvSchema = z.object({
   // Lifetime of a presigned upload/view URL, in seconds. Short by design: the
   // link is handed out per action, not stored.
   S3_URL_TTL: z.coerce.number().int().positive().default(300),
+
+  // --- Payments (optional — that provider returns 503 when unset) ---
+  STRIPE_SECRET_KEY: optionalString,
+  STRIPE_WEBHOOK_SECRET: optionalString,
+  PAYPAL_CLIENT_ID: optionalString,
+  PAYPAL_CLIENT_SECRET: optionalString,
+  PAYPAL_WEBHOOK_ID: optionalString,
+  PAYPAL_MODE: z.enum(['sandbox', 'live']).default('sandbox'),
+
+  // Seller identity printed on invoices. Tax numbers are omitted from the PDF
+  // until set — never invent a GST/QST number.
+  INVOICE_LEGAL_NAME: z.string().min(1).default('Kouby'),
+  INVOICE_ADDRESS: z.string().optional().transform((value) => value?.trim() || undefined),
+  INVOICE_GST_NUMBER: optionalString,
+  INVOICE_QST_NUMBER: optionalString,
+  // Quebec default: TPS 5 % + TVQ 9,975 % on the 4 CAD commission only.
+  TAX_MODE: z.enum(['none', 'gst', 'gst_qst']).default('gst_qst'),
+
+  // --- Observability (optional — incidents still email + admin inbox) ---
+  // GlitchTip (or Sentry) DSN — envelope ingest. Host vs Docker hosts differ.
+  SENTRY_DSN: optionalString,
+  SENTRY_ENVIRONMENT: optionalString,
+  // ntfy (self-hosted or ntfy.sh). Topic should be unguessable.
+  NTFY_URL: optionalString,
+  NTFY_TOPIC: optionalString,
+  NTFY_TOKEN: optionalString,
+  // Optional leftover — unused when ntfy is set.
+  PAGERDUTY_ROUTING_KEY: optionalString,
+
+  // When true (default), this process also consumes payment BullMQ jobs.
+  // Docker API sets false; the `payment-worker` service consumes instead.
+  PAYMENT_WORKER_EMBEDDED: z
+    .string()
+    .optional()
+    .transform((value) => value !== 'false'),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

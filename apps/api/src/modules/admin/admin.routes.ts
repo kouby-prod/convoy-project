@@ -3,8 +3,21 @@ import {
   AdminDocumentListSchema,
   AdminDocumentQuerySchema,
   AdminDocumentSchema,
+  AdminBookingListSchema,
+  AdminBookingQuerySchema,
+  AdminInvoiceListSchema,
+  AdminInvoiceQuerySchema,
+  AdminMismatchQuerySchema,
+  AdminPayoutQuerySchema,
   AdminStatsSchema,
+  AdminTrajetListSchema,
+  AdminTrajetQuerySchema,
   AdminUserListSchema,
+  AdminUserQuerySchema,
+  DriverPayoutSchema,
+  MarkDriverPayoutPaidSchema,
+  ReconciliationMismatchSchema,
+  ResolveMismatchSchema,
   ReviewDocumentSchema,
 } from '@carpool/schemas';
 
@@ -112,6 +125,7 @@ export const listAdminUsersRoute = createRoute({
   tags: ['admin'],
   summary: "Accounts, with each one's document tally",
   security: bearerAuth,
+  request: { query: AdminUserQuerySchema },
   responses: {
     200: {
       description: 'All accounts, newest first',
@@ -123,6 +137,189 @@ export const listAdminUsersRoute = createRoute({
     },
     403: {
       description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listAdminTrajetsRoute = createRoute({
+  method: 'get',
+  path: '/admin/trajets',
+  tags: ['admin'],
+  summary: 'Published ride ads, filterable by date and state',
+  security: bearerAuth,
+  request: { query: AdminTrajetQuerySchema },
+  responses: {
+    200: {
+      description: 'Matching ads, by ride date',
+      content: { 'application/json': { schema: AdminTrajetListSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listAdminBookingsRoute = createRoute({
+  method: 'get',
+  path: '/admin/bookings',
+  tags: ['admin'],
+  summary: 'Reservations with trip, people, and invoice status',
+  security: bearerAuth,
+  request: { query: AdminBookingQuerySchema },
+  responses: {
+    200: {
+      description: 'Matching reservations, by ride date',
+      content: { 'application/json': { schema: AdminBookingListSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listAdminInvoicesRoute = createRoute({
+  method: 'get',
+  path: '/admin/invoices',
+  tags: ['admin'],
+  summary: 'Passenger invoices and latest payment attempt',
+  security: bearerAuth,
+  request: { query: AdminInvoiceQuerySchema },
+  responses: {
+    200: {
+      description: 'Matching invoices, newest first',
+      content: { 'application/json': { schema: AdminInvoiceListSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listAdminPayoutsRoute = createRoute({
+  method: 'get',
+  path: '/admin/payouts',
+  tags: ['admin'],
+  summary: 'Driver payout queue (manual, no Connect)',
+  security: bearerAuth,
+  request: { query: AdminPayoutQuerySchema },
+  responses: {
+    200: {
+      description: 'Matching payouts, newest first',
+      content: { 'application/json': { schema: z.array(DriverPayoutSchema) } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const markAdminPayoutPaidRoute = createRoute({
+  method: 'post',
+  path: '/admin/payouts/{id}/paid',
+  tags: ['admin'],
+  summary: 'Mark a driver payout as paid',
+  security: bearerAuth,
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+    body: { content: { 'application/json': { schema: MarkDriverPayoutPaidSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'The paid payout',
+      content: { 'application/json': { schema: DriverPayoutSchema } },
+    },
+    400: {
+      description: 'Payout is not held or due',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const listAdminMismatchesRoute = createRoute({
+  method: 'get',
+  path: '/admin/payments/incidents',
+  tags: ['admin'],
+  summary: 'Open payment incidents and reconcile mismatches',
+  security: bearerAuth,
+  request: { query: AdminMismatchQuerySchema },
+  responses: {
+    200: {
+      description: 'Incidents, newest first',
+      content: { 'application/json': { schema: z.array(ReconciliationMismatchSchema) } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const resolveAdminMismatchRoute = createRoute({
+  method: 'post',
+  path: '/admin/payments/incidents/{id}/resolve',
+  tags: ['admin'],
+  summary: 'Mark a payment incident as resolved',
+  security: bearerAuth,
+  request: {
+    params: z.object({ id: z.string() }),
+    body: { content: { 'application/json': { schema: ResolveMismatchSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'The resolved incident',
+      content: { 'application/json': { schema: ReconciliationMismatchSchema } },
+    },
+    400: {
+      description: 'Incident is already resolved',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    403: {
+      description: 'Authenticated but not an admin',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Not found',
       content: { 'application/json': { schema: errorSchema } },
     },
   },

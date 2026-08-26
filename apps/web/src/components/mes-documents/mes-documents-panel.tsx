@@ -19,6 +19,7 @@ import { DriverIdentityCard } from '@/components/documents/driver-identity-card'
 import { fetchMyDocuments, fetchMyEligibility } from '@/lib/documents';
 import { DocumentSlotCard } from './document-slot-card';
 import { MesDocumentsHistory } from './mes-documents-list';
+import { CardSkeleton } from '@/components/ui/list-skeleton';
 
 /**
  * `/mes-documents` behind a session.
@@ -49,9 +50,9 @@ export function MesDocumentsPanel() {
     enabled: Boolean(session?.user),
   });
 
-  // Render nothing until the session resolves, to avoid flashing the sign-in
-  // prompt at someone who is in fact signed in.
-  if (isPending) return null;
+  if (isPending) {
+    return <CardSkeleton rows={5} label={t('loading')} />;
+  }
 
   if (!session?.user) {
     return (
@@ -59,7 +60,7 @@ export function MesDocumentsPanel() {
         <CardContent className="flex flex-col items-center gap-4 p-8 pt-8 text-center">
           <ShieldCheck className="size-8 text-primary" strokeWidth={2} aria-hidden />
           <p className="text-sm text-muted-foreground">{t('authRequired')}</p>
-          <Link href="/sign-in" className={buttonVariants({ variant: 'primary' })}>
+          <Link href="/auth/signin" className={buttonVariants({ variant: 'primary' })}>
             {t('authCta')}
           </Link>
         </CardContent>
@@ -68,7 +69,7 @@ export function MesDocumentsPanel() {
   }
 
   if (documentsQuery.isLoading || eligibilityQuery.isLoading) {
-    return <StatusCard>{t('loading')}</StatusCard>;
+    return <CardSkeleton rows={5} label={t('loading')} />;
   }
   if (documentsQuery.isError || eligibilityQuery.isError) {
     return <StatusCard tone="error">{t('error')}</StatusCard>;
@@ -115,6 +116,7 @@ function StatusCard({ children, tone }: { children: string; tone?: 'error' }) {
   return (
     <Card>
       <CardContent
+        role={tone === 'error' ? 'alert' : undefined}
         className={
           tone === 'error'
             ? 'p-8 pt-8 text-center text-sm text-destructive'

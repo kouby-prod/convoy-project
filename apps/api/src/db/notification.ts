@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, text, timestamp, index, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, index, uuid, boolean } from 'drizzle-orm/pg-core';
 import { user } from './auth-schema';
 
 export const notification = pgTable(
@@ -22,6 +22,30 @@ export const notification = pgTable(
 export const notificationRelations = relations(notification, ({ one }) => ({
   user: one(user, {
     fields: [notification.userId],
+    references: [user.id],
+  }),
+}));
+
+/**
+ * Per-user channel switches. One row per account (`userId` PK); missing row
+ * means both channels on (see `DEFAULT_NOTIFICATION_PREFERENCE`). Cascade
+ * with the user so prefs never outlive the account.
+ */
+export const notificationPreference = pgTable('notification_preference', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  emailEnabled: boolean('email_enabled').notNull().default(true),
+  inAppEnabled: boolean('in_app_enabled').notNull().default(true),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const notificationPreferenceRelations = relations(notificationPreference, ({ one }) => ({
+  user: one(user, {
+    fields: [notificationPreference.userId],
     references: [user.id],
   }),
 }));

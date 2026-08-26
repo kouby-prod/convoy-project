@@ -153,6 +153,10 @@ function buildTrajet(driverIds: string[]) {
     comfort: pick(COMFORT_TIERS),
     baggageAllowance: pick(BAGGAGE_OPTIONS),
     amenities: pickSubset(AMENITY_POOL, 4),
+    paymentMethods: (() => {
+      const methods = (['card', 'interac', 'cash'] as const).filter(() => Math.random() > 0.35);
+      return (methods.length > 0 ? methods : ['cash']) as string[];
+    })(),
     hasIntermediateStop: Math.random() > 0.75,
   };
 }

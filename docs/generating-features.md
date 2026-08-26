@@ -83,12 +83,15 @@ Swagger and the frontend won't see them.
 ### 4. Migrate
 
 ```bash
-pnpm docker:infra                          # start Postgres + Redis
 pnpm --filter @carpool/api db:generate     # writes apps/api/drizzle/NNNN_*.sql
-pnpm --filter @carpool/api db:migrate
 ```
 
 Commit the generated `.sql` file — migrations are part of the codebase.
+
+Apply it next:
+
+- Host API against `pnpm docker:infra`: `pnpm db:migrate`
+- Full Docker stack: `pnpm docker:up` (rebuilds the API image, then `api-migrate` runs `node dist/migrate.js` before `api` starts)
 
 ### 5. Verify
 
@@ -101,7 +104,7 @@ pnpm --filter @carpool/api test
 Then test it live:
 
 ```bash
-pnpm docker:up      # full stack
+pnpm docker:up      # full stack — applies pending migrations, then starts api + web
 ```
 
 Open **http://localhost:3001/docs** and try the endpoints:

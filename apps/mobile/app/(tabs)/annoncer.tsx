@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
-import type { TrajetAmenity } from '@carpool/schemas';
+import type { RidePaymentMethod, TrajetAmenity } from '@carpool/schemas';
+import { RIDE_PAYMENT_METHODS } from '@carpool/schemas';
 import { api } from '@/lib/api-client';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextField } from '@/components/ui/TextField';
@@ -18,6 +19,12 @@ const COMFORT_OPTIONS: { value: Comfort; label: string }[] = [
   { value: 'premium', label: 'Premium' },
 ];
 
+const PAYMENT_METHOD_LABELS: Record<RidePaymentMethod, string> = {
+  card: 'Carte',
+  interac: 'Interac',
+  cash: 'Comptant',
+};
+
 interface FormState {
   departureCity: string;
   destinationCity: string;
@@ -30,6 +37,7 @@ interface FormState {
   description: string;
   amenities: TrajetAmenity[];
   hasIntermediateStop: boolean;
+  paymentMethods: RidePaymentMethod[];
 }
 
 const EMPTY_FORM: FormState = {
@@ -44,6 +52,7 @@ const EMPTY_FORM: FormState = {
   description: '',
   amenities: [],
   hasIntermediateStop: false,
+  paymentMethods: [],
 };
 
 /**
@@ -71,6 +80,15 @@ export default function AnnoncerScreen() {
     }));
   }
 
+  function togglePaymentMethod(method: RidePaymentMethod) {
+    setForm((prev) => ({
+      ...prev,
+      paymentMethods: prev.paymentMethods.includes(method)
+        ? prev.paymentMethods.filter((m) => m !== method)
+        : [...prev.paymentMethods, method],
+    }));
+  }
+
   const mutation = useMutation({
     mutationFn: async () => {
       const departureDateTime = new Date(`${form.date}T${form.time}`).toISOString();
@@ -86,6 +104,7 @@ export default function AnnoncerScreen() {
           description: form.description.trim() || undefined,
           amenities: form.amenities,
           hasIntermediateStop: form.hasIntermediateStop,
+          paymentMethods: form.paymentMethods,
         },
       });
       if (!res.ok) throw new Error('Échec de la publication.');
@@ -119,6 +138,10 @@ export default function AnnoncerScreen() {
     }
     if (!Number.isFinite(Number(form.pricePerSeat)) || Number(form.pricePerSeat) < 0) {
       setFieldError('Le prix par place doit être positif.');
+      return;
+    }
+    if (form.paymentMethods.length === 0) {
+      setFieldError('Choisissez au moins un moyen de paiement accepté.');
       return;
     }
 
@@ -197,6 +220,21 @@ export default function AnnoncerScreen() {
           value={form.baggageAllowance}
           onChangeText={(v) => updateField('baggageAllowance', v)}
         />
+
+        <View style={styles.comfortGroup}>
+          <Text style={styles.label}>Moyens de paiement acceptés</Text>
+          <View style={styles.row}>
+            {RIDE_PAYMENT_METHODS.map((method) => (
+              <Button
+                key={method}
+                label={PAYMENT_METHOD_LABELS[method]}
+                size="sm"
+                variant={form.paymentMethods.includes(method) ? 'primary' : 'outline'}
+                onPress={() => togglePaymentMethod(method)}
+              />
+            ))}
+          </View>
+        </View>
 
         <View style={styles.comfortGroup}>
           <Text style={styles.label}>Arrêt intermédiaire</Text>

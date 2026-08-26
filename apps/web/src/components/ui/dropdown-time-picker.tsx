@@ -2,50 +2,60 @@
 
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { DEFAULT_TIME, type TimeValue } from '@/components/ui/time-picker';
+import { parseTime, type TimeValue } from '@/components/ui/time-picker';
+import { cn } from '@/lib/utils';
 
 interface DropdownTimePickerProps {
+  id?: string;
   value?: TimeValue;
   onChange: (t: TimeValue) => void;
   ariaLabel?: string;
   className?: string;
+  required?: boolean;
+  invalid?: boolean;
 }
 
 function formatTime(value: TimeValue) {
   return `${String(value.hour).padStart(2, '0')}:${String(value.minute).padStart(2, '0')}`;
 }
 
-export function DropdownTimePicker({ value, onChange, ariaLabel, className }: DropdownTimePickerProps) {
-  const initial = value ?? DEFAULT_TIME;
-  const [timeValue, setTimeValue] = useState<string>(formatTime(initial));
+export function DropdownTimePicker({
+  id,
+  value,
+  onChange,
+  ariaLabel,
+  className,
+  required,
+  invalid,
+}: DropdownTimePickerProps) {
+  const [timeValue, setTimeValue] = useState<string>(value ? formatTime(value) : '');
 
   useEffect(() => {
-    if (value) {
-      setTimeValue(formatTime(value));
-    }
+    setTimeValue(value ? formatTime(value) : '');
   }, [value]);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const nextTime = event.target.value;
     setTimeValue(nextTime);
-
-    const [hourString, minuteString] = nextTime.split(':');
-    const hour = Number(hourString);
-    const minute = Number(minuteString);
-
-    if (!Number.isNaN(hour) && !Number.isNaN(minute)) {
-      onChange({ hour, minute });
-    }
+    const parsed = parseTime(nextTime);
+    if (parsed) onChange(parsed);
   }
 
   return (
     <div className={className}>
       <Input
+        id={id}
         type="time"
         aria-label={ariaLabel ?? 'Select time'}
+        required={required}
+        aria-invalid={invalid || undefined}
+        aria-describedby={invalid && id ? `${id}-error` : undefined}
         value={timeValue}
         onChange={handleChange}
-        className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+        className={cn(
+          'appearance-none [&::-webkit-calendar-picker-indicator]:opacity-60',
+          invalid && 'ring-destructive focus-visible:ring-destructive/30',
+        )}
       />
     </div>
   );

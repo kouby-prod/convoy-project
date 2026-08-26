@@ -38,6 +38,19 @@ export const MarkAllReadResponseSchema = z.object({
   updated: z.number().int().min(0),
 });
 
+/** Missing row means both channels on — same as a fresh account. */
+export const NotificationPreferenceSchema = z.object({
+  emailEnabled: z.boolean(),
+  inAppEnabled: z.boolean(),
+});
+export const UpdateNotificationPreferenceSchema = NotificationPreferenceSchema;
+export type NotificationPreference = z.infer<typeof NotificationPreferenceSchema>;
+
+export const DEFAULT_NOTIFICATION_PREFERENCE: NotificationPreference = {
+  emailEnabled: true,
+  inAppEnabled: true,
+};
+
 export type Notification = z.infer<typeof NotificationSchema>;
 export type NotificationPage = z.infer<typeof NotificationPageSchema>;
 export type UnreadCount = z.infer<typeof UnreadCountSchema>;

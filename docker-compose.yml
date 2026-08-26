@@ -5,6 +5,7 @@
 #
 #   pnpm docker:up
 #   (= docker compose --env-file .env up --build)
+#   `api-migrate` applies Drizzle SQL before `api` starts.
 #
 # All configuration comes from the single root `.env` (copy from `.env.example`).
 # There are NO hard-coded config values here — every value is a ${VAR} reference.
@@ -13,51 +14,80 @@ name: carpool
 include:
   - infra/docker-compose.infra.yml
 
+# Shared by `api` and `payment-worker` (same image, different command).
+x-api-environment: &api-environment
+  PORT: ${API_PORT}
+  DATABASE_URL: ${DOCKER_DATABASE_URL}
+  REDIS_URL: ${DOCKER_REDIS_URL:-redis://redis:6379}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?missing in root .env — copy .env.example to .env and set a 32+ char secret}
+  BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+  TRUSTED_ORIGINS: ${TRUSTED_ORIGINS}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+  EMAIL_FROM: ${EMAIL_FROM}
+  SUPPORT_EMAIL: ${SUPPORT_EMAIL}
+  SMTP_HOST: ${SMTP_HOST}
+  SMTP_PORT: ${SMTP_PORT}
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASS: ${SMTP_PASS}
+  SMTP_SECURE: ${SMTP_SECURE}
+  SMS_FROM: ${SMS_FROM}
+  SMS_GATEWAY_URL: ${SMS_GATEWAY_URL}
+  SMS_GATEWAY_USER: ${SMS_GATEWAY_USER}
+  SMS_GATEWAY_PASSWORD: ${SMS_GATEWAY_PASSWORD}
+  S3_ENDPOINT: ${DOCKER_S3_ENDPOINT}
+  S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT}
+  S3_REGION: ${S3_REGION}
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+  S3_SECRET_KEY: ${S3_SECRET_KEY}
+  S3_BUCKET: ${S3_BUCKET}
+  S3_URL_TTL: ${S3_URL_TTL}
+  STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+  PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
+  PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
+  PAYPAL_WEBHOOK_ID: ${PAYPAL_WEBHOOK_ID:-}
+  PAYPAL_MODE: ${PAYPAL_MODE:-sandbox}
+  INVOICE_LEGAL_NAME: ${INVOICE_LEGAL_NAME:-Kouby}
+  INVOICE_ADDRESS: ${INVOICE_ADDRESS:-}
+  INVOICE_GST_NUMBER: ${INVOICE_GST_NUMBER:-}
+  INVOICE_QST_NUMBER: ${INVOICE_QST_NUMBER:-}
+  TAX_MODE: ${TAX_MODE:-gst_qst}
+  SENTRY_DSN: ${DOCKER_SENTRY_DSN:-${SENTRY_DSN:-}}
+  SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-}
+  NTFY_URL: ${DOCKER_NTFY_URL:-${NTFY_URL:-}}
+  NTFY_TOPIC: ${NTFY_TOPIC:-}
+  NTFY_TOKEN: ${NTFY_TOKEN:-}
+  PAGERDUTY_ROUTING_KEY: ${PAGERDUTY_ROUTING_KEY:-}
+
 services:
+  # Apply pending Drizzle SQL, then exit. The API waits for this to succeed
+  # so a schema change ships with the image instead of a manual host command.
+  # Same image as `api`; only DATABASE_URL is required. Failed migrate fails
+  # `docker compose up` rather than serving against a stale schema.
+  api-migrate:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.api
+    image: carpool-api
+    command: ['node', 'dist/migrate.js']
+    restart: 'no'
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     build:
       context: .
       dockerfile: infra/Dockerfile.api
+    image: carpool-api
     restart: unless-stopped
     environment:
-      PORT: ${API_PORT}
-      # Container-side URL (host = the 'postgres' service). Defined in root .env.
-      DATABASE_URL: ${DOCKER_DATABASE_URL}
-      # BullMQ + WS fan-out — container reaches the `redis` service by name.
-      REDIS_URL: ${DOCKER_REDIS_URL:-redis://redis:6379}
-      # Required; compose fails fast with this message if it is unset in .env.
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?missing in root .env — copy .env.example to .env and set a 32+ char secret}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS}
-      # Google OAuth (web redirect). Optional — empty unless set in root .env.
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      EMAIL_FROM: ${EMAIL_FROM}
-      SUPPORT_EMAIL: ${SUPPORT_EMAIL}
-      # SMTP transport. Optional — empty SMTP_HOST falls back to the console stub.
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_SECURE: ${SMTP_SECURE}
-      SMS_FROM: ${SMS_FROM}
-      # Self-hosted SMS gateway. Optional — empty URL falls back to the console stub.
-      # NOTE: the container reaches the phone over the LAN; a host like
-      # http://192.168.1.x:8080 works, but http://localhost would point at the
-      # container itself, not your machine.
-      SMS_GATEWAY_URL: ${SMS_GATEWAY_URL}
-      SMS_GATEWAY_USER: ${SMS_GATEWAY_USER}
-      SMS_GATEWAY_PASSWORD: ${SMS_GATEWAY_PASSWORD}
-      # Object storage. The container talks to MinIO by service name, but signs
-      # presigned URLs with the PUBLIC endpoint — the browser follows those and
-      # cannot resolve `minio`. Same host/container split as DATABASE_URL.
-      S3_ENDPOINT: ${DOCKER_S3_ENDPOINT}
-      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT}
-      S3_REGION: ${S3_REGION}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
-      S3_SECRET_KEY: ${S3_SECRET_KEY}
-      S3_BUCKET: ${S3_BUCKET}
-      S3_URL_TTL: ${S3_URL_TTL}
+      <<: *api-environment
+      # Consume payment jobs in `payment-worker`, not inside this HTTP process.
+      PAYMENT_WORKER_EMBEDDED: 'false'
     ports:
       - '${API_PORT}:${API_PORT}'
     depends_on:
@@ -67,6 +97,101 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      api-migrate:
+        condition: service_completed_successfully
+
+  # Same image as `api`; only the command differs. Owns BullMQ consumers and
+  # the repeating unpaid-expire / payout-release / reconcile schedules.
+  payment-worker:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.api
+    image: carpool-api
+    command: ['node', 'dist/payment-worker.js']
+    restart: unless-stopped
+    environment:
+      <<: *api-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api-migrate:
+        condition: service_completed_successfully
+
+  # Extra Postgres database for GlitchTip (same server, isolated catalog).
+  # Init scripts in the postgres image only run on an empty volume, so this
+  # one-shot is idempotent on every compose up.
+  glitchtip-db:
+    image: postgres:17-alpine
+    restart: 'no'
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGUSER: ${POSTGRES_USER}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        psql -h postgres -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'glitchtip'" | grep -q 1 \
+          || psql -h postgres -d postgres -c "CREATE DATABASE glitchtip"
+
+  glitchtip-migrate:
+    image: glitchtip/glitchtip:6.2.6
+    restart: 'no'
+    command: ['./manage.py', 'migrate']
+    environment: &glitchtip-environment
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-${BETTER_AUTH_SECRET}}
+      DATABASE_URL: ${DOCKER_GLITCHTIP_DATABASE_URL}
+      REDIS_URL: ${DOCKER_GLITCHTIP_REDIS_URL:-redis://redis:6379/2}
+      VALKEY_URL: ${DOCKER_GLITCHTIP_REDIS_URL:-redis://redis:6379/2}
+      EMAIL_URL: consolemail://
+      GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN}
+      DEFAULT_FROM_EMAIL: ${EMAIL_FROM}
+      ENABLE_OPEN_USER_REGISTRATION: ${GLITCHTIP_ENABLE_REGISTRATION:-true}
+      ENABLE_USER_REGISTRATION: ${GLITCHTIP_ENABLE_REGISTRATION:-true}
+      PORT: '8000'
+    depends_on:
+      glitchtip-db:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  glitchtip:
+    image: glitchtip/glitchtip:6.2.6
+    restart: unless-stopped
+    environment: *glitchtip-environment
+    ports:
+      - '${GLITCHTIP_PORT}:8000'
+    depends_on:
+      glitchtip-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  glitchtip-worker:
+    image: glitchtip/glitchtip:6.2.6
+    restart: unless-stopped
+    command: ['./bin/run-celery-with-beat.sh']
+    environment: *glitchtip-environment
+    depends_on:
+      glitchtip-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # Phone/desktop push for payment incidents. Subscribe the ntfy app to NTFY_TOPIC
+  # at NTFY_PUBLIC_URL (http://localhost:2586 from this machine).
+  ntfy:
+    image: binwiederhier/ntfy:v2.27.0
+    restart: unless-stopped
+    command: ['serve']
+    environment:
+      NTFY_BASE_URL: ${NTFY_PUBLIC_URL}
+    ports:
+      - '${NTFY_PORT}:80'
 
   web:
     build:
@@ -75,13 +200,16 @@ services:
       args:
         # Inlined into the browser bundle at build time (from root .env).
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
+        NEXT_PUBLIC_PAYPAL_CLIENT_ID: ${NEXT_PUBLIC_PAYPAL_CLIENT_ID:-}
+        NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: ${GOOGLE_CLIENT_ID:-}
     restart: unless-stopped
     environment:
       # Read at runtime by server components; the browser bundle keeps using the
       # public URL baked in above.
       INTERNAL_API_URL: ${DOCKER_INTERNAL_API_URL}
     ports:
-      - '${WEB_PORT}:3000'
+      - '${WEB_PORT:-3000}:3000'
     depends_on:
       - api
 

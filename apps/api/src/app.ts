@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { swaggerUI } from '@hono/swagger-ui';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { healthRoute, pingRoute } from './routes/ping';
+import { healthRoute, pingRoute, readyRoute, checkReady } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
 import { trajetModule } from './modules/trajet';
 import { geocodeModule } from './modules/geocode';
@@ -13,6 +13,10 @@ import { reviewModule } from './modules/review';
 import { messageModule } from './modules/message';
 import { contactModule } from './modules/contact';
 import { notificationModule } from './modules/notification';
+import { avatarModule } from './modules/avatar';
+import { accountDeletionModule } from './modules/account-deletion';
+import { paymentModule } from './modules/payment';
+import { stripeWebhookHandler, paypalWebhookHandler } from './modules/payment/webhooks';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
 import { messagesWebSocketHandler } from './realtime/messages-ws';
@@ -34,7 +38,7 @@ app.use(
   '*',
   cors({
     origin: env.TRUSTED_ORIGINS,
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     exposeHeaders: ['set-auth-token'],
     credentials: true,
@@ -47,6 +51,11 @@ app.use(
 // password hashing, token signing, sessions, CSRF and rate limiting.
 // ---------------------------------------------------------------------------
 app.on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw));
+
+// PSP webhooks — raw body, unsigned by us, verified with provider signatures.
+// Mounted outside the OpenAPI JSON chain so Hono does not parse the payload.
+app.post('/webhooks/stripe', stripeWebhookHandler);
+app.post('/webhooks/paypal', paypalWebhookHandler);
 
 // ---------------------------------------------------------------------------
 // Auth middleware for the proof routes (attached before the OpenAPI handlers).
@@ -63,6 +72,16 @@ app.use('/admin/health', requireAuth, requireRole('admin'));
 const routes = app
   .openapi(healthRoute, (c) => {
     return c.json({ status: 'ok' as const }, 200);
+  })
+  .openapi(readyRoute, async (c) => {
+    const deps = await checkReady();
+    if (deps.postgres === 'ok' && deps.redis === 'ok') {
+      return c.json({ status: 'ok' as const, postgres: 'ok' as const, redis: 'ok' as const }, 200);
+    }
+    return c.json(
+      { status: 'error' as const, postgres: deps.postgres, redis: deps.redis },
+      503,
+    );
   })
   .openapi(pingRoute, (c) => {
     return c.json(
@@ -89,8 +108,12 @@ const routes = app
   .route('/', messageModule)
   // --- NOTIFICATION domain routes ---
   .route('/', notificationModule)
+  .route('/', avatarModule)
+  .route('/', accountDeletionModule)
   // --- CONTACT domain routes ---
   .route('/', contactModule)
+  // --- PAYMENT / INVOICE domain routes ---
+  .route('/', paymentModule)
   // --- PROOF routes (not domain logic) ---
   .openapi(meRoute, (c) => {
     const { user } = getAuth(c);

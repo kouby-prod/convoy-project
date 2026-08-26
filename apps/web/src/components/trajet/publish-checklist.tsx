@@ -19,6 +19,8 @@ import { DocumentSlotCard } from '@/components/mes-documents/document-slot-card'
 import { fetchMyDocuments, fetchMyEligibility } from '@/lib/documents';
 import { fetchMyVehicle, saveMyVehicle } from '@/lib/vehicles';
 import { cn } from '@/lib/utils';
+import { CardSkeleton } from '@/components/ui/list-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export interface PublishChecklistStepProps {
   onPublish: () => void;
@@ -75,7 +77,7 @@ export function PublishChecklistStep({ onPublish, onBack, publishing }: PublishC
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <div className="flex flex-col gap-6">
           {isLoadingDriverInfo ? (
-            <p className="text-sm text-muted-foreground">{t('create.step2.verification.loading')}</p>
+            <CardSkeleton rows={3} label={t('create.step2.verification.loading')} />
           ) : (
             <>
               <DriverIdentityCard />
@@ -86,7 +88,7 @@ export function PublishChecklistStep({ onPublish, onBack, publishing }: PublishC
 
         <div className="flex flex-col gap-6">
           {isLoadingDriverInfo
-            ? null
+            ? <CardSkeleton rows={3} label={t('create.step2.verification.loading')} />
             : REQUIRED_DRIVER_DOCUMENT_TYPES.map((type) => (
                 <DocumentSlotCard
                   key={type}
@@ -105,20 +107,20 @@ export function PublishChecklistStep({ onPublish, onBack, publishing }: PublishC
       </div>
 
       {error ? (
-        <p className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {error}
         </p>
       ) : null}
 
-      <div className="flex flex-col-reverse items-center gap-3 sm:flex-row sm:justify-center">
-        <Button type="button" variant="outline" size="lg" onClick={onBack}>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
+        <Button type="button" variant="outline" size="lg" className="w-full sm:w-auto" onClick={onBack}>
           {t('create.step2.back')}
         </Button>
         <Button
           type="button"
           variant="primary"
           size="lg"
-          className="px-10"
+          className="w-full px-10 sm:w-auto"
           disabled={!canPublish || publishing}
           onClick={handlePublish}
         >
@@ -197,7 +199,7 @@ function InsuranceChecklistItem({
         <ChecklistHeader Icon={ShieldCheck} title={t('create.step4.title')} done={done} />
 
         {loading ? (
-          <p className="text-sm text-muted-foreground">{t('create.step2.verification.loading')}</p>
+          <Skeleton className="h-11 w-full" />
         ) : (
           <>
             <p className="text-sm font-semibold text-foreground">{t('create.step4.question')}</p>

@@ -6,11 +6,14 @@ import { useTranslations } from 'next-intl';
 import { ChevronDown, Eye } from 'lucide-react';
 import { fetchDocumentViewUrl } from '@/lib/documents';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export interface DocumentPreviewProps {
   id: string;
   mimeType: string;
   fileName: string;
+  /** Case pane starts open so the reviewer sees the file without a second click. */
+  defaultOpen?: boolean;
 }
 
 /**
@@ -25,9 +28,14 @@ export interface DocumentPreviewProps {
  * Fetched only once expanded, and never cached: the URL is signed for minutes,
  * so a reused one would be a broken image rather than a fast one.
  */
-export function DocumentPreview({ id, mimeType, fileName }: DocumentPreviewProps) {
+export function DocumentPreview({
+  id,
+  mimeType,
+  fileName,
+  defaultOpen = false,
+}: DocumentPreviewProps) {
   const t = useTranslations('Admin');
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['document-file', id],
@@ -63,9 +71,11 @@ export function DocumentPreview({ id, mimeType, fileName }: DocumentPreviewProps
         // checkerboard behind a transparent PNG needs to be a plain surface.
         <div className="overflow-hidden rounded-md bg-card ring-1 ring-border">
           {isLoading ? (
-            <p className="p-8 text-center text-sm text-muted-foreground">{t('loading')}</p>
+            <div className="p-2" aria-busy aria-label={t('loading')}>
+              <Skeleton className="h-64 w-full" />
+            </div>
           ) : isError || !data ? (
-            <p className="p-8 text-center text-sm text-destructive">{t('queue.previewFailed')}</p>
+            <p role="alert" className="p-8 text-center text-sm text-destructive">{t('queue.previewFailed')}</p>
           ) : isImage ? (
             /* Plain <img>: the src is a presigned, short-lived URL on the storage
                host. next/image would proxy and cache bytes that are deliberately

@@ -5,6 +5,7 @@ import { LocateFixed, Loader2, MapPin } from 'lucide-react';
 import type { GeocodeResult } from '@carpool/schemas';
 import { searchPlaces, reverseGeocode } from '@/lib/geocode';
 import { cn } from '@/lib/utils';
+import { fieldControlClassName } from '@/components/ui/input';
 import { TripMap } from './trip-map';
 
 export interface LocationValue {
@@ -20,9 +21,11 @@ interface LocationPickerProps {
   onChange: (value: LocationValue) => void;
   placeholder?: string;
   required?: boolean;
+  invalid?: boolean;
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
+  'aria-describedby'?: string;
   /** Accessible label for the icon-only "use my location" button. */
   useMyLocationLabel: string;
   /** Shown when the browser denies/fails a "use my location" request. */
@@ -47,9 +50,11 @@ export function LocationPicker({
   onChange,
   placeholder,
   required,
+  invalid,
   disabled,
   className,
   'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
   useMyLocationLabel,
   locationErrorLabel,
   mapColor,
@@ -181,6 +186,8 @@ export function LocationPicker({
             aria-controls={listboxId}
             aria-autocomplete="list"
             aria-label={ariaLabel}
+            aria-describedby={ariaDescribedBy ?? (invalid && id ? `${id}-error` : undefined)}
+            aria-invalid={invalid || undefined}
             autoComplete="off"
             required={required}
             disabled={disabled}
@@ -190,9 +197,9 @@ export function LocationPicker({
             onFocus={() => setOpen(true)}
             onKeyDown={handleKeyDown}
             className={cn(
-              'h-11 w-full rounded-md bg-card py-2 pr-11 pl-10 text-sm text-foreground shadow-sm ring-1 ring-border outline-none transition-all duration-200',
-              'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30',
-              'disabled:cursor-not-allowed disabled:opacity-50',
+              fieldControlClassName,
+              'py-2 pr-11 pl-10',
+              invalid && 'ring-destructive focus-visible:ring-destructive/30',
             )}
           />
           <button

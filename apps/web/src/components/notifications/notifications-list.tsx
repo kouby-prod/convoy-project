@@ -9,6 +9,7 @@ import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SegmentedTabs, TabPanel } from '@/components/ui/segmented-tabs';
 import { cn } from '@/lib/utils';
 import {
   Check,
@@ -132,10 +133,11 @@ export function NotificationsList() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const showUnreadOnly = filter === 'unread';
 
   useEffect(() => {
-    if (!isSessionPending && !session?.user) router.push('/sign-in');
+    if (!isSessionPending && !session?.user) router.push('/auth/signin');
   }, [isSessionPending, router, session?.user]);
 
   const { data, isLoading, isError, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery({
@@ -181,8 +183,8 @@ export function NotificationsList() {
   if (isSessionPending || (isLoading && !isError)) return <NotificationsSkeleton />;
   if (isError)
     return (
-      <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-        <AlertCircle className="size-4 shrink-0" strokeWidth={2.25} />
+      <div role="alert" className="flex items-center gap-2 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <AlertCircle className="size-4 shrink-0" strokeWidth={2.25} aria-hidden />
         {t('error')}
       </div>
     );
@@ -194,33 +196,17 @@ export function NotificationsList() {
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-1 rounded-lg bg-muted p-1">
-          <button
-            type="button"
-            onClick={() => setShowUnreadOnly(false)}
-            className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/40',
-              !showUnreadOnly
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {t('tabAll')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowUnreadOnly(true)}
-            className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/40',
-              showUnreadOnly
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {t('tabUnread')}
-            {unreadCount > 0 ? ` (${unreadCount})` : ''}
-          </button>
-        </div>
+        <SegmentedTabs
+          id="notifications"
+          size="compact"
+          label={t('filterLabel')}
+          value={filter}
+          onChange={setFilter}
+          tabs={[
+            { id: 'all', label: t('tabAll') },
+            { id: 'unread', label: t('tabUnread'), count: unreadCount > 0 ? unreadCount : undefined },
+          ]}
+        />
 
         {unreadCount > 0 && (
           <Button
@@ -236,6 +222,7 @@ export function NotificationsList() {
         )}
       </div>
 
+      <TabPanel tabsId="notifications" tab={filter} className="grid gap-4">
       {items.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-16 text-center">
           <span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -365,6 +352,7 @@ export function NotificationsList() {
           {isFetchingNextPage ? t('loading') : t('loadMore')}
         </Button>
       )}
+      </TabPanel>
     </div>
   );
 }

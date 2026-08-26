@@ -12,6 +12,7 @@ import { LabelledField } from '@/components/ui/labelled-field';
 import { fetchMyVehicle, fetchVehiclePhotoUrl, saveMyVehicle, uploadMyVehiclePhoto } from '@/lib/vehicles';
 import { isApiError } from '@/lib/api-error';
 import { useSessionDraft, clearSessionDraft } from '@/hooks/use-session-draft';
+import { cn } from '@/lib/utils';
 
 /** Same reasoning as `RideDraft` in `trajet-create-form.tsx`: these fields
  *  used to be plain `useState`, which a locale switch (remounts this whole
@@ -49,7 +50,7 @@ const VEHICLE_DRAFT_KEY = 'trajet-create-vehicle-draft';
  * and the photo are all optional, and are omitted from the ride card rather
  * than shown as invented data when left blank.
  */
-export function VehicleForm() {
+export function VehicleForm({ embedded = false }: { embedded?: boolean }) {
   const t = useTranslations('Trajet');
   const queryClient = useQueryClient();
 
@@ -151,9 +152,8 @@ export function VehicleForm() {
     photoMutation.mutate(file);
   }
 
-  return (
-    <Card>
-      <CardContent className="flex flex-col gap-4 p-5 pt-5">
+  const body = (
+      <div className={cn('flex flex-col gap-4', embedded ? undefined : 'p-5 pt-5')}>
         <div className="flex items-center gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
             <Car className="size-5" strokeWidth={2.25} aria-hidden />
@@ -219,7 +219,7 @@ export function VehicleForm() {
             </p>
           ) : null}
 
-          <Button type="submit" variant="outline" disabled={mutation.isPending} className="self-start">
+          <Button type="submit" variant="outline" disabled={mutation.isPending} className="w-full sm:w-auto sm:self-start">
             <Check className="size-4" strokeWidth={2.5} aria-hidden />
             {mutation.isPending
               ? t('create.step3.vehicle.saving')
@@ -260,7 +260,7 @@ export function VehicleForm() {
             type="button"
             variant="outline"
             size="sm"
-            className="self-start"
+            className="w-full sm:w-auto sm:self-start"
             disabled={!vehicleQuery.data || photoMutation.isPending}
             onClick={() => fileInputRef.current?.click()}
           >
@@ -280,7 +280,16 @@ export function VehicleForm() {
             </p>
           ) : null}
         </div>
-      </CardContent>
+      </div>
+  );
+
+  if (embedded) {
+    return body;
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-0 pt-0">{body}</CardContent>
     </Card>
   );
 }

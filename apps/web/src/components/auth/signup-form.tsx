@@ -8,9 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { FormAlert } from '@/components/ui/form-alert';
+import { PasswordInput } from '@/components/ui/password-input';
+import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 
 export function SignUpForm() {
   const translateAuth = useTranslations('Auth');
+  const translateBrand = useTranslations('Navbar');
+  const translateA11y = useTranslations('A11y');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -63,7 +68,7 @@ export function SignUpForm() {
   return (
     <Card className="mx-auto w-full max-w-lg gap-0 py-0 shadow-xl">
       <CardHeader className="gap-2 px-8 pt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">Convoy</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">{translateBrand('brand')}</p>
         <CardTitle className="font-display text-2xl font-semibold">
           {translateAuth('signUp.title')}
         </CardTitle>
@@ -110,37 +115,41 @@ export function SignUpForm() {
 
           <div className="space-y-2">
             <Label htmlFor="password">{translateAuth('fields.password')}</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               name="password"
               autoComplete="new-password"
               placeholder={translateAuth('fields.passwordPlaceholder')}
               required
+              showLabel={translateA11y('showPassword')}
+              hideLabel={translateA11y('hidePassword')}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">{translateAuth('fields.confirmPassword')}</Label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
-              type="password"
               name="confirmPassword"
               autoComplete="new-password"
               placeholder={translateAuth('fields.confirmPasswordPlaceholder')}
               required
+              showLabel={translateA11y('showPassword')}
+              hideLabel={translateA11y('hidePassword')}
             />
           </div>
 
           {error ? (
-            <p className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive ring-1 ring-destructive/20">
+            <FormAlert className="rounded-md bg-destructive/10 px-4 py-3 ring-1 ring-destructive/20">
               {error}
-            </p>
+            </FormAlert>
           ) : null}
 
           <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
             {isLoading ? translateAuth('signUp.pending') : translateAuth('signUp.submit')}
           </Button>
+
+          <GoogleSignInButton />
 
           <p className="text-center text-sm text-muted-foreground">
             {translateAuth('signUp.hasAccount')}{' '}

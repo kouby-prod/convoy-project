@@ -17,6 +17,7 @@ function createChain(result: unknown) {
       return chain;
     },
     innerJoin: () => chain,
+    leftJoin: () => chain,
     groupBy: () => chain,
     having: () => chain,
     orderBy: (...args: unknown[]) => {
@@ -84,6 +85,8 @@ vi.mock('../../src/modules/trajet/notifications', () => ({
   notifyUser: (...a: unknown[]) => notifyUser(...a),
   trajetUrl: (id: string) => `https://example.test/trajet/${id}`,
   trajetSearchUrl: () => 'https://example.test/trajets',
+  paymentUrl: (id: string) => `https://example.test/paiement/${id}`,
+  formatDueAt: (dueAt: Date | string) => String(dueAt),
   describeTrip: (trip: { departureCity: string; arrivalCity: string; departureAt: Date }) =>
     `${trip.departureCity} to ${trip.arrivalCity} (departing ${trip.departureAt.toUTCString()})`,
   describeTripShort: (trip: { departureCity: string; arrivalCity: string }) =>
@@ -108,6 +111,32 @@ vi.mock('../../src/middleware/rate-limit', () => ({
 const geocodeAndStoreTrajetLocation = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../src/modules/trajet/geocoding', () => ({
   geocodeAndStoreTrajetLocation: (...a: unknown[]) => geocodeAndStoreTrajetLocation(...a),
+}));
+
+const paymentHooks = vi.hoisted(() => ({
+  issueInvoiceForBooking: vi.fn().mockResolvedValue({
+    number: 'KOU-2026-000001',
+    totalCents: 400,
+    fareCents: 0,
+    dueAt: '2026-08-21T12:00:00.000Z',
+  }),
+  voidIssuedInvoiceForBooking: vi.fn().mockResolvedValue(undefined),
+  refundPaidBooking: vi.fn().mockResolvedValue(undefined),
+  expireUnpaidBookings: vi.fn(async (_tx: unknown, _id: string, seats: number) => ({
+    seatsAvailable: seats,
+    expired: [],
+  })),
+  cancelOpenPaymentsForBooking: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('../../src/modules/payment/booking-hooks', () => paymentHooks);
+vi.mock('../../src/modules/payment/stripe', () => ({
+  cancelStripePaymentIntent: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../../src/modules/payment/pdf', () => ({
+  renderInvoicePdf: vi.fn().mockResolvedValue(Buffer.from('pdf')),
+}));
+vi.mock('../../src/auth/email', () => ({
+  smtpEmailSender: null,
 }));
 
 // Mock the driver-verified lookup entirely: it is exercised on its own (real
@@ -157,6 +186,8 @@ function makeTrajetRow(overrides: Partial<Record<string, unknown>> = {}) {
     description: 'A sample trajet',
     comfort: null,
     baggageAllowance: null,
+    amenities: [],
+    paymentMethods: ['card', 'interac', 'cash'],
     cancelledAt: null,
     createdAt: now,
     updatedAt: now,
@@ -173,6 +204,8 @@ function makeBookingRow(overrides: Partial<Record<string, unknown>> = {}) {
     passengerId: 'u_2',
     seats: 2,
     status: 'pending',
+    paymentMethod: 'cash',
+    fareCents: 0,
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -188,6 +221,21 @@ describe('trajet module', () => {
     getSession.mockReset();
     notifyUser.mockClear();
     geocodeAndStoreTrajetLocation.mockClear();
+    paymentHooks.issueInvoiceForBooking.mockClear();
+    paymentHooks.voidIssuedInvoiceForBooking.mockClear();
+    paymentHooks.refundPaidBooking.mockClear();
+    paymentHooks.expireUnpaidBookings.mockClear();
+    paymentHooks.cancelOpenPaymentsForBooking.mockClear();
+    paymentHooks.issueInvoiceForBooking.mockResolvedValue({
+      number: 'KOU-2026-000001',
+      totalCents: 400,
+      fareCents: 0,
+      dueAt: '2026-08-21T12:00:00.000Z',
+    });
+    paymentHooks.expireUnpaidBookings.mockImplementation(
+      async (_tx: unknown, _id: string, seats: number) => ({ seatsAvailable: seats, expired: [] }),
+    );
+    paymentHooks.cancelOpenPaymentsForBooking.mockResolvedValue([]);
     dbState.selectResult = [];
     dbState.selectQueue = [];
     dbState.insertResult = [];
@@ -410,6 +458,7 @@ describe('trajet module', () => {
         departureDateTime: new Date(Date.now() + 60_000).toISOString(),
         seatsTotal: 3,
         pricePerSeat: 20,
+        paymentMethods: ['card', 'interac', 'cash'],
         description: 'A sample trajet',
       }),
     });
@@ -446,6 +495,7 @@ describe('trajet module', () => {
         departureDateTime: new Date(Date.now() - 60_000).toISOString(),
         seatsTotal: 3,
         pricePerSeat: 20,
+        paymentMethods: ['cash'],
       }),
     });
 
@@ -654,10 +704,25 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 1 }),
+      body: JSON.stringify({ seats: 1, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(400);
+  });
+
+  it('POST /trajets/:id/book returns 400 when the ride does not offer that payment method', async () => {
+    getSession.mockResolvedValue(sessionFor('user'));
+    dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', paymentMethods: ['interac'] })];
+
+    const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seats: 1, paymentMethod: 'card' }),
+    });
+
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/payment method/i);
   });
 
   it('POST /trajets/:id/book returns 401 without a session', async () => {
@@ -665,30 +730,37 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 1 }),
+      body: JSON.stringify({ seats: 1, paymentMethod: 'cash' }),
     });
     expect(res.status).toBe(401);
   });
 
-  it('POST /trajets/:id/book books seats as pending when enough are available', async () => {
+  it('POST /trajets/:id/book books seats as awaiting_payment and issues an invoice', async () => {
     getSession.mockResolvedValue(sessionFor('user'));
     dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', seatsAvailable: 3 })];
-    dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'pending' })];
+    dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'awaiting_payment' })];
 
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 2 }),
+      body: JSON.stringify({ seats: 2, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(201);
     const body = await res.json();
-    expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'pending' });
+    expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'awaiting_payment' });
+    expect(paymentHooks.issueInvoiceForBooking).toHaveBeenCalled();
     expect(notifyUser).toHaveBeenCalledWith(
-      'someone-else',
-      expect.stringContaining('New booking request'),
+      'u_1',
+      expect.stringContaining('Pay Kouby'),
       expect.any(String),
-      expect.objectContaining({ type: 'booking_request', link: expect.any(String) }),
+      expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
+    );
+    expect(notifyUser).not.toHaveBeenCalledWith(
+      'someone-else',
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
     );
   });
 
@@ -699,7 +771,7 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 1 }),
+      body: JSON.stringify({ seats: 1, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(403);
@@ -712,7 +784,7 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 2 }),
+      body: JSON.stringify({ seats: 2, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(400);
@@ -723,17 +795,17 @@ describe('trajet module', () => {
     // Fully booked at rest, but one pending request (2 seats) is past the TTL.
     dbState.selectResult = [makeTrajetRow({ driverId: 'someone-else', seatsAvailable: 0 })];
     dbState.updateQueue = [[{ passengerId: 'u_3', seats: 2 }]];
-    dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'pending' })];
+    dbState.insertResult = [makeBookingRow({ passengerId: 'u_1', seats: 2, status: 'awaiting_payment' })];
 
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 2 }),
+      body: JSON.stringify({ seats: 2, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(201);
     const body = await res.json();
-    expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'pending' });
+    expect(body).toMatchObject({ id: BOOKING_ID, seats: 2, status: 'awaiting_payment' });
     // Sweep's expire update + the trajet restock it triggers + this booking's
     // own seatsAvailable decrement.
     expect(db.update).toHaveBeenCalledTimes(3);
@@ -744,9 +816,9 @@ describe('trajet module', () => {
       expect.any(String),
       expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
     );
-    expect(notifyUser).toHaveBeenCalledWith(
+    expect(notifyUser).not.toHaveBeenCalledWith(
       'someone-else',
-      expect.stringContaining('New booking request'),
+      expect.stringContaining('New booking'),
       expect.any(String),
       expect.objectContaining({ type: 'booking_request', link: expect.any(String) }),
     );
@@ -759,7 +831,7 @@ describe('trajet module', () => {
     const res = await trajetModule.request('/trajets/11111111-1111-4111-8111-111111111111/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: 1 }),
+      body: JSON.stringify({ seats: 1, paymentMethod: 'cash' }),
     });
 
     expect(res.status).toBe(404);
@@ -790,11 +862,11 @@ describe('trajet module', () => {
       expect(res.status).toBe(403);
     });
 
-    it('returns a page of bookings for the trajet when the caller is the driver', async () => {
+    it('returns confirmed bookings for the trajet when the caller is the driver', async () => {
       getSession.mockResolvedValue(sessionFor('user'));
       dbState.selectQueue = [
         [makeTrajetRow({ driverId: 'u_1' })],
-        [makeBookingRow({ status: 'pending' }), makeBookingRow({ id: 'b_2', status: 'confirmed' })],
+        [makeBookingRow({ id: 'b_2', status: 'confirmed' })],
       ];
 
       const res = await trajetModule.request(url);
@@ -806,9 +878,8 @@ describe('trajet module', () => {
         hasMore: boolean;
       };
       expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
-      expect(body.items).toHaveLength(2);
-      expect(body.items[0]).toMatchObject({ id: BOOKING_ID, status: 'pending' });
-      expect(body.items[1]).toMatchObject({ id: 'b_2', status: 'confirmed' });
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0]).toMatchObject({ id: 'b_2', status: 'confirmed' });
     });
 
     it('rejects an out-of-range limit', async () => {
@@ -882,7 +953,7 @@ describe('trajet module', () => {
       expect(res.status).toBe(400);
     });
 
-    it('confirms a pending booking without restocking seats', async () => {
+    it('maps driver accept to awaiting_payment and issues an invoice', async () => {
       getSession.mockResolvedValue(sessionFor('user'));
       dbState.selectQueue = [
         [makeTrajetRow({ driverId: 'u_1', seatsAvailable: 1 })],
@@ -890,7 +961,7 @@ describe('trajet module', () => {
       ];
       // First frame: the stale-pending sweep finds nothing to expire.
       dbState.updateQueue = [[]];
-      dbState.updateResult = [makeBookingRow({ status: 'confirmed', seats: 2 })];
+      dbState.updateResult = [makeBookingRow({ status: 'awaiting_payment', seats: 2 })];
 
       const res = await trajetModule.request(url, {
         method: 'PATCH',
@@ -900,13 +971,14 @@ describe('trajet module', () => {
 
       expect(res.status).toBe(200);
       const body = await res.json();
-      expect(body).toMatchObject({ id: BOOKING_ID, status: 'confirmed' });
+      expect(body).toMatchObject({ id: BOOKING_ID, status: 'awaiting_payment' });
       // Sweep (no-op) + the booking update — seats stay held, no trajet update.
       expect(db.update).toHaveBeenCalledTimes(2);
+      expect(paymentHooks.issueInvoiceForBooking).toHaveBeenCalled();
       expect(notifyUser).toHaveBeenCalledWith(
         'u_2',
-        expect.stringContaining('confirmed'),
-        expect.any(String),
+        expect.stringContaining('Pay Kouby'),
+        expect.stringContaining('5.00 CAD'),
         expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
       );
     });
@@ -1028,12 +1100,7 @@ describe('trajet module', () => {
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'cancelled' });
       // Sweep (no-op) + booking update + trajet seatsAvailable restock.
       expect(db.update).toHaveBeenCalledTimes(3);
-      expect(notifyUser).toHaveBeenCalledWith(
-        'u_1',
-        expect.stringContaining('cancelled'),
-        expect.any(String),
-        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
-      );
+      expect(notifyUser).not.toHaveBeenCalled();
     });
 
     it('cancels a confirmed booking and restocks the seats', async () => {
@@ -1098,14 +1165,14 @@ describe('trajet module', () => {
       const res = await trajetModule.request('/me/trajets');
       expect(res.status).toBe(200);
       const body = (await res.json()) as {
-        items: Array<{ driverId: string }>;
+        items: Array<{ driverId: string; pendingRequestCount: number }>;
         page: number;
         limit: number;
         hasMore: boolean;
       };
       expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
       expect(body.items).toHaveLength(1);
-      expect(body.items[0]).toMatchObject({ driverId: 'u_1' });
+      expect(body.items[0]).toMatchObject({ driverId: 'u_1', pendingRequestCount: 0 });
     });
 
     it('caps a page at `limit` items and reports hasMore', async () => {
@@ -1151,7 +1218,11 @@ describe('trajet module', () => {
           departureCity: 'Montreal',
           arrivalCity: 'Quebec',
           departureAt: now,
+          departurePlace: 'Gare Centrale',
+          arrivalPlace: 'Gare du Palais',
           pricePerSeat: '20',
+          driverName: 'Alex Driver',
+          reviewId: null,
         },
       ];
 
@@ -1166,7 +1237,14 @@ describe('trajet module', () => {
       expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
       expect(body.items).toHaveLength(1);
       expect(body.items[0]).toMatchObject({ id: BOOKING_ID });
-      expect(body.items[0]?.trajet).toMatchObject({ destinationCity: 'Quebec', pricePerSeat: 20 });
+      expect(body.items[0]?.trajet).toMatchObject({
+        destinationCity: 'Quebec',
+        pricePerSeat: 20,
+        departurePlace: 'Gare Centrale',
+        driverFirstName: 'Alex',
+        driverLastName: 'Driver',
+      });
+      expect(body.items[0]).toMatchObject({ reviewedByPassenger: false });
     });
 
     it('rejects a page below 1', async () => {

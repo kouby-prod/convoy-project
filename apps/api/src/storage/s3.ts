@@ -115,6 +115,32 @@ export async function deleteObject(storageKey: string): Promise<void> {
   await internalClient.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: storageKey }));
 }
 
+/** Server-side PUT used for generated invoice PDFs (not browser uploads). */
+export async function putObject(
+  storageKey: string,
+  body: Buffer,
+  contentType: string,
+): Promise<void> {
+  await internalClient.send(
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: storageKey,
+      Body: body,
+      ContentType: contentType,
+    }),
+  );
+}
+
+export async function getObjectBuffer(storageKey: string): Promise<Buffer | null> {
+  try {
+    const response = await internalClient.send(new GetObjectCommand({ Bucket: BUCKET, Key: storageKey }));
+    const bytes = await response.Body?.transformToByteArray();
+    return bytes ? Buffer.from(bytes) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Create the bucket if it is missing. Called once at boot so a fresh `docker
  * compose up` (empty MinIO volume) is immediately usable, with no manual step

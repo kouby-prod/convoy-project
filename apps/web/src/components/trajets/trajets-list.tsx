@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { createApiClient } from '@carpool/api-client';
 import { useRouter, Link } from '@/i18n/navigation';
 import { env } from '@/lib/env';
+import { formatCad, koubyFeeCents } from '@/lib/booking-money';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -99,6 +101,7 @@ function formatDateTime(value: string) {
 
 export function TrajetsList() {
   const t = useTranslations('Trajets');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState<Filters>(() => filtersFromSearchParams(searchParams));
@@ -277,8 +280,8 @@ export function TrajetsList() {
         </div>
       </form>
 
-      {isLoading ? <p className="text-muted-foreground">{t('loading')}</p> : null}
-      {isError ? <p className="text-destructive">{t('error')}</p> : null}
+      {isLoading ? <ListSkeleton label={t('loading')} /> : null}
+      {isError ? <p role="alert" className="text-destructive">{t('error')}</p> : null}
       {!isLoading && !isError && !data?.items.length ? (
         <p className="text-muted-foreground">{t('empty')}</p>
       ) : null}
@@ -327,6 +330,9 @@ export function TrajetsList() {
                         currency: 'CAD',
                         maximumFractionDigits: 2,
                       }).format(item.pricePerSeat)}
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        {t('plusKoubyFee', { amount: formatCad(koubyFeeCents(), locale) })}
+                      </span>
                     </div>
                     {item.description ? <div>{item.description}</div> : null}
                   </CardContent>
