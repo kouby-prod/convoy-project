@@ -6,6 +6,9 @@ import {
   MarkAllReadResponseSchema,
   NotificationPreferenceSchema,
   UpdateNotificationPreferenceSchema,
+  SubscribeWebPushSchema,
+  UnsubscribeWebPushSchema,
+  VapidPublicKeyResponseSchema,
 } from '@carpool/schemas';
 
 const bearerAuth = [{ Bearer: [] }];
@@ -127,6 +130,60 @@ export const putNotificationPreferenceRoute = createRoute({
       description: 'Saved preferences',
       content: { 'application/json': { schema: NotificationPreferenceSchema } },
     },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const vapidPublicKeyRoute = createRoute({
+  method: 'get',
+  path: '/notifications/push/vapid-public-key',
+  tags: ['notification'],
+  summary: 'Get the VAPID public key needed to create a browser push subscription',
+  security: bearerAuth,
+  responses: {
+    200: {
+      description: 'The public key, or null when push is not configured server-side',
+      content: { 'application/json': { schema: VapidPublicKeyResponseSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const subscribeWebPushRoute = createRoute({
+  method: 'post',
+  path: '/notifications/push/subscribe',
+  tags: ['notification'],
+  summary: "Register (or refresh) a browser push subscription for the authenticated user",
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: SubscribeWebPushSchema } } },
+  },
+  responses: {
+    204: { description: 'Subscribed' },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const unsubscribeWebPushRoute = createRoute({
+  method: 'post',
+  path: '/notifications/push/unsubscribe',
+  tags: ['notification'],
+  summary: "Remove a browser push subscription for the authenticated user",
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: UnsubscribeWebPushSchema } } },
+  },
+  responses: {
+    204: { description: 'Unsubscribed' },
     401: {
       description: 'Not authenticated',
       content: { 'application/json': { schema: errorSchema } },

@@ -1,9 +1,10 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { NotificationType } from '@carpool/schemas';
 import { db } from '../../db/client';
-import { notification, notificationPreference } from '../../db/notification';
+import { notification, notificationPreference, webPushSubscription } from '../../db/notification';
 import { user } from '../../db/auth-schema';
 import { sendEmail, type EmailAttachment } from '../../auth/email';
+import { sendWebPush } from '../notification/push';
 import { env } from '../../env';
 import { serializeNotification } from '../notification/serialize';
 import { publishNotificationCreated } from '../notification/events';
@@ -86,17 +87,20 @@ export type NotifyUserOptions = {
 
 /**
  * Looks up `userId`'s email, stores an in-app notification, publishes it for
- * live WebSocket fan-out, and sends a plain-text email. Channel switches in
- * `notification_preference` skip insert/WS and/or email (missing row = both
- * on). Storage/publish/email failures are all logged, not thrown — there's no
- * retry queue in this codebase, so a dead SMTP server (or Redis) must never
- * fail the booking action that triggered the notification.
+ * live WebSocket fan-out, sends a plain-text email, and pushes to every
+ * subscribed browser. Channel switches in `notification_preference` skip
+ * insert/WS, email and/or push independently (missing row = every channel
+ * on). Storage/publish/email/push failures are all logged, not thrown —
+ * there's no retry queue in this codebase, so a dead SMTP server, Redis, or
+ * push service must never fail the booking action that triggered the
+ * notification.
  *
  * `text` is the email body — it can be as detailed as it needs to be, since
  * the recipient reads it standalone outside the app. `inAppBody` is what's
- * stored/shown in the notification list, which already has its own "View"
- * link and relative timestamp, so it should stay short and skip the raw URL.
- * Defaults to `text` if omitted. Invoice PDFs go on `attachments`.
+ * stored/shown in the notification list (and pushed to browsers), which
+ * already has its own "View" link and relative timestamp, so it should stay
+ * short and skip the raw URL. Defaults to `text` if omitted. Invoice PDFs go
+ * on `attachments`.
  */
 export async function notifyUser(
   userId: string,
@@ -108,12 +112,14 @@ export async function notifyUser(
     .select({
       emailEnabled: notificationPreference.emailEnabled,
       inAppEnabled: notificationPreference.inAppEnabled,
+      pushEnabled: notificationPreference.pushEnabled,
     })
     .from(notificationPreference)
     .where(eq(notificationPreference.userId, userId));
   const emailEnabled = prefs?.emailEnabled ?? true;
   const inAppEnabled = prefs?.inAppEnabled ?? true;
-  if (!emailEnabled && !inAppEnabled) return;
+  const pushEnabled = prefs?.pushEnabled ?? true;
+  if (!emailEnabled && !inAppEnabled && !pushEnabled) return;
 
   const [recipient] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId));
   if (!recipient) return;
@@ -155,6 +161,33 @@ export async function notifyUser(
       });
     } catch (err) {
       console.error(`Failed to send "${subject}" notification to ${recipient.email}`, err);
+    }
+  }
+
+  if (pushEnabled) {
+    try {
+      const subscriptions = await db
+        .select({
+          endpoint: webPushSubscription.endpoint,
+          p256dh: webPushSubscription.p256dh,
+          auth: webPushSubscription.auth,
+        })
+        .from(webPushSubscription)
+        .where(eq(webPushSubscription.userId, userId));
+
+      if (subscriptions.length > 0) {
+        const { staleEndpoints } = await sendWebPush(
+          subscriptions.map((s) => ({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } })),
+          { title: subject, body: options.inAppBody ?? text, link: options.link ?? null },
+        );
+        if (staleEndpoints.length > 0) {
+          await db
+            .delete(webPushSubscription)
+            .where(inArray(webPushSubscription.endpoint, staleEndpoints));
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to push "${subject}" notification to ${recipient.email}`, err);
     }
   }
 }

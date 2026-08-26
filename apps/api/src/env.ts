@@ -85,6 +85,16 @@ const EnvSchema = z.object({
   SMS_GATEWAY_USER: z.string().optional(),
   SMS_GATEWAY_PASSWORD: z.string().optional(),
 
+  // --- Web Push (browser push notifications) ---
+  // A VAPID key pair identifies this server to push services (FCM, Mozilla
+  // Autopush, …). Generate one with `npx web-push generate-vapid-keys`. Both
+  // must be set for push to go out; otherwise the console stub is used (dev).
+  VAPID_PUBLIC_KEY: optionalString,
+  VAPID_PRIVATE_KEY: optionalString,
+  // Contact address push services may use to reach the site operator if a
+  // subscription is misbehaving — required by the Web Push protocol.
+  VAPID_SUBJECT: z.string().default('mailto:support@carpool.local'),
+
   // --- Object storage (MinIO, or any S3-compatible service) ---
   // Driver identity documents live here, never in Postgres. The API only ever
   // signs URLs; the browser transfers the bytes.

@@ -36,9 +36,14 @@ const db = vi.hoisted(() => ({
   ),
   insert: vi.fn(() => createChain(dbState.insertResult)),
   update: vi.fn(() => createChain(dbState.updateResult)),
+  delete: vi.fn(() => createChain(undefined)),
 }));
 
 vi.mock('../../src/db/client', () => ({ db }));
+
+// The real push module talks to `web-push` and reads VAPID env vars at
+// import time — mocked so this test controls the public key deterministically.
+vi.mock('../../src/modules/notification/push', () => ({ vapidPublicKey: 'test-vapid-public-key' }));
 
 // Mock BetterAuth so protected routes can be exercised without real sessions.
 const getSession = vi.fn();
@@ -86,6 +91,7 @@ describe('notification module', () => {
     db.select.mockClear();
     db.insert.mockClear();
     db.update.mockClear();
+    db.delete.mockClear();
     getSession.mockReset();
     dbState.selectResult = [];
     dbState.selectQueue = [];
@@ -227,22 +233,24 @@ describe('notification module', () => {
       expect(res.status).toBe(401);
     });
 
-    it('returns both channels on when the caller has no saved row', async () => {
+    it('returns every channel on when the caller has no saved row', async () => {
       getSession.mockResolvedValue(sessionFor('u_1'));
       dbState.selectResult = [];
 
       const res = await notificationModule.request('/notifications/preferences');
       expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ emailEnabled: true, inAppEnabled: true });
+      expect(await res.json()).toEqual({ emailEnabled: true, inAppEnabled: true, pushEnabled: true });
     });
 
     it('returns the saved channel switches', async () => {
       getSession.mockResolvedValue(sessionFor('u_1'));
-      dbState.selectResult = [{ userId: 'u_1', emailEnabled: false, inAppEnabled: true }];
+      dbState.selectResult = [
+        { userId: 'u_1', emailEnabled: false, inAppEnabled: true, pushEnabled: false },
+      ];
 
       const res = await notificationModule.request('/notifications/preferences');
       expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ emailEnabled: false, inAppEnabled: true });
+      expect(await res.json()).toEqual({ emailEnabled: false, inAppEnabled: true, pushEnabled: false });
     });
   });
 
@@ -252,22 +260,94 @@ describe('notification module', () => {
       const res = await notificationModule.request('/notifications/preferences', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailEnabled: false, inAppEnabled: true }),
+        body: JSON.stringify({ emailEnabled: false, inAppEnabled: true, pushEnabled: false }),
       });
       expect(res.status).toBe(401);
     });
 
     it('upserts and returns the saved switches', async () => {
       getSession.mockResolvedValue(sessionFor('u_1'));
-      dbState.insertResult = [{ userId: 'u_1', emailEnabled: false, inAppEnabled: true }];
+      dbState.insertResult = [
+        { userId: 'u_1', emailEnabled: false, inAppEnabled: true, pushEnabled: false },
+      ];
 
       const res = await notificationModule.request('/notifications/preferences', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailEnabled: false, inAppEnabled: true }),
+        body: JSON.stringify({ emailEnabled: false, inAppEnabled: true, pushEnabled: false }),
       });
       expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ emailEnabled: false, inAppEnabled: true });
+      expect(await res.json()).toEqual({ emailEnabled: false, inAppEnabled: true, pushEnabled: false });
+    });
+  });
+
+  describe('GET /notifications/push/vapid-public-key', () => {
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await notificationModule.request('/notifications/push/vapid-public-key');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns the configured public key', async () => {
+      getSession.mockResolvedValue(sessionFor('u_1'));
+      const res = await notificationModule.request('/notifications/push/vapid-public-key');
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ publicKey: 'test-vapid-public-key' });
+    });
+  });
+
+  describe('POST /notifications/push/subscribe', () => {
+    const body = {
+      endpoint: 'https://push.example/1',
+      keys: { p256dh: 'p1', auth: 'a1' },
+    };
+
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await notificationModule.request('/notifications/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('upserts the subscription for the caller', async () => {
+      getSession.mockResolvedValue(sessionFor('u_1'));
+
+      const res = await notificationModule.request('/notifications/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      expect(res.status).toBe(204);
+      expect(db.insert).toHaveBeenCalled();
+    });
+  });
+
+  describe('POST /notifications/push/unsubscribe', () => {
+    const body = { endpoint: 'https://push.example/1' };
+
+    it('returns 401 without a session', async () => {
+      getSession.mockResolvedValue(null);
+      const res = await notificationModule.request('/notifications/push/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('deletes the caller-owned subscription', async () => {
+      getSession.mockResolvedValue(sessionFor('u_1'));
+
+      const res = await notificationModule.request('/notifications/push/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      expect(res.status).toBe(204);
+      expect(db.delete).toHaveBeenCalled();
     });
   });
 });

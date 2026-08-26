@@ -38,10 +38,11 @@ export const MarkAllReadResponseSchema = z.object({
   updated: z.number().int().min(0),
 });
 
-/** Missing row means both channels on — same as a fresh account. */
+/** Missing row means every channel on — same as a fresh account. */
 export const NotificationPreferenceSchema = z.object({
   emailEnabled: z.boolean(),
   inAppEnabled: z.boolean(),
+  pushEnabled: z.boolean(),
 });
 export const UpdateNotificationPreferenceSchema = NotificationPreferenceSchema;
 export type NotificationPreference = z.infer<typeof NotificationPreferenceSchema>;
@@ -49,10 +50,36 @@ export type NotificationPreference = z.infer<typeof NotificationPreferenceSchema
 export const DEFAULT_NOTIFICATION_PREFERENCE: NotificationPreference = {
   emailEnabled: true,
   inAppEnabled: true,
+  pushEnabled: true,
 };
 
 export type Notification = z.infer<typeof NotificationSchema>;
 export type NotificationPage = z.infer<typeof NotificationPageSchema>;
+
+/**
+ * Browser Web Push subscription (RFC 8030 + `PushSubscription.toJSON()`
+ * shape) — what the client posts to register for push, and what the server
+ * hands `web-push` verbatim when sending.
+ */
+export const WebPushSubscriptionKeysSchema = z.object({
+  p256dh: z.string().min(1),
+  auth: z.string().min(1),
+});
+
+export const SubscribeWebPushSchema = z.object({
+  endpoint: z.url(),
+  keys: WebPushSubscriptionKeysSchema,
+});
+export type SubscribeWebPush = z.infer<typeof SubscribeWebPushSchema>;
+
+export const UnsubscribeWebPushSchema = z.object({
+  endpoint: z.url(),
+});
+
+/** `null` means the server has no VAPID key pair configured — push is off. */
+export const VapidPublicKeyResponseSchema = z.object({
+  publicKey: z.string().nullable(),
+});
 
 /**
  * Client → server frames on `GET /ws/notifications`. No subscribe step: a

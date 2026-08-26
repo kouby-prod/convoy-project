@@ -21,5 +21,6 @@ export function serializeNotificationPreference(
   return {
     emailEnabled: row.emailEnabled,
     inAppEnabled: row.inAppEnabled,
+    pushEnabled: row.pushEnabled,
   };
 }

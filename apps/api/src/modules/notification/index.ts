@@ -3,7 +3,8 @@ import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { DEFAULT_NOTIFICATION_PREFERENCE } from '@carpool/schemas';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { db } from '../../db/client';
-import { notification, notificationPreference } from '../../db/notification';
+import { notification, notificationPreference, webPushSubscription } from '../../db/notification';
+import { vapidPublicKey } from './push';
 import { serializeNotification, serializeNotificationPreference } from './serialize';
 import {
   listNotificationsRoute,
@@ -12,6 +13,9 @@ import {
   unreadNotificationCountRoute,
   getNotificationPreferenceRoute,
   putNotificationPreferenceRoute,
+  vapidPublicKeyRoute,
+  subscribeWebPushRoute,
+  unsubscribeWebPushRoute,
 } from './notification.routes';
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -20,6 +24,9 @@ app.use('/notifications/unread-count', requireAuth);
 app.use('/notifications/read-all', requireAuth);
 app.use('/notifications/:id/read', requireAuth);
 app.use('/notifications/preferences', requireAuth);
+app.use('/notifications/push/vapid-public-key', requireAuth);
+app.use('/notifications/push/subscribe', requireAuth);
+app.use('/notifications/push/unsubscribe', requireAuth);
 
 async function unreadCountFor(userId: string): Promise<number> {
   const [row] = await db
@@ -99,4 +106,29 @@ export const notificationModule = app
       .returning();
     if (!row) throw new Error('Upsert returned no row');
     return c.json(serializeNotificationPreference(row), 200);
+  })
+  .openapi(vapidPublicKeyRoute, async (c) => {
+    return c.json({ publicKey: vapidPublicKey }, 200);
+  })
+  .openapi(subscribeWebPushRoute, async (c) => {
+    const { user } = getAuth(c);
+    const { endpoint, keys } = c.req.valid('json');
+    await db
+      .insert(webPushSubscription)
+      .values({ userId: user.id, endpoint, p256dh: keys.p256dh, auth: keys.auth })
+      .onConflictDoUpdate({
+        target: webPushSubscription.endpoint,
+        set: { userId: user.id, p256dh: keys.p256dh, auth: keys.auth },
+      });
+    return c.body(null, 204);
+  })
+  .openapi(unsubscribeWebPushRoute, async (c) => {
+    const { user } = getAuth(c);
+    const { endpoint } = c.req.valid('json');
+    await db
+      .delete(webPushSubscription)
+      .where(
+        and(eq(webPushSubscription.endpoint, endpoint), eq(webPushSubscription.userId, user.id)),
+      );
+    return c.body(null, 204);
   });

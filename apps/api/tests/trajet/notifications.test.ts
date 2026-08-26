@@ -17,10 +17,21 @@ vi.mock('../../src/modules/notification/events', () => ({
   publishNotificationCreated: (...args: unknown[]) => publishNotificationCreated(...args),
 }));
 
+const sendWebPush = vi.hoisted(() => vi.fn());
+vi.mock('../../src/modules/notification/push', () => ({
+  sendWebPush: (...args: unknown[]) => sendWebPush(...args),
+}));
+
 const dbState = vi.hoisted(() => ({
   selectResult: [] as unknown[],
+  // Queue for tests that need to control each of `notifyUser`'s three selects
+  // (prefs, recipient email, push subscriptions) independently — each call
+  // shifts one entry. Falls back to `selectResult` for every call when empty,
+  // which is enough for tests that only care about email/insert side effects.
+  selectQueue: [] as unknown[][],
   insertResult: [] as unknown[],
   insertValues: [] as unknown[],
+  deleteWhereCalls: [] as unknown[],
 }));
 
 function createChain(result: unknown) {
@@ -35,10 +46,17 @@ function createChain(result: unknown) {
 const db = vi.hoisted(() => ({
   select: vi.fn(() => ({
     from: () => ({
-      where: () => Promise.resolve(dbState.selectResult),
+      where: () =>
+        Promise.resolve(dbState.selectQueue.length ? dbState.selectQueue.shift() : dbState.selectResult),
     }),
   })),
   insert: vi.fn(() => createChain(dbState.insertResult)),
+  delete: vi.fn(() => ({
+    where: (clause: unknown) => {
+      dbState.deleteWhereCalls.push(clause);
+      return Promise.resolve(undefined);
+    },
+  })),
 }));
 vi.mock('../../src/db/client', () => ({ db }));
 
@@ -59,11 +77,16 @@ describe('notifyUser', () => {
     sendEmail.mockReset();
     publishNotificationCreated.mockReset();
     publishNotificationCreated.mockResolvedValue(undefined);
+    sendWebPush.mockReset();
+    sendWebPush.mockResolvedValue({ staleEndpoints: [] });
     db.select.mockClear();
     db.insert.mockClear();
+    db.delete.mockClear();
     dbState.selectResult = [];
+    dbState.selectQueue = [];
     dbState.insertResult = [];
     dbState.insertValues = [];
+    dbState.deleteWhereCalls = [];
   });
 
   it('sends an email to the looked-up user', async () => {
@@ -186,6 +209,99 @@ describe('notifyUser', () => {
 
     expect(consoleError).toHaveBeenCalled();
     consoleError.mockRestore();
+  });
+
+  it('pushes to every subscribed browser, keyed by endpoint', async () => {
+    dbState.selectQueue = [
+      [{ emailEnabled: true, inAppEnabled: true, pushEnabled: true }],
+      [{ email: 'driver@example.com' }],
+      [
+        { endpoint: 'https://push.example/1', p256dh: 'p1', auth: 'a1' },
+        { endpoint: 'https://push.example/2', p256dh: 'p2', auth: 'a2' },
+      ],
+    ];
+    dbState.insertResult = [{ id: 'notif-1' }];
+
+    await notifyUser('u_1', 'Subject', 'Full body', {
+      type: 'booking_request',
+      inAppBody: 'Short body',
+      link: 'https://example.test/trajet/abc',
+    });
+
+    expect(sendWebPush).toHaveBeenCalledWith(
+      [
+        { endpoint: 'https://push.example/1', keys: { p256dh: 'p1', auth: 'a1' } },
+        { endpoint: 'https://push.example/2', keys: { p256dh: 'p2', auth: 'a2' } },
+      ],
+      { title: 'Subject', body: 'Short body', link: 'https://example.test/trajet/abc' },
+    );
+  });
+
+  it('skips push entirely when pushEnabled is false, without querying subscriptions', async () => {
+    dbState.selectQueue = [
+      [{ emailEnabled: true, inAppEnabled: true, pushEnabled: false }],
+      [{ email: 'driver@example.com' }],
+    ];
+    dbState.insertResult = [{ id: 'notif-1' }];
+
+    await notifyUser('u_1', 'Subject', 'Body', { type: 'system' });
+
+    expect(sendWebPush).not.toHaveBeenCalled();
+    expect(db.select).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not call the push service when the user has no subscriptions', async () => {
+    dbState.selectQueue = [
+      [{ emailEnabled: true, inAppEnabled: true, pushEnabled: true }],
+      [{ email: 'driver@example.com' }],
+      [],
+    ];
+    dbState.insertResult = [{ id: 'notif-1' }];
+
+    await notifyUser('u_1', 'Subject', 'Body', { type: 'system' });
+
+    expect(sendWebPush).not.toHaveBeenCalled();
+  });
+
+  it('deletes subscriptions the push service reports as gone', async () => {
+    dbState.selectQueue = [
+      [{ emailEnabled: true, inAppEnabled: true, pushEnabled: true }],
+      [{ email: 'driver@example.com' }],
+      [{ endpoint: 'https://push.example/dead', p256dh: 'p1', auth: 'a1' }],
+    ];
+    dbState.insertResult = [{ id: 'notif-1' }];
+    sendWebPush.mockResolvedValue({ staleEndpoints: ['https://push.example/dead'] });
+
+    await notifyUser('u_1', 'Subject', 'Body', { type: 'system' });
+
+    expect(db.delete).toHaveBeenCalled();
+  });
+
+  it('logs and swallows an error from sendWebPush instead of throwing', async () => {
+    dbState.selectQueue = [
+      [{ emailEnabled: true, inAppEnabled: true, pushEnabled: true }],
+      [{ email: 'driver@example.com' }],
+      [{ endpoint: 'https://push.example/1', p256dh: 'p1', auth: 'a1' }],
+    ];
+    dbState.insertResult = [{ id: 'notif-1' }];
+    sendWebPush.mockRejectedValue(new Error('push service down'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await expect(notifyUser('u_1', 'Subject', 'Body', { type: 'system' })).resolves.toBeUndefined();
+
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it('does nothing on any channel when every preference is off', async () => {
+    dbState.selectQueue = [[{ emailEnabled: false, inAppEnabled: false, pushEnabled: false }]];
+
+    await notifyUser('u_1', 'Subject', 'Body', { type: 'system' });
+
+    expect(db.select).toHaveBeenCalledTimes(1);
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect(sendWebPush).not.toHaveBeenCalled();
+    expect(db.insert).not.toHaveBeenCalled();
   });
 });
 
