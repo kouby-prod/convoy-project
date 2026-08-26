@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { db } from '../../db/client';
 import { invoice, payment } from '../../db/payment';
-import { notifyUser, paymentUrl, describeTrip, trajetUrl } from '../trajet/notifications';
+import { notifyUser, paymentUrl, describeTrip, describeTripShort, trajetUrl } from '../trajet/notifications';
 import { booking, trajet } from '../../db/trajet-schema';
 import { payLines, postLedger } from './ledger';
 import { createHeldDriverPayout } from './payout';
@@ -193,11 +193,12 @@ async function notifyBookingPaid(invoiceId: string): Promise<void> {
       [bookingRow.firstName, bookingRow.lastName].filter(Boolean).join(' ').trim() || 'A passenger';
     await notifyUser(
       trip.driverId,
-      'Passenger paid — booking confirmed',
-      `${passengerName} paid the Kouby invoice for ${tripText}. The seat is confirmed: ${trajetUrl(trip.id)}`,
+      'A passenger booked a seat on your Kouby trip',
+      `${passengerName} booked a reservation for ${tripText}. ${trajetUrl(trip.id)}`,
       {
         type: 'booking_status',
         link: trajetUrl(trip.id),
+        inAppBody: `${passengerName} booked ${bookingRow.seats} seat(s) on your trip ${describeTripShort(trip)}.`,
       },
     );
   }

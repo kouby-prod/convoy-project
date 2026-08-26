@@ -756,11 +756,11 @@ describe('trajet module', () => {
       expect.any(String),
       expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
     );
-    expect(notifyUser).toHaveBeenCalledWith(
+    expect(notifyUser).not.toHaveBeenCalledWith(
       'someone-else',
-      expect.stringContaining('New booking'),
-      expect.any(String),
-      expect.objectContaining({ type: 'booking_request', link: expect.any(String) }),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
     );
   });
 
@@ -816,7 +816,7 @@ describe('trajet module', () => {
       expect.any(String),
       expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
     );
-    expect(notifyUser).toHaveBeenCalledWith(
+    expect(notifyUser).not.toHaveBeenCalledWith(
       'someone-else',
       expect.stringContaining('New booking'),
       expect.any(String),
@@ -862,11 +862,11 @@ describe('trajet module', () => {
       expect(res.status).toBe(403);
     });
 
-    it('returns a page of bookings for the trajet when the caller is the driver', async () => {
+    it('returns confirmed bookings for the trajet when the caller is the driver', async () => {
       getSession.mockResolvedValue(sessionFor('user'));
       dbState.selectQueue = [
         [makeTrajetRow({ driverId: 'u_1' })],
-        [makeBookingRow({ status: 'pending' }), makeBookingRow({ id: 'b_2', status: 'confirmed' })],
+        [makeBookingRow({ id: 'b_2', status: 'confirmed' })],
       ];
 
       const res = await trajetModule.request(url);
@@ -878,16 +878,8 @@ describe('trajet module', () => {
         hasMore: boolean;
       };
       expect(body).toMatchObject({ page: 1, limit: 20, hasMore: false });
-      expect(body.items).toHaveLength(2);
-      expect(body.items[0]).toMatchObject({
-        id: BOOKING_ID,
-        status: 'pending',
-        invoiceDueAt: null,
-        invoiceTotalCents: null,
-        paymentStatus: null,
-        payout: null,
-      });
-      expect(body.items[1]).toMatchObject({ id: 'b_2', status: 'confirmed' });
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0]).toMatchObject({ id: 'b_2', status: 'confirmed' });
     });
 
     it('rejects an out-of-range limit', async () => {
@@ -1108,12 +1100,7 @@ describe('trajet module', () => {
       expect(body).toMatchObject({ id: BOOKING_ID, status: 'cancelled' });
       // Sweep (no-op) + booking update + trajet seatsAvailable restock.
       expect(db.update).toHaveBeenCalledTimes(3);
-      expect(notifyUser).toHaveBeenCalledWith(
-        'u_1',
-        expect.stringContaining('cancelled'),
-        expect.any(String),
-        expect.objectContaining({ type: 'booking_status', link: expect.any(String) }),
-      );
+      expect(notifyUser).not.toHaveBeenCalled();
     });
 
     it('cancels a confirmed booking and restocks the seats', async () => {

@@ -196,7 +196,7 @@ export const listTrajetBookingsRoute = createRoute({
   },
   responses: {
     200: {
-      description: 'A page of bookings',
+      description: 'Confirmed bookings on this ride. Unpaid seat holds are not returned.',
       content: { 'application/json': { schema: DriverBookingPageSchema } },
     },
     401: {
@@ -290,7 +290,7 @@ export const myTrajetsRoute = createRoute({
   request: { query: PaginationQuerySchema },
   responses: {
     200: {
-      description: 'A page of trajets with pending/awaiting-payment counts',
+      description: "A page of the driver's published trajets",
       content: { 'application/json': { schema: OwnedTrajetPageSchema } },
     },
     401: {

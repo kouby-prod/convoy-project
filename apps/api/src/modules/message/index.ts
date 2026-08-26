@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { asc, desc, eq, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { randomUUID } from 'crypto';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
@@ -38,6 +38,7 @@ type BookingAccess =
       ok: true;
       passengerId: string;
       driverId: string;
+      status: string;
       trajetId: string;
       trip: { departureCity: string; arrivalCity: string; departureAt: Date };
     }
@@ -46,9 +47,9 @@ type BookingAccess =
 /**
  * Same booking → trajet → role-check shape as the review module: a booking
  * only names its passenger directly, so the trajet's driver has to be looked
- * up via `booking.trajetId` before the caller's role can be decided. Messaging
- * doesn't gate on booking status (unlike reviews) — either party may reach
- * out about a pending, confirmed, or even rejected/cancelled request.
+ * up via `booking.trajetId` before the caller's role can be decided. Drivers
+ * only see a thread after Kouby has confirmed the reservation; passengers
+ * can write as soon as they hold a seat.
  */
 async function resolveBookingAccess(bookingId: string, userId: string): Promise<BookingAccess> {
   const [bookingRow] = await db.select().from(booking).where(eq(booking.id, bookingId));
@@ -60,11 +61,15 @@ async function resolveBookingAccess(bookingId: string, userId: string): Promise<
   if (userId !== bookingRow.passengerId && userId !== trajetRow.driverId) {
     return { ok: false, status: 403, error: 'Neither the passenger nor the driver of this booking' };
   }
+  if (userId === trajetRow.driverId && userId !== bookingRow.passengerId && bookingRow.status !== 'confirmed') {
+    return { ok: false, status: 404, error: 'Booking not found' };
+  }
 
   return {
     ok: true,
     passengerId: bookingRow.passengerId,
     driverId: trajetRow.driverId,
+    status: bookingRow.status,
     trajetId: trajetRow.id,
     trip: {
       departureCity: trajetRow.departureCity,
@@ -119,7 +124,12 @@ export const messageModule = app
       .innerJoin(passenger, eq(booking.passengerId, passenger.id))
       .innerJoin(driver, eq(trajet.driverId, driver.id))
       .leftJoin(lastMessage, eq(lastMessage.bookingId, booking.id))
-      .where(or(eq(booking.passengerId, me.id), eq(trajet.driverId, me.id)))
+      .where(
+        or(
+          eq(booking.passengerId, me.id),
+          and(eq(trajet.driverId, me.id), eq(booking.status, 'confirmed')),
+        ),
+      )
       .orderBy(sql`coalesce(${lastMessage.createdAt}, ${booking.createdAt}) desc`)
       .limit(limit + 1)
       .offset((page - 1) * limit);
@@ -201,22 +211,26 @@ export const messageModule = app
 
     const serialized = serialize(created);
     const recipientId = user.id === access.passengerId ? access.driverId : access.passengerId;
+    const notifyDriverEarly = recipientId === access.driverId && access.status !== 'confirmed';
 
     // Persist first, then enqueue best-effort. A Redis blip must not turn a
     // successful insert into a non-201 (clients would retry and duplicate).
-    try {
-      await enqueueMessageNotify({
-        message: serialized,
-        recipientId,
-        trajetId: access.trajetId,
-        trip: {
-          departureCity: access.trip.departureCity,
-          arrivalCity: access.trip.arrivalCity,
-          departureAt: access.trip.departureAt.toISOString(),
-        },
-      });
-    } catch (err) {
-      console.error('[message] failed to enqueue notify job', err);
+    // Drivers are not told about a thread until Kouby has confirmed the seat.
+    if (!notifyDriverEarly) {
+      try {
+        await enqueueMessageNotify({
+          message: serialized,
+          recipientId,
+          trajetId: access.trajetId,
+          trip: {
+            departureCity: access.trip.departureCity,
+            arrivalCity: access.trip.arrivalCity,
+            departureAt: access.trip.departureAt.toISOString(),
+          },
+        });
+      } catch (err) {
+        console.error('[message] failed to enqueue notify job', err);
+      }
     }
 
     return c.json(serialized, 201);

@@ -822,9 +822,9 @@
     },
     "bookings": {
       "title": "Bookings",
-      "subtitle": "Passengers reserve instantly. They pay Kouby to confirm the seat.",
+      "subtitle": "Passengers reserve instantly. You'll see a booking once Kouby has confirmed it.",
       "queueLabel": "Bookings",
-      "selectPrompt": "Choose a booking to follow payment or message the passenger.",
+      "selectPrompt": "Choose a booking to message the passenger.",
       "backToQueue": "All bookings",
       "loading": "Loading bookings...",
       "empty": "No bookings for this ride yet.",
@@ -950,13 +950,13 @@
   },
   "MesTrajets": {
     "title": "My rides",
-    "subtitle": "See who still needs a decision, how full each ride is, and what has already left.",
+    "subtitle": "See how full each ride is, and what has already left.",
     "post": "Offer a ride",
     "loading": "Loading…",
     "loadingMore": "Loading…",
     "loadMore": "Load more",
     "empty": "No rides published.",
-    "emptyHint": "Post a trip to start receiving booking requests.",
+    "emptyHint": "Post a trip to start receiving reservations.",
     "emptyCta": "Offer a ride",
     "emptyFilter": {
       "upcoming": "No upcoming rides.",

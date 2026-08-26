@@ -23,6 +23,9 @@ async function resolvePartyAccess(
   if (userId !== bookingRow.passengerId && userId !== trajetRow.driverId) {
     return { ok: false, error: 'Neither the passenger nor the driver of this booking' };
   }
+  if (userId === trajetRow.driverId && userId !== bookingRow.passengerId && bookingRow.status !== 'confirmed') {
+    return { ok: false, error: 'Booking not found' };
+  }
   return { ok: true };
 }
 

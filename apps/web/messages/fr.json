@@ -822,9 +822,9 @@
     },
     "bookings": {
       "title": "Réservations",
-      "subtitle": "Les passagers réservent directement. Ils paient Kouby pour confirmer la place.",
+      "subtitle": "Les passagers réservent. Vous voyez la réservation une fois qu'elle est confirmée.",
       "queueLabel": "Réservations",
-      "selectPrompt": "Choisissez une réservation pour suivre le paiement ou écrire au passager.",
+      "selectPrompt": "Choisissez une réservation pour écrire au passager.",
       "backToQueue": "Toutes les réservations",
       "loading": "Chargement des réservations...",
       "empty": "Aucune réservation pour ce trajet.",
@@ -950,13 +950,13 @@
   },
   "MesTrajets": {
     "title": "Mes trajets",
-    "subtitle": "Voyez qui attend une décision, combien de places restent, et ce qui est déjà parti.",
+    "subtitle": "Voyez combien de places restent, et ce qui est déjà parti.",
     "post": "Annoncer un trajet",
     "loading": "Chargement…",
     "loadingMore": "Chargement…",
     "loadMore": "Afficher plus",
     "empty": "Aucun trajet publié.",
-    "emptyHint": "Publiez un trajet pour recevoir des demandes de réservation.",
+    "emptyHint": "Publiez un trajet pour recevoir des réservations.",
     "emptyCta": "Annoncer un trajet",
     "emptyFilter": {
       "upcoming": "Aucun trajet à venir.",

@@ -253,8 +253,9 @@ export function paginatedSchema<Item extends z.ZodTypeAny>(itemSchema: Item) {
 export const TrajetPageSchema = paginatedSchema(TrajetSchema).describe('TrajetPage');
 
 /**
- * A driver's own ride on `GET /me/trajets`. Same as `Trajet`, plus how many
- * bookings still need a look (legacy accept/reject, or the passenger paying).
+ * A driver's own ride on `GET /me/trajets`. Same as `Trajet`. Count fields
+ * stay on the contract at zero — drivers are not shown unpaid holds or
+ * leftover accept/reject queues.
  */
 export const OwnedTrajetSchema = TrajetSchema.extend({
   pendingRequestCount: z.number().int().nonnegative(),

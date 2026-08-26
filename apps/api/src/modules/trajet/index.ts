@@ -310,29 +310,6 @@ function splitPersonName(name: string | null | undefined): { firstName: string; 
   return { firstName: firstName ?? '', lastName: rest.join(' ') };
 }
 
-/** Pending accept/reject + unpaid holds for a page of the driver's rides. */
-async function bookingActionCounts(trajetIds: string[]) {
-  const counts = new Map<string, { pending: number; awaitingPayment: number }>();
-  if (!trajetIds.length) return counts;
-  const rows = await db
-    .select({
-      trajetId: booking.trajetId,
-      status: booking.status,
-      n: count(),
-    })
-    .from(booking)
-    .where(and(inArray(booking.trajetId, trajetIds), inArray(booking.status, ['pending', 'awaiting_payment'])))
-    .groupBy(booking.trajetId, booking.status);
-  for (const row of rows) {
-    if (!row.trajetId) continue;
-    const current = counts.get(row.trajetId) ?? { pending: 0, awaitingPayment: 0 };
-    if (row.status === 'pending') current.pending = Number(row.n) || 0;
-    if (row.status === 'awaiting_payment') current.awaitingPayment = Number(row.n) || 0;
-    counts.set(row.trajetId, current);
-  }
-  return counts;
-}
-
 // Reads are public; creating requires authentication. Adjust to your auth rules
 // (e.g. add `requireRole('admin')` from ../../auth for admin-only mutations).
 app.use('/trajets', async (c, next) =>
@@ -750,17 +727,6 @@ export const trajetModule = app
       issued: result.issuedInvoice,
       intro: `Your seat is reserved for the trip from ${describeTrip(result)}.`,
     });
-    await notifyUser(
-      result.driverId,
-      'New booking on your Kouby trip',
-      `A passenger reserved ${seats} seat(s) on your trip from ${describeTrip(result)}. ` +
-        `They pay Kouby to confirm the seat: ${trajetUrl(id)}`,
-      {
-        type: 'booking_request',
-        link: trajetUrl(id),
-        inAppBody: `A passenger reserved ${seats} seat(s) on your trip ${describeTripShort(result)}.`,
-      },
-    );
     return c.json(serializeBooking(result.booking), 201);
   })
   .openapi(listTrajetBookingsRoute, async (c) => {
@@ -811,7 +777,7 @@ export const trajetModule = app
       .from(booking)
       .leftJoin(invoice, eq(invoice.bookingId, booking.id))
       .leftJoin(driverPayout, eq(driverPayout.bookingId, booking.id))
-      .where(eq(booking.trajetId, id))
+      .where(and(eq(booking.trajetId, id), eq(booking.status, 'confirmed')))
       .limit(limit + 1)
       .offset((page - 1) * limit);
 
@@ -971,6 +937,7 @@ export const trajetModule = app
         departureAt: trajetRow.departureAt,
         openAttempts,
         refundFare,
+        wasConfirmed: bookingRow.status === 'confirmed',
       };
     });
 
@@ -993,16 +960,18 @@ export const trajetModule = app
         });
       });
     }
-    await notifyUser(
-      result.driverId,
-      'A passenger cancelled their Carpool booking',
-      `A passenger cancelled their booking of ${result.seats} seat(s) on your trip from ${describeTrip(result)}. The seat(s) are available again.`,
-      {
-        type: 'booking_status',
-        link: trajetUrl(id),
-        inAppBody: `A passenger cancelled their booking of ${result.seats} seat(s) on your trip ${describeTripShort(result)}. The seat(s) are available again.`,
-      },
-    );
+    if (result.wasConfirmed) {
+      await notifyUser(
+        result.driverId,
+        'A passenger cancelled their Carpool booking',
+        `A passenger cancelled their booking of ${result.seats} seat(s) on your trip from ${describeTrip(result)}. The seat(s) are available again.`,
+        {
+          type: 'booking_status',
+          link: trajetUrl(id),
+          inAppBody: `A passenger cancelled their booking of ${result.seats} seat(s) on your trip ${describeTripShort(result)}. The seat(s) are available again.`,
+        },
+      );
+    }
     return c.json(serializeBooking(result.booking), 200);
   })
   .openapi(myTrajetsRoute, async (c) => {
@@ -1018,17 +987,13 @@ export const trajetModule = app
 
     const { items, hasMore } = paginate(rows, limit);
     const driver = await getDriverProfile(user.id);
-    const counts = await bookingActionCounts(items.map((row) => row.id));
     return c.json(
       {
-        items: items.map((row) => {
-          const action = counts.get(row.id);
-          return {
-            ...serialize(row, driver),
-            pendingRequestCount: action?.pending ?? 0,
-            awaitingPaymentCount: action?.awaitingPayment ?? 0,
-          } satisfies OwnedTrajet;
-        }),
+        items: items.map((row) => ({
+          ...serialize(row, driver),
+          pendingRequestCount: 0,
+          awaitingPaymentCount: 0,
+        })) satisfies OwnedTrajet[],
         page,
         limit,
         hasMore,

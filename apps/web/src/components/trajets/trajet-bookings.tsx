@@ -3,15 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
-import { ArrowLeft, AlertCircle, Banknote, CheckCircle2, Clock } from 'lucide-react';
+import { ArrowLeft, Banknote, CheckCircle2 } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
 import type { DriverBooking } from '@carpool/schemas';
 import { env } from '@/lib/env';
 import {
   formatCad,
-  isPastDue,
   payableCents,
-  remainingDueLabel,
 } from '@/lib/booking-money';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -373,11 +371,6 @@ function QueueRow({
   const displayName =
     [booking.firstName, booking.lastName].filter(Boolean).join(' ') || t('bookings.passenger');
   const amount = formatCad(queueAmountCents(booking), locale);
-  const remaining =
-    booking.status === 'awaiting_payment' && booking.invoiceDueAt && !isPastDue(booking.invoiceDueAt)
-      ? remainingDueLabel(booking.invoiceDueAt)
-      : null;
-  const overdue = booking.status === 'awaiting_payment' && isPastDue(booking.invoiceDueAt);
 
   return (
     <button
@@ -405,22 +398,6 @@ function QueueRow({
           {t('bookings.seatsCount', { count: booking.seats })}
           {' · '}
           {amount}
-          {booking.paymentStatus === 'failed' ? (
-            <>
-              {' · '}
-              <span className="text-destructive">{t('bookings.declinedShort')}</span>
-            </>
-          ) : remaining ? (
-            <>
-              {' · '}
-              {remaining}
-            </>
-          ) : overdue ? (
-            <>
-              {' · '}
-              <span className="text-destructive">{t('bookings.overdueShort')}</span>
-            </>
-          ) : null}
         </span>
       </span>
       {unread ? <UnreadBadge count={1} /> : null}
@@ -469,8 +446,6 @@ function DriverBookingCard({
   const driverGets = formatCad(booking.fareCents, locale);
   const methodLabel = tRide(`paymentMethods.${booking.paymentMethod}`);
   const offPlatform = booking.paymentMethod !== 'card';
-  const payWindowExpired =
-    booking.status === 'awaiting_payment' && isPastDue(booking.invoiceDueAt);
   const displayName =
     [booking.firstName, booking.lastName].filter(Boolean).join(' ') || t('bookings.passenger');
 
@@ -545,29 +520,14 @@ function DriverBookingCard({
       ) : null}
 
       {booking.status === 'awaiting_payment' ? (
-        <>
-          <SettlementStrip passengerPays={passengerPays} youReceive={driverGets} />
-          {booking.paymentStatus === 'failed' ? (
-            <StatusCallout tone="danger" icon={AlertCircle} copy={t('bookings.paymentFailed')} />
-          ) : null}
-          {booking.paymentStatus === 'processing' ? (
-            <StatusCallout tone="held" icon={Clock} copy={t('bookings.paymentProcessing')} />
-          ) : null}
-          {booking.invoiceDueAt ? (
-            <PayWindow dueAt={booking.invoiceDueAt} expired={payWindowExpired} />
-          ) : null}
-        </>
+        <SettlementStrip passengerPays={passengerPays} youReceive={driverGets} />
       ) : null}
 
       {booking.status === 'confirmed' ? <ConfirmedSettlement booking={booking} locale={locale} /> : null}
 
       <BookingMessages
         bookingId={booking.id}
-        pickupHints={
-          booking.status === 'pending' ||
-          booking.status === 'awaiting_payment' ||
-          booking.status === 'confirmed'
-        }
+        pickupHints={booking.status === 'confirmed'}
       />
 
       {booking.status === 'confirmed' && hasDeparted ? (
@@ -714,36 +674,6 @@ function StatusCallout({
           {copy}
         </p>
       </div>
-    </div>
-  );
-}
-
-function PayWindow({ dueAt, expired }: { dueAt: string; expired: boolean }) {
-  const t = useTranslations('Trajets');
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (expired) return;
-    const id = window.setInterval(() => setNow(Date.now()), 1_000);
-    return () => window.clearInterval(id);
-  }, [expired]);
-
-  if (expired || isPastDue(dueAt)) {
-    return (
-      <StatusCallout tone="danger" icon={Clock} copy={t('bookings.payWindowOverdue')} />
-    );
-  }
-  const remaining = remainingDueLabel(dueAt, now);
-  if (!remaining) return null;
-  return (
-    <div className="grid gap-1 rounded-lg bg-primary/10 px-3 py-3 ring-1 ring-primary/20">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {t('bookings.payWindowLabel')}
-      </p>
-      <p className="font-display text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-        {remaining}
-      </p>
-      <p className="text-sm text-foreground">{t('bookings.payWindow', { remaining })}</p>
     </div>
   );
 }

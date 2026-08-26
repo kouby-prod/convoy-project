@@ -28,16 +28,12 @@ const GROUP_HEADING =
 type RideFilter = 'upcoming' | 'past' | 'cancelled';
 const TABS_ID = 'mes-trajets';
 
-function needsWork(item: OwnedTrajet) {
-  return !item.cancelledAt && (item.pendingRequestCount > 0 || item.awaitingPaymentCount > 0);
-}
-
 function isUpcoming(item: OwnedTrajet, now: number) {
-  return !item.cancelledAt && !needsWork(item) && new Date(item.departureDateTime).getTime() >= now;
+  return !item.cancelledAt && new Date(item.departureDateTime).getTime() >= now;
 }
 
 function isPast(item: OwnedTrajet, now: number) {
-  return !item.cancelledAt && !needsWork(item) && new Date(item.departureDateTime).getTime() < now;
+  return !item.cancelledAt && new Date(item.departureDateTime).getTime() < now;
 }
 
 function byDepartureAsc(a: OwnedTrajet, b: OwnedTrajet) {
@@ -48,13 +44,10 @@ function byDepartureDesc(a: OwnedTrajet, b: OwnedTrajet) {
   return new Date(b.departureDateTime).getTime() - new Date(a.departureDateTime).getTime();
 }
 
-function workRank(item: OwnedTrajet) {
-  return item.pendingRequestCount > 0 ? 0 : 1;
-}
-
 /**
- * Driver's published rides (`GET /me/trajets`) — work first, then itinerary
- * rows grouped by day. Upcoming / Past / Cancelled.
+ * Driver's published rides (`GET /me/trajets`) — itinerary rows grouped by
+ * day. Upcoming / Past / Cancelled. Reservations appear on the ride page
+ * only after Kouby has confirmed them.
  */
 export function MesTrajetsList() {
   const t = useTranslations('MesTrajets');
@@ -106,16 +99,13 @@ export function MesTrajetsList() {
     [query.data],
   );
   const now = Date.now();
-  const action = items
-    .filter(needsWork)
-    .sort((a, b) => workRank(a) - workRank(b) || byDepartureAsc(a, b));
   const upcoming = items.filter((item) => isUpcoming(item, now)).sort(byDepartureAsc);
   const past = items.filter((item) => isPast(item, now)).sort(byDepartureDesc);
   const cancelled = items.filter((item) => Boolean(item.cancelledAt)).sort(byDepartureDesc);
   const upcomingGrouped = groupByDateKey(upcoming, (item) => item.departureDateTime);
   const pastGrouped = groupByDateKey(past, (item) => item.departureDateTime);
   const cancelledGrouped = groupByDateKey(cancelled, (item) => item.departureDateTime);
-  const upcomingCount = action.length + upcoming.length;
+  const upcomingCount = upcoming.length;
 
   if (isSessionPending || !session?.user) {
     return <ListSkeleton label={t('loading')} />;
@@ -158,13 +148,6 @@ export function MesTrajetsList() {
         <EmptyState title={t('emptyFilter.cancelled')} />
       ) : filter === 'upcoming' ? (
         <>
-          {action.length > 0 ? (
-            <RideGroup heading={<h2 className={GROUP_HEADING}>{t('needsAction')}</h2>}>
-              {action.map((item) => (
-                <RideRow key={item.id} item={item} isPendingVerification={isPendingVerification} />
-              ))}
-            </RideGroup>
-          ) : null}
           {upcomingGrouped.map(([dayKey, rides]) => (
             <RideGroup
               key={dayKey}
@@ -240,12 +223,6 @@ function RideRow({
           {item.cancelledAt ? <Badge variant="destructive">{t('cancelledBadge')}</Badge> : null}
           {!item.cancelledAt && isPendingVerification ? (
             <Badge variant="warning">{t('pendingVerificationBadge')}</Badge>
-          ) : null}
-          {!item.cancelledAt && item.pendingRequestCount > 0 ? (
-            <Badge variant="warning">{t('pendingRequests', { count: item.pendingRequestCount })}</Badge>
-          ) : null}
-          {!item.cancelledAt && item.awaitingPaymentCount > 0 ? (
-            <Badge variant="primary">{t('awaitingPayment', { count: item.awaitingPaymentCount })}</Badge>
           ) : null}
         </>
       }

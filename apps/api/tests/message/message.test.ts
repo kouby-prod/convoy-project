@@ -204,6 +204,35 @@ describe('message module', () => {
       );
     });
 
+    it('does not notify the driver while the seat is still awaiting payment', async () => {
+      getSession.mockResolvedValue(sessionFor('passenger_1'));
+      dbState.selectQueue = [[makeBookingRow({ status: 'awaiting_payment' })], [makeTrajetRow()]];
+      dbState.insertResult = [makeMessageRow({ senderId: 'passenger_1', body: 'On my way' })];
+
+      const res = await messageModule.request(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: 'On my way' }),
+      });
+
+      expect(res.status).toBe(201);
+      expect(enqueueMessageNotify).not.toHaveBeenCalled();
+    });
+
+    it('hides an unpaid hold from the driver', async () => {
+      getSession.mockResolvedValue(sessionFor('driver_1'));
+      dbState.selectQueue = [[makeBookingRow({ status: 'awaiting_payment' })], [makeTrajetRow()]];
+
+      const res = await messageModule.request(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: "I'm outside" }),
+      });
+
+      expect(res.status).toBe(404);
+      expect(enqueueMessageNotify).not.toHaveBeenCalled();
+    });
+
     it('lets the driver message the passenger and enqueues notify for the passenger', async () => {
       getSession.mockResolvedValue(sessionFor('driver_1'));
       dbState.selectQueue = [[makeBookingRow()], [makeTrajetRow()]];
