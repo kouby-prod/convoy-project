@@ -112,15 +112,15 @@ export function PublishChecklistStep({ onPublish, onBack, publishing }: PublishC
         </p>
       ) : null}
 
-      <div className="flex flex-col-reverse items-center gap-3 sm:flex-row sm:justify-center">
-        <Button type="button" variant="outline" size="lg" onClick={onBack}>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
+        <Button type="button" variant="outline" size="lg" className="w-full sm:w-auto" onClick={onBack}>
           {t('create.step2.back')}
         </Button>
         <Button
           type="button"
           variant="primary"
           size="lg"
-          className="px-10"
+          className="w-full px-10 sm:w-auto"
           disabled={!canPublish || publishing}
           onClick={handlePublish}
         >

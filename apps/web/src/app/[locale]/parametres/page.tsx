@@ -1,6 +1,5 @@
-import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 import { ParametresForm } from '@/components/parametres/parametres-form';
-import { PageHeader } from '@/components/ui/page-header';
 
 export default async function ParametresPage({
   params,
@@ -9,11 +8,9 @@ export default async function ParametresPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations('Parametres');
 
   return (
-    <section className="mx-auto flex w-full max-w-2xl flex-col gap-8">
-      <PageHeader title={t('title')} subtitle={t('subtitle')} />
+    <section className="mx-auto w-full max-w-5xl">
       <ParametresForm />
     </section>
   );

@@ -511,8 +511,15 @@
   },
   "Parametres": {
     "title": "Paramètres du compte",
-    "subtitle": "Gérez votre profil, votre photo, la langue, les notifications et l'apparence.",
+    "subtitle": "Votre profil, vos préférences, vos paiements et votre compte.",
     "loading": "Chargement...",
+    "navLabel": "Sections des paramètres",
+    "sections": {
+      "account": "Compte",
+      "preferences": "Préférences",
+      "payments": "Paiements",
+      "danger": "Zone de danger"
+    },
     "profile": {
       "title": "Profil",
       "email": "Adresse e-mail",
@@ -548,7 +555,7 @@
     },
     "notifications": {
       "title": "Notifications",
-      "description": "Choisissez comment Kouby vous contacte. Les canaux décochés sont ignorés.",
+      "description": "Choisissez comment Convoy vous contacte. Les canaux décochés sont ignorés.",
       "email": "E-mail",
       "inApp": "Dans l'application",
       "loading": "Chargement des préférences de notification...",
@@ -566,7 +573,7 @@
     },
     "cards": {
       "title": "Cartes enregistrées",
-      "description": "Cartes enregistrées chez Stripe pour payer plus vite. Kouby ne stocke jamais le numéro.",
+      "description": "Cartes enregistrées chez Stripe pour payer plus vite. Convoy ne stocke jamais le numéro.",
       "loading": "Chargement des cartes…",
       "empty": "Aucune carte enregistrée.",
       "add": "Ajouter une carte",
@@ -1463,6 +1470,15 @@
       "cta": "Proposer un trajet",
       "title": "Proposer un trajet",
       "subtitle": "Remplissez ce formulaire pour publier vos places libres.",
+      "navLabel": "Sections du trajet",
+      "sections": {
+        "route": "Itinéraire",
+        "when": "Horaires",
+        "fare": "Places et prix",
+        "details": "Détails",
+        "vehicle": "Véhicule",
+        "publish": "Publication"
+      },
       "departure": "Départ",
       "departurePlace": "Lieu de départ",
       "arrival": "Arrivée",

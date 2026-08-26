@@ -219,7 +219,7 @@ export function VehicleForm({ embedded = false }: { embedded?: boolean }) {
             </p>
           ) : null}
 
-          <Button type="submit" variant="outline" disabled={mutation.isPending} className="self-start">
+          <Button type="submit" variant="outline" disabled={mutation.isPending} className="w-full sm:w-auto sm:self-start">
             <Check className="size-4" strokeWidth={2.5} aria-hidden />
             {mutation.isPending
               ? t('create.step3.vehicle.saving')
@@ -260,7 +260,7 @@ export function VehicleForm({ embedded = false }: { embedded?: boolean }) {
             type="button"
             variant="outline"
             size="sm"
-            className="self-start"
+            className="w-full sm:w-auto sm:self-start"
             disabled={!vehicleQuery.data || photoMutation.isPending}
             onClick={() => fileInputRef.current?.click()}
           >
@@ -284,9 +284,7 @@ export function VehicleForm({ embedded = false }: { embedded?: boolean }) {
   );
 
   if (embedded) {
-    return (
-      <section className="rounded-lg bg-muted/40 p-5 ring-1 ring-border">{body}</section>
-    );
+    return body;
   }
 
   return (

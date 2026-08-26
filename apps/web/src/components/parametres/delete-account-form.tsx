@@ -11,7 +11,7 @@ import {
   scheduleAccountDeletion,
 } from '@/lib/account-deletion';
 import { isApiError } from '@/lib/api-error';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormAlert } from '@/components/ui/form-alert';
@@ -78,13 +78,13 @@ export function DeleteAccountForm() {
   if (status?.scheduled && status.purgeAt) {
     const date = format.dateTime(new Date(status.purgeAt), { dateStyle: 'long' });
     return (
-      <Card>
+      <Card className="ring-destructive/25 dark:ring-destructive/30">
         <CardHeader>
-          <CardTitle>{t('pendingTitle')}</CardTitle>
+          <CardTitle className="text-destructive">{t('pendingTitle')}</CardTitle>
+          <CardDescription>{t('pendingDescription', { date })}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3">
-            <p className="text-sm text-muted-foreground">{t('pendingDescription', { date })}</p>
             {cancel.error ? <FormAlert>{t('cancelError')}</FormAlert> : null}
             <Button
               type="button"
@@ -102,9 +102,10 @@ export function DeleteAccountForm() {
   }
 
   return (
-    <Card>
+    <Card className="ring-destructive/25 dark:ring-destructive/30">
       <CardHeader>
-        <CardTitle>{t('title')}</CardTitle>
+        <CardTitle className="text-destructive">{t('title')}</CardTitle>
+        <CardDescription>{t('description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form
@@ -113,9 +114,8 @@ export function DeleteAccountForm() {
             if (!confirmed) return;
             schedule.mutate();
           }}
-          className="grid gap-3"
+          className="grid max-w-md gap-3"
         >
-          <p className="text-sm text-muted-foreground">{t('description')}</p>
           {(status?.passwordRequired ?? true) ? (
             <LabelledField label={t('password')} htmlFor="delete-account-password">
               <PasswordInput

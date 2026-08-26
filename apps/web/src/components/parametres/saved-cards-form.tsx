@@ -8,7 +8,7 @@ import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-
 import type { SavedPaymentMethod } from '@carpool/schemas';
 import { createApiClient } from '@carpool/api-client';
 import { env } from '@/lib/env';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FormAlert } from '@/components/ui/form-alert';
 import { CardSkeleton } from '@/components/ui/list-skeleton';
@@ -68,9 +68,9 @@ export function SavedCardsForm() {
     <Card>
       <CardHeader>
         <CardTitle>{t('title')}</CardTitle>
+        <CardDescription>{t('description')}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3">
-        <p className="text-sm text-muted-foreground">{t('description')}</p>
         {query.error || remove.error || makeDefault.error ? <FormAlert>{t('error')}</FormAlert> : null}
         {items.length === 0 && !adding ? (
           <p className="text-sm text-muted-foreground">{t('empty')}</p>

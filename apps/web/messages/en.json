@@ -511,8 +511,15 @@
   },
   "Parametres": {
     "title": "Account settings",
-    "subtitle": "Manage your profile, photo, language, notifications, and appearance.",
+    "subtitle": "Your profile, preferences, payments, and account.",
     "loading": "Loading...",
+    "navLabel": "Settings sections",
+    "sections": {
+      "account": "Account",
+      "preferences": "Preferences",
+      "payments": "Payments",
+      "danger": "Danger zone"
+    },
     "profile": {
       "title": "Profile",
       "email": "Email address",
@@ -548,7 +555,7 @@
     },
     "notifications": {
       "title": "Notifications",
-      "description": "Choose how Kouby reaches you. Unchecked channels are skipped.",
+      "description": "Choose how Convoy reaches you. Unchecked channels are skipped.",
       "email": "Email",
       "inApp": "In the app",
       "loading": "Loading notification preferences...",
@@ -566,7 +573,7 @@
     },
     "cards": {
       "title": "Saved cards",
-      "description": "Cards saved with Stripe for faster checkout. Kouby never stores the number.",
+      "description": "Cards saved with Stripe for faster checkout. Convoy never stores the number.",
       "loading": "Loading cards…",
       "empty": "No saved cards yet.",
       "add": "Add a card",
@@ -1463,6 +1470,15 @@
       "cta": "Offer a ride",
       "title": "Offer a ride",
       "subtitle": "Fill in this form to publish your free seats.",
+      "navLabel": "Ride sections",
+      "sections": {
+        "route": "Route",
+        "when": "Schedule",
+        "fare": "Seats and price",
+        "details": "Ride details",
+        "vehicle": "Vehicle",
+        "publish": "Publish"
+      },
       "departure": "Departure",
       "departurePlace": "Pick-up point",
       "arrival": "Arrival",

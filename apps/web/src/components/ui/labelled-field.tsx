@@ -21,7 +21,7 @@ export function LabelledField({
   children: ReactNode;
 }) {
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
       <label htmlFor={htmlFor} className="text-sm font-medium leading-none text-foreground">
         {label}
       </label>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTheme } from '@/components/ui/theme-provider';
 import { useTranslations } from 'next-intl';
 import { Monitor, Moon, Sun } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 const OPTIONS = [
@@ -24,12 +24,12 @@ export function AppearanceForm() {
   }, []);
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <CardTitle>{t('title')}</CardTitle>
+        <CardDescription>{t('description')}</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-3">
-        <p className="text-sm text-muted-foreground">{t('description')}</p>
+      <CardContent>
         <div role="radiogroup" aria-label={t('label')} className="grid grid-cols-3 gap-2">
           {OPTIONS.map(({ id, icon: Icon }) => {
             const selected = mounted && theme === id;
@@ -41,7 +41,7 @@ export function AppearanceForm() {
                 aria-checked={selected}
                 onClick={() => setTheme(id)}
                 className={cn(
-                  'flex flex-col items-center gap-1.5 rounded-md px-2 py-3 text-sm font-medium outline-none transition-all duration-200',
+                  'flex flex-col items-center gap-1.5 rounded-md px-2 py-3 text-sm font-medium outline-none transition-colors duration-300 ease-out',
                   'ring-1 ring-border hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30',
                   selected && 'bg-secondary text-secondary-foreground ring-transparent hover:bg-secondary/85',
                 )}

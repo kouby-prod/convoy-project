@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import type { NotificationPreference } from '@carpool/schemas';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormAlert } from '@/components/ui/form-alert';
 import { CardSkeleton } from '@/components/ui/list-skeleton';
@@ -52,9 +52,9 @@ export function NotificationPrefsForm() {
     <Card>
       <CardHeader>
         <CardTitle>{t('title')}</CardTitle>
+        <CardDescription>{t('description')}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3">
-        <p className="text-sm text-muted-foreground">{t('description')}</p>
         {error ? <FormAlert>{error}</FormAlert> : null}
         {prefs ? (
           <div className="grid gap-2">

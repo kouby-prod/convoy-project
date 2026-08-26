@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Car, Clock, MapPin, ShieldCheck, Sparkles, Wallet } from 'lucide-react';
 import {
   CreateTrajetRequestSchema,
   RIDE_PAYMENT_METHODS,
@@ -13,7 +13,7 @@ import {
 } from '@carpool/schemas';
 import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -39,9 +39,21 @@ import { useSessionDraft, clearSessionDraft } from '@/hooks/use-session-draft';
 import { cn } from '@/lib/utils';
 import { CardSkeleton } from '@/components/ui/list-skeleton';
 import { toast } from '@/components/ui/toast';
+import { PageHeader } from '@/components/ui/page-header';
+import { SettingsSection } from '@/components/parametres/settings-section';
+import { SectionNav, scrollToSection, type SectionNavItem } from '@/components/ui/section-nav';
 
 type Step = 'ride-vehicle' | 'license-insurance';
-const STEPS: Step[] = ['ride-vehicle', 'license-insurance'];
+
+const STEP1_SECTION_IDS = [
+  'create-route',
+  'create-when',
+  'create-fare',
+  'create-details',
+  'create-vehicle',
+] as const;
+
+const PUBLISH_SECTION_ID = 'create-publish';
 
 /**
  * Every field on this form, in one persisted draft — see `useSessionDraft`.
@@ -102,6 +114,10 @@ const EMPTY_RIDE_DRAFT: RideDraft = {
 
 const RIDE_DRAFT_KEY = 'trajet-create-draft';
 
+function isStep1Section(id: string): boolean {
+  return (STEP1_SECTION_IDS as readonly string[]).includes(id);
+}
+
 /**
  * Publish-a-ride form, two pages: (1) ride details + vehicle description,
  * (2) licence verification + insurance declaration. Both pages stay mounted
@@ -132,10 +148,25 @@ export function TrajetCreateForm() {
 
   const [draft, setDraft] = useSessionDraft<RideDraft>(RIDE_DRAFT_KEY, EMPTY_RIDE_DRAFT);
   const [error, setError] = useState('');
+  const pendingScrollId = useRef<string | null>(null);
 
   function updateDraft(patch: Partial<RideDraft>) {
     setDraft((current) => ({ ...current, ...patch }));
   }
+
+  function queueScroll(id: string) {
+    pendingScrollId.current = id;
+  }
+
+  useLayoutEffect(() => {
+    const id = pendingScrollId.current;
+    if (!id) return;
+    pendingScrollId.current = null;
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => scrollToSection(id));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [draft.step]);
 
   // Shares the `['my-vehicle']` cache with `VehicleForm`/`PublishChecklistStep`
   // — read here only to gate Page 1's "Suivant" on a vehicle actually existing.
@@ -220,9 +251,11 @@ export function TrajetCreateForm() {
 
     if (!vehicleQuery.data) {
       setError(t('create.step1.vehicleRequired'));
+      scrollToSection('create-vehicle');
       return;
     }
 
+    queueScroll(PUBLISH_SECTION_ID);
     updateDraft({ ridePayload: parsed.data, step: 'license-insurance' });
   }
 
@@ -234,6 +267,7 @@ export function TrajetCreateForm() {
    */
   function handlePublish() {
     if (!draft.ridePayload) {
+      queueScroll('create-route');
       updateDraft({ step: 'ride-vehicle' });
       return;
     }
@@ -241,228 +275,300 @@ export function TrajetCreateForm() {
     mutation.mutate(draft.ridePayload);
   }
 
+  function handleNavSelect(id: string): void | 'skip' {
+    if (isStep1Section(id)) {
+      if (draft.step !== 'ride-vehicle') {
+        queueScroll(id);
+        updateDraft({ step: 'ride-vehicle' });
+        return 'skip';
+      }
+      return;
+    }
+    if (draft.step === 'license-insurance') return;
+    (document.getElementById('ride-details-form') as HTMLFormElement | null)?.requestSubmit();
+    return 'skip';
+  }
+
+  const navItems: SectionNavItem[] = [
+    { id: 'create-route', title: t('create.sections.route'), icon: MapPin },
+    { id: 'create-when', title: t('create.sections.when'), icon: Clock },
+    { id: 'create-fare', title: t('create.sections.fare'), icon: Wallet },
+    { id: 'create-details', title: t('create.sections.details'), icon: Sparkles },
+    { id: 'create-vehicle', title: t('create.sections.vehicle'), icon: Car },
+    { id: 'create-publish', title: t('create.sections.publish'), icon: ShieldCheck },
+  ];
+
+  const layoutClass =
+    'flex min-w-0 flex-col gap-6 overflow-x-clip lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:items-start lg:gap-x-8 lg:gap-y-8 lg:overflow-visible';
+
   if (isSessionPending) {
-    return <CardSkeleton rows={6} label={t('loading')} />;
+    return (
+      <div className={layoutClass}>
+        <PageHeader className="mb-0 lg:col-span-2" title={t('create.title')} subtitle={t('create.subtitle')} />
+        <div className="grid gap-6 lg:col-start-2">
+          <CardSkeleton rows={6} label={t('loading')} />
+          <CardSkeleton rows={4} label={t('loading')} />
+        </div>
+      </div>
+    );
   }
 
   if (!session?.user) {
     return (
-      <Card className="mx-auto w-full max-w-md">
-        <CardContent className="flex flex-col items-center gap-3 p-8 pt-8 text-center">
-          <p className="text-sm text-muted-foreground">{t('authRequired')}</p>
-          <Link href="/auth/signin" className="text-sm font-semibold text-primary hover:underline">
-            {t('authCta')}
-          </Link>
-        </CardContent>
-      </Card>
+      <div className={layoutClass}>
+        <PageHeader className="mb-0 lg:col-span-2" title={t('create.title')} subtitle={t('create.subtitle')} />
+        <Card className="lg:col-start-2">
+          <CardContent className="flex flex-col items-center gap-3 pt-0 text-center">
+            <p className="text-sm text-muted-foreground">{t('authRequired')}</p>
+            <Link href="/auth/signin" className="text-sm font-semibold text-primary hover:underline">
+              {t('authCta')}
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
-  const stepLabels: Record<Step, string> = {
-    'ride-vehicle': t('create.step1.label'),
-    'license-insurance': t('create.step2.label'),
-  };
-
   return (
-    <Card className="mx-auto w-full max-w-4xl">
-      <CardContent className="p-6 pt-6 sm:p-8 sm:pt-8">
-        <div className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-          {STEPS.map((entry, index) => (
-            <span key={entry} className="flex items-center gap-2">
-              {index > 0 ? <ArrowRight className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden /> : null}
-              <span className={draft.step === entry ? 'text-primary' : undefined}>{stepLabels[entry]}</span>
-            </span>
-          ))}
-        </div>
+    <div className={layoutClass}>
+      <PageHeader className="mb-0 lg:col-span-2" title={t('create.title')} subtitle={t('create.subtitle')} />
+      <SectionNav
+        items={navItems}
+        label={t('create.navLabel')}
+        className="lg:col-start-1 lg:row-start-2"
+        observeKey={draft.step}
+        onSelect={handleNavSelect}
+      />
 
-        <div className={cn('flex flex-col gap-6', draft.step !== 'ride-vehicle' && 'hidden')}>
-          <form id="ride-details-form" onSubmit={handleStep1Submit} className="flex flex-col gap-6">
-            <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-              <Field label={t('create.departure')}>
-                <LocationPicker
-                  name="departureCity"
-                  value={{ city: draft.departureCity, lat: draft.departureLat, lng: draft.departureLng }}
-                  onChange={(value: LocationValue) =>
-                    updateDraft({ departureCity: value.city, departureLat: value.lat, departureLng: value.lng })
-                  }
-                  placeholder={t('filters.from')}
-                  aria-label={t('filters.from')}
-                  useMyLocationLabel={t('create.useMyLocation')}
-                  locationErrorLabel={t('create.locationError')}
-                  mapColor="blue"
-                  required
-                />
-                <Input
-                  name="departurePlace"
-                  value={draft.departurePlace}
-                  onChange={(event) => updateDraft({ departurePlace: event.target.value })}
-                  placeholder={t('create.departurePlace')}
-                  required
-                />
-              </Field>
+      <div className="grid gap-10 lg:col-start-2 lg:row-start-2">
+        <div className={cn('grid gap-10', draft.step !== 'ride-vehicle' && 'hidden')}>
+          <form id="ride-details-form" onSubmit={handleStep1Submit} className="grid gap-10">
+            <SettingsSection id="create-route" title={t('create.sections.route')}>
+              <Card>
+                <CardContent className="grid gap-6 pt-0 lg:grid-cols-2 lg:items-start">
+                  <Field label={t('create.departure')}>
+                    <LocationPicker
+                      name="departureCity"
+                      value={{ city: draft.departureCity, lat: draft.departureLat, lng: draft.departureLng }}
+                      onChange={(value: LocationValue) =>
+                        updateDraft({ departureCity: value.city, departureLat: value.lat, departureLng: value.lng })
+                      }
+                      placeholder={t('filters.from')}
+                      aria-label={t('filters.from')}
+                      useMyLocationLabel={t('create.useMyLocation')}
+                      locationErrorLabel={t('create.locationError')}
+                      mapColor="blue"
+                      required
+                    />
+                    <Input
+                      name="departurePlace"
+                      value={draft.departurePlace}
+                      onChange={(event) => updateDraft({ departurePlace: event.target.value })}
+                      placeholder={t('create.departurePlace')}
+                      required
+                    />
+                  </Field>
 
-              <Field label={t('create.arrival')}>
-                <LocationPicker
-                  name="arrivalCity"
-                  value={{ city: draft.arrivalCity, lat: draft.arrivalLat, lng: draft.arrivalLng }}
-                  onChange={(value: LocationValue) =>
-                    updateDraft({ arrivalCity: value.city, arrivalLat: value.lat, arrivalLng: value.lng })
-                  }
-                  placeholder={t('filters.to')}
-                  aria-label={t('filters.to')}
-                  useMyLocationLabel={t('create.useMyLocation')}
-                  locationErrorLabel={t('create.locationError')}
-                  mapColor="green"
-                  required
-                />
-                <Input
-                  name="arrivalPlace"
-                  value={draft.arrivalPlace}
-                  onChange={(event) => updateDraft({ arrivalPlace: event.target.value })}
-                  placeholder={t('create.arrivalPlace')}
-                  required
-                />
-              </Field>
-            </div>
+                  <Field label={t('create.arrival')}>
+                    <LocationPicker
+                      name="arrivalCity"
+                      value={{ city: draft.arrivalCity, lat: draft.arrivalLat, lng: draft.arrivalLng }}
+                      onChange={(value: LocationValue) =>
+                        updateDraft({ arrivalCity: value.city, arrivalLat: value.lat, arrivalLng: value.lng })
+                      }
+                      placeholder={t('filters.to')}
+                      aria-label={t('filters.to')}
+                      useMyLocationLabel={t('create.useMyLocation')}
+                      locationErrorLabel={t('create.locationError')}
+                      mapColor="green"
+                      required
+                    />
+                    <Input
+                      name="arrivalPlace"
+                      value={draft.arrivalPlace}
+                      onChange={(event) => updateDraft({ arrivalPlace: event.target.value })}
+                      placeholder={t('create.arrivalPlace')}
+                      required
+                    />
+                  </Field>
+                </CardContent>
+              </Card>
+            </SettingsSection>
 
-            <Field label={t('create.when')}>
-              <LabelledField label={t('filters.date')} htmlFor="create-date">
-                <DropdownDatePicker
-                  id="create-date"
-                  value={paramToDate(draft.date)}
-                  onChange={(next) => updateDraft({ date: dateToParam(next) })}
-                  placeholder={t('filters.date')}
-                  aria-label={t('filters.date')}
-                  required
-                />
-              </LabelledField>
-              <div className="grid grid-cols-2 gap-3">
-                <LabelledField label={t('create.departureTime')} htmlFor="create-departure-time">
-                  <DropdownTimePicker
-                    id="create-departure-time"
-                    value={parseTime(draft.departureTime)}
-                    onChange={(next) => updateDraft({ departureTime: formatTime(next) })}
-                    ariaLabel={t('create.departureTime')}
-                    required
-                  />
-                </LabelledField>
-                <LabelledField label={t('create.arrivalTime')} htmlFor="create-arrival-time">
-                  <DropdownTimePicker
-                    id="create-arrival-time"
-                    value={parseTime(draft.arrivalTime)}
-                    onChange={(next) => updateDraft({ arrivalTime: formatTime(next) })}
-                    ariaLabel={t('create.arrivalTime')}
-                  />
-                </LabelledField>
+            <SettingsSection id="create-when" title={t('create.sections.when')}>
+              <Card>
+                <CardContent className="grid gap-3 pt-0">
+                  <LabelledField label={t('filters.date')} htmlFor="create-date">
+                    <DropdownDatePicker
+                      id="create-date"
+                      value={paramToDate(draft.date)}
+                      onChange={(next) => updateDraft({ date: dateToParam(next) })}
+                      placeholder={t('filters.date')}
+                      aria-label={t('filters.date')}
+                      required
+                    />
+                  </LabelledField>
+                  <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                    <LabelledField label={t('create.departureTime')} htmlFor="create-departure-time">
+                      <DropdownTimePicker
+                        id="create-departure-time"
+                        value={parseTime(draft.departureTime)}
+                        onChange={(next) => updateDraft({ departureTime: formatTime(next) })}
+                        ariaLabel={t('create.departureTime')}
+                        required
+                      />
+                    </LabelledField>
+                    <LabelledField label={t('create.arrivalTime')} htmlFor="create-arrival-time">
+                      <DropdownTimePicker
+                        id="create-arrival-time"
+                        value={parseTime(draft.arrivalTime)}
+                        onChange={(next) => updateDraft({ arrivalTime: formatTime(next) })}
+                        ariaLabel={t('create.arrivalTime')}
+                      />
+                    </LabelledField>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t('create.timesHint')}</p>
+                </CardContent>
+              </Card>
+            </SettingsSection>
+
+            <SettingsSection id="create-fare" title={t('create.sections.fare')}>
+              <Card>
+                <CardContent className="grid min-w-0 grid-cols-2 gap-3 pt-0">
+                  <LabelledField label={t('create.seatsTotal')} htmlFor="create-seats">
+                    <Input
+                      type="number"
+                      id="create-seats"
+                      name="seatsTotal"
+                      min={1}
+                      max={8}
+                      value={draft.seatsTotal}
+                      onChange={(event) => updateDraft({ seatsTotal: event.target.value })}
+                      required
+                    />
+                  </LabelledField>
+                  <LabelledField label={t('create.pricePerSeat')} htmlFor="create-price">
+                    <Input
+                      type="number"
+                      id="create-price"
+                      name="pricePerSeat"
+                      min={0}
+                      step="0.5"
+                      value={draft.pricePerSeat}
+                      onChange={(event) => updateDraft({ pricePerSeat: event.target.value })}
+                      required
+                    />
+                  </LabelledField>
+                </CardContent>
+              </Card>
+            </SettingsSection>
+
+            <SettingsSection id="create-details" title={t('create.sections.details')}>
+              <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t('comfort.legend')}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-3">
+                    <Select
+                      value={draft.comfort}
+                      onValueChange={(value) => updateDraft({ comfort: value as RideDraft['comfort'] })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">{t('comfort.standard')}</SelectItem>
+                        <SelectItem value="confort">{t('comfort.confort')}</SelectItem>
+                        <SelectItem value="premium">{t('comfort.premium')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <LabelledField label={t('create.baggage')} htmlFor="create-baggage">
+                      <Input
+                        id="create-baggage"
+                        name="baggageAllowance"
+                        value={draft.baggageAllowance}
+                        onChange={(event) => updateDraft({ baggageAllowance: event.target.value })}
+                        maxLength={500}
+                        placeholder={t('create.baggagePlaceholder')}
+                      />
+                    </LabelledField>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t('create.paymentMethods')}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-3">
+                    <p className="text-xs text-muted-foreground">{t('create.paymentMethodsHint')}</p>
+                    <div className="grid gap-2">
+                      {RIDE_PAYMENT_METHODS.map((method) => (
+                        <Checkbox
+                          key={method}
+                          checked={draft.paymentMethods.includes(method)}
+                          onChange={() => togglePaymentMethod(method)}
+                          label={t(`paymentMethods.${method}`)}
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <p className="text-xs text-muted-foreground">{t('create.timesHint')}</p>
-            </Field>
 
-            <Field label={t('create.seatsAndPrice')}>
-              <div className="grid grid-cols-2 gap-3">
-                <LabelledField label={t('create.seatsTotal')} htmlFor="create-seats">
-                  <Input
-                    type="number"
-                    id="create-seats"
-                    name="seatsTotal"
-                    min={1}
-                    max={8}
-                    value={draft.seatsTotal}
-                    onChange={(event) => updateDraft({ seatsTotal: event.target.value })}
-                    required
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('create.options')}</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-3">
+                  <AmenityToggleGroup
+                    selected={draft.amenities}
+                    onToggle={toggleAmenity}
+                    label={(amenity) => t(`amenities.${amenity}`)}
+                    legend={t('filters.amenitiesLegend')}
+                    amenities={GENERAL_AMENITIES}
+                    className="justify-start"
                   />
-                </LabelledField>
-                <LabelledField label={t('create.pricePerSeat')} htmlFor="create-price">
-                  <Input
-                    type="number"
-                    id="create-price"
-                    name="pricePerSeat"
-                    min={0}
-                    step="0.5"
-                    value={draft.pricePerSeat}
-                    onChange={(event) => updateDraft({ pricePerSeat: event.target.value })}
-                    required
-                  />
-                </LabelledField>
-              </div>
-            </Field>
-
-            <Field label={t('comfort.legend')}>
-              <Select
-                value={draft.comfort}
-                onValueChange={(value) => updateDraft({ comfort: value as RideDraft['comfort'] })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">{t('comfort.standard')}</SelectItem>
-                  <SelectItem value="confort">{t('comfort.confort')}</SelectItem>
-                  <SelectItem value="premium">{t('comfort.premium')}</SelectItem>
-                </SelectContent>
-              </Select>
-              <LabelledField label={t('create.baggage')} htmlFor="create-baggage">
-                <Input
-                  id="create-baggage"
-                  name="baggageAllowance"
-                  value={draft.baggageAllowance}
-                  onChange={(event) => updateDraft({ baggageAllowance: event.target.value })}
-                  maxLength={500}
-                  placeholder={t('create.baggagePlaceholder')}
-                />
-              </LabelledField>
-            </Field>
-
-            <Field label={t('create.paymentMethods')}>
-              <p className="text-xs text-muted-foreground">{t('create.paymentMethodsHint')}</p>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {RIDE_PAYMENT_METHODS.map((method) => (
                   <Checkbox
-                    key={method}
-                    checked={draft.paymentMethods.includes(method)}
-                    onChange={() => togglePaymentMethod(method)}
-                    label={t(`paymentMethods.${method}`)}
+                    name="hasIntermediateStop"
+                    checked={draft.hasIntermediateStop}
+                    onChange={(event) => updateDraft({ hasIntermediateStop: event.target.checked })}
+                    label={t('create.intermediateStop')}
                   />
-                ))}
-              </div>
-            </Field>
+                </CardContent>
+              </Card>
 
-            <Field label={t('create.options')}>
-              <AmenityToggleGroup
-                selected={draft.amenities}
-                onToggle={toggleAmenity}
-                label={(amenity) => t(`amenities.${amenity}`)}
-                legend={t('filters.amenitiesLegend')}
-                amenities={GENERAL_AMENITIES}
-                className="justify-start"
-              />
-              <Checkbox
-                name="hasIntermediateStop"
-                checked={draft.hasIntermediateStop}
-                onChange={(event) => updateDraft({ hasIntermediateStop: event.target.checked })}
-                label={t('create.intermediateStop')}
-              />
-            </Field>
-
-            <Field label={t('create.description')}>
-              <Textarea
-                name="description"
-                value={draft.description}
-                onChange={(event) => updateDraft({ description: event.target.value })}
-                maxLength={500}
-                placeholder={t('create.descriptionPlaceholder')}
-              />
-            </Field>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('create.description')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    name="description"
+                    value={draft.description}
+                    onChange={(event) => updateDraft({ description: event.target.value })}
+                    maxLength={500}
+                    placeholder={t('create.descriptionPlaceholder')}
+                  />
+                </CardContent>
+              </Card>
+            </SettingsSection>
           </form>
 
           {/* Sibling, not nested — `VehicleForm` is its own `<form>`, and forms
               cannot nest. Its submit button stays independent; the outer
               "Suivant" below is linked to `ride-details-form` via `form=`
               rather than being inside it. */}
-          <VehicleForm embedded />
-          {!vehicleQuery.data ? (
-            <p className="text-center text-xs text-muted-foreground">{t('create.step3.saveHint')}</p>
-          ) : null}
+          <SettingsSection id="create-vehicle" title={t('create.sections.vehicle')}>
+            <Card>
+              <CardContent className="pt-0">
+                <VehicleForm embedded />
+              </CardContent>
+            </Card>
+            {!vehicleQuery.data ? (
+              <p className="text-xs text-muted-foreground">{t('create.step3.saveHint')}</p>
+            ) : null}
+          </SettingsSection>
 
           {draft.step === 'ride-vehicle' && error ? (
             <p className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -470,31 +576,36 @@ export function TrajetCreateForm() {
             </p>
           ) : null}
 
-          <div className="flex flex-col-reverse items-center gap-3 sm:flex-row sm:justify-center">
-            <Button type="button" variant="outline" size="lg" onClick={() => router.push('/trajet')}>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
+            <Button type="button" variant="outline" size="lg" className="w-full sm:w-auto" onClick={() => router.push('/trajet')}>
               {t('create.step2.back')}
             </Button>
-            <Button type="submit" form="ride-details-form" variant="primary" size="lg" className="px-10">
+            <Button type="submit" form="ride-details-form" variant="primary" size="lg" className="w-full px-10 sm:w-auto">
               {t('create.step1.next')}
               <ArrowRight className="size-5" strokeWidth={2.25} />
             </Button>
           </div>
         </div>
 
-        <div className={cn('flex flex-col gap-6', draft.step !== 'license-insurance' && 'hidden')}>
-          {draft.step === 'license-insurance' && error ? (
-            <p className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {error}
-            </p>
-          ) : null}
-          <PublishChecklistStep
-            onPublish={handlePublish}
-            onBack={() => updateDraft({ step: 'ride-vehicle' })}
-            publishing={mutation.isPending}
-          />
+        <div className={cn('grid gap-10', draft.step !== 'license-insurance' && 'hidden')}>
+          <SettingsSection id="create-publish" title={t('create.sections.publish')}>
+            {draft.step === 'license-insurance' && error ? (
+              <p className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {error}
+              </p>
+            ) : null}
+            <PublishChecklistStep
+              onPublish={handlePublish}
+              onBack={() => {
+                queueScroll('create-route');
+                updateDraft({ step: 'ride-vehicle' });
+              }}
+              publishing={mutation.isPending}
+            />
+          </SettingsSection>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
