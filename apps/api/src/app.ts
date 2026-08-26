@@ -14,6 +14,7 @@ import { messageModule } from './modules/message';
 import { contactModule } from './modules/contact';
 import { notificationModule } from './modules/notification';
 import { avatarModule } from './modules/avatar';
+import { accountDeletionModule } from './modules/account-deletion';
 import { paymentModule } from './modules/payment';
 import { stripeWebhookHandler, paypalWebhookHandler } from './modules/payment/webhooks';
 import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
@@ -108,6 +109,7 @@ const routes = app
   // --- NOTIFICATION domain routes ---
   .route('/', notificationModule)
   .route('/', avatarModule)
+  .route('/', accountDeletionModule)
   // --- CONTACT domain routes ---
   .route('/', contactModule)
   // --- PAYMENT / INVOICE domain routes ---

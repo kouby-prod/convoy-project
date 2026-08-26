@@ -1,52 +1,104 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import {
+  cancelAccountDeletion,
+  fetchAccountDeletion,
+  scheduleAccountDeletion,
+} from '@/lib/account-deletion';
+import { isApiError } from '@/lib/api-error';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormAlert } from '@/components/ui/form-alert';
 import { PasswordInput } from '@/components/ui/password-input';
 import { LabelledField } from '@/components/ui/labelled-field';
+import { CardSkeleton } from '@/components/ui/list-skeleton';
 import { toast } from '@/components/ui/toast';
 
-function isRestrictedDelete(error: { message?: string | null; status?: string | number } | null): boolean {
-  if (!error) return false;
-  const status = String(error.status ?? '');
-  if (status === '500' || status === 'INTERNAL_SERVER_ERROR') return true;
-  const message = (error.message ?? '').toLowerCase();
-  return message.includes('foreign key') || message.includes('restrict') || message.includes('violat');
-}
+const DELETION_KEY = ['account-deletion'] as const;
 
-/** Danger zone: password + explicit confirm. Ledger FKs are restrict — those accounts stay. */
+/** Danger zone: 30-day hold, then a hard wipe. The user can sign back in to cancel. */
 export function DeleteAccountForm() {
   const t = useTranslations('Parametres.deleteAccount');
   const translateA11y = useTranslations('A11y');
+  const format = useFormatter();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id;
+  const query = useQuery({
+    queryKey: [...DELETION_KEY, userId],
+    queryFn: fetchAccountDeletion,
+    enabled: Boolean(userId),
+  });
   const [password, setPassword] = useState('');
   const [confirmed, setConfirmed] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!confirmed) return;
-    setLoading(true);
-    setError(null);
+  const schedule = useMutation({
+    mutationFn: () => scheduleAccountDeletion(password || undefined),
+    onSuccess: async (data) => {
+      queryClient.setQueryData([...DELETION_KEY, userId], data);
+      const date = data.purgeAt
+        ? format.dateTime(new Date(data.purgeAt), { dateStyle: 'long' })
+        : '';
+      toast(t('success', { date }));
+      queryClient.removeQueries({ queryKey: DELETION_KEY });
+      await authClient.signOut();
+      router.push('/auth/signin');
+      router.refresh();
+    },
+  });
 
-    const { error: deleteError } = await authClient.deleteUser({ password });
+  const cancel = useMutation({
+    mutationFn: cancelAccountDeletion,
+    onSuccess: (data) => {
+      queryClient.setQueryData([...DELETION_KEY, userId], data);
+      toast(t('cancelled'));
+    },
+  });
 
-    if (deleteError) {
-      setLoading(false);
-      setError(isRestrictedDelete(deleteError) ? t('restricted') : (deleteError.message ?? t('error')));
-      return;
-    }
+  if (!userId || query.isLoading || query.isPending) {
+    return <CardSkeleton rows={4} label={t('loading')} />;
+  }
 
-    toast(t('success'));
-    router.push('/');
-    router.refresh();
+  const status = query.data;
+  const errorMessage = (() => {
+    const err = schedule.error ?? cancel.error ?? query.error;
+    if (!err) return null;
+    if (isApiError(err, 400)) return t('error');
+    if (isApiError(err, 409)) return t('alreadyScheduled');
+    return t('error');
+  })();
+
+  if (status?.scheduled && status.purgeAt) {
+    const date = format.dateTime(new Date(status.purgeAt), { dateStyle: 'long' });
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('pendingTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3">
+            <p className="text-sm text-muted-foreground">{t('pendingDescription', { date })}</p>
+            {cancel.error ? <FormAlert>{t('cancelError')}</FormAlert> : null}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-fit"
+              disabled={cancel.isPending}
+              onClick={() => cancel.mutate()}
+            >
+              {cancel.isPending ? t('cancelling') : t('cancel')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -55,32 +107,47 @@ export function DeleteAccountForm() {
         <CardTitle>{t('title')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="grid gap-3">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!confirmed) return;
+            schedule.mutate();
+          }}
+          className="grid gap-3"
+        >
           <p className="text-sm text-muted-foreground">{t('description')}</p>
-          <LabelledField label={t('password')} htmlFor="delete-account-password">
-            <PasswordInput
-              id="delete-account-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-              required
-              showLabel={translateA11y('showPassword')}
-              hideLabel={translateA11y('hidePassword')}
-            />
-          </LabelledField>
+          {(status?.passwordRequired ?? true) ? (
+            <LabelledField label={t('password')} htmlFor="delete-account-password">
+              <PasswordInput
+                id="delete-account-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="current-password"
+                required
+                showLabel={translateA11y('showPassword')}
+                hideLabel={translateA11y('hidePassword')}
+              />
+            </LabelledField>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('googleOnlyHint')}</p>
+          )}
           <Checkbox
             label={t('confirm')}
             checked={confirmed}
             onChange={(event) => setConfirmed(event.target.checked)}
           />
-          {error ? <FormAlert>{error}</FormAlert> : null}
+          {errorMessage ? <FormAlert>{errorMessage}</FormAlert> : null}
           <Button
             type="submit"
             variant="destructive"
             className="w-fit"
-            disabled={loading || !confirmed || password.length < 8}
+            disabled={
+              schedule.isPending ||
+              !confirmed ||
+              (Boolean(status?.passwordRequired ?? true) && password.length < 8)
+            }
           >
-            {loading ? t('submitting') : t('submit')}
+            {schedule.isPending ? t('submitting') : t('submit')}
           </Button>
         </form>
       </CardContent>

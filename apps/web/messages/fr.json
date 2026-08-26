@@ -584,14 +584,24 @@
     },
     "deleteAccount": {
       "title": "Supprimer le compte",
-      "description": "Cela supprime définitivement votre compte. L'historique de paiement ne peut pas être effacé ici — contactez le support si vous avez des versements ou des factures.",
+      "description": "Nous conservons le compte 30 jours, puis le supprimons définitivement. Connectez-vous pendant ce délai pour annuler. Les factures et versements restent au grand livre.",
       "password": "Mot de passe actuel",
-      "confirm": "Je comprends que cette action est irréversible",
-      "submit": "Supprimer mon compte",
-      "submitting": "Suppression...",
-      "success": "Votre compte a été supprimé.",
-      "error": "Impossible de supprimer le compte. Vérifiez votre mot de passe et réessayez.",
-      "restricted": "Ce compte a un historique de paiement et ne peut pas être supprimé ici. Contactez le support."
+      "confirm": "Je comprends que le compte sera supprimé dans 30 jours si je n'annule pas",
+      "submit": "Planifier la suppression",
+      "submitting": "Planification…",
+      "success": "Votre compte sera supprimé le {date}. Connectez-vous avant cette date pour annuler.",
+      "error": "Impossible de planifier la suppression. Vérifiez votre mot de passe et réessayez.",
+      "alreadyScheduled": "La suppression est déjà planifiée.",
+      "loading": "Chargement de la suppression du compte…",
+      "pendingTitle": "Suppression planifiée",
+      "pendingDescription": "Votre compte sera définitivement supprimé le {date}. Annulez ci-dessous pour le conserver.",
+      "cancel": "Annuler la suppression",
+      "cancelling": "Annulation…",
+      "cancelled": "Suppression annulée. Votre compte reste actif.",
+      "cancelError": "Impossible d'annuler la suppression. Veuillez réessayer.",
+      "banner": "Votre compte sera supprimé le {date}.",
+      "bannerCancel": "Conserver mon compte",
+      "googleOnlyHint": "Vous vous connectez avec Google — confirmez ci-dessous, sans mot de passe."
     }
   },
   "Messages": {

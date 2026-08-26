@@ -10,6 +10,7 @@ import { Footer } from '@/components/ui/footer';
 import { SkipLink } from '@/components/ui/skip-link';
 import { Toaster } from '@/components/ui/toast';
 import { LocaleSwitcher } from '@/components/ui/locale-switcher';
+import { DeletionBanner } from '@/components/parametres/deletion-banner';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
     return (
       <ChromeRoot>
         <CheckoutBar />
+        <DeletionBanner />
         <main
           id={MAIN_ID}
           tabIndex={-1}
@@ -41,6 +43,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
     return (
       <ChromeRoot>
         <Navbar />
+        <DeletionBanner />
         <main
           id={MAIN_ID}
           tabIndex={-1}
@@ -58,6 +61,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
   return (
     <ChromeRoot>
       <Navbar />
+      <DeletionBanner />
       <main
         id={MAIN_ID}
         tabIndex={-1}

@@ -584,14 +584,24 @@
     },
     "deleteAccount": {
       "title": "Delete account",
-      "description": "This permanently removes your account. Payment history cannot be deleted this way — contact support if you have payouts or invoices.",
+      "description": "We keep the account for 30 days, then delete it for good. Sign in during that time to cancel. Invoices and payouts stay in the ledger.",
       "password": "Current password",
-      "confirm": "I understand this cannot be undone",
-      "submit": "Delete my account",
-      "submitting": "Deleting...",
-      "success": "Your account has been deleted.",
-      "error": "Unable to delete the account. Check your password and try again.",
-      "restricted": "This account has payment history and cannot be deleted here. Contact support."
+      "confirm": "I understand the account will be deleted in 30 days unless I cancel",
+      "submit": "Schedule deletion",
+      "submitting": "Scheduling…",
+      "success": "Your account will be deleted on {date}. Sign in before then to cancel.",
+      "error": "Unable to schedule deletion. Check your password and try again.",
+      "alreadyScheduled": "Deletion is already scheduled.",
+      "loading": "Loading account deletion…",
+      "pendingTitle": "Deletion scheduled",
+      "pendingDescription": "Your account will be permanently deleted on {date}. Cancel below if you want to keep it.",
+      "cancel": "Cancel deletion",
+      "cancelling": "Cancelling…",
+      "cancelled": "Account deletion cancelled. Your account stays active.",
+      "cancelError": "Unable to cancel deletion. Please try again.",
+      "banner": "Your account will be deleted on {date}.",
+      "bannerCancel": "Keep my account",
+      "googleOnlyHint": "You sign in with Google — confirm below, no password needed."
     }
   },
   "Messages": {

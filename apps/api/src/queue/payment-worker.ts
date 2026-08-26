@@ -9,6 +9,7 @@ import { handlePayPalEvent, handleStripeEvent, markEventProcessed } from '../mod
 import { runPaymentReconciliation } from '../modules/payment/reconcile';
 import { releaseHeldDriverPayouts } from '../modules/payment/payout';
 import { expireAllUnpaidBookings } from '../modules/payment/ttl';
+import { purgeDueAccounts } from '../modules/account-deletion/purge';
 import { recordPaymentIncident } from '../modules/payment/incidents';
 import { notifyUser, describeTrip, trajetSearchUrl } from '../modules/trajet/notifications';
 
@@ -57,6 +58,13 @@ export function startPaymentWorkers(): void {
             `Your booking for ${describeTrip(row.trip)} expired because the invoice was not paid in time. Search for another ride: ${trajetSearchUrl()}`,
             { type: 'booking_status', link: trajetSearchUrl() },
           );
+        }
+        return;
+      }
+      if (job.name === 'account-purge') {
+        const result = await purgeDueAccounts();
+        if (result.purged || result.anonymized) {
+          console.log('[account-deletion] purge', result);
         }
         return;
       }

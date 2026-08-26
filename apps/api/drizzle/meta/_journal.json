@@ -148,6 +148,13 @@
       "when": 1787700000001,
       "tag": "0016_avatar_stripe_customer",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1787700000002,
+      "tag": "0017_account_deletion",
+      "breakpoints": true
     }
   ]
 }

@@ -72,6 +72,11 @@ export async function schedulePaymentReconcile(): Promise<void> {
     { pattern: '* * * * *' },
     { name: 'unpaid-expire', data: {} },
   );
+  await getReconcileQueue().upsertJobScheduler(
+    'account-deletion-purge-daily',
+    { pattern: '20 6 * * *' },
+    { name: 'account-purge', data: {} },
+  );
 }
 
 export async function enqueuePaymentReconcileNow(): Promise<void> {

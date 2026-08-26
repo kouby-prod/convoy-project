@@ -123,13 +123,14 @@ export const auth = betterAuth({
       '/sign-up/email': { window: 60, max: 5 },
       '/request-password-reset': { window: 60, max: 3 },
       '/phone-number/send-otp': { window: 60, max: 3 },
-      '/delete-user': { window: 60, max: 3 },
     },
   },
 
   user: {
+    // Immediate wipe is off. Settings schedules a 30-day hold on
+    // POST /account/deletion; the daily worker purges after that.
     deleteUser: {
-      enabled: true,
+      enabled: false,
     },
   },
 

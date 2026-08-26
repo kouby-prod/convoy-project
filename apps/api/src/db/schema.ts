@@ -17,3 +17,4 @@ export * from './review';
 export * from './message';
 export * from './notification';
 export * from './avatar';
+export * from './account-deletion';
