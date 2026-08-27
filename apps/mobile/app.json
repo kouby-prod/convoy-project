@@ -26,6 +26,13 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Carpool utilise votre position pour partager votre trajet en direct avec vos passagers pendant que vous conduisez."
         }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "",
+          "enableGooglePay": false
+        }
       ]
     ],
     "experiments": {

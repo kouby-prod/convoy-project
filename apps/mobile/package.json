@@ -16,6 +16,7 @@
     "@better-auth/expo": "1.6.26",
     "@carpool/api-client": "workspace:*",
     "@carpool/schemas": "workspace:*",
+    "@stripe/stripe-react-native": "0.64.0",
     "@expo/metro-runtime": "~56.0.15",
     "@tanstack/react-query": "5.101.0",
     "better-auth": "1.6.26",

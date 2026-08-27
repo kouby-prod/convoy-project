@@ -4,9 +4,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import type { UnreadCount } from '@carpool/schemas';
 import { authClient } from '@/lib/auth-client';
 import { useNotificationsSocket } from '@/hooks/useNotificationsSocket';
+import { env } from '@/lib/env';
 import { colors } from '@/lib/theme';
 
 /**
@@ -60,6 +62,7 @@ function RootNavigator() {
           <Stack.Screen name="contact" options={{ headerShown: true, title: 'Contact' }} />
           <Stack.Screen name="vehicle" options={{ headerShown: true, title: 'Mon véhicule' }} />
           <Stack.Screen name="messages/[bookingId]" options={{ headerShown: true, title: '' }} />
+          <Stack.Screen name="paiement/[bookingId]" options={{ headerShown: true, title: 'Paiement' }} />
         </Stack.Protected>
         <Stack.Protected guard={!session?.user}>
           <Stack.Screen name="(auth)" />
@@ -74,10 +77,17 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="dark" />
-        <RootNavigator />
-      </QueryClientProvider>
+      {/* An empty publishableKey is fine at mount — the checkout screen itself
+          checks env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY and shows an
+          "unavailable" state instead of presenting the payment sheet.
+          No merchantIdentifier: Apple Pay isn't wired up (no registered
+          merchant ID yet) — the sheet still works for card entry without one. */}
+      <StripeProvider publishableKey={env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </QueryClientProvider>
+      </StripeProvider>
     </GestureHandlerRootView>
   );
 }

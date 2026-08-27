@@ -223,6 +223,7 @@ services:
     environment:
       EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL}
       EXPO_PUBLIC_WEB_URL: ${EXPO_PUBLIC_WEB_URL:-http://localhost:3000}
+      EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
     ports:
       - '${EXPO_PORT}:8081'
     depends_on:

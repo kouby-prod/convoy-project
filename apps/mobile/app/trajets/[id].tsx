@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { RidePaymentMethod, Trajet } from '@carpool/schemas';
 import { api } from '@/lib/api-client';
@@ -304,6 +304,9 @@ function BookingSection({
       {myBooking ? (
         <>
           <Text style={styles.value}>Statut : {STATUS_LABELS[myBooking.status] ?? myBooking.status}</Text>
+          {myBooking.status === 'awaiting_payment' ? (
+            <Button label="Payer maintenant" size="sm" onPress={() => router.push(`/paiement/${myBooking.id}`)} />
+          ) : null}
           {myBooking.status === 'pending' || myBooking.status === 'confirmed' ? (
             <Button
               label={cancelMutation.isPending ? 'Annulation…' : 'Annuler ma réservation'}

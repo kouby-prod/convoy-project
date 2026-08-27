@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import type { BookingWithTrajet, BookingStatus } from '@carpool/schemas';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -29,6 +30,7 @@ export function BookingCard({
   onCancel: () => void;
   cancelling: boolean;
 }) {
+  const router = useRouter();
   const canCancel = booking.status === 'pending' || booking.status === 'confirmed';
   const canReview = booking.status === 'confirmed' && new Date(booking.trajet.departureDateTime) < new Date();
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -47,6 +49,9 @@ export function BookingCard({
           <Button label={cancelling ? 'Annulation…' : 'Annuler'} variant="outline" size="sm" disabled={cancelling} onPress={onCancel} />
         ) : null}
       </View>
+      {booking.status === 'awaiting_payment' ? (
+        <Button label="Payer maintenant" size="sm" onPress={() => router.push(`/paiement/${booking.id}`)} />
+      ) : null}
       <BookingMessages bookingId={booking.id} />
       {canReview ? (
         reviewed ? (
