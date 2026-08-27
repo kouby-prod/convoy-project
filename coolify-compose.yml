@@ -124,7 +124,7 @@ services:
       retries: 10
 
   minio-init:
-    image: minio/mc:RELEASE.2024-10-13T13-34-11Z
+    image: minio/mc:latest
     restart: 'no'
     logging: *default-logging
     environment:
