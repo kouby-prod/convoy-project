@@ -60,8 +60,21 @@ function liveIcon(color: TripMapPin['color']): L.DivIcon {
   });
 }
 
+/**
+ * Only 3 colors × 2 kinds (6 total) ever exist, but a live pin's position
+ * ticks every ~8-10s and each tick is a new pin object — without this cache,
+ * `pinIcon` reallocated a fresh `L.DivIcon` (including a fresh SVG string)
+ * for the moving marker on every single ping.
+ */
+const iconCache = new Map<string, L.DivIcon>();
+
 function pinIcon(pin: Pick<TripMapPin, 'color' | 'kind'>): L.DivIcon {
-  return pin.kind === 'live' ? liveIcon(pin.color) : teardropIcon(pin.color);
+  const key = `${pin.kind ?? 'default'}:${pin.color}`;
+  const cached = iconCache.get(key);
+  if (cached) return cached;
+  const icon = pin.kind === 'live' ? liveIcon(pin.color) : teardropIcon(pin.color);
+  iconCache.set(key, icon);
+  return icon;
 }
 
 /**
