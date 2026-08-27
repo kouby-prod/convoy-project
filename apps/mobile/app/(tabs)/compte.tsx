@@ -121,6 +121,7 @@ export default function CompteScreen() {
         <NotificationPrefsCard />
 
         <Button label="Mon véhicule" variant="outline" onPress={() => router.push('/vehicle')} />
+        <Button label="Aide & informations" variant="outline" onPress={() => router.push('/legal')} />
         <Button label="Aide & contact" variant="outline" onPress={() => router.push('/contact')} />
         <Button label="Se déconnecter" variant="outline" onPress={() => authClient.signOut()} />
 

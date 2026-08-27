@@ -63,6 +63,10 @@ function RootNavigator() {
           <Stack.Screen name="vehicle" options={{ headerShown: true, title: 'Mon véhicule' }} />
           <Stack.Screen name="messages/[bookingId]" options={{ headerShown: true, title: '' }} />
           <Stack.Screen name="paiement/[bookingId]" options={{ headerShown: true, title: 'Paiement' }} />
+          <Stack.Screen name="legal/index" options={{ headerShown: true, title: 'Aide & informations' }} />
+          <Stack.Screen name="legal/[slug]" options={{ headerShown: true, title: '' }} />
+          <Stack.Screen name="become-driver" options={{ headerShown: true, title: 'Devenir chauffeur' }} />
+          <Stack.Screen name="become-passenger" options={{ headerShown: true, title: 'Devenir passager' }} />
         </Stack.Protected>
         <Stack.Protected guard={!session?.user}>
           <Stack.Screen name="(auth)" />
