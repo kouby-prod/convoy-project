@@ -34,6 +34,7 @@ export const auth = betterAuth({
     // set it is emailed for real.
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
+      console.log(`[auth] sending password-reset email to ${user.email}`);
       await sendEmail({
         to: user.email,
         subject: 'Reset your Convoy password / Réinitialisez votre mot de passe Convoy',
@@ -46,8 +47,10 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: true,
+    sendOnSignIn: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
+      console.log(`[auth] sending verification email to ${user.email}`);
       await sendEmail({
         to: user.email,
         subject: 'Verify your Carpool email',

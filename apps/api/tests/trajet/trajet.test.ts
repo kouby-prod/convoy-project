@@ -136,7 +136,7 @@ vi.mock('../../src/modules/payment/pdf', () => ({
   renderInvoicePdf: vi.fn().mockResolvedValue(Buffer.from('pdf')),
 }));
 vi.mock('../../src/auth/email', () => ({
-  smtpEmailSender: null,
+  isSmtpConfigured: () => false,
 }));
 
 // Mock the driver-verified lookup entirely: it is exercised on its own (real
