@@ -8,6 +8,7 @@ import type { BookingStatus, RidePaymentMethod } from '@carpool/schemas';
 import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
+import { signInHref } from '@/lib/auth-urls';
 import {
   formatCad,
   koubyDueCents,
@@ -178,7 +179,7 @@ export function TrajetBookingForm({
         ) : null}
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t('booking.signInPrompt')}</p>
         <Link
-          href="/auth/signin"
+          href={signInHref(`/trajet/${trajetId}`)}
           className={cn(buttonVariants({ variant: 'primary', size: 'default' }), 'mt-4 w-full font-semibold')}
         >
           {t('booking.signInLink')}

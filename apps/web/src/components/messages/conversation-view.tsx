@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { signInHref } from '@/lib/auth-urls';
 import { fetchConversations } from '@/lib/conversations';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +33,7 @@ export function ConversationView({ bookingId }: { bookingId: string }) {
   const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   useEffect(() => {
-    if (!isSessionPending && !session?.user) router.push('/auth/signin');
+    if (!isSessionPending && !session?.user) router.push(signInHref(`/messages/${bookingId}`));
   }, [isSessionPending, router, session?.user]);
 
   const { data, isLoading, isError } = useQuery({

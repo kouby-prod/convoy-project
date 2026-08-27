@@ -1,11 +1,12 @@
-import { type InputHTMLAttributes, forwardRef } from 'react';
+import { type InputHTMLAttributes, type ReactNode, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
 /* Checkbox + label as one focusable row. `accent-primary` keeps the native
    control (and its keyboard/AT behaviour) while painting it with the brand
-   token — no custom control to re-implement. */
+   token — no custom control to re-implement. `label` is a node so terms
+   copy can include locale Links. */
 export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  label: string;
+  label: ReactNode;
 }
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(

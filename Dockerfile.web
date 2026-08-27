@@ -1,15 +1,19 @@
 # syntax=docker/dockerfile:1
-# Prefer repo-root `Dockerfile.web`. Kept so `docker build -f infra/Dockerfile.web .` still works.
+# Production web image. Build context = repo root:
+#   docker build -f Dockerfile.web --build-arg NEXT_PUBLIC_API_URL=https://api.example.com .
 FROM node:22-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 WORKDIR /app
 
+# ---- install workspace deps (build needs typescript / Next) ----
 FROM base AS deps
 COPY pnpm-workspace.yaml package.json .npmrc ./
 COPY pnpm-lock.yaml* ./
 COPY apps/web/package.json apps/web/package.json
+# @carpool/api-client typechecks against @carpool/api, so the api manifest
+# must be present for pnpm to provision the workspace.
 COPY apps/api/package.json apps/api/package.json
 COPY packages/config/package.json packages/config/package.json
 COPY packages/schemas/package.json packages/schemas/package.json
@@ -18,6 +22,7 @@ COPY packages/api-client/package.json packages/api-client/package.json
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --store-dir /pnpm/store
 
+# ---- build Next.js (NEXT_PUBLIC_* is inlined here) ----
 FROM deps AS build
 COPY . .
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
@@ -32,6 +37,9 @@ ARG NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=
 ENV NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=$NEXT_PUBLIC_GOOGLE_AUTH_ENABLED
 RUN pnpm --filter @carpool/web build
 
+# ---- runtime: Next standalone trace (no pnpm, no full node_modules) ----
+# next.config.ts still imports dotenv at *build* time (local root .env).
+# The standalone server does not load next.config.ts at runtime.
 FROM base AS runner
 ENV NODE_ENV=production
 ENV PORT=3000

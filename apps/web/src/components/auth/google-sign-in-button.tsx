@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { authClient } from '@/lib/auth-client';
+import { authReturnUrl, authSignInErrorUrl } from '@/lib/auth-urls';
 import { env } from '@/lib/env';
 import { Button } from '@/components/ui/button';
 import { FormAlert } from '@/components/ui/form-alert';
@@ -31,7 +32,7 @@ function GoogleMark() {
 }
 
 /** Shown only when the API has Google OAuth credentials (public build flag). */
-export function GoogleSignInButton() {
+export function GoogleSignInButton({ next = null }: { next?: string | null }) {
   const t = useTranslations('Auth');
   const locale = useLocale();
   const [pending, setPending] = useState(false);
@@ -42,12 +43,10 @@ export function GoogleSignInButton() {
   async function handleClick() {
     setError('');
     setPending(true);
-    const origin = window.location.origin;
-    const callbackURL = locale === 'en' ? `${origin}/en` : `${origin}/`;
     const { error: socialError } = await authClient.signIn.social({
       provider: 'google',
-      callbackURL,
-      errorCallbackURL: `${origin}${locale === 'en' ? '/en' : ''}/auth/signin`,
+      callbackURL: authReturnUrl(locale, next),
+      errorCallbackURL: authSignInErrorUrl(locale, next),
     });
     if (socialError) {
       setPending(false);

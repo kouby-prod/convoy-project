@@ -75,7 +75,9 @@
       "submit": "S'inscrire",
       "pending": "Création…",
       "hasAccount": "Déjà inscrit ?",
-      "signIn": "Se connecter"
+      "signIn": "Se connecter",
+      "passwordHint": "Au moins 8 caractères.",
+      "terms": "J’accepte les <terms>conditions d’utilisation</terms> et la <privacy>politique de confidentialité</privacy>."
     },
     "forgotPassword": {
       "title": "Réinitialiser le mot de passe",
@@ -93,6 +95,28 @@
       "success": "Mot de passe mis à jour. Vous pouvez vous connecter.",
       "missingToken": "Ce lien est incomplet ou a expiré. Demandez-en un nouveau.",
       "invalidToken": "Ce lien n’est plus valable. Demandez-en un nouveau."
+    },
+    "checkEmail": {
+      "title": "Vérifiez votre boîte mail",
+      "subtitle": "Un lien de confirmation a été envoyé à {email}.",
+      "body": "Ouvrez le message et cliquez sur le bouton pour activer votre compte.",
+      "resend": "Renvoyer l’e-mail",
+      "resending": "Envoi…",
+      "resent": "Un nouveau lien est en route.",
+      "resendFailed": "Impossible de renvoyer l’e-mail. Réessayez dans une minute.",
+      "differentEmail": "Utiliser une autre adresse"
+    },
+    "verified": {
+      "title": "Adresse e-mail confirmée",
+      "subtitle": "Votre compte Convoy est prêt.",
+      "success": "Vous pouvez continuer.",
+      "continue": "Continuer",
+      "loading": "Confirmation de votre e-mail…",
+      "errorTitle": "Ce lien n’a pas fonctionné",
+      "errorSubtitle": "Demandez un nouvel e-mail de confirmation depuis la connexion.",
+      "expired": "Ce lien a expiré. Connectez-vous pour en recevoir un nouveau.",
+      "invalid": "Ce lien n’est plus valable. Connectez-vous pour en recevoir un nouveau.",
+      "missing": "Impossible de confirmer votre e-mail. Connectez-vous et nous enverrons un nouveau lien."
     },
     "fields": {
       "email": "Adresse e-mail",
@@ -112,6 +136,7 @@
       "signInUnavailable": "Impossible de se connecter. Réessayez ultérieurement.",
       "missingFields": "Veuillez remplir tous les champs.",
       "passwordMismatch": "Les mots de passe ne correspondent pas.",
+      "termsRequired": "Veuillez accepter les conditions d’utilisation pour créer un compte.",
       "signUpFailed": "Échec de l'inscription. Réessayez.",
       "signUpUnavailable": "Impossible de créer le compte. Réessayez plus tard.",
       "googleFailed": "La connexion Google a échoué. Veuillez réessayer.",
@@ -577,7 +602,8 @@
       "new": "Nouveau mot de passe",
       "save": "Mettre à jour",
       "saving": "Mise à jour...",
-      "success": "Mot de passe mis à jour.",
+      "hint": "La mise à jour du mot de passe déconnecte les autres appareils.",
+      "success": "Mot de passe mis à jour. Les autres appareils ont été déconnectés.",
       "error": "Impossible de mettre à jour le mot de passe. Vérifiez votre mot de passe actuel."
     },
     "appearance": {

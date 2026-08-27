@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { authCallbackUrl } from '@/lib/auth-urls';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,8 +12,7 @@ import { Label } from '@/components/ui/label';
 import { FormAlert, FormStatus } from '@/components/ui/form-alert';
 
 function resetCallbackUrl(locale: string) {
-  const prefix = locale === 'fr' ? '' : `/${locale}`;
-  return `${window.location.origin}${prefix}/auth/reset-password`;
+  return authCallbackUrl(locale, '/auth/reset-password');
 }
 
 export function ForgotPasswordForm() {

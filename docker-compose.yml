@@ -68,7 +68,7 @@ services:
   api-migrate:
     build:
       context: .
-      dockerfile: infra/Dockerfile.api
+      dockerfile: Dockerfile
     image: carpool-api
     command: ['node', 'dist/migrate.js']
     restart: 'no'
@@ -81,7 +81,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: infra/Dockerfile.api
+      dockerfile: Dockerfile
     image: carpool-api
     restart: unless-stopped
     environment:
@@ -105,7 +105,7 @@ services:
   payment-worker:
     build:
       context: .
-      dockerfile: infra/Dockerfile.api
+      dockerfile: Dockerfile
     image: carpool-api
     command: ['node', 'dist/payment-worker.js']
     restart: unless-stopped
@@ -196,7 +196,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: infra/Dockerfile.web
+      dockerfile: Dockerfile.web
       args:
         # Inlined into the browser bundle at build time (from root .env).
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
