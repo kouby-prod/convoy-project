@@ -1,26 +1,11 @@
 import { and, eq } from 'drizzle-orm';
+import { isWithinLocationSharingWindow } from '@carpool/schemas';
 import { db } from '../../db/client';
 import { booking, trajet } from '../../db/trajet-schema';
 
 export type TrajetLocationAccess =
   | { ok: true; isDriver: boolean }
   | { ok: false; status: 403 | 404; error: string };
-
-/** How long before departure sharing may start — no point broadcasting a day in advance. */
-const SHARING_OPENS_BEFORE_MS = 2 * 60 * 60 * 1000;
-/** Grace period after the estimated arrival before sharing is considered over. */
-const SHARING_CLOSES_AFTER_ARRIVAL_MS = 2 * 60 * 60 * 1000;
-/** Fallback window length when the trajet has no estimated arrival time. */
-const SHARING_CLOSES_AFTER_DEPARTURE_MS = 12 * 60 * 60 * 1000;
-
-function isWithinSharingWindow(departureAt: Date, arrivalAt: Date | null, now: Date): boolean {
-  const opensAt = departureAt.getTime() - SHARING_OPENS_BEFORE_MS;
-  const closesAt = arrivalAt
-    ? arrivalAt.getTime() + SHARING_CLOSES_AFTER_ARRIVAL_MS
-    : departureAt.getTime() + SHARING_CLOSES_AFTER_DEPARTURE_MS;
-  const nowMs = now.getTime();
-  return nowMs >= opensAt && nowMs <= closesAt;
-}
 
 /**
  * Who may see (or, if the driver, publish) a trajet's live location: the
@@ -45,7 +30,13 @@ export async function resolveTrajetLocationAccess(
   if (trajetRow.cancelledAt) {
     return { ok: false, status: 403, error: 'Trajet is cancelled' };
   }
-  if (!isWithinSharingWindow(trajetRow.departureAt, trajetRow.arrivalAt, now)) {
+  if (
+    !isWithinLocationSharingWindow(
+      trajetRow.departureAt.toISOString(),
+      trajetRow.arrivalAt ? trajetRow.arrivalAt.toISOString() : null,
+      now,
+    )
+  ) {
     return { ok: false, status: 403, error: 'Outside the live-sharing window for this trajet' };
   }
 

@@ -5,7 +5,13 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, BadgeCheck, Briefcase, Car, CreditCard, Banknote, Sparkles, Users } from 'lucide-react';
 import { createApiClient } from '@carpool/api-client';
-import { PAYMENT_AMENITIES, type RidePaymentMethod, type Trajet, type TrajetAmenity } from '@carpool/schemas';
+import {
+  PAYMENT_AMENITIES,
+  isWithinLocationSharingWindow,
+  type RidePaymentMethod,
+  type Trajet,
+  type TrajetAmenity,
+} from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
@@ -200,8 +206,12 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
   const hasConfirmedBooking = (myBookings ?? []).some(
     (item) => item.trajetId === id && item.status === 'confirmed',
   );
+  // Matches the server's own access window (resolveTrajetLocationAccess) —
+  // without this, a confirmed passenger with the page open outside the
+  // window polls every ~15s for a request the server always 403s.
+  const withinSharingWindow = isWithinLocationSharingWindow(trajet.departureDateTime, trajet.arrivalDateTime);
   const { location: liveLocation } = useTrajetLiveLocation(id, {
-    enabled: !trajet.cancelledAt && hasConfirmedBooking,
+    enabled: !trajet.cancelledAt && hasConfirmedBooking && withinSharingWindow,
   });
   const pins: (TripMapPin | null)[] = [
     trajet.departureLat !== null && trajet.departureLng !== null

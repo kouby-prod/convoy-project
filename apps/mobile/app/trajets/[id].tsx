@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { RidePaymentMethod, Trajet } from '@carpool/schemas';
+import { isWithinLocationSharingWindow, type RidePaymentMethod, type Trajet } from '@carpool/schemas';
 import { api } from '@/lib/api-client';
 import { authClient } from '@/lib/auth-client';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -236,11 +236,15 @@ function BookingSection({
   seatsAvailable,
   cancelled,
   paymentMethods,
+  departureDateTime,
+  arrivalDateTime,
 }: {
   trajetId: string;
   seatsAvailable: number;
   cancelled: boolean;
   paymentMethods: RidePaymentMethod[];
+  departureDateTime: string;
+  arrivalDateTime: string | null;
 }) {
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
@@ -374,7 +378,9 @@ function BookingSection({
         </>
       )}
     </Card>
-    {myBooking?.status === 'confirmed' ? <LiveLocationView trajetId={trajetId} /> : null}
+    {myBooking?.status === 'confirmed' && isWithinLocationSharingWindow(departureDateTime, arrivalDateTime) ? (
+      <LiveLocationView trajetId={trajetId} />
+    ) : null}
     </>
   );
 }
@@ -485,6 +491,8 @@ export default function TrajetDetailScreen() {
             seatsAvailable={data.seatsAvailable}
             cancelled={!!data.cancelledAt}
             paymentMethods={data.paymentMethods}
+            departureDateTime={data.departureDateTime}
+            arrivalDateTime={data.arrivalDateTime}
           />
         )}
       </ScrollView>
