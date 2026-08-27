@@ -228,6 +228,9 @@ function TrajetBookingsList({ trajetId, departureDateTime }: { trajetId: string;
   );
 }
 
+/** A passenger's booking still counts as "active" for this trajet in these statuses — matches the web's `ACTIVE_BOOKING` set. */
+const ACTIVE_BOOKING_STATUSES = new Set(['pending', 'awaiting_payment', 'confirmed']);
+
 function BookingSection({
   trajetId,
   seatsAvailable,
@@ -243,7 +246,27 @@ function BookingSection({
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [seats, setSeats] = useState('1');
   const [paymentMethod, setPaymentMethod] = useState<RidePaymentMethod | null>(paymentMethods[0] ?? null);
-  const [myBooking, setMyBooking] = useState<{ id: string; status: string } | null>(null);
+  // Bridges the gap between a mutation succeeding and the query below
+  // refetching; the query is the actual source of truth (so a passenger
+  // reopening this screen in a later session still sees their booking,
+  // rather than only right after the in-session mutation — see mes-
+  // reservations/trajet-booking-form.tsx on web for the same pattern).
+  const [optimisticBooking, setOptimisticBooking] = useState<{ id: string; status: string } | null>(null);
+
+  const myBookingsQueryKey = ['me', 'bookings', 'trajet', trajetId] as const;
+  const { data: myBookings, isLoading: isMyBookingsLoading } = useQuery({
+    queryKey: myBookingsQueryKey,
+    enabled: !!session?.user,
+    queryFn: async () => {
+      const res = await api.me.bookings.$get({ query: { page: '1', limit: '50' } });
+      if (!res.ok) return [];
+      const body = await res.json();
+      return body.items.filter(
+        (item) => item.trajetId === trajetId && ACTIVE_BOOKING_STATUSES.has(item.status),
+      );
+    },
+  });
+  const myBooking = optimisticBooking ?? myBookings?.[0] ?? null;
 
   const bookMutation = useMutation({
     mutationFn: async () => {
@@ -257,8 +280,9 @@ function BookingSection({
       return res.json();
     },
     onSuccess: (data) => {
-      setMyBooking({ id: data.id, status: data.status });
+      setOptimisticBooking({ id: data.id, status: data.status });
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
+      queryClient.invalidateQueries({ queryKey: myBookingsQueryKey });
     },
   });
 
@@ -272,8 +296,9 @@ function BookingSection({
       return res.json();
     },
     onSuccess: () => {
-      setMyBooking(null);
+      setOptimisticBooking(null);
       queryClient.invalidateQueries({ queryKey: ['trajets', trajetId] });
+      queryClient.invalidateQueries({ queryKey: myBookingsQueryKey });
     },
   });
 
@@ -286,6 +311,8 @@ function BookingSection({
       </Card>
     );
   }
+
+  if (isMyBookingsLoading) return null;
 
   if (!myBooking && cancelled) return null;
 

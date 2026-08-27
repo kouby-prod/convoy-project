@@ -151,9 +151,13 @@ export function useTrajetLocationSocket({
         }
 
         if (frame.data.type === 'error') {
-          // Auth/access failures: fall back to REST; do not claim live.
+          // Auth/access failures: fall back to REST and retry via the same
+          // backoff as a real disconnect (the 'close' listener below) rather
+          // than abandoning this socket — the access window (sharing opens
+          // 2h before departure) or the booking's confirmation can become
+          // valid later without the page being reloaded.
           subscribed = false;
-          setStatus('fallback');
+          socket?.close();
           return;
         }
 

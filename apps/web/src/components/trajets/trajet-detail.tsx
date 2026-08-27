@@ -173,6 +173,7 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
   const t = useTranslations('Trajets');
   const tRide = useTranslations('Trajet');
   const format = useFormatter();
+  const { data: session } = authClient.useSession();
   const departure = new Date(trajet.departureDateTime);
   const arrival = trajet.arrivalDateTime ? new Date(trajet.arrivalDateTime) : null;
   const driverName = [trajet.driver.firstName, trajet.driver.lastName].filter(Boolean).join(' ');
@@ -180,7 +181,28 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
     .filter(Boolean)
     .join('')
     .toUpperCase();
-  const { location: liveLocation } = useTrajetLiveLocation(id, { enabled: !trajet.cancelledAt });
+  // Same query key as trajet-booking-form.tsx's `fetchedBookings` — React
+  // Query dedupes it against that component's own fetch, so this doesn't add
+  // a second request. Only a confirmed passenger may subscribe to
+  // /trajets/:id/location (see resolveTrajetLocationAccess server-side);
+  // gating on it here too avoids a doomed poll + WS attempt for every other
+  // viewer of the page (anonymous, unconfirmed, or not-yet-booked).
+  const { data: myBookings } = useQuery({
+    queryKey: ['me', 'bookings', 'trajet', id],
+    enabled: Boolean(session?.user),
+    queryFn: async () => {
+      const res = await api.me.bookings.$get({ query: { page: '1', limit: '50' } });
+      if (!res.ok) return [] as { trajetId: string; status: string }[];
+      const body = await res.json();
+      return body.items;
+    },
+  });
+  const hasConfirmedBooking = (myBookings ?? []).some(
+    (item) => item.trajetId === id && item.status === 'confirmed',
+  );
+  const { location: liveLocation } = useTrajetLiveLocation(id, {
+    enabled: !trajet.cancelledAt && hasConfirmedBooking,
+  });
   const pins: (TripMapPin | null)[] = [
     trajet.departureLat !== null && trajet.departureLng !== null
       ? { id: 'departure', lat: trajet.departureLat, lng: trajet.departureLng, color: 'blue' }

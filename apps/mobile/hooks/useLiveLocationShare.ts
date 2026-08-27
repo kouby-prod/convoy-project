@@ -22,8 +22,15 @@ export function useLiveLocationShare(trajetId: string) {
   const subscriptionRef = useRef<Location.LocationSubscription | null>(null);
   const lastSentAtRef = useRef(0);
   const sharingRef = useRef(false);
+  // Flipped by stop()/unmount so a start() still awaiting the permission
+  // prompt or watchPositionAsync's setup can tell it's no longer wanted and
+  // must remove whatever subscription it gets instead of storing it — without
+  // this, calling stop() (or unmounting) while start() is still in flight
+  // left a live GPS watch running with nothing left to stop it.
+  const cancelledRef = useRef(false);
 
   const stop = useCallback(() => {
+    cancelledRef.current = true;
     subscriptionRef.current?.remove();
     subscriptionRef.current = null;
     const wasSharing = sharingRef.current;
@@ -37,17 +44,19 @@ export function useLiveLocationShare(trajetId: string) {
   }, [trajetId]);
 
   const start = useCallback(async () => {
+    cancelledRef.current = false;
     setStatus('requesting');
     setError(null);
 
     const { status: permission } = await Location.requestForegroundPermissionsAsync();
+    if (cancelledRef.current) return;
     if (permission !== 'granted') {
       setError('permission-denied');
       setStatus('error');
       return;
     }
 
-    subscriptionRef.current = await Location.watchPositionAsync(
+    const subscription = await Location.watchPositionAsync(
       { accuracy: Location.Accuracy.High, timeInterval: MIN_SEND_INTERVAL_MS, distanceInterval: 10 },
       (position) => {
         sharingRef.current = true;
@@ -69,10 +78,17 @@ export function useLiveLocationShare(trajetId: string) {
         });
       },
     );
+
+    if (cancelledRef.current) {
+      subscription.remove();
+      return;
+    }
+    subscriptionRef.current = subscription;
   }, [trajetId]);
 
   useEffect(() => {
     return () => {
+      cancelledRef.current = true;
       subscriptionRef.current?.remove();
       if (sharingRef.current) {
         void stopLiveLocation(trajetId).catch(() => {
