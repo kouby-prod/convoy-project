@@ -51,6 +51,15 @@ export async function confirmStripePayment(bookingId: string): Promise<void> {
   }
 }
 
+/** POST /payments/paypal/capture — finalizes a PayPal order after the buyer approved it. */
+export async function capturePayPalOrder(orderId: string): Promise<void> {
+  const res = await api.payments.paypal.capture.$post({ json: { orderId } });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error ?? 'Capture failed');
+  }
+}
+
 export function isPaidPaymentState(state: BookingPaymentState | undefined): boolean {
   return state?.invoice?.status === 'paid' || state?.payment?.status === 'succeeded';
 }

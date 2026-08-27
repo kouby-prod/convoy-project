@@ -23,6 +23,7 @@ export const LEGAL_SLUGS = [
   'cgv',
   'contrat-conducteur',
   'privacy',
+  'mentions-legales',
   'responsibility',
   'driver-tips',
   'passenger-tips',
@@ -34,6 +35,7 @@ const NAMESPACE_BY_SLUG: Record<LegalSlug, keyof typeof fr> = {
   cgv: 'Cgv',
   'contrat-conducteur': 'ContratConducteur',
   privacy: 'Privacy',
+  'mentions-legales': 'MentionsLegales',
   responsibility: 'Responsibility',
   'driver-tips': 'DriverTips',
   'passenger-tips': 'PassengerTips',
@@ -42,15 +44,6 @@ const NAMESPACE_BY_SLUG: Record<LegalSlug, keyof typeof fr> = {
 export function legalContentFor(slug: LegalSlug): LegalContent {
   return fr[NAMESPACE_BY_SLUG[slug]] as unknown as LegalContent;
 }
-
-/**
- * NOTE: the web's `/mentions-legales` page reads a `MentionsLegales`
- * namespace that does not exist in `fr.json` (nor `en.json`) — the footer
- * links to it, but the copy was apparently never written, so that page
- * currently renders with missing translations on web too. Not mirrored here
- * for the same reason importing everything else here avoids: inventing
- * legal notice text isn't something to guess at.
- */
 
 export interface ChecklistCopy {
   title: string;

@@ -59,12 +59,24 @@ function formatPayPalAmount(amountCents: number): string {
   return (amountCents / 100).toFixed(2);
 }
 
+type PayPalLink = { href: string; rel: string; method?: string };
+
+/**
+ * The `rel: "approve"` link out of an order's `links` array — where a buyer
+ * who isn't using the JS SDK's popup (i.e. the mobile app, via an in-app
+ * browser) is sent to authorize the payment. Absent once an order is no
+ * longer approvable (already captured, voided, etc).
+ */
+function approvalUrlFromLinks(links: PayPalLink[] | undefined): string | null {
+  return links?.find((link) => link.rel === 'approve')?.href ?? null;
+}
+
 export async function createPayPalOrder(input: {
   invoiceId: string;
   invoiceNumber: string;
   amountCents: number;
   currency: string;
-}): Promise<{ id: string }> {
+}): Promise<{ id: string; approvalUrl: string | null }> {
   const res = await paypalFetch('/v2/checkout/orders', {
     method: 'POST',
     requestId: paypalRequestId(input.invoiceId, 'order'),
@@ -80,13 +92,22 @@ export async function createPayPalOrder(input: {
           },
         },
       ],
+      // `return_url`/`cancel_url` only matter to a buyer redirected to the
+      // full PayPal checkout page (the mobile in-app-browser flow below) —
+      // the web JS SDK's popup completes via its own postMessage channel and
+      // ignores these. `carpool://` is the app's own scheme (see app.json).
+      application_context: {
+        return_url: 'carpool://paypal-redirect?result=success',
+        cancel_url: 'carpool://paypal-redirect?result=cancel',
+        user_action: 'PAY_NOW',
+      },
     }),
   });
   if (!res.ok) {
     throw new Error(`PayPal create order failed (${res.status})`);
   }
-  const body = (await res.json()) as { id: string };
-  return { id: body.id };
+  const body = (await res.json()) as { id: string; links?: PayPalLink[] };
+  return { id: body.id, approvalUrl: approvalUrlFromLinks(body.links) };
 }
 
 export async function retrievePayPalOrder(orderId: string): Promise<{
@@ -95,6 +116,7 @@ export async function retrievePayPalOrder(orderId: string): Promise<{
   amountCents: number;
   currency: string;
   invoiceId: string | undefined;
+  approvalUrl: string | null;
 }> {
   const res = await paypalFetch(`/v2/checkout/orders/${orderId}`, { method: 'GET' });
   if (!res.ok) {
@@ -103,6 +125,7 @@ export async function retrievePayPalOrder(orderId: string): Promise<{
   const body = (await res.json()) as {
     id: string;
     status: string;
+    links?: PayPalLink[];
     purchase_units?: Array<{
       custom_id?: string;
       amount?: { currency_code?: string; value?: string };
@@ -117,6 +140,7 @@ export async function retrievePayPalOrder(orderId: string): Promise<{
     amountCents,
     currency: (unit?.amount?.currency_code ?? 'CAD').toLowerCase(),
     invoiceId: unit?.custom_id,
+    approvalUrl: approvalUrlFromLinks(body.links),
   };
 }
 

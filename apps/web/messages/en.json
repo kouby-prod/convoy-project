@@ -45,6 +45,7 @@
     "contratConducteur": "Driver agreement",
     "responsibility": "Responsibility charter",
     "privacy": "Privacy",
+    "mentionsLegales": "Legal Notice",
     "contact": "Contact us",
     "infoTitle": "Information",
     "becomeDriver": "How to become a driver?",
@@ -431,6 +432,45 @@
       {
         "heading": "15. Final clause",
         "body": "Kouby is committed to complying with PIPEDA's ten fair information principles, as well as the requirements of Quebec's Law 25 on the protection of personal information:\n• Accountability\n• Identifying purposes\n• Consent\n• Limiting collection\n• Limiting use, disclosure, and retention\n• Accuracy\n• Safeguards\n• Openness\n• Individual access\n• Challenging compliance"
+      }
+    ]
+  },
+  "MentionsLegales": {
+    "title": "Legal Notice",
+    "lastUpdated": "Last updated: [to be completed]",
+    "disclaimer": "Some details still need to be filled in before publishing (legal name, registered address, Quebec enterprise number, hosting provider details) — see the \"[to be completed]\" notes below.",
+    "sections": [
+      {
+        "heading": "1. Site publisher",
+        "body": "The Kouby website and app are published by:\n[Legal name to be completed]\n[Legal form to be completed]\n[Registered address to be completed]\nQuebec Enterprise Number (NEQ): [to be completed]\nEmail: [email to be completed]\n\nKouby acts exclusively as a technical intermediation platform between drivers and passengers, in accordance with its Terms of Service."
+      },
+      {
+        "heading": "2. Publication director",
+        "body": "[Name of the publication director to be completed]"
+      },
+      {
+        "heading": "3. Hosting",
+        "body": "The app is hosted by:\n[Hosting provider's legal name to be completed]\n[Hosting provider's address to be completed]\n[Hosting provider's contact to be completed]"
+      },
+      {
+        "heading": "4. Intellectual property",
+        "body": "All elements of the Kouby site and app (text, logos, trademarks, graphic elements, source code) are protected by copyright and trademark law applicable in Canada.\n\nAny reproduction, representation, or use, in whole or in part, without prior authorization is prohibited."
+      },
+      {
+        "heading": "5. Hyperlinks",
+        "body": "Kouby cannot be held responsible for the content of third-party sites accessible through links on the platform."
+      },
+      {
+        "heading": "6. Personal data",
+        "body": "The processing of users' personal information is described in Kouby's Privacy Policy, in accordance with the Personal Information Protection and Electronic Documents Act (PIPEDA) and Quebec's Law 25."
+      },
+      {
+        "heading": "7. Limitation of liability",
+        "body": "Kouby acts exclusively as a technical intermediary. Kouby cannot be held liable for temporary site malfunctions, errors or omissions in its content, or acts attributable to a third party."
+      },
+      {
+        "heading": "8. Governing law",
+        "body": "This legal notice is governed by Canadian law and the law of the user's province of residence. Any dispute falls under the jurisdiction of the competent courts of that province."
       }
     ]
   },

@@ -45,6 +45,7 @@
     "contratConducteur": "Contrat conducteur",
     "responsibility": "Charte de responsabilité",
     "privacy": "Vie privée",
+    "mentionsLegales": "Mentions légales",
     "contact": "Contactez-nous",
     "infoTitle": "Informations",
     "becomeDriver": "Comment devenir chauffeur ?",
@@ -431,6 +432,45 @@
       {
         "heading": "15. Clause finale",
         "body": "Kouby s'engage à respecter les dix principes de la LPRPDE (PIPEDA), ainsi que les exigences de la Loi 25 du Québec relative à la protection des renseignements personnels :\n• Responsabilité\n• Détermination des fins de la collecte\n• Consentement\n• Limitation de la collecte\n• Limitation de l'utilisation, de la communication et de la conservation\n• Exactitude\n• Mesures de sécurité\n• Transparence\n• Accès individuel\n• Possibilité de porter plainte"
+      }
+    ]
+  },
+  "MentionsLegales": {
+    "title": "Mentions légales",
+    "lastUpdated": "Dernière mise à jour : [à compléter]",
+    "disclaimer": "Certaines mentions restent à compléter avant publication (raison sociale, adresse du siège, numéro d'entreprise du Québec, coordonnées de l'hébergeur) — voir les indications « [à compléter] » ci-dessous.",
+    "sections": [
+      {
+        "heading": "1. Éditeur du site",
+        "body": "Le site et l'application Kouby sont édités par :\n[Raison sociale à compléter]\n[Forme juridique à compléter]\n[Adresse du siège social à compléter]\nNuméro d'entreprise du Québec (NEQ) : [à compléter]\nCourriel : [e-mail à compléter]\n\nKouby agit exclusivement en tant que plateforme d'intermédiation technique entre conducteurs et passagers, conformément à ses Conditions Générales d'Utilisation."
+      },
+      {
+        "heading": "2. Directeur de la publication",
+        "body": "[Nom du directeur de la publication à compléter]"
+      },
+      {
+        "heading": "3. Hébergement",
+        "body": "L'application est hébergée par :\n[Raison sociale de l'hébergeur à compléter]\n[Adresse de l'hébergeur à compléter]\n[Contact de l'hébergeur à compléter]"
+      },
+      {
+        "heading": "4. Propriété intellectuelle",
+        "body": "L'ensemble des éléments du site et de l'application Kouby (textes, logos, marques, éléments graphiques, code source) est protégé par le droit d'auteur et le droit des marques applicables au Canada.\n\nToute reproduction, représentation ou utilisation, totale ou partielle, sans autorisation préalable est interdite."
+      },
+      {
+        "heading": "5. Liens hypertextes",
+        "body": "Kouby ne peut être tenu responsable du contenu des sites tiers accessibles via des liens présents sur la plateforme."
+      },
+      {
+        "heading": "6. Données personnelles",
+        "body": "Le traitement des renseignements personnels des utilisateurs est décrit dans la Politique de confidentialité de Kouby, conforme à la Loi sur la protection des renseignements personnels et les documents électroniques (LPRPDE / PIPEDA) et à la Loi 25 du Québec."
+      },
+      {
+        "heading": "7. Limitation de responsabilité",
+        "body": "Kouby agit exclusivement comme intermédiaire technique. La responsabilité de Kouby ne saurait être engagée en cas de dysfonctionnement temporaire du site, d'erreur ou d'omission dans son contenu, ou de fait imputable à un tiers."
+      },
+      {
+        "heading": "8. Droit applicable",
+        "body": "Les présentes mentions légales sont régies par le droit canadien et le droit de la province de résidence de l'utilisateur. Tout litige relève des juridictions compétentes de cette province."
       }
     ]
   },

@@ -143,6 +143,12 @@ export const CheckoutResponseSchema = z
     provider: PaymentProviderSchema,
     clientSecret: z.string().nullable(),
     orderId: z.string().nullable(),
+    /**
+     * PayPal's `rel: "approve"` link — where a buyer not using the web JS
+     * SDK's popup (i.e. a native client opening an in-app browser) is sent to
+     * authorize the payment. Always null for `provider: "stripe"`.
+     */
+    approvalUrl: z.string().nullable(),
     invoice: InvoiceSchema,
     customerSessionClientSecret: z.string().nullable().optional(),
   })

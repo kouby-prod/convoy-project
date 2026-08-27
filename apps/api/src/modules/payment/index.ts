@@ -224,6 +224,7 @@ async function startCheckout(
             provider,
             clientSecret: intent.clientSecret,
             orderId: null,
+            approvalUrl: null,
             invoice: serializeInvoice(paidInv ?? inv),
             customerSessionClientSecret,
           },
@@ -239,18 +240,21 @@ async function startCheckout(
             provider,
             clientSecret: intent.clientSecret,
             orderId: null,
+            approvalUrl: null,
             invoice: serializeInvoice(inv),
             customerSessionClientSecret,
           },
         };
       }
     } else if (open.status === 'created' || open.status === 'processing') {
+      const existingOrder = await retrievePayPalOrder(open.providerPaymentId);
       return {
         ok: true,
         value: {
           provider,
           clientSecret: null,
           orderId: open.providerPaymentId,
+          approvalUrl: existingOrder.approvalUrl,
           invoice: serializeInvoice(inv),
         },
       };
@@ -283,6 +287,7 @@ async function startCheckout(
         provider,
         clientSecret: intent.clientSecret,
         orderId: null,
+        approvalUrl: null,
         invoice: serializeInvoice(inv),
         customerSessionClientSecret: customer
           ? await createStripeCustomerSession(customer.customerId)
@@ -312,6 +317,7 @@ async function startCheckout(
       provider,
       clientSecret: null,
       orderId: order.id,
+      approvalUrl: order.approvalUrl,
       invoice: serializeInvoice(inv),
     },
   };

@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, Text } from 'react-native';
 import { router } from 'expo-router';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { Button } from '@/components/ui/Button';
-import { legalContentFor } from '@/lib/legal-content';
+import { legalContentFor, type LegalSlug } from '@/lib/legal-content';
 import { colors, spacing, fontSize } from '@/lib/theme';
 
 const GUIDES: { label: string; href: '/become-driver' | '/become-passenger' }[] = [
@@ -10,15 +10,17 @@ const GUIDES: { label: string; href: '/become-driver' | '/become-passenger' }[] 
   { label: 'Comment devenir passager', href: '/become-passenger' },
 ];
 
-const TIPS_AND_LEGAL: { label: string; slug: 'driver-tips' | 'passenger-tips' | 'responsibility' | 'terms' | 'cgv' | 'contrat-conducteur' | 'privacy' }[] = [
-  { label: legalContentFor('driver-tips').title, slug: 'driver-tips' },
-  { label: legalContentFor('passenger-tips').title, slug: 'passenger-tips' },
-  { label: legalContentFor('responsibility').title, slug: 'responsibility' },
-  { label: legalContentFor('terms').title, slug: 'terms' },
-  { label: legalContentFor('cgv').title, slug: 'cgv' },
-  { label: legalContentFor('contrat-conducteur').title, slug: 'contrat-conducteur' },
-  { label: legalContentFor('privacy').title, slug: 'privacy' },
+const TIPS_AND_LEGAL_SLUGS: LegalSlug[] = [
+  'driver-tips',
+  'passenger-tips',
+  'responsibility',
+  'terms',
+  'cgv',
+  'contrat-conducteur',
+  'privacy',
+  'mentions-legales',
 ];
+const TIPS_AND_LEGAL = TIPS_AND_LEGAL_SLUGS.map((slug) => ({ slug, label: legalContentFor(slug).title }));
 
 /** Hub for the onboarding guides and legal/info pages — reached from Compte. */
 export default function LegalIndexScreen() {

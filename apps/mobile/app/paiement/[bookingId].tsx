@@ -3,7 +3,14 @@ import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useStripe } from '@stripe/stripe-react-native';
-import { confirmStripePayment, fetchPaymentState, isPaidPaymentState, startCheckout } from '@/lib/payments';
+import * as WebBrowser from 'expo-web-browser';
+import {
+  capturePayPalOrder,
+  confirmStripePayment,
+  fetchPaymentState,
+  isPaidPaymentState,
+  startCheckout,
+} from '@/lib/payments';
 import { formatCad, isPastDue, payableCents } from '@/lib/booking-money';
 import { env } from '@/lib/env';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -12,17 +19,21 @@ import { Button } from '@/components/ui/Button';
 import { LoadingState, ErrorState } from '@/components/ui/StateMessage';
 import { colors, spacing, fontSize } from '@/lib/theme';
 
+/** Must match the redirect scheme in apps/api/src/modules/payment/paypal.ts's `application_context`. */
+const PAYPAL_REDIRECT_URL = 'carpool://paypal-redirect';
+
 function formatWhen(value: string) {
   return new Intl.DateTimeFormat('fr-CA', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
 /**
- * Card checkout for one booking's invoice — mobile counterpart of the web's
- * `PaiementCheckout`, using Stripe's pre-built `PaymentSheet` instead of
- * hand-assembled Elements (same "let Stripe own the UI" idea as the web's
- * `PaymentElement`). PayPal isn't wired up here yet: the API only returns an
- * `orderId`, not the approval link a native client needs to open PayPal's
- * checkout — deferred until that's added.
+ * Checkout for one booking's invoice — mobile counterpart of the web's
+ * `PaiementCheckout`. Card payment uses Stripe's pre-built `PaymentSheet`
+ * (same "let Stripe own the UI" idea as the web's `PaymentElement`). PayPal
+ * has no native SDK button here: it opens the approval link (from
+ * `POST /payments`'s `approvalUrl`) in an in-app browser and waits for the
+ * redirect back to `PAYPAL_REDIRECT_URL`, then captures the order — the
+ * mobile equivalent of the web JS SDK's popup-and-postMessage flow.
  */
 export default function PaiementScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -31,6 +42,7 @@ export default function PaiementScreen() {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [payError, setPayError] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
+  const [payingPaypal, setPayingPaypal] = useState(false);
 
   const queryKey = ['payments', 'by-booking', bookingId] as const;
   const { data, isLoading, isError } = useQuery({
@@ -73,6 +85,29 @@ export default function PaiementScreen() {
       setPayError(err instanceof Error ? err.message : "Échec du paiement.");
     } finally {
       setPaying(false);
+    }
+  }
+
+  async function handlePayPal() {
+    if (!data?.invoice) return;
+    setPayError(null);
+    setPayingPaypal(true);
+    try {
+      const checkout = await startCheckout(bookingId, data.invoice.id, 'paypal');
+      if (!checkout.approvalUrl) throw new Error('PayPal est indisponible pour le moment.');
+
+      const result = await WebBrowser.openAuthSessionAsync(checkout.approvalUrl, PAYPAL_REDIRECT_URL);
+      if (result.type !== 'success') return; // cancelled or dismissed — not an error
+      if (!result.url.includes('result=success')) return; // buyer backed out on PayPal's side
+
+      if (!checkout.orderId) throw new Error('Réponse PayPal invalide.');
+      await capturePayPalOrder(checkout.orderId);
+      await queryClient.invalidateQueries({ queryKey });
+      await queryClient.invalidateQueries({ queryKey: ['me', 'bookings'] });
+    } catch (err) {
+      setPayError(err instanceof Error ? err.message : 'Échec du paiement PayPal.');
+    } finally {
+      setPayingPaypal(false);
     }
   }
 
@@ -167,22 +202,28 @@ export default function PaiementScreen() {
                 : ''}
             </Text>
 
+            {payError ? <Text style={styles.error}>{payError}</Text> : null}
+
             {stripeReady ? (
-              <>
-                {payError ? <Text style={styles.error}>{payError}</Text> : null}
-                <Button
-                  label={paying ? 'Traitement…' : `Payer ${formatCad(invoice.totalCents)}`}
-                  onPress={() => void handlePay()}
-                  disabled={paying}
-                  loading={paying}
-                />
-              </>
+              <Button
+                label={paying ? 'Traitement…' : `Payer par carte ${formatCad(invoice.totalCents)}`}
+                onPress={() => void handlePay()}
+                disabled={paying || payingPaypal}
+                loading={paying}
+              />
             ) : (
               <Text style={styles.error}>
-                Le paiement par carte n'est pas disponible sur cette build. Ouvrez le lien reçu par e-mail pour
-                payer depuis le site web.
+                Le paiement par carte n'est pas disponible sur cette build.
               </Text>
             )}
+
+            <Button
+              label={payingPaypal ? 'Redirection…' : 'Payer avec PayPal'}
+              variant="outline"
+              onPress={() => void handlePayPal()}
+              disabled={paying || payingPaypal}
+              loading={payingPaypal}
+            />
 
             <Button
               label="Ouvrir le paiement sur le web"
