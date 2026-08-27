@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { authClient } from '@/lib/auth-client';
+import { isEmailNotVerified } from '@/lib/auth-errors';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
+import { CheckEmailNotice } from '@/components/auth/CheckEmailNotice';
 import { colors, spacing, fontSize } from '@/lib/theme';
 
 export default function SignInScreen() {
@@ -12,6 +14,10 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Set once a sign-in attempt is blocked by `requireEmailVerification` — the
+  // server resends a fresh verification email itself (`sendOnSignIn: true`),
+  // this just tells the driver/passenger to go check it.
+  const [pendingEmail, setPendingEmail] = useState('');
 
   async function handleSubmit() {
     setError(null);
@@ -28,38 +34,50 @@ export default function SignInScreen() {
     setLoading(false);
 
     if (signInError) {
+      if (isEmailNotVerified(signInError)) {
+        setPendingEmail(email.trim());
+        return;
+      }
       setError(signInError.message ?? 'Échec de la connexion. Vérifiez vos identifiants.');
     }
   }
+
+  const waitingForInbox = pendingEmail.length > 0;
 
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Carpool</Text>
-        <Text style={styles.subtitle}>Connectez-vous pour rechercher et réserver un trajet.</Text>
+        <Text style={styles.subtitle}>
+          {waitingForInbox ? 'Confirmez votre e-mail' : 'Connectez-vous pour rechercher et réserver un trajet.'}
+        </Text>
 
-        <View style={styles.form}>
-          <TextField
-            label="Adresse e-mail"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-          />
-          <TextField
-            label="Mot de passe"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="password"
-          />
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Button label={loading ? 'Connexion…' : 'Se connecter'} onPress={handleSubmit} loading={loading} />
-          <Link href="/forgot-password" style={styles.forgotLink}>
-            Mot de passe oublié ?
-          </Link>
-        </View>
+        {waitingForInbox ? (
+          <CheckEmailNotice email={pendingEmail} />
+        ) : (
+          <View style={styles.form}>
+            <TextField
+              label="Adresse e-mail"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+            />
+            <TextField
+              label="Mot de passe"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="password"
+            />
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            <Button label={loading ? 'Connexion…' : 'Se connecter'} onPress={handleSubmit} loading={loading} />
+            <Link href="/forgot-password" style={styles.forgotLink}>
+              Mot de passe oublié ?
+            </Link>
+          </View>
+        )}
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Pas encore de compte ?</Text>

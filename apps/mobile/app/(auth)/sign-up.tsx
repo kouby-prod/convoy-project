@@ -5,6 +5,7 @@ import { authClient } from '@/lib/auth-client';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
+import { CheckEmailNotice } from '@/components/auth/CheckEmailNotice';
 import { colors, spacing, fontSize } from '@/lib/theme';
 
 export default function SignUpScreen() {
@@ -54,9 +55,8 @@ export default function SignUpScreen() {
 
         {createdNotice ? (
           <View style={styles.notice}>
-            <Text style={styles.noticeText}>
-              Compte créé. Vérifiez votre e-mail pour confirmer votre adresse, puis connectez-vous.
-            </Text>
+            <Text style={styles.noticeText}>Compte créé.</Text>
+            <CheckEmailNotice email={email.trim()} />
             <Link href="/" style={styles.link}>
               Se connecter
             </Link>
