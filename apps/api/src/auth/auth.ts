@@ -6,7 +6,9 @@ import { env } from '../env';
 import * as authSchema from '../db/auth-schema';
 import { sendEmail } from './email';
 import { localeFromAuthUrl, resetPasswordEmail, verificationEmail } from './email-templates';
+import { createAuthSecondaryStorage } from './secondary-storage';
 import { sendSms } from './sms';
+import { createRedisConnection } from '../queue/redis';
 
 /**
  * BetterAuth instance — the single source of truth for authentication.
@@ -39,6 +41,8 @@ export const auth = betterAuth({
       const mail = resetPasswordEmail({ url, locale: localeFromAuthUrl(url) });
       await sendEmail({ to: user.email, ...mail });
     },
+    // Reset is unauthenticated — drop every session, then they sign in again.
+    revokeSessionsOnPasswordReset: true,
     onPasswordReset: async ({ user }) => {
       console.log(`[auth] password reset completed for ${user.email}`);
     },
@@ -112,12 +116,12 @@ export const auth = betterAuth({
     },
   },
 
-  // --- Rate limiting (BetterAuth built-in) ---
-  // In-memory for dev. TODO(prod): configure `secondaryStorage` (Redis) and set
-  // `storage: 'secondary-storage'` so limits + sessions survive restarts and
-  // scale across instances. See the commented `secondaryStorage` slot below.
+  // --- Rate limiting (Redis via secondaryStorage) ---
+  // Shared across API replicas and survives restarts. Custom rules stay tight
+  // on the auth endpoints that are worth brute-forcing.
   rateLimit: {
     enabled: true,
+    storage: 'secondary-storage',
     window: 60,
     max: 100,
     customRules: {
@@ -137,12 +141,7 @@ export const auth = betterAuth({
     },
   },
 
-  // TODO(prod): back rate limiting + sessions with Redis.
-  // secondaryStorage: {
-  //   get: (key) => redis.get(key),
-  //   set: (key, value, ttl) => redis.set(key, value, 'EX', ttl ?? 60),
-  //   delete: (key) => redis.del(key),
-  // },
+  secondaryStorage: createAuthSecondaryStorage(createRedisConnection('auth')),
 
   plugins: [
     // Roles: `user` (default) and `admin`. Two roles only — no permissions engine.

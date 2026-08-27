@@ -559,7 +559,8 @@
       "new": "New password",
       "save": "Update",
       "saving": "Updating...",
-      "success": "Password updated.",
+      "hint": "Updating your password signs out other devices.",
+      "success": "Password updated. Other devices have been signed out.",
       "error": "Unable to update the password. Check your current password."
     },
     "appearance": {

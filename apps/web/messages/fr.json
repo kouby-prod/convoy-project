@@ -559,7 +559,8 @@
       "new": "Nouveau mot de passe",
       "save": "Mettre à jour",
       "saving": "Mise à jour...",
-      "success": "Mot de passe mis à jour.",
+      "hint": "La mise à jour du mot de passe déconnecte les autres appareils.",
+      "success": "Mot de passe mis à jour. Les autres appareils ont été déconnectés.",
       "error": "Impossible de mettre à jour le mot de passe. Vérifiez votre mot de passe actuel."
     },
     "appearance": {

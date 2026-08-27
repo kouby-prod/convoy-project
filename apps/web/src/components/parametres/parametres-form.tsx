@@ -98,7 +98,7 @@ export function ParametresForm() {
     const { error } = await authClient.changePassword({
       currentPassword,
       newPassword,
-      revokeOtherSessions: false,
+      revokeOtherSessions: true,
     });
 
     setPasswordState({
@@ -183,6 +183,7 @@ export function ParametresForm() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePasswordSubmit} className="grid max-w-md gap-3">
+                <p className="text-sm text-muted-foreground">{t('password.hint')}</p>
                 <LabelledField label={t('password.current')} htmlFor="currentPassword">
                   <PasswordInput
                     id="currentPassword"
