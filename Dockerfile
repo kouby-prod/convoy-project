@@ -2,6 +2,8 @@
 # Production API image. Build context = repo root:
 #   docker build -f Dockerfile .
 FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 WORKDIR /app
 
@@ -14,7 +16,8 @@ COPY packages/config/package.json packages/config/package.json
 COPY packages/schemas/package.json packages/schemas/package.json
 COPY packages/core/package.json packages/core/package.json
 COPY packages/api-client/package.json packages/api-client/package.json
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile --store-dir /pnpm/store
 
 # ---- build (tsup bundles @carpool/* into dist) ----
 FROM deps AS build
@@ -30,7 +33,8 @@ COPY packages/config/package.json packages/config/package.json
 COPY packages/schemas/package.json packages/schemas/package.json
 COPY packages/core/package.json packages/core/package.json
 COPY packages/api-client/package.json packages/api-client/package.json
-RUN pnpm install --frozen-lockfile --prod
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile --prod --store-dir /pnpm/store
 
 # ---- runtime: no app source, no secrets, no devDependencies ----
 FROM base AS runner

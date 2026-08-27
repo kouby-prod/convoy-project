@@ -9,6 +9,9 @@ config({ path: resolve(process.cwd(), '../../.env') });
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  output: 'standalone',
+  // Monorepo: include workspace packages in the standalone file trace.
+  outputFileTracingRoot: resolve(process.cwd(), '../..'),
   // Workspace packages ship TypeScript source, so Next must transpile them.
   transpilePackages: ['@carpool/api-client', '@carpool/schemas', '@carpool/core'],
 };

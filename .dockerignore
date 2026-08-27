@@ -1,6 +1,10 @@
 **/node_modules
 **/dist
 **/.next
+**/out
+**/build
+**/.pnpm-store
+**/*.tsbuildinfo
 **/.expo
 **/.turbo
 **/coverage

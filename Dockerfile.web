@@ -2,6 +2,8 @@
 # Production web image. Build context = repo root:
 #   docker build -f Dockerfile.web --build-arg NEXT_PUBLIC_API_URL=https://api.example.com .
 FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 WORKDIR /app
 
@@ -17,7 +19,8 @@ COPY packages/config/package.json packages/config/package.json
 COPY packages/schemas/package.json packages/schemas/package.json
 COPY packages/core/package.json packages/core/package.json
 COPY packages/api-client/package.json packages/api-client/package.json
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile --store-dir /pnpm/store
 
 # ---- build Next.js (NEXT_PUBLIC_* is inlined here) ----
 FROM deps AS build
@@ -34,28 +37,18 @@ ARG NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=
 ENV NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=$NEXT_PUBLIC_GOOGLE_AUTH_ENABLED
 RUN pnpm --filter @carpool/web build
 
-# ---- runtime ----
-# next.config.ts imports `dotenv` (a web *devDependency*) when `next start`
-# loads config, so a --prod install would crash at boot. We copy the build
-# install but not the app source tree, except files Next reads at runtime.
+# ---- runtime: Next standalone trace (no pnpm, no full node_modules) ----
+# next.config.ts still imports dotenv at *build* time (local root .env).
+# The standalone server does not load next.config.ts at runtime.
 FROM base AS runner
 ENV NODE_ENV=production
-COPY --from=build --chown=node:node /app/node_modules ./node_modules
-COPY --from=build --chown=node:node /app/package.json ./package.json
-COPY --from=build --chown=node:node /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --from=build --chown=node:node /app/.npmrc ./.npmrc
-COPY --from=build --chown=node:node /app/apps/web/package.json ./apps/web/package.json
-COPY --from=build --chown=node:node /app/apps/web/.next ./apps/web/.next
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+WORKDIR /app
+COPY --from=build --chown=node:node /app/apps/web/.next/standalone ./
+COPY --from=build --chown=node:node /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build --chown=node:node /app/apps/web/public ./apps/web/public
-COPY --from=build --chown=node:node /app/apps/web/next.config.ts ./apps/web/next.config.ts
 COPY --from=build --chown=node:node /app/apps/web/messages ./apps/web/messages
-COPY --from=build --chown=node:node /app/apps/web/src/i18n ./apps/web/src/i18n
-COPY --from=build --chown=node:node /app/packages/schemas ./packages/schemas
-COPY --from=build --chown=node:node /app/packages/api-client ./packages/api-client
-COPY --from=build --chown=node:node /app/packages/core ./packages/core
-COPY --from=build --chown=node:node /app/packages/config ./packages/config
-COPY --from=build --chown=node:node /app/apps/api/package.json ./apps/api/package.json
 USER node
-WORKDIR /app/apps/web
 EXPOSE 3000
-CMD ["pnpm", "start"]
+CMD ["node", "apps/web/server.js"]
