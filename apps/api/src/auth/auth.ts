@@ -5,6 +5,7 @@ import { db } from '../db/client';
 import { env } from '../env';
 import * as authSchema from '../db/auth-schema';
 import { sendEmail } from './email';
+import { localeFromAuthUrl, resetPasswordEmail, verificationEmail } from './email-templates';
 import { sendSms } from './sms';
 
 /**
@@ -29,17 +30,14 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
-    // Unverified users cannot sign in until they click the verification link.
-    // In dev (console stub) the link is printed to the API logs; with SMTP_HOST
-    // set it is emailed for real.
+    // Unverified sign-in resends the mail when `sendOnSignIn` is on. The web
+    // client passes a locale `callbackURL` so the link returns to the site,
+    // not the API origin (`/`).
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
       console.log(`[auth] sending password-reset email to ${user.email}`);
-      await sendEmail({
-        to: user.email,
-        subject: 'Reset your Convoy password / Réinitialisez votre mot de passe Convoy',
-        text: `Reset your password with this link / Réinitialisez votre mot de passe avec ce lien : ${url}`,
-      });
+      const mail = resetPasswordEmail({ url, locale: localeFromAuthUrl(url) });
+      await sendEmail({ to: user.email, ...mail });
     },
     onPasswordReset: async ({ user }) => {
       console.log(`[auth] password reset completed for ${user.email}`);
@@ -51,11 +49,12 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       console.log(`[auth] sending verification email to ${user.email}`);
-      await sendEmail({
-        to: user.email,
-        subject: 'Verify your Carpool email',
-        text: `Verify your email with this link: ${url}`,
+      const mail = verificationEmail({
+        email: user.email,
+        url,
+        locale: localeFromAuthUrl(url),
       });
+      await sendEmail({ to: user.email, ...mail });
     },
   },
 
@@ -125,6 +124,7 @@ export const auth = betterAuth({
       '/sign-in/email': { window: 10, max: 5 },
       '/sign-up/email': { window: 60, max: 5 },
       '/request-password-reset': { window: 60, max: 3 },
+      '/send-verification-email': { window: 60, max: 3 },
       '/phone-number/send-otp': { window: 60, max: 3 },
     },
   },

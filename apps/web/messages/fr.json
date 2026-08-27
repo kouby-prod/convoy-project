@@ -93,6 +93,28 @@
       "missingToken": "Ce lien est incomplet ou a expiré. Demandez-en un nouveau.",
       "invalidToken": "Ce lien n’est plus valable. Demandez-en un nouveau."
     },
+    "checkEmail": {
+      "title": "Vérifiez votre boîte mail",
+      "subtitle": "Un lien de confirmation a été envoyé à {email}.",
+      "body": "Ouvrez le message et cliquez sur le bouton pour activer votre compte.",
+      "resend": "Renvoyer l’e-mail",
+      "resending": "Envoi…",
+      "resent": "Un nouveau lien est en route.",
+      "resendFailed": "Impossible de renvoyer l’e-mail. Réessayez dans une minute.",
+      "differentEmail": "Utiliser une autre adresse"
+    },
+    "verified": {
+      "title": "Adresse e-mail confirmée",
+      "subtitle": "Votre compte Convoy est prêt.",
+      "success": "Vous pouvez continuer.",
+      "continue": "Continuer",
+      "loading": "Confirmation de votre e-mail…",
+      "errorTitle": "Ce lien n’a pas fonctionné",
+      "errorSubtitle": "Demandez un nouvel e-mail de confirmation depuis la connexion.",
+      "expired": "Ce lien a expiré. Connectez-vous pour en recevoir un nouveau.",
+      "invalid": "Ce lien n’est plus valable. Connectez-vous pour en recevoir un nouveau.",
+      "missing": "Impossible de confirmer votre e-mail. Connectez-vous et nous enverrons un nouveau lien."
+    },
     "fields": {
       "email": "Adresse e-mail",
       "emailPlaceholder": "vous@exemple.com",

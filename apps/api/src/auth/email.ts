@@ -11,6 +11,8 @@ export interface EmailMessage {
   to: string;
   subject: string;
   text: string;
+  /** Optional HTML alternative. Auth mail always sends both; other callers may stay text-only. */
+  html?: string;
   attachments?: EmailAttachment[];
 }
 
@@ -70,6 +72,7 @@ export function getSmtpEmailSender(): EmailSender | null {
       to: message.to,
       subject: message.subject,
       text: message.text,
+      html: message.html,
       attachments: message.attachments?.map((file) => ({
         filename: file.filename,
         content: file.content,
