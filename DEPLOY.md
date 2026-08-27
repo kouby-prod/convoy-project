@@ -73,18 +73,19 @@ Google callback: `https://api.example.com/api/auth/callback/google`. Webhooks: `
 
 ## 5. Environment variables
 
-Paste from `deploy/.env.example` into Coolify → **Environment Variables**. Do not commit real values.
+Paste from `deploy/.env.example` into Coolify → **Environment Variables**. The complete list (build vs runtime, required, where the value comes from) is in [COOLIFY.md](./COOLIFY.md). Do not commit real values.
 
-**Build-time** (mark “available at build time” / build arg in Coolify). Changing any of these **requires a rebuild** (Redeploy with rebuild), not a container restart. They are `ARG`s in `Dockerfile.web`:
+**Build-time** (also declared under `web.build.args`). Changing any of these **requires a rebuild**, not a restart:
 
 | Variable | Notes |
 |---|---|
-| `NEXT_PUBLIC_API_URL` | Public API origin; inlined into the Next.js bundle |
+| `NEXT_PUBLIC_API_URL` | Required. Public API origin; inlined into the Next.js bundle |
+| `NEXT_PUBLIC_WS_URL` | Optional; empty derives `wss://` from the API URL |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Optional |
 | `NEXT_PUBLIC_PAYPAL_CLIENT_ID` | Optional |
 | `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED` | Optional; truthy shows the Google button |
 
-**Runtime** (restart is enough): everything else in `deploy/.env.example` — `DATABASE_URL`, `REDIS_URL`, `REDIS_PASSWORD`, `POSTGRES_*`, `BETTER_AUTH_*`, `TRUSTED_ORIGINS`, `S3_*`, `INTERNAL_API_URL` (`http://api:3001`), SMTP, SMS, Stripe/PayPal **secret** keys, invoice fields, `SENTRY_*`, `NTFY_*`, `PAGERDUTY_ROUTING_KEY`, `PORT=3001`, `PAYMENT_WORKER_EMBEDDED` is hard-coded `false` on `api` in compose.
+**Runtime** (restart is enough): everything else listed in [COOLIFY.md](./COOLIFY.md). `PAYMENT_WORKER_EMBEDDED` defaults to `false` on `api`.
 
 Generate secrets with `openssl rand -base64 32`. URL-encode the password inside `DATABASE_URL` and `REDIS_URL` (`redis://:<encoded>@redis:6379`). Use compose hostnames `postgres`, `redis`, `minio` — not localhost.
 
