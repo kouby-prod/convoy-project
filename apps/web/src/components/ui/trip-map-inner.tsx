@@ -21,9 +21,10 @@ import type { TripMapPin } from './trip-map';
 const PIN_COLORS: Record<TripMapPin['color'], string> = {
   blue: '#187eb3',
   green: '#26b053',
+  yellow: '#e2d200',
 };
 
-function pinIcon(color: TripMapPin['color']): L.DivIcon {
+function teardropIcon(color: TripMapPin['color']): L.DivIcon {
   const fill = PIN_COLORS[color];
   return L.divIcon({
     className: '',
@@ -36,9 +37,55 @@ function pinIcon(color: TripMapPin['color']): L.DivIcon {
   });
 }
 
-/** Recenters/fits the map whenever the pin set changes — panning is otherwise frozen at the initial view. */
-function FitToPins({ pins }: { pins: TripMapPin[] }) {
+/**
+ * Pulsing dot for a live (moving) position — plain SVG `<animate>` (SMIL)
+ * rather than a Tailwind animation class: a `divIcon`'s `html` is raw HTML,
+ * not JSX, so Tailwind's static class scanner never sees classes embedded in
+ * it (see the module doc above). SMIL needs no framework and works in every
+ * evergreen browser this app targets.
+ */
+function liveIcon(color: TripMapPin['color']): L.DivIcon {
+  const fill = PIN_COLORS[color];
+  return L.divIcon({
+    className: '',
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26">
+      <circle cx="13" cy="13" r="8" fill="${fill}" fill-opacity="0.35">
+        <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite" />
+        <animate attributeName="fill-opacity" values="0.35;0.05;0.35" dur="2s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="13" cy="13" r="6" fill="${fill}" stroke="white" stroke-width="2"/>
+    </svg>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+  });
+}
+
+function pinIcon(pin: Pick<TripMapPin, 'color' | 'kind'>): L.DivIcon {
+  return pin.kind === 'live' ? liveIcon(pin.color) : teardropIcon(pin.color);
+}
+
+/**
+ * A single dependency string for `FitToPins`' effect. In the normal case it
+ * encodes every pin's id + position, so any move re-fits the view (departure/
+ * arrival map, the draggable picker pin). In `preserveViewOnUpdate` mode it
+ * only encodes the *set* of ids, so a live pin's position ticking every few
+ * seconds does not keep fighting a passenger's manual pan/zoom — the view
+ * only re-fits when a pin actually appears or disappears.
+ */
+function fitKeyFor(pins: TripMapPin[], preserveViewOnUpdate: boolean): string {
+  if (preserveViewOnUpdate) {
+    return pins
+      .map((pin) => pin.id)
+      .sort()
+      .join(',');
+  }
+  return pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join(',');
+}
+
+/** Recenters/fits the map when `fitKey` changes — panning is otherwise frozen at the initial view. */
+function FitToPins({ pins, preserveViewOnUpdate }: { pins: TripMapPin[]; preserveViewOnUpdate: boolean }) {
   const map = useMap();
+  const fitKey = fitKeyFor(pins, preserveViewOnUpdate);
   useEffect(() => {
     if (pins.length === 0) return;
     if (pins.length === 1) {
@@ -49,7 +96,8 @@ function FitToPins({ pins }: { pins: TripMapPin[] }) {
       pins.map((pin) => [pin.lat, pin.lng] as [number, number]),
       { padding: [32, 32] },
     );
-  }, [map, pins]);
+    // Deliberately keyed on `fitKey`, not `pins` — see `fitKeyFor` above.
+  }, [map, fitKey]);
   return null;
 }
 
@@ -57,9 +105,15 @@ interface TripMapInnerProps {
   pins: TripMapPin[];
   className?: string;
   zoom?: number;
+  preserveViewOnUpdate?: boolean;
 }
 
-export default function TripMapInner({ pins, className, zoom = 13 }: TripMapInnerProps) {
+export default function TripMapInner({
+  pins,
+  className,
+  zoom = 13,
+  preserveViewOnUpdate = false,
+}: TripMapInnerProps) {
   const first = pins[0];
 
   if (!first) return null;
@@ -76,12 +130,12 @@ export default function TripMapInner({ pins, className, zoom = 13 }: TripMapInne
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitToPins pins={pins} />
+        <FitToPins pins={pins} preserveViewOnUpdate={preserveViewOnUpdate} />
         {pins.map((pin) => (
           <Marker
             key={pin.id}
             position={[pin.lat, pin.lng]}
-            icon={pinIcon(pin.color)}
+            icon={pinIcon(pin)}
             draggable={pin.draggable ?? false}
             eventHandlers={
               pin.onDragEnd

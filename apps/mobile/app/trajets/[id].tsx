@@ -13,6 +13,8 @@ import { LoadingState, ErrorState } from '@/components/ui/StateMessage';
 import { PaginationBar } from '@/components/ui/PaginationBar';
 import { BookingMessages } from '@/components/trajets/BookingMessages';
 import { ReviewForm } from '@/components/trajets/ReviewForm';
+import { LiveLocationShare } from '@/components/trajets/LiveLocationShare';
+import { LiveLocationView } from '@/components/trajets/LiveLocationView';
 import { AMENITY_LABELS } from '@/lib/amenities';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
 
@@ -296,6 +298,7 @@ function BookingSection({
   }
 
   return (
+    <>
     <Card>
       <Text style={styles.cardTitle}>Réservation</Text>
       {myBooking ? (
@@ -341,6 +344,8 @@ function BookingSection({
         </>
       )}
     </Card>
+    {myBooking?.status === 'confirmed' ? <LiveLocationView trajetId={trajetId} /> : null}
+    </>
   );
 }
 
@@ -440,6 +445,7 @@ export default function TrajetDetailScreen() {
 
         {isOwner ? (
           <>
+            <LiveLocationShare trajetId={id} cancelled={!!data.cancelledAt} />
             <OwnerActions trajetId={id} cancelled={!!data.cancelledAt} />
             <TrajetBookingsList trajetId={id} departureDateTime={data.departureDateTime} />
           </>

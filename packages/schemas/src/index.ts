@@ -12,5 +12,6 @@ export * from './geocode';
 export * from './message';
 export * from './notification';
 export * from './review';
+export * from './tracking';
 export * from './trajet';
 export * from './account-deletion';

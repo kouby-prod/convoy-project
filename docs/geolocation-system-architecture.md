@@ -173,6 +173,63 @@ Concretely:
    arrival-detection, and breadcrumb history persistence. Revisit if a fleet-proximity feature or
    post-trip analytics is ever requested.
 
+## 4. What was actually built (`feat/geolocation`)
+
+The shape in §3 shipped largely as proposed — Redis-only storage, direct publish (no BullMQ),
+`LocationHub` mirroring `MessageHub`, driver-only ingestion, Leaflet on the client. Two deliberate
+deltas from the plan, and the concrete file map:
+
+**Delta 1 — no trip-lifecycle columns.** §3.1 called `startedAt`/`completedAt` a "required
+prerequisite." That was skipped in favor of a cheaper gate with no schema change: since `trajet`
+already carries `departureAt`, `arrivalAt` (nullable) and `cancelledAt`, the sharing window is
+computed from those instead —
+
+```
+opensAt  = departureAt − 2h
+closesAt = arrivalAt ? (arrivalAt + 2h) : (departureAt + 12h)   // fallback when no ETA
+```
+
+Access (`resolveTrajetLocationAccess` in `apps/api/src/modules/tracking/access.ts`, shared by the
+REST routes and the WebSocket subscribe handshake) denies outright when `cancelledAt` is set, or
+when "now" falls outside `[opensAt, closesAt]`. Trade-off accepted knowingly: no schema migration
+and no new lifecycle to keep in sync with reality, at the cost of being coarser than an explicit
+"driver pressed start" signal — a driver running more than 2h early/late can't share, and there is
+no way to end the window early short of the explicit `DELETE` endpoint or `cancelledAt`. Revisit if
+the product ever needs a real "trip in progress" concept for other reasons (§3.1's original
+motivation still stands for that case).
+
+**Delta 2 — cache/channel naming and TTL.** The KV cache key is `location:latest:trajet:{id}`
+(deliberately distinct from the pub/sub channel `location:trajet:{id}` from §3's diagram, so the
+two different Redis usages — a value vs. a broadcast — don't share a prefix). TTL is 120s, not the
+30s in §3.3: the browser client (`apps/web/src/hooks/use-live-location-share.ts`) throttles sends to
+roughly one every 8-10s, so 120s gives a few missed beats of slack before a stale position silently
+disappears, rather than expiring between two normal pings.
+
+Everything else matches §3 as designed: driver-only `POST`, no queue on the hot path, `LocationHub`
+keyed by `trajetId` with explicit subscribe/unsubscribe, `GET /ws/location` reusing the existing
+`WS_CLOSE_UNAUTHORIZED` auth pattern, and Leaflet on the client (already a dependency by the time
+this shipped, added independently for the departure/arrival picker).
+
+**File map:**
+
+| Layer | Files |
+|---|---|
+| Shared contract | `packages/schemas/src/tracking.ts` (`LiveLocation`, `UpdateLiveLocation`, WS frames) |
+| Access control | `apps/api/src/modules/tracking/access.ts` — cancellation + window + driver/confirmed-passenger check, shared by REST and WS |
+| Storage | `apps/api/src/modules/tracking/store.ts` — Redis `SET …EX 120` / `GET` / `DEL`, one key per trajet |
+| Pub/sub | `apps/api/src/modules/tracking/events.ts` — `location:trajet:{id}` channel |
+| REST routes | `apps/api/src/modules/tracking/{tracking.routes.ts,index.ts}` — `POST`/`GET`/`DELETE /trajets/{id}/location`, rate-limited to 30 `POST`s/min per user (in-memory limiter, same known non-Redis-backed limitation as the rest of the codebase) |
+| Real-time | `apps/api/src/realtime/location-hub.ts` (fan-out) + `location-ws.ts` (`GET /ws/location`) |
+| Driver client | `apps/web/src/hooks/use-live-location-share.ts` (`watchPosition`, throttled) + `apps/web/src/components/trajets/live-location-share.tsx` (start/stop control) |
+| Passenger client | `apps/web/src/hooks/use-trajet-location-socket.ts` (WS) + `use-trajet-live-location.ts` (query + WS, REST-poll fallback when the socket isn't connected — same pattern as the message thread's `refetchInterval` gate) |
+| Map | `apps/web/src/components/ui/trip-map{,-inner}.tsx` — new `yellow`/`kind:'live'` pulsing-dot pin, and a `preserveViewOnUpdate` flag so the view re-fits once when the live pin appears rather than re-centering on every ping (which would fight a passenger's manual pan/zoom) |
+| Tests | `apps/api/tests/tracking/{access,store,tracking}.test.ts` |
+
+**Explicitly still out of scope**, same reasoning as §3.8 plus one addition: the mobile app has no
+screens at all (see the project-wide compliance audit), so this feature is web-only by necessity,
+not by choice — there is nothing to extend it to yet. No breadcrumb history, no geospatial "nearby"
+queries, no background location on a closed/backgrounded tab.
+
 ## Sources
 
 - [Hello Interview — Design a Ride-Sharing Service Like Uber](https://www.hellointerview.com/learn/system-design/problem-breakdowns/uber)

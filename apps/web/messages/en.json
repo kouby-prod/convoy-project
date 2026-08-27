@@ -721,7 +721,21 @@
       "backToRides": "My rides",
       "tabsLabel": "Ride workspace",
       "tabRequests": "Bookings",
-      "tabTrip": "Ride"
+      "tabTrip": "Ride",
+      "liveLocation": {
+        "title": "Live location",
+        "description": "Share your position during the trip — confirmed passengers see it live on the map.",
+        "start": "Share my location",
+        "stop": "Stop sharing",
+        "requesting": "Requesting permission…",
+        "live": "Live",
+        "unsupported": "Your browser doesn't support geolocation.",
+        "permissionDenied": "Permission denied — enable location access for this site in your browser settings.",
+        "sendFailed": "Failed to send your position. Retrying automatically."
+      }
+    },
+    "liveLocation": {
+      "sharing": "The driver is sharing their live location"
     },
     "driverRating": {
       "label": "Driver rating",

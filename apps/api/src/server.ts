@@ -5,11 +5,14 @@ import { env } from './env';
 import { initObservability } from './observability';
 import { messageHub } from './realtime/hub';
 import { notificationHub } from './realtime/notification-hub';
+import { locationHub } from './realtime/location-hub';
 import { closeMessageQueue } from './queue/message-jobs';
 import { startMessageWorker, stopMessageWorker } from './queue/message-worker';
 import { closePaymentQueues, schedulePaymentReconcile } from './queue/payment-jobs';
 import { startPaymentWorkers, stopPaymentWorkers } from './queue/payment-worker';
 import { closeNotificationPublisher } from './modules/notification/events';
+import { closeLocationPublisher } from './modules/tracking/events';
+import { closeLocationStore } from './modules/tracking/store';
 import { ensureBucket } from './storage/s3';
 
 // `ws` is CJS; Node ESM rejects `import { WebSocketServer } from 'ws'` at
@@ -35,6 +38,7 @@ initObservability('api');
 // Boot. `env` is validated at import time and will exit(1) on bad config.
 messageHub.start();
 notificationHub.start();
+locationHub.start();
 startMessageWorker();
 if (env.PAYMENT_WORKER_EMBEDDED) {
   startPaymentWorkers();
@@ -59,6 +63,7 @@ const server = serve(
     console.log(`[api] OpenAPI doc: http://localhost:${info.port}/openapi.json`);
     console.log(`[api] Messages WS: ws://localhost:${info.port}/ws/messages`);
     console.log(`[api] Notifications WS: ws://localhost:${info.port}/ws/notifications`);
+    console.log(`[api] Location WS: ws://localhost:${info.port}/ws/location`);
   },
 );
 
@@ -76,7 +81,10 @@ async function shutdown(signal: string): Promise<void> {
     await closePaymentQueues();
     await messageHub.stop();
     await notificationHub.stop();
+    await locationHub.stop();
     await closeNotificationPublisher();
+    await closeLocationPublisher();
+    await closeLocationStore();
   } catch (err) {
     console.error('[api] error while stopping messaging infra', err);
   }

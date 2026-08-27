@@ -6,6 +6,7 @@ import { healthRoute, pingRoute, readyRoute, checkReady } from './routes/ping';
 import { adminHealthRoute, meRoute } from './routes/auth-proofs';
 import { trajetModule } from './modules/trajet';
 import { geocodeModule } from './modules/geocode';
+import { trackingModule } from './modules/tracking';
 import { documentModule } from './modules/document';
 import { vehicleModule } from './modules/vehicle';
 import { adminModule } from './modules/admin';
@@ -21,6 +22,7 @@ import { auth, requireAuth, requireRole, getAuth, type AuthEnv } from './auth';
 import { env } from './env';
 import { messagesWebSocketHandler } from './realtime/messages-ws';
 import { notificationsWebSocketHandler } from './realtime/notifications-ws';
+import { locationWebSocketHandler } from './realtime/location-ws';
 // TODO: domain modules — mount feature routers from ./modules here.
 // import { rideRoutes } from './modules/rides';
 
@@ -96,6 +98,8 @@ const routes = app
   .route('/', trajetModule)
   // --- GEOCODE routes (place search/reverse-geocode for the location picker) ---
   .route('/', geocodeModule)
+  // --- TRACKING routes (live driver position for an in-progress trip) ---
+  .route('/', trackingModule)
   // --- DOCUMENT domain routes (a driver's own submissions) ---
   .route('/', documentModule)
   // --- VEHICLE domain routes (a driver's own car description) ---
@@ -172,6 +176,12 @@ app.get('/ws/messages', messagesWebSocketHandler);
 // notifications once the `ready` frame arrives.
 // ---------------------------------------------------------------------------
 app.get('/ws/notifications', notificationsWebSocketHandler);
+
+// ---------------------------------------------------------------------------
+// WebSocket — live driver position for an in-progress trip. Same rationale as
+// `/ws/messages` above. After connect: `{ type: "subscribe", trajetId }`.
+// ---------------------------------------------------------------------------
+app.get('/ws/location', locationWebSocketHandler);
 
 // ---------------------------------------------------------------------------
 // PROOF helper (dev only): one-click "Continue with Google" page to exercise

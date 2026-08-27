@@ -22,8 +22,10 @@ import {
 import { TrajetBookings } from '@/components/trajets/trajet-bookings';
 import { TrajetBookingForm } from '@/components/trajets/trajet-booking-form';
 import { TrajetOwnerActions } from '@/components/trajets/trajet-owner-actions';
+import { LiveLocationShare } from '@/components/trajets/live-location-share';
 import { TripMap, type TripMapPin } from '@/components/ui/trip-map';
 import { DetailSkeleton } from '@/components/ui/list-skeleton';
+import { useTrajetLiveLocation } from '@/hooks/use-trajet-live-location';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
 
@@ -127,6 +129,7 @@ function DriverRideWorkspace({ id, trajet }: { id: string; trajet: Trajet }) {
       ) : (
         <div className="flex flex-col gap-6">
           <TrajetOwnerActions trajet={trajet} />
+          <LiveLocationShare trajetId={id} cancelled={!!trajet.cancelledAt} />
           <ItineraryTimeline
             dateLabel={format.dateTime(departure, {
               weekday: 'long',
@@ -177,14 +180,19 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
     .filter(Boolean)
     .join('')
     .toUpperCase();
-  const pins: TripMapPin[] = [
+  const { location: liveLocation } = useTrajetLiveLocation(id, { enabled: !trajet.cancelledAt });
+  const pins: (TripMapPin | null)[] = [
     trajet.departureLat !== null && trajet.departureLng !== null
-      ? { id: 'departure', lat: trajet.departureLat, lng: trajet.departureLng, color: 'blue' as const }
+      ? { id: 'departure', lat: trajet.departureLat, lng: trajet.departureLng, color: 'blue' }
       : null,
     trajet.arrivalLat !== null && trajet.arrivalLng !== null
-      ? { id: 'arrival', lat: trajet.arrivalLat, lng: trajet.arrivalLng, color: 'green' as const }
+      ? { id: 'arrival', lat: trajet.arrivalLat, lng: trajet.arrivalLng, color: 'green' }
       : null,
-  ].filter((pin): pin is TripMapPin => pin !== null);
+    liveLocation
+      ? { id: 'live', lat: liveLocation.lat, lng: liveLocation.lng, color: 'yellow', kind: 'live' }
+      : null,
+  ];
+  const visiblePins = pins.filter((pin): pin is TripMapPin => pin !== null);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
@@ -248,7 +256,17 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
           />
           </div>
 
-          {pins.length > 0 ? <TripMap pins={pins} className="h-52" /> : null}
+          {visiblePins.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {liveLocation ? (
+                <span className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-brand-green">
+                  <span className="size-2 animate-pulse rounded-full bg-brand-green" aria-hidden />
+                  {t('liveLocation.sharing')}
+                </span>
+              ) : null}
+              <TripMap pins={visiblePins} className="h-52" preserveViewOnUpdate />
+            </div>
+          ) : null}
 
           <section aria-labelledby="driver-heading" className="border-t border-border pt-8">
             <h2 id="driver-heading" className="text-sm font-semibold text-foreground">

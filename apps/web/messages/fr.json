@@ -721,7 +721,21 @@
       "backToRides": "Mes trajets",
       "tabsLabel": "Espace trajet",
       "tabRequests": "Réservations",
-      "tabTrip": "Trajet"
+      "tabTrip": "Trajet",
+      "liveLocation": {
+        "title": "Position en direct",
+        "description": "Partagez votre position pendant le trajet — les passagers confirmés la voient en temps réel sur la carte.",
+        "start": "Partager ma position",
+        "stop": "Arrêter le partage",
+        "requesting": "Autorisation en cours…",
+        "live": "En direct",
+        "unsupported": "Votre navigateur ne prend pas en charge la géolocalisation.",
+        "permissionDenied": "Autorisation refusée — activez la géolocalisation pour ce site dans les réglages de votre navigateur.",
+        "sendFailed": "Échec de l'envoi de la position. Nouvelle tentative automatique."
+      }
+    },
+    "liveLocation": {
+      "sharing": "Le conducteur partage sa position en direct"
     },
     "driverRating": {
       "label": "Note du conducteur",
