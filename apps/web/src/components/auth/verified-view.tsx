@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { safeNextPath, signInHref } from '@/lib/auth-urls';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
 import { FormAlert, FormStatus } from '@/components/ui/form-alert';
@@ -15,6 +16,7 @@ export function VerifiedView() {
   const translateBrand = useTranslations('Navbar');
   const searchParams = useSearchParams();
   const linkError = searchParams.get('error');
+  const continueHref = safeNextPath(searchParams.get('next')) ?? '/';
   const { data: session, isPending } = authClient.useSession();
 
   if (isPending && !linkError) {
@@ -43,14 +45,14 @@ export function VerifiedView() {
             <FormAlert className="rounded-md bg-destructive/10 px-4 py-3 ring-1 ring-destructive/20">
               {errorCopy}
             </FormAlert>
-            <Link href="/auth/signin" className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full')}>
+            <Link href={signInHref(continueHref === '/' ? null : continueHref)} className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full')}>
               {translateAuth('forgotPassword.backToSignIn')}
             </Link>
           </>
         ) : confirmed ? (
           <>
             <FormStatus>{translateAuth('verified.success')}</FormStatus>
-            <Link href="/" className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full')}>
+            <Link href={continueHref} className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full')}>
               {translateAuth('verified.continue')}
             </Link>
           </>
@@ -59,7 +61,7 @@ export function VerifiedView() {
             <FormAlert className="rounded-md bg-destructive/10 px-4 py-3 ring-1 ring-destructive/20">
               {translateAuth('verified.missing')}
             </FormAlert>
-            <Link href="/auth/signin" className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full')}>
+            <Link href={signInHref(continueHref === '/' ? null : continueHref)} className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full')}>
               {translateAuth('forgotPassword.backToSignIn')}
             </Link>
           </>

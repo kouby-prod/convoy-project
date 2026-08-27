@@ -25,6 +25,13 @@ describe('localeFromAuthUrl', () => {
     expect(localeFromAuthUrl('http://localhost:3001/api/auth/verify-email?token=abc')).toBe('fr');
     expect(localeFromAuthUrl('not a url')).toBe('fr');
   });
+
+  it('still reads English when the verified page carries a ?next= return path', () => {
+    const url =
+      'http://localhost:3001/api/auth/verify-email?token=abc&callbackURL=' +
+      encodeURIComponent('http://localhost:3000/en/auth/verified?next=%2Ftrajet%2Fabc');
+    expect(localeFromAuthUrl(url)).toBe('en');
+  });
 });
 
 describe('verificationEmail', () => {

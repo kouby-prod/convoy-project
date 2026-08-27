@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
-import { authCallbackUrl } from '@/lib/auth-urls';
+import { authVerifiedCallbackUrl, signInHref } from '@/lib/auth-urls';
 import { Button } from '@/components/ui/button';
 import { FormAlert, FormStatus } from '@/components/ui/form-alert';
 
@@ -14,9 +14,11 @@ import { FormAlert, FormStatus } from '@/components/ui/form-alert';
  */
 export function CheckEmailPanel({
   email,
+  next = null,
   onUseDifferentEmail,
 }: {
   email: string;
+  next?: string | null;
   onUseDifferentEmail?: () => void;
 }) {
   const translateAuth = useTranslations('Auth');
@@ -28,7 +30,7 @@ export function CheckEmailPanel({
     try {
       const { error } = await authClient.sendVerificationEmail({
         email,
-        callbackURL: authCallbackUrl(locale, '/auth/verified'),
+        callbackURL: authVerifiedCallbackUrl(locale, next),
       });
       setResendState(error ? 'error' : 'sent');
     } catch (err) {
@@ -67,7 +69,7 @@ export function CheckEmailPanel({
         </p>
       ) : (
         <p className="text-center text-sm text-muted-foreground">
-          <Link href="/auth/signin" className="font-semibold text-primary hover:underline">
+          <Link href={signInHref(next)} className="font-semibold text-primary hover:underline">
             {translateAuth('forgotPassword.backToSignIn')}
           </Link>
         </p>

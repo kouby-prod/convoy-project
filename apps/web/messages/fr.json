@@ -74,7 +74,9 @@
       "submit": "S'inscrire",
       "pending": "Création…",
       "hasAccount": "Déjà inscrit ?",
-      "signIn": "Se connecter"
+      "signIn": "Se connecter",
+      "passwordHint": "Au moins 8 caractères.",
+      "terms": "J’accepte les <terms>conditions d’utilisation</terms> et la <privacy>politique de confidentialité</privacy>."
     },
     "forgotPassword": {
       "title": "Réinitialiser le mot de passe",
@@ -133,6 +135,7 @@
       "signInUnavailable": "Impossible de se connecter. Réessayez ultérieurement.",
       "missingFields": "Veuillez remplir tous les champs.",
       "passwordMismatch": "Les mots de passe ne correspondent pas.",
+      "termsRequired": "Veuillez accepter les conditions d’utilisation pour créer un compte.",
       "signUpFailed": "Échec de l'inscription. Réessayez.",
       "signUpUnavailable": "Impossible de créer le compte. Réessayez plus tard.",
       "googleFailed": "La connexion Google a échoué. Veuillez réessayer.",

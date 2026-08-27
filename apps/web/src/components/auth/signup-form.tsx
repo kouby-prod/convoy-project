@@ -1,16 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
-import { authCallbackUrl } from '@/lib/auth-urls';
+import { authVerifiedCallbackUrl, safeNextPath, signInHref } from '@/lib/auth-urls';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { FormAlert } from '@/components/ui/form-alert';
 import { PasswordInput } from '@/components/ui/password-input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { CheckEmailPanel } from '@/components/auth/check-email-panel';
 
@@ -19,6 +21,8 @@ export function SignUpForm() {
   const translateBrand = useTranslations('Navbar');
   const translateA11y = useTranslations('A11y');
   const locale = useLocale();
+  const searchParams = useSearchParams();
+  const nextPath = safeNextPath(searchParams.get('next'));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
@@ -35,6 +39,7 @@ export function SignUpForm() {
     const email = formData.get('email')?.toString().trim() ?? '';
     const password = formData.get('password')?.toString() ?? '';
     const confirmPassword = formData.get('confirmPassword')?.toString() ?? '';
+    const acceptedTerms = formData.get('acceptTerms') === 'on';
 
     try {
       if (!firstName || !lastName || !email || !password || !confirmPassword) {
@@ -47,11 +52,16 @@ export function SignUpForm() {
         return;
       }
 
+      if (!acceptedTerms) {
+        setError(translateAuth('errors.termsRequired'));
+        return;
+      }
+
       const { error: signUpError } = await authClient.signUp.email({
         name: `${firstName} ${lastName}`,
         email,
         password,
-        callbackURL: authCallbackUrl(locale, '/auth/verified'),
+        callbackURL: authVerifiedCallbackUrl(locale, nextPath),
       });
 
       if (signUpError) {
@@ -85,7 +95,7 @@ export function SignUpForm() {
       </CardHeader>
       <CardContent className="px-8 pb-8 pt-6">
         {waitingForInbox ? (
-          <CheckEmailPanel email={pendingEmail} />
+          <CheckEmailPanel email={pendingEmail} next={nextPath} />
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -132,10 +142,12 @@ export function SignUpForm() {
                 name="password"
                 autoComplete="new-password"
                 placeholder={translateAuth('fields.passwordPlaceholder')}
+                minLength={8}
                 required
                 showLabel={translateA11y('showPassword')}
                 hideLabel={translateA11y('hidePassword')}
               />
+              <p className="text-xs text-muted-foreground">{translateAuth('signUp.passwordHint')}</p>
             </div>
 
             <div className="space-y-2">
@@ -145,11 +157,38 @@ export function SignUpForm() {
                 name="confirmPassword"
                 autoComplete="new-password"
                 placeholder={translateAuth('fields.confirmPasswordPlaceholder')}
+                minLength={8}
                 required
                 showLabel={translateA11y('showPassword')}
                 hideLabel={translateA11y('hidePassword')}
               />
             </div>
+
+            <Checkbox
+              name="acceptTerms"
+              required
+              className="items-start"
+              label={translateAuth.rich('signUp.terms', {
+                terms: (chunks) => (
+                  <Link
+                    href="/terms"
+                    className="font-semibold text-primary hover:underline"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {chunks}
+                  </Link>
+                ),
+                privacy: (chunks) => (
+                  <Link
+                    href="/privacy"
+                    className="font-semibold text-primary hover:underline"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            />
 
             {error ? (
               <FormAlert className="rounded-md bg-destructive/10 px-4 py-3 ring-1 ring-destructive/20">
@@ -161,11 +200,11 @@ export function SignUpForm() {
               {isLoading ? translateAuth('signUp.pending') : translateAuth('signUp.submit')}
             </Button>
 
-            <GoogleSignInButton />
+            <GoogleSignInButton next={nextPath} />
 
             <p className="text-center text-sm text-muted-foreground">
               {translateAuth('signUp.hasAccount')}{' '}
-              <Link href="/auth/signin" className="font-semibold text-primary hover:underline">
+              <Link href={signInHref(nextPath)} className="font-semibold text-primary hover:underline">
                 {translateAuth('signUp.signIn')}
               </Link>
             </p>

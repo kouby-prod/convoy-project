@@ -11,6 +11,7 @@ import {
 } from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { signInHref } from '@/lib/auth-urls';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBanner } from '@/components/documents/verification-banner';
@@ -60,7 +61,7 @@ export function MesDocumentsPanel() {
         <CardContent className="flex flex-col items-center gap-4 p-8 pt-8 text-center">
           <ShieldCheck className="size-8 text-primary" strokeWidth={2} aria-hidden />
           <p className="text-sm text-muted-foreground">{t('authRequired')}</p>
-          <Link href="/auth/signin" className={buttonVariants({ variant: 'primary' })}>
+          <Link href={signInHref('/mes-documents')} className={buttonVariants({ variant: 'primary' })}>
             {t('authCta')}
           </Link>
         </CardContent>

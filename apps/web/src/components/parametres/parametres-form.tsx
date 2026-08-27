@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
+import { signInHref } from '@/lib/auth-urls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -55,7 +56,7 @@ export function ParametresForm() {
   );
 
   useEffect(() => {
-    if (!isSessionPending && !user) router.push('/auth/signin');
+    if (!isSessionPending && !user) router.push(signInHref('/parametres'));
   }, [isSessionPending, router, user]);
 
   const [name, setName] = useState('');

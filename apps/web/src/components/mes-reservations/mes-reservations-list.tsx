@@ -12,6 +12,7 @@ import { groupByDateKey } from '@/lib/trip-when';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
+import { signInHref } from '@/lib/auth-urls';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
@@ -149,7 +150,7 @@ export function MesReservationsList() {
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!isSessionPending && !session?.user) router.push('/auth/signin');
+    if (!isSessionPending && !session?.user) router.push(signInHref('/mes-reservations'));
   }, [isSessionPending, router, session?.user]);
 
   const query = useInfiniteQuery({

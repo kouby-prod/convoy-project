@@ -74,7 +74,9 @@
       "submit": "Sign up",
       "pending": "Creating…",
       "hasAccount": "Already registered?",
-      "signIn": "Sign in"
+      "signIn": "Sign in",
+      "passwordHint": "At least 8 characters.",
+      "terms": "I agree to the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>."
     },
     "forgotPassword": {
       "title": "Reset your password",
@@ -133,6 +135,7 @@
       "signInUnavailable": "Unable to sign in. Please try again later.",
       "missingFields": "Please fill in all fields.",
       "passwordMismatch": "Passwords do not match.",
+      "termsRequired": "Please accept the terms of use to create an account.",
       "signUpFailed": "Sign-up failed. Please try again.",
       "signUpUnavailable": "Unable to create the account. Please try again later.",
       "googleFailed": "Google sign-in failed. Please try again.",

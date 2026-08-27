@@ -18,6 +18,7 @@ import type { BookingStatus, CheckoutBookingSummary, Invoice } from '@carpool/sc
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import { Link, useRouter } from '@/i18n/navigation';
+import { signInHref } from '@/lib/auth-urls';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -197,7 +198,7 @@ export function PaiementCheckout({ bookingId }: { bookingId: string }) {
 
   if (isSessionPending) return <CardSkeleton label={t('loading')} />;
   if (!session?.user) {
-    router.push('/auth/signin');
+    router.push(signInHref(`/paiement/${bookingId}`));
     return <CardSkeleton label={t('loading')} />;
   }
   if (isLoading || !returnReady) return <CardSkeleton label={t('loading')} />;

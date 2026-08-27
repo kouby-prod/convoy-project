@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
-import { authHomeUrl } from '@/lib/auth-urls';
+import { authReturnUrl, safeNextPath, signUpHref } from '@/lib/auth-urls';
 import { isEmailNotVerified } from '@/lib/auth-errors';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,8 @@ export function SignInForm() {
   const translateBrand = useTranslations('Navbar');
   const translateA11y = useTranslations('A11y');
   const locale = useLocale();
+  const searchParams = useSearchParams();
+  const nextPath = safeNextPath(searchParams.get('next'));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
@@ -41,7 +44,7 @@ export function SignInForm() {
         return;
       }
 
-      const callbackURL = authHomeUrl(locale);
+      const callbackURL = authReturnUrl(locale, nextPath);
       const { error: signInError } = await authClient.signIn.email({
         email,
         password,
@@ -57,7 +60,7 @@ export function SignInForm() {
         return;
       }
 
-      router.push('/');
+      router.push(nextPath ?? '/');
       router.refresh();
     } catch (err) {
       console.error(err);
@@ -84,7 +87,11 @@ export function SignInForm() {
       </CardHeader>
       <CardContent className="px-8 pb-8 pt-6">
         {waitingForInbox ? (
-          <CheckEmailPanel email={pendingEmail} onUseDifferentEmail={() => setPendingEmail('')} />
+          <CheckEmailPanel
+            email={pendingEmail}
+            next={nextPath}
+            onUseDifferentEmail={() => setPendingEmail('')}
+          />
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -127,11 +134,11 @@ export function SignInForm() {
               {isLoading ? translateAuth('signIn.pending') : translateAuth('signIn.submit')}
             </Button>
 
-            <GoogleSignInButton />
+            <GoogleSignInButton next={nextPath} />
 
             <p className="text-center text-sm text-muted-foreground">
               {translateAuth('signIn.noAccount')}{' '}
-              <Link href="/auth/signup" className="font-semibold text-primary hover:underline">
+              <Link href={signUpHref(nextPath)} className="font-semibold text-primary hover:underline">
                 {translateAuth('signIn.createAccount')}
               </Link>
             </p>
