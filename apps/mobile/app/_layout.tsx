@@ -59,6 +59,7 @@ function RootNavigator() {
           <Stack.Screen name="trajets/[id]" options={{ headerShown: true, title: '' }} />
           <Stack.Screen name="contact" options={{ headerShown: true, title: 'Contact' }} />
           <Stack.Screen name="vehicle" options={{ headerShown: true, title: 'Mon véhicule' }} />
+          <Stack.Screen name="messages/[bookingId]" options={{ headerShown: true, title: '' }} />
         </Stack.Protected>
         <Stack.Protected guard={!session?.user}>
           <Stack.Screen name="(auth)" />
