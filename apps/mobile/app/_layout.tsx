@@ -9,7 +9,7 @@ import type { UnreadCount } from '@carpool/schemas';
 import { authClient } from '@/lib/auth-client';
 import { useNotificationsSocket } from '@/hooks/useNotificationsSocket';
 import { env } from '@/lib/env';
-import { colors } from '@/lib/theme';
+import { colors, isDarkMode } from '@/lib/theme';
 
 /**
  * Keeps the `['notifications', 'unread-count']` cache (read by the tab bar
@@ -88,7 +88,7 @@ export default function RootLayout() {
           merchant ID yet) — the sheet still works for card entry without one. */}
       <StripeProvider publishableKey={env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="dark" />
+          <StatusBar style={isDarkMode ? 'light' : 'dark'} />
           <RootNavigator />
         </QueryClientProvider>
       </StripeProvider>
