@@ -170,6 +170,7 @@ async function startCheckout(
   userId: string,
   bookingId: string,
   provider: 'stripe' | 'paypal',
+  paypalRedirect?: { returnUrl?: string; cancelUrl?: string },
 ): Promise<
   | { ok: true; value: CheckoutResponse }
   | { ok: false; status: 400 | 403 | 404 | 503; error: string }
@@ -301,6 +302,8 @@ async function startCheckout(
     invoiceNumber: inv.number,
     amountCents: inv.totalCents,
     currency: inv.currency,
+    returnUrl: paypalRedirect?.returnUrl,
+    cancelUrl: paypalRedirect?.cancelUrl,
   });
   await db.insert(payment).values({
     id: randomUUID(),
@@ -381,7 +384,10 @@ export const paymentModule = app
     const hashed = hashRequest(body);
     try {
       const wrapped = await withIdempotency(user.id, idempotency ?? undefined, hashed, async () => {
-        const started = await startCheckout(user.id, body.bookingId, body.provider);
+        const started = await startCheckout(user.id, body.bookingId, body.provider, {
+          returnUrl: body.returnUrl,
+          cancelUrl: body.cancelUrl,
+        });
         if (!started.ok) {
           throw Object.assign(new Error(started.error), { httpStatus: started.status });
         }

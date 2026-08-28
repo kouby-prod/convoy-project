@@ -201,7 +201,14 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
     queryKey: ['me', 'bookings', 'trajet', id, 'live-location-gate'],
     enabled: Boolean(session?.user),
     queryFn: async () => {
-      const res = await api.me.bookings.$get({ query: { page: '1', limit: '50' } });
+      // `limit: '100'` is the API's hard max (PaginationQuerySchema) rather
+      // than a real page size: this is a client-side scan for "do I have a
+      // confirmed booking on this trajet", ordered by soonest departure, so a
+      // passenger with more upcoming bookings than the page size would never
+      // find this trajet's booking. There's no dedicated "my booking for this
+      // trajet" endpoint yet, so maxing out the page is the safest mitigation
+      // available without touching the trajet module's booking routes.
+      const res = await api.me.bookings.$get({ query: { page: '1', limit: '100' } });
       if (!res.ok) return [] as { trajetId: string; status: string }[];
       const body = await res.json();
       return body.items;

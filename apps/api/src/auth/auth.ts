@@ -102,11 +102,18 @@ export const auth = betterAuth({
   },
 
   // --- Security ---
-  // `carpool://` is the mobile app's scheme (apps/mobile/app.json); `exp://**`
-  // covers Expo Go / dev-client sessions over a LAN IP during development.
-  // Both are compile-time app constants, not per-deployment config, so they
-  // are hardcoded here rather than added to TRUSTED_ORIGINS in env.ts.
-  trustedOrigins: [...env.TRUSTED_ORIGINS, 'carpool://', 'exp://**'],
+  // `carpool://` is the mobile app's scheme (apps/mobile/app.json) — needed in
+  // every environment, since the shipped production app uses it too.
+  // `exp://**` only covers Expo Go / dev-client sessions over a LAN IP during
+  // development, so it's gated out of production rather than widening the
+  // CSRF-relevant trusted-origins allowlist unconditionally. Both are
+  // compile-time app constants, not per-deployment config, so they're
+  // hardcoded here rather than added to TRUSTED_ORIGINS in env.ts.
+  trustedOrigins: [
+    ...env.TRUSTED_ORIGINS,
+    'carpool://',
+    ...(process.env.NODE_ENV === 'production' ? [] : ['exp://**']),
+  ],
   advanced: {
     // CSRF is enforced via origin checking against trustedOrigins (on by
     // default — we do NOT disable it). Cookies are httpOnly + sameSite=lax.

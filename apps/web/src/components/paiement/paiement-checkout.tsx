@@ -60,9 +60,14 @@ function idempotencyKey(invoiceId: string, provider: 'stripe' | 'paypal'): strin
   return created;
 }
 
-async function startCheckout(bookingId: string, invoiceId: string, provider: 'stripe' | 'paypal') {
+async function startCheckout(
+  bookingId: string,
+  invoiceId: string,
+  provider: 'stripe' | 'paypal',
+  paypalRedirect?: { returnUrl: string; cancelUrl: string },
+) {
   const res = await api.payments.$post({
-    json: { bookingId, provider },
+    json: { bookingId, provider, ...paypalRedirect },
     header: { 'Idempotency-Key': idempotencyKey(invoiceId, provider) },
   });
   if (!res.ok) {
@@ -637,7 +642,14 @@ function CheckoutRails({
             <PayPalButtons
               style={{ layout: 'vertical', label: 'pay' }}
               createOrder={async () => {
-                const checkout = await startCheckout(bookingId, invoice.id, 'paypal');
+                // If PayPal falls back to a full-page redirect instead of
+                // its popup (blocked popup, some funding sources), the buyer
+                // must land back on this same web page — not the mobile
+                // app's `carpool://` scheme, which no browser can open.
+                const checkout = await startCheckout(bookingId, invoice.id, 'paypal', {
+                  returnUrl: window.location.href,
+                  cancelUrl: window.location.href,
+                });
                 if (!checkout.orderId) throw new Error(t('paypalMissingOrder'));
                 return checkout.orderId;
               }}

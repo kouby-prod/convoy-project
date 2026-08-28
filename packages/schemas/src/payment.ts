@@ -134,6 +134,13 @@ export const CreatePaymentSchema = z
   .object({
     bookingId: z.string().min(1),
     provider: PaymentProviderSchema,
+    // PayPal-only, and only meaningful for a web caller: where to send the
+    // buyer back if PayPal falls back to a full-page redirect instead of the
+    // JS SDK's popup (blocked popup, certain funding sources). Omit on
+    // mobile — the server falls back to the app's own `carpool://` deep
+    // link, which a browser could never open.
+    returnUrl: z.string().url().optional(),
+    cancelUrl: z.string().url().optional(),
   })
   .describe('CreatePayment');
 export type CreatePayment = z.infer<typeof CreatePaymentSchema>;

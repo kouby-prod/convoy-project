@@ -76,6 +76,12 @@ export async function createPayPalOrder(input: {
   invoiceNumber: string;
   amountCents: number;
   currency: string;
+  // Caller-supplied web return/cancel targets (see CreatePaymentSchema) — a
+  // web buyer redirected to the full PayPal checkout page (popup blocked, or
+  // certain funding sources) lands back on the web app, not the mobile
+  // scheme below. Mobile omits these and gets its own deep link.
+  returnUrl?: string;
+  cancelUrl?: string;
 }): Promise<{ id: string; approvalUrl: string | null }> {
   const res = await paypalFetch('/v2/checkout/orders', {
     method: 'POST',
@@ -93,12 +99,15 @@ export async function createPayPalOrder(input: {
         },
       ],
       // `return_url`/`cancel_url` only matter to a buyer redirected to the
-      // full PayPal checkout page (the mobile in-app-browser flow below) —
-      // the web JS SDK's popup completes via its own postMessage channel and
-      // ignores these. `carpool://` is the app's own scheme (see app.json).
+      // full PayPal checkout page rather than the JS SDK's popup (which
+      // completes via its own postMessage channel and ignores these) — that
+      // full-page redirect can happen on web too (blocked popup, some
+      // funding sources), not just the mobile in-app-browser flow, so these
+      // must resolve to wherever the caller actually is. `carpool://` (the
+      // app's own scheme, see app.json) is only correct for mobile.
       application_context: {
-        return_url: 'carpool://paypal-redirect?result=success',
-        cancel_url: 'carpool://paypal-redirect?result=cancel',
+        return_url: input.returnUrl ?? 'carpool://paypal-redirect?result=success',
+        cancel_url: input.cancelUrl ?? 'carpool://paypal-redirect?result=cancel',
         user_action: 'PAY_NOW',
       },
     }),

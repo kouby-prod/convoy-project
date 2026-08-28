@@ -57,11 +57,16 @@ export function useLiveLocationShare(trajetId: string) {
         if (now - lastSentAtRef.current < MIN_SEND_INTERVAL_MS) return;
         lastSentAtRef.current = now;
 
+        // The Geolocation spec allows `heading`/`speed` to be a negative
+        // sentinel (e.g. -1) when the device can't determine them — normalize
+        // to `null` so `LiveLocation` has one platform-independent contract
+        // (matches the mobile hook's own sanitization).
+        const { heading, speed } = position.coords;
         void updateLiveLocation(trajetId, {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-          heading: position.coords.heading,
-          speed: position.coords.speed,
+          heading: heading != null && heading >= 0 ? heading : null,
+          speed: speed != null && speed >= 0 ? speed : null,
         }).catch(() => {
           setError('send-failed');
         });

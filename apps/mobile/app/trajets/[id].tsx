@@ -279,7 +279,13 @@ function BookingSection({
     queryKey: myBookingsQueryKey,
     enabled: !!session?.user,
     queryFn: async () => {
-      const res = await api.me.bookings.$get({ query: { page: '1', limit: '50' } });
+      // `limit: '100'` is the API's hard max (PaginationQuerySchema), not a
+      // real page size — this filters client-side for the current trajetId,
+      // so a passenger with more upcoming bookings than the page would never
+      // see this trajet's own booking on page 1 (bookings are ordered by
+      // soonest departure, not recency). Mirrors the same mitigation on web's
+      // trajet-detail.tsx / trajet-booking-form.tsx.
+      const res = await api.me.bookings.$get({ query: { page: '1', limit: '100' } });
       if (!res.ok) return [];
       const body = await res.json();
       return body.items.filter(
