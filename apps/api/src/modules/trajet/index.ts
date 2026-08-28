@@ -55,7 +55,7 @@ import { recordPaymentIncident } from '../payment/incidents';
 import { fareCentsFromPrice } from '../payment/tax';
 import { cancelStripePaymentIntent } from '../payment/stripe';
 import { renderInvoicePdf } from '../payment/pdf';
-import { smtpEmailSender, type EmailAttachment } from '../../auth/email';
+import { isSmtpConfigured, type EmailAttachment } from '../../auth/email';
 import type { DbTx } from '../payment/ledger';
 
 /**
@@ -178,7 +178,7 @@ async function notifyPassengerToPay(input: {
   intro: string;
 }): Promise<void> {
   let attachments: EmailAttachment[] | undefined;
-  if (smtpEmailSender && input.issued) {
+  if (isSmtpConfigured() && input.issued) {
     try {
       const pdf = await renderInvoicePdf(input.issued);
       attachments = [{ filename: `${input.issued.number}.pdf`, content: pdf, contentType: 'application/pdf' }];

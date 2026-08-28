@@ -63,15 +63,25 @@ const EnvSchema = z.object({
   // SMTP transport. When SMTP_HOST is set, real email is sent via SMTP;
   // otherwise the console stub is used (dev). SMTP_USER/PASS are optional so
   // local relays without auth (Mailpit/MailHog) work out of the box.
-  SMTP_HOST: z.string().optional(),
+  // optionalString so Coolify's empty `${SMTP_HOST:-}` is unset, not "".
+  SMTP_HOST: optionalString,
   SMTP_PORT: z.coerce.number().int().positive().default(587),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  // Use a TLS-on-connect port (465). Accepts "true"/"false"; anything else is false.
+  SMTP_USER: optionalString,
+  SMTP_PASS: optionalString,
+  // TLS-on-connect (port 465). Only true/1/yes are true; false/0/no are false.
+  // Empty/unset is undefined so the mailer can default from the port (465 →
+  // secure). Do NOT use z.coerce.boolean(): Boolean("false") === true.
   SMTP_SECURE: z
     .string()
     .optional()
-    .transform((value) => value === 'true'),
+    .transform((value): boolean | undefined => {
+      if (value === undefined) return undefined;
+      const normalized = value.trim().toLowerCase();
+      if (normalized === '') return undefined;
+      if (normalized === 'true' || normalized === '1' || normalized === 'yes') return true;
+      if (normalized === 'false' || normalized === '0' || normalized === 'no') return false;
+      return undefined;
+    }),
 
   // --- SMS sender ---
   // Display "From" label for the console stub.

@@ -74,7 +74,9 @@
       "submit": "Sign up",
       "pending": "Creating…",
       "hasAccount": "Already registered?",
-      "signIn": "Sign in"
+      "signIn": "Sign in",
+      "passwordHint": "At least 8 characters.",
+      "terms": "I agree to the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>."
     },
     "forgotPassword": {
       "title": "Reset your password",
@@ -92,6 +94,28 @@
       "success": "Password updated. You can sign in.",
       "missingToken": "This reset link is missing or has expired. Request a new one.",
       "invalidToken": "This reset link is no longer valid. Request a new one."
+    },
+    "checkEmail": {
+      "title": "Check your inbox",
+      "subtitle": "We sent a verification link to {email}.",
+      "body": "Open the message and click the button to activate your account.",
+      "resend": "Resend the email",
+      "resending": "Sending…",
+      "resent": "A new link is on its way.",
+      "resendFailed": "Could not resend the email. Try again in a minute.",
+      "differentEmail": "Use a different address"
+    },
+    "verified": {
+      "title": "Email confirmed",
+      "subtitle": "Your Convoy account is ready.",
+      "success": "You can continue.",
+      "continue": "Continue",
+      "loading": "Confirming your email…",
+      "errorTitle": "This link did not work",
+      "errorSubtitle": "Request a new verification email from sign in.",
+      "expired": "This verification link has expired. Sign in to receive a new one.",
+      "invalid": "This verification link is no longer valid. Sign in to receive a new one.",
+      "missing": "We could not confirm your email. Sign in and we will send a new link."
     },
     "fields": {
       "email": "Email address",
@@ -111,6 +135,7 @@
       "signInUnavailable": "Unable to sign in. Please try again later.",
       "missingFields": "Please fill in all fields.",
       "passwordMismatch": "Passwords do not match.",
+      "termsRequired": "Please accept the terms of use to create an account.",
       "signUpFailed": "Sign-up failed. Please try again.",
       "signUpUnavailable": "Unable to create the account. Please try again later.",
       "googleFailed": "Google sign-in failed. Please try again.",
@@ -537,7 +562,8 @@
       "new": "New password",
       "save": "Update",
       "saving": "Updating...",
-      "success": "Password updated.",
+      "hint": "Updating your password signs out other devices.",
+      "success": "Password updated. Other devices have been signed out.",
       "error": "Unable to update the password. Check your current password."
     },
     "appearance": {

@@ -7,6 +7,7 @@ import { createApiClient } from '@carpool/api-client';
 import { useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
+import { signInHref } from '@/lib/auth-urls';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SegmentedTabs, TabPanel } from '@/components/ui/segmented-tabs';
@@ -137,7 +138,7 @@ export function NotificationsList() {
   const showUnreadOnly = filter === 'unread';
 
   useEffect(() => {
-    if (!isSessionPending && !session?.user) router.push('/auth/signin');
+    if (!isSessionPending && !session?.user) router.push(signInHref('/notifications'));
   }, [isSessionPending, router, session?.user]);
 
   const { data, isLoading, isError, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery({

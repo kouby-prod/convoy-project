@@ -5,7 +5,10 @@ import { db } from '../db/client';
 import { env } from '../env';
 import * as authSchema from '../db/auth-schema';
 import { sendEmail } from './email';
+import { localeFromAuthUrl, resetPasswordEmail, verificationEmail } from './email-templates';
+import { createAuthSecondaryStorage } from './secondary-storage';
 import { sendSms } from './sms';
+import { createRedisConnection } from '../queue/redis';
 
 /**
  * BetterAuth instance — the single source of truth for authentication.
@@ -29,30 +32,33 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
-    // Unverified users cannot sign in until they click the verification link.
-    // In dev (console stub) the link is printed to the API logs; with SMTP_HOST
-    // set it is emailed for real.
+    // Unverified sign-in resends the mail when `sendOnSignIn` is on. The web
+    // client passes a locale `callbackURL` so the link returns to the site,
+    // not the API origin (`/`).
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
-      await sendEmail({
-        to: user.email,
-        subject: 'Reset your Convoy password / Réinitialisez votre mot de passe Convoy',
-        text: `Reset your password with this link / Réinitialisez votre mot de passe avec ce lien : ${url}`,
-      });
+      console.log(`[auth] sending password-reset email to ${user.email}`);
+      const mail = resetPasswordEmail({ url, locale: localeFromAuthUrl(url) });
+      await sendEmail({ to: user.email, ...mail });
     },
+    // Reset is unauthenticated — drop every session, then they sign in again.
+    revokeSessionsOnPasswordReset: true,
     onPasswordReset: async ({ user }) => {
       console.log(`[auth] password reset completed for ${user.email}`);
     },
   },
   emailVerification: {
     sendOnSignUp: true,
+    sendOnSignIn: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
-      await sendEmail({
-        to: user.email,
-        subject: 'Verify your Carpool email',
-        text: `Verify your email with this link: ${url}`,
+      console.log(`[auth] sending verification email to ${user.email}`);
+      const mail = verificationEmail({
+        email: user.email,
+        url,
+        locale: localeFromAuthUrl(url),
       });
+      await sendEmail({ to: user.email, ...mail });
     },
   },
 
@@ -110,18 +116,19 @@ export const auth = betterAuth({
     },
   },
 
-  // --- Rate limiting (BetterAuth built-in) ---
-  // In-memory for dev. TODO(prod): configure `secondaryStorage` (Redis) and set
-  // `storage: 'secondary-storage'` so limits + sessions survive restarts and
-  // scale across instances. See the commented `secondaryStorage` slot below.
+  // --- Rate limiting (Redis via secondaryStorage) ---
+  // Shared across API replicas and survives restarts. Custom rules stay tight
+  // on the auth endpoints that are worth brute-forcing.
   rateLimit: {
     enabled: true,
+    storage: 'secondary-storage',
     window: 60,
     max: 100,
     customRules: {
       '/sign-in/email': { window: 10, max: 5 },
       '/sign-up/email': { window: 60, max: 5 },
       '/request-password-reset': { window: 60, max: 3 },
+      '/send-verification-email': { window: 60, max: 3 },
       '/phone-number/send-otp': { window: 60, max: 3 },
     },
   },
@@ -134,12 +141,7 @@ export const auth = betterAuth({
     },
   },
 
-  // TODO(prod): back rate limiting + sessions with Redis.
-  // secondaryStorage: {
-  //   get: (key) => redis.get(key),
-  //   set: (key, value, ttl) => redis.set(key, value, 'EX', ttl ?? 60),
-  //   delete: (key) => redis.del(key),
-  // },
+  secondaryStorage: createAuthSecondaryStorage(createRedisConnection('auth')),
 
   plugins: [
     // Roles: `user` (default) and `admin`. Two roles only — no permissions engine.

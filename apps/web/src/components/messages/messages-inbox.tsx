@@ -7,6 +7,7 @@ import { ArrowLeft, MessageSquare } from 'lucide-react';
 import type { Conversation } from '@carpool/schemas';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { signInHref } from '@/lib/auth-urls';
 import { fetchConversations, groupConversations, type ConversationGroup } from '@/lib/conversations';
 import { unreadThreadCount } from '@/lib/message-read';
 import { useMessageReadMap } from '@/hooks/use-message-read';
@@ -47,7 +48,7 @@ export function MessagesInbox({ selectedId }: { selectedId?: string }) {
   const { userId, readMap, markRead } = useMessageReadMap();
 
   useEffect(() => {
-    if (!isSessionPending && !session?.user) router.push('/auth/signin');
+    if (!isSessionPending && !session?.user) router.push(signInHref('/messages'));
   }, [isSessionPending, router, session?.user]);
 
   useEffect(() => {

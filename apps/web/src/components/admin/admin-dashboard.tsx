@@ -7,6 +7,7 @@ import { ShieldAlert, ShieldCheck } from 'lucide-react';
 import type { AdminStats, DocumentStatus } from '@carpool/schemas';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { signInHref } from '@/lib/auth-urls';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
@@ -77,7 +78,7 @@ export function AdminDashboard() {
   if (!session?.user) {
     return (
       <AccessCard Icon={ShieldCheck} tone="primary" message={t('authRequired')}>
-        <Link href="/auth/signin" className={buttonVariants({ variant: 'primary' })}>
+        <Link href={signInHref('/admin')} className={buttonVariants({ variant: 'primary' })}>
           {t('authCta')}
         </Link>
       </AccessCard>

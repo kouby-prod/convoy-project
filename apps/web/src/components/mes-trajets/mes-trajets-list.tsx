@@ -9,6 +9,7 @@ import { deriveDriverVerification, type OwnedTrajet } from '@carpool/schemas';
 import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
+import { signInHref } from '@/lib/auth-urls';
 import { fetchMyDocuments, fetchMyEligibility } from '@/lib/documents';
 import { groupByDateKey } from '@/lib/trip-when';
 import { cn } from '@/lib/utils';
@@ -56,7 +57,7 @@ export function MesTrajetsList() {
   const [filter, setFilter] = useState<RideFilter>('upcoming');
 
   useEffect(() => {
-    if (!isSessionPending && !session?.user) router.push('/auth/signin');
+    if (!isSessionPending && !session?.user) router.push(signInHref('/mes-trajets'));
   }, [isSessionPending, router, session?.user]);
 
   const query = useInfiniteQuery({

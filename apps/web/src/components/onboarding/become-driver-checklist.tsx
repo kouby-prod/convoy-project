@@ -9,6 +9,7 @@ import { CardSkeleton } from '@/components/ui/list-skeleton';
 import { buttonVariants } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { signInHref, signUpHref } from '@/lib/auth-urls';
 import { fetchMyEligibility } from '@/lib/documents';
 import { fetchMyVehicle } from '@/lib/vehicles';
 import { env } from '@/lib/env';
@@ -71,10 +72,10 @@ export function BecomeDriverChecklist() {
           extra={
             accountDone ? null : (
               <div className="flex flex-wrap gap-2">
-                <Link href="/auth/signin" className={cn(buttonVariants({ variant: 'primary', size: 'sm' }), 'w-fit')}>
+                <Link href={signInHref('/become-driver')} className={cn(buttonVariants({ variant: 'primary', size: 'sm' }), 'w-fit')}>
                   {t('checklist.account.signIn')}
                 </Link>
-                <Link href="/auth/signup" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-fit')}>
+                <Link href={signUpHref('/become-driver')} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-fit')}>
                   {t('checklist.account.signUp')}
                 </Link>
               </div>

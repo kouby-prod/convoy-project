@@ -13,6 +13,7 @@ import {
 } from '@carpool/schemas';
 import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { signInHref } from '@/lib/auth-urls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -370,7 +371,7 @@ export function TrajetCreateForm() {
         <Card className="lg:col-start-2">
           <CardContent className="flex flex-col items-center gap-3 pt-0 text-center">
             <p className="text-sm text-muted-foreground">{t('authRequired')}</p>
-            <Link href="/auth/signin" className="text-sm font-semibold text-primary hover:underline">
+            <Link href={signInHref('/trajet/nouveau')} className="text-sm font-semibold text-primary hover:underline">
               {t('authCta')}
             </Link>
           </CardContent>
