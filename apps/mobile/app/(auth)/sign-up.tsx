@@ -7,8 +7,10 @@ import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { CheckEmailNotice } from '@/components/auth/CheckEmailNotice';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 export default function SignUpScreen() {
+  const { t } = useI18n();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,11 +26,11 @@ export default function SignUpScreen() {
     setCreatedNotice(false);
 
     if (!name.trim() || !email.trim() || !password || !confirmPassword) {
-      setError('Veuillez remplir tous les champs.');
+      setError(t('auth.signUp.missingFields'));
       return;
     }
     if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas.');
+      setError(t('auth.signUp.passwordMismatch'));
       return;
     }
 
@@ -41,7 +43,7 @@ export default function SignUpScreen() {
     setLoading(false);
 
     if (signUpError) {
-      setError(signUpError.message ?? "Échec de l'inscription. Réessayez.");
+      setError(signUpError.message ?? t('auth.signUp.genericError'));
       return;
     }
 
@@ -51,21 +53,21 @@ export default function SignUpScreen() {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Créer un compte</Text>
+        <Text style={styles.title}>{t('auth.signUp.title')}</Text>
 
         {createdNotice ? (
           <View style={styles.notice}>
-            <Text style={styles.noticeText}>Compte créé.</Text>
+            <Text style={styles.noticeText}>{t('auth.signUp.accountCreated')}</Text>
             <CheckEmailNotice email={email.trim()} />
             <Link href="/" style={styles.link}>
-              Se connecter
+              {t('auth.signUp.signIn')}
             </Link>
           </View>
         ) : (
           <View style={styles.form}>
-            <TextField label="Nom complet" value={name} onChangeText={setName} autoComplete="name" />
+            <TextField label={t('auth.signUp.fullName')} value={name} onChangeText={setName} autoComplete="name" />
             <TextField
-              label="Adresse e-mail"
+              label={t('auth.signUp.emailLabel')}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -73,27 +75,31 @@ export default function SignUpScreen() {
               autoComplete="email"
             />
             <TextField
-              label="Mot de passe"
+              label={t('auth.signUp.passwordLabel')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
               autoComplete="new-password"
             />
             <TextField
-              label="Confirmer le mot de passe"
+              label={t('auth.signUp.confirmPasswordLabel')}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
             />
             {error ? <Text style={styles.error}>{error}</Text> : null}
-            <Button label={loading ? 'Création…' : "S'inscrire"} onPress={handleSubmit} loading={loading} />
+            <Button
+              label={loading ? t('auth.signUp.submitting') : t('auth.signUp.submit')}
+              onPress={handleSubmit}
+              loading={loading}
+            />
           </View>
         )}
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Déjà inscrit ?</Text>
+          <Text style={styles.footerText}>{t('auth.signUp.alreadyRegistered')}</Text>
           <Link href="/" style={styles.link}>
-            Se connecter
+            {t('auth.signUp.signIn')}
           </Link>
         </View>
       </ScrollView>

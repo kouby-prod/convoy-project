@@ -11,9 +11,12 @@ import { AvatarCard } from '@/components/account/AvatarCard';
 import { NotificationPrefsCard } from '@/components/account/NotificationPrefsCard';
 import { SavedCardsCard } from '@/components/account/SavedCardsCard';
 import { DeleteAccountCard } from '@/components/account/DeleteAccountCard';
+import { LanguageSwitcher } from '@/components/account/LanguageSwitcher';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 export default function CompteScreen() {
+  const { t } = useI18n();
   const { data: session, isPending } = authClient.useSession();
   // `phoneNumberClient`'s `phoneNumber`/`phoneNumberVerified` fields don't
   // merge into the inferred session type (same upstream generic-inference
@@ -45,7 +48,7 @@ export default function CompteScreen() {
   async function handleSaveProfile() {
     setProfileState({ loading: true, error: null, success: false });
     const { error } = await authClient.updateUser({ name: name.trim() });
-    setProfileState({ loading: false, error: error ? (error.message ?? 'Échec de la mise à jour.') : null, success: !error });
+    setProfileState({ loading: false, error: error ? (error.message ?? t('compte.profileUpdateFailed')) : null, success: !error });
   }
 
   async function handleChangePassword() {
@@ -53,7 +56,7 @@ export default function CompteScreen() {
     const { error } = await authClient.changePassword({ currentPassword, newPassword, revokeOtherSessions: false });
     setPasswordState({
       loading: false,
-      error: error ? (error.message ?? 'Échec du changement de mot de passe.') : null,
+      error: error ? (error.message ?? t('compte.passwordChangeFailed')) : null,
       success: !error,
     });
     if (!error) {
@@ -65,7 +68,7 @@ export default function CompteScreen() {
   if (isPending || !user) {
     return (
       <ScreenContainer>
-        <LoadingState label="Chargement…" />
+        <LoadingState label={t('common.loading')} />
       </ScreenContainer>
     );
   }
@@ -76,24 +79,24 @@ export default function CompteScreen() {
         <AvatarCard userId={user.id} />
 
         <Card>
-          <Text style={styles.cardTitle}>Profil</Text>
+          <Text style={styles.cardTitle}>{t('compte.profileTitle')}</Text>
           <View>
-            <Text style={styles.label}>E-mail</Text>
+            <Text style={styles.label}>{t('compte.email')}</Text>
             <Text style={styles.value}>
-              {user.email} {user.emailVerified ? '' : '(non vérifié)'}
+              {user.email} {user.emailVerified ? '' : t('compte.notVerified')}
             </Text>
           </View>
           {user.phoneNumber ? (
             <View>
-              <Text style={styles.label}>Téléphone</Text>
+              <Text style={styles.label}>{t('compte.phone')}</Text>
               <Text style={styles.value}>{user.phoneNumber}</Text>
             </View>
           ) : null}
-          <TextField label="Nom" value={name} onChangeText={setName} />
+          <TextField label={t('compte.nameLabel')} value={name} onChangeText={setName} />
           {profileState.error ? <Text style={styles.error}>{profileState.error}</Text> : null}
-          {profileState.success ? <Text style={styles.success}>Profil mis à jour.</Text> : null}
+          {profileState.success ? <Text style={styles.success}>{t('compte.profileUpdated')}</Text> : null}
           <Button
-            label={profileState.loading ? 'Enregistrement…' : 'Enregistrer'}
+            label={profileState.loading ? t('compte.saving') : t('compte.save')}
             size="sm"
             onPress={handleSaveProfile}
             disabled={profileState.loading || !name.trim()}
@@ -101,32 +104,39 @@ export default function CompteScreen() {
         </Card>
 
         <Card>
-          <Text style={styles.cardTitle}>Mot de passe</Text>
+          <Text style={styles.cardTitle}>{t('compte.passwordTitle')}</Text>
           <TextField
-            label="Mot de passe actuel"
+            label={t('compte.currentPassword')}
             value={currentPassword}
             onChangeText={setCurrentPassword}
             secureTextEntry
           />
-          <TextField label="Nouveau mot de passe" value={newPassword} onChangeText={setNewPassword} secureTextEntry />
+          <TextField
+            label={t('compte.newPassword')}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry
+          />
           {passwordState.error ? <Text style={styles.error}>{passwordState.error}</Text> : null}
-          {passwordState.success ? <Text style={styles.success}>Mot de passe modifié.</Text> : null}
+          {passwordState.success ? <Text style={styles.success}>{t('compte.passwordChanged')}</Text> : null}
           <Button
-            label={passwordState.loading ? 'Enregistrement…' : 'Changer le mot de passe'}
+            label={passwordState.loading ? t('compte.changingPassword') : t('compte.changePassword')}
             size="sm"
             onPress={handleChangePassword}
             disabled={passwordState.loading || !currentPassword || newPassword.length < 8}
           />
         </Card>
 
+        <LanguageSwitcher />
+
         <NotificationPrefsCard />
 
         <SavedCardsCard />
 
-        <Button label="Mon véhicule" variant="outline" onPress={() => router.push('/vehicle')} />
-        <Button label="Aide & informations" variant="outline" onPress={() => router.push('/legal')} />
-        <Button label="Aide & contact" variant="outline" onPress={() => router.push('/contact')} />
-        <Button label="Se déconnecter" variant="outline" onPress={() => authClient.signOut()} />
+        <Button label={t('compte.myVehicle')} variant="outline" onPress={() => router.push('/vehicle')} />
+        <Button label={t('compte.helpInfo')} variant="outline" onPress={() => router.push('/legal')} />
+        <Button label={t('compte.contactHelp')} variant="outline" onPress={() => router.push('/contact')} />
+        <Button label={t('compte.signOut')} variant="outline" onPress={() => authClient.signOut()} />
 
         <DeleteAccountCard />
       </ScrollView>

@@ -5,9 +5,11 @@ import { fetchNotificationPreferences, saveNotificationPreferences } from '@/lib
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /** Email / in-app channel switches — a missing API row reads as both channels on. */
 export function NotificationPrefsCard() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ['notification-preferences'],
@@ -37,15 +39,15 @@ export function NotificationPrefsCard() {
 
   return (
     <Card>
-      <Text style={styles.cardTitle}>Notifications</Text>
-      {query.isLoading ? <Text style={styles.value}>Chargement…</Text> : null}
-      {query.isError ? <Text style={styles.error}>Impossible de charger vos préférences.</Text> : null}
+      <Text style={styles.cardTitle}>{t('notificationPrefs.title')}</Text>
+      {query.isLoading ? <Text style={styles.value}>{t('notificationPrefs.loading')}</Text> : null}
+      {query.isError ? <Text style={styles.error}>{t('notificationPrefs.error')}</Text> : null}
       {prefs ? (
         <>
           <View style={styles.row}>
-            <Text style={styles.value}>E-mail</Text>
+            <Text style={styles.value}>{t('notificationPrefs.email')}</Text>
             <Button
-              label={prefs.emailEnabled ? 'Activé' : 'Désactivé'}
+              label={prefs.emailEnabled ? t('notificationPrefs.enabled') : t('notificationPrefs.disabled')}
               size="sm"
               variant={prefs.emailEnabled ? 'primary' : 'outline'}
               disabled={mutation.isPending}
@@ -53,9 +55,9 @@ export function NotificationPrefsCard() {
             />
           </View>
           <View style={styles.row}>
-            <Text style={styles.value}>Dans l'application</Text>
+            <Text style={styles.value}>{t('notificationPrefs.inApp')}</Text>
             <Button
-              label={prefs.inAppEnabled ? 'Activé' : 'Désactivé'}
+              label={prefs.inAppEnabled ? t('notificationPrefs.enabled') : t('notificationPrefs.disabled')}
               size="sm"
               variant={prefs.inAppEnabled ? 'primary' : 'outline'}
               disabled={mutation.isPending}
@@ -64,7 +66,7 @@ export function NotificationPrefsCard() {
           </View>
         </>
       ) : null}
-      {mutation.isError ? <Text style={styles.error}>L'enregistrement a échoué.</Text> : null}
+      {mutation.isError ? <Text style={styles.error}>{t('notificationPrefs.saveFailed')}</Text> : null}
     </Card>
   );
 }

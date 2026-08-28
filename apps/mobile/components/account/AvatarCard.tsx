@@ -5,9 +5,11 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { fetchAvatarUrl, uploadMyAvatar } from '@/lib/avatar';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /** Profile photo — same upload handshake as a driver document, attached to the account instead of a review queue. */
 export function AvatarCard({ userId }: { userId: string }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { data: avatarUrl, isLoading } = useQuery({
     queryKey: ['my-avatar', userId],
@@ -36,7 +38,7 @@ export function AvatarCard({ userId }: { userId: string }) {
 
   return (
     <Card>
-      <Text style={styles.cardTitle}>Photo de profil</Text>
+      <Text style={styles.cardTitle}>{t('avatar.title')}</Text>
       <View style={styles.row}>
         {isLoading ? null : avatarUrl ? (
           <Image source={{ uri: avatarUrl }} style={styles.avatar} />
@@ -44,14 +46,14 @@ export function AvatarCard({ userId }: { userId: string }) {
           <View style={styles.avatarPlaceholder} />
         )}
         <Button
-          label={mutation.isPending ? 'Envoi…' : 'Changer la photo'}
+          label={mutation.isPending ? t('avatar.sending') : t('avatar.changePhoto')}
           size="sm"
           variant="outline"
           disabled={mutation.isPending}
           onPress={() => mutation.mutate()}
         />
       </View>
-      {mutation.isError ? <Text style={styles.error}>Échec de l'envoi de la photo.</Text> : null}
+      {mutation.isError ? <Text style={styles.error}>{t('avatar.uploadFailed')}</Text> : null}
     </Card>
   );
 }

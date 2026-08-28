@@ -5,11 +5,14 @@ import { api } from '@/lib/api-client';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { LoadingState } from '@/components/ui/StateMessage';
 import { ChecklistStep } from '@/components/onboarding/ChecklistStep';
-import { BECOME_PASSENGER } from '@/lib/legal-content';
+import { getBecomePassengerContent } from '@/lib/legal-content';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /** Compact passenger onboarding checklist — mobile counterpart of the web's `BecomePassengerChecklist`. */
 export default function BecomePassengerScreen() {
+  const { locale } = useI18n();
+  const BECOME_PASSENGER = getBecomePassengerContent(locale);
   const bookingsQuery = useQuery({
     queryKey: ['me', 'bookings', 'onboarding'],
     queryFn: async () => {

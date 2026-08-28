@@ -10,6 +10,7 @@ import { authClient } from '@/lib/auth-client';
 import { useNotificationsSocket } from '@/hooks/useNotificationsSocket';
 import { env } from '@/lib/env';
 import { colors, isDarkMode } from '@/lib/theme';
+import { I18nProvider, useI18n } from '@/lib/i18n';
 
 /**
  * Keeps the `['notifications', 'unread-count']` cache (read by the tab bar
@@ -43,6 +44,7 @@ function NotificationsSync() {
  */
 function RootNavigator() {
   const { data: session, isPending } = authClient.useSession();
+  const { t } = useI18n();
 
   if (isPending) {
     return (
@@ -59,14 +61,14 @@ function RootNavigator() {
         <Stack.Protected guard={!!session?.user}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="trajets/[id]" options={{ headerShown: true, title: '' }} />
-          <Stack.Screen name="contact" options={{ headerShown: true, title: 'Contact' }} />
-          <Stack.Screen name="vehicle" options={{ headerShown: true, title: 'Mon véhicule' }} />
+          <Stack.Screen name="contact" options={{ headerShown: true, title: t('nav.contact') }} />
+          <Stack.Screen name="vehicle" options={{ headerShown: true, title: t('nav.vehicle') }} />
           <Stack.Screen name="messages/[bookingId]" options={{ headerShown: true, title: '' }} />
-          <Stack.Screen name="paiement/[bookingId]" options={{ headerShown: true, title: 'Paiement' }} />
-          <Stack.Screen name="legal/index" options={{ headerShown: true, title: 'Aide & informations' }} />
+          <Stack.Screen name="paiement/[bookingId]" options={{ headerShown: true, title: t('nav.payment') }} />
+          <Stack.Screen name="legal/index" options={{ headerShown: true, title: t('nav.legalHelp') }} />
           <Stack.Screen name="legal/[slug]" options={{ headerShown: true, title: '' }} />
-          <Stack.Screen name="become-driver" options={{ headerShown: true, title: 'Devenir chauffeur' }} />
-          <Stack.Screen name="become-passenger" options={{ headerShown: true, title: 'Devenir passager' }} />
+          <Stack.Screen name="become-driver" options={{ headerShown: true, title: t('nav.becomeDriver') }} />
+          <Stack.Screen name="become-passenger" options={{ headerShown: true, title: t('nav.becomePassenger') }} />
         </Stack.Protected>
         <Stack.Protected guard={!session?.user}>
           <Stack.Screen name="(auth)" />
@@ -86,12 +88,14 @@ export default function RootLayout() {
           "unavailable" state instead of presenting the payment sheet.
           No merchantIdentifier: Apple Pay isn't wired up (no registered
           merchant ID yet) — the sheet still works for card entry without one. */}
-      <StripeProvider publishableKey={env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-          <RootNavigator />
-        </QueryClientProvider>
-      </StripeProvider>
+      <I18nProvider>
+        <StripeProvider publishableKey={env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}>
+          <QueryClientProvider client={queryClient}>
+            <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+            <RootNavigator />
+          </QueryClientProvider>
+        </StripeProvider>
+      </I18nProvider>
     </GestureHandlerRootView>
   );
 }

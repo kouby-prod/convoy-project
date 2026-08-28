@@ -8,9 +8,11 @@ import { PaginationBar } from '@/components/ui/PaginationBar';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateMessage';
 import { BookingCard } from '@/components/trajets/BookingCard';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /** Passenger's own bookings (`GET /me/bookings`), with cancel for pending/confirmed ones. */
 export default function MesReservationsScreen() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
 
@@ -38,11 +40,9 @@ export default function MesReservationsScreen() {
 
   return (
     <ScreenContainer>
-      {isLoading ? <LoadingState label="Chargement…" /> : null}
-      {isError ? <ErrorState label="Impossible de charger vos réservations." /> : null}
-      {!isLoading && !isError && !data?.items.length ? (
-        <EmptyState label="Vous n'avez aucune réservation." />
-      ) : null}
+      {isLoading ? <LoadingState label={t('common.loading')} /> : null}
+      {isError ? <ErrorState label={t('mesReservations.error')} /> : null}
+      {!isLoading && !isError && !data?.items.length ? <EmptyState label={t('mesReservations.empty')} /> : null}
 
       {data?.items.length ? (
         <FlatList<BookingWithTrajet>
@@ -58,7 +58,7 @@ export default function MesReservationsScreen() {
           )}
           ListFooterComponent={
             <>
-              {cancelMutation.isError ? <Text style={styles.error}>Échec de l'annulation.</Text> : null}
+              {cancelMutation.isError ? <Text style={styles.error}>{t('mesReservations.cancelFailed')}</Text> : null}
               <PaginationBar
                 page={page}
                 hasMore={data.hasMore}

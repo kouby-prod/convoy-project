@@ -9,8 +9,10 @@ import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { LoadingState } from '@/components/ui/StateMessage';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 export default function ConversationScreen() {
+  const { t } = useI18n();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const router = useRouter();
   const [reportOpen, setReportOpen] = useState(false);
@@ -26,12 +28,12 @@ export default function ConversationScreen() {
   if (isLoading) {
     return (
       <ScreenContainer>
-        <LoadingState label="Chargement…" />
+        <LoadingState label={t('conversation.loading')} />
       </ScreenContainer>
     );
   }
 
-  const name = conversation?.counterpart.name || 'Utilisateur inconnu';
+  const name = conversation?.counterpart.name || t('common.unknownUser');
   const route = conversation ? `${conversation.trip.departureCity} → ${conversation.trip.arrivalCity}` : '';
 
   return (
@@ -42,10 +44,10 @@ export default function ConversationScreen() {
           {conversation ? <Text style={styles.route}>{route}</Text> : null}
         </View>
         <View style={styles.headerActions}>
-          <Button label="Signaler" variant="outline" size="sm" onPress={() => setReportOpen((v) => !v)} />
+          <Button label={t('conversation.report')} variant="outline" size="sm" onPress={() => setReportOpen((v) => !v)} />
           {conversation ? (
             <Button
-              label="Voir le trajet"
+              label={t('conversation.viewTrip')}
               variant="outline"
               size="sm"
               onPress={() => router.push(`/trajets/${conversation.trajetId}`)}

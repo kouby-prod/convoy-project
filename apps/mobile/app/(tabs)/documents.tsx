@@ -21,19 +21,20 @@ import { TextField } from '@/components/ui/TextField';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateMessage';
 import { EligibilityCard } from '@/components/documents/EligibilityCard';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
+import { useI18n, type MessageKey } from '@/lib/i18n';
 
-const TYPE_LABELS: Record<DriverDocumentType, string> = {
-  permis: 'Permis de conduire',
-  carteIdentite: "Carte d'identité",
-  carteGrise: 'Carte grise',
-  assurance: 'Assurance',
-  immatriculation: 'Immatriculation du véhicule',
+const TYPE_LABEL_KEYS: Record<DriverDocumentType, MessageKey> = {
+  permis: 'documents.types.permis',
+  carteIdentite: 'documents.types.carteIdentite',
+  carteGrise: 'documents.types.carteGrise',
+  assurance: 'documents.types.assurance',
+  immatriculation: 'documents.types.immatriculation',
 };
 
-const STATUS_LABELS: Record<DriverDocument['status'], string> = {
-  pending: 'En attente',
-  approved: 'Approuvé',
-  rejected: 'Refusé',
+const STATUS_LABEL_KEYS: Record<DriverDocument['status'], MessageKey> = {
+  pending: 'documents.statuses.pending',
+  approved: 'documents.statuses.approved',
+  rejected: 'documents.statuses.rejected',
 };
 
 const STATUS_COLORS: Record<DriverDocument['status'], string> = {
@@ -52,6 +53,7 @@ const MAX_SIZE_MB = Math.round(DOCUMENT_MAX_BYTES / (1024 * 1024));
  * (approve/reject) is an admin-only surface and stays on the web backoffice.
  */
 export default function DocumentsScreen() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [type, setType] = useState<DriverDocumentType>('permis');
   const [expiresOn, setExpiresOn] = useState('');
@@ -79,19 +81,19 @@ export default function DocumentsScreen() {
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!pickedFile) throw new Error('Veuillez choisir un fichier.');
+      if (!pickedFile) throw new Error(t('documents.missingFile'));
 
       const mimeParsed = DocumentMimeTypeSchema.safeParse(pickedFile.mimeType);
-      if (!mimeParsed.success) throw new Error('Type de fichier non pris en charge.');
+      if (!mimeParsed.success) throw new Error(t('documents.unsupportedFile'));
       const mimeType = mimeParsed.data;
 
       const size = pickedFile.size ?? 0;
-      if (size > DOCUMENT_MAX_BYTES) throw new Error(`Le fichier dépasse ${MAX_SIZE_MB} Mo.`);
+      if (size > DOCUMENT_MAX_BYTES) throw new Error(t('documents.fileTooLarge', { maxSizeMb: MAX_SIZE_MB }));
 
       const signed = await api.documents['upload-url'].$post({
         json: { type, fileName: pickedFile.name, mimeType, sizeBytes: size },
       });
-      if (!signed.ok) throw new Error("Échec de la préparation de l'envoi.");
+      if (!signed.ok) throw new Error(t('documents.uploadPrepFailed'));
       const { uploadUrl, storageKey } = await signed.json();
 
       // No Content-Type header on purpose: the presigned PUT is not signed
@@ -101,7 +103,7 @@ export default function DocumentsScreen() {
         uploadType: UploadType.BINARY_CONTENT,
       });
       const result = await uploadTask.uploadAsync();
-      if (result.status < 200 || result.status >= 300) throw new Error("Échec de l'envoi du fichier.");
+      if (result.status < 200 || result.status >= 300) throw new Error(t('documents.uploadFailed'));
 
       const created = await api.documents.$post({
         json: {
@@ -113,7 +115,7 @@ export default function DocumentsScreen() {
           expiresOn: expiresOn.trim() || null,
         },
       });
-      if (!created.ok) throw new Error("Échec de l'enregistrement de la soumission.");
+      if (!created.ok) throw new Error(t('documents.saveFailed'));
       return created.json();
     },
     onSuccess: () => {
@@ -122,7 +124,7 @@ export default function DocumentsScreen() {
       setExpiresOn('');
       queryClient.invalidateQueries({ queryKey: ['my-documents'] });
     },
-    onError: (err) => setError(err instanceof Error ? err.message : "Échec de l'envoi."),
+    onError: (err) => setError(err instanceof Error ? err.message : t('documents.sendFailed')),
   });
 
   async function pickFile() {
@@ -147,13 +149,13 @@ export default function DocumentsScreen() {
       ) : null}
 
       <Card>
-        <Text style={styles.cardTitle}>Soumettre un document</Text>
-        <Text style={styles.label}>Type de document</Text>
+        <Text style={styles.cardTitle}>{t('documents.submitTitle')}</Text>
+        <Text style={styles.label}>{t('documents.typeLabel')}</Text>
         <View style={styles.typeGrid}>
           {DRIVER_DOCUMENT_TYPES.map((value) => (
             <Button
               key={value}
-              label={TYPE_LABELS[value]}
+              label={t(TYPE_LABEL_KEYS[value])}
               size="sm"
               variant={type === value ? 'primary' : 'outline'}
               onPress={() => setType(value)}
@@ -162,15 +164,15 @@ export default function DocumentsScreen() {
         </View>
 
         <Button
-          label={pickedFile ? pickedFile.name : 'Choisir un fichier'}
+          label={pickedFile ? pickedFile.name : t('documents.chooseFile')}
           variant="outline"
           size="sm"
           onPress={pickFile}
         />
-        <Text style={styles.hint}>JPEG, PNG, WebP ou PDF — {MAX_SIZE_MB} Mo maximum.</Text>
+        <Text style={styles.hint}>{t('documents.hint', { maxSizeMb: MAX_SIZE_MB })}</Text>
 
         <TextField
-          label="Date d'expiration (AAAA-MM-JJ, optionnel)"
+          label={t('documents.expiresLabel')}
           value={expiresOn}
           onChangeText={setExpiresOn}
           placeholder="2028-06-30"
@@ -179,31 +181,29 @@ export default function DocumentsScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Button
-          label={uploadMutation.isPending ? 'Envoi…' : 'Envoyer'}
+          label={uploadMutation.isPending ? t('documents.sending') : t('documents.send')}
           disabled={uploadMutation.isPending || !pickedFile}
           onPress={() => uploadMutation.mutate()}
         />
       </Card>
 
-      {isLoading ? <LoadingState label="Chargement…" /> : null}
-      {isError ? <ErrorState label="Impossible de charger vos documents." /> : null}
-      {!isLoading && !isError && !data?.length ? (
-        <EmptyState label="Aucun document soumis pour l'instant." />
-      ) : null}
+      {isLoading ? <LoadingState label={t('common.loading')} /> : null}
+      {isError ? <ErrorState label={t('documents.error')} /> : null}
+      {!isLoading && !isError && !data?.length ? <EmptyState label={t('documents.empty')} /> : null}
 
       {data?.map((doc) => (
         <Card key={doc.id} style={styles.docCard}>
           <View style={styles.docHeader}>
-            <Text style={styles.docTitle}>{TYPE_LABELS[doc.type]}</Text>
+            <Text style={styles.docTitle}>{t(TYPE_LABEL_KEYS[doc.type])}</Text>
             <Text style={[styles.statusBadge, { color: STATUS_COLORS[doc.status] }]}>
-              {STATUS_LABELS[doc.status]}
+              {t(STATUS_LABEL_KEYS[doc.status])}
             </Text>
           </View>
           <Text style={styles.line}>{doc.fileName}</Text>
           {doc.status === 'rejected' && doc.reviewNote ? (
-            <Text style={styles.error}>Motif du refus : {doc.reviewNote}</Text>
+            <Text style={styles.error}>{t('documents.rejectionReason', { reason: doc.reviewNote })}</Text>
           ) : null}
-          <Button label="Voir le fichier" variant="outline" size="sm" onPress={() => viewDocument(doc.id)} />
+          <Button label={t('documents.viewFile')} variant="outline" size="sm" onPress={() => viewDocument(doc.id)} />
         </Card>
       ))}
       </ScrollView>

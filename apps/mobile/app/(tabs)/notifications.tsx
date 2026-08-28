@@ -11,19 +11,20 @@ import { Button } from '@/components/ui/Button';
 import { PaginationBar } from '@/components/ui/PaginationBar';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateMessage';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n, type MessageKey, type Locale } from '@/lib/i18n';
 
-const TYPE_LABELS: Record<NotificationType, string> = {
-  booking_request: 'Demande de réservation',
-  booking_status: 'Mise à jour de réservation',
-  trip_cancelled: 'Trajet annulé',
-  message: 'Message',
-  system: 'Système',
+const TYPE_LABEL_KEYS: Record<NotificationType, MessageKey> = {
+  booking_request: 'notifications.types.booking_request',
+  booking_status: 'notifications.types.booking_status',
+  trip_cancelled: 'notifications.types.trip_cancelled',
+  message: 'notifications.types.message',
+  system: 'notifications.types.system',
 };
 
-function formatRelativeTime(value: string): string {
+function formatRelativeTime(value: string, locale: Locale): string {
   const date = new Date(value);
   const diffSec = Math.round((date.getTime() - Date.now()) / 1000);
-  const rtf = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' });
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
   const abs = Math.abs(diffSec);
   if (abs < 60) return rtf.format(diffSec, 'second');
   const diffMin = Math.round(diffSec / 60);
@@ -42,6 +43,7 @@ function trajetIdFromLink(link: string | null): string | null {
 }
 
 export default function NotificationsScreen() {
+  const { t, locale } = useI18n();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -81,7 +83,7 @@ export default function NotificationsScreen() {
       <View style={styles.header}>
         <View style={styles.tabs}>
           <Button
-            label="Toutes"
+            label={t('notifications.all')}
             size="sm"
             variant={!unreadOnly ? 'primary' : 'outline'}
             onPress={() => {
@@ -90,7 +92,7 @@ export default function NotificationsScreen() {
             }}
           />
           <Button
-            label={unreadCount > 0 ? `Non lues (${unreadCount})` : 'Non lues'}
+            label={unreadCount > 0 ? t('notifications.unreadCount', { count: unreadCount }) : t('notifications.unread')}
             size="sm"
             variant={unreadOnly ? 'primary' : 'outline'}
             onPress={() => {
@@ -101,7 +103,7 @@ export default function NotificationsScreen() {
         </View>
         {unreadCount > 0 ? (
           <Button
-            label={markAllReadMutation.isPending ? 'Marquage…' : 'Tout marquer comme lu'}
+            label={markAllReadMutation.isPending ? t('notifications.marking') : t('notifications.markAllRead')}
             size="sm"
             variant="outline"
             disabled={markAllReadMutation.isPending}
@@ -110,10 +112,10 @@ export default function NotificationsScreen() {
         ) : null}
       </View>
 
-      {isLoading ? <LoadingState label="Chargement…" /> : null}
-      {isError ? <ErrorState label="Impossible de charger les notifications." /> : null}
+      {isLoading ? <LoadingState label={t('common.loading')} /> : null}
+      {isError ? <ErrorState label={t('notifications.error')} /> : null}
       {!isLoading && !isError && !data?.items.length ? (
-        <EmptyState label={unreadOnly ? 'Aucune notification non lue.' : 'Aucune notification pour le moment.'} />
+        <EmptyState label={unreadOnly ? t('notifications.emptyUnread') : t('notifications.emptyAll')} />
       ) : null}
 
       {data?.items.length ? (
@@ -127,14 +129,14 @@ export default function NotificationsScreen() {
               <Pressable onPress={() => openNotification(item)}>
                 <Card style={unread ? styles.unreadCard : undefined}>
                   <View style={styles.rowHeader}>
-                    <Text style={styles.type}>{TYPE_LABELS[item.type]}</Text>
+                    <Text style={styles.type}>{t(TYPE_LABEL_KEYS[item.type])}</Text>
                     {unread ? <View style={styles.dot} /> : null}
                   </View>
                   <Text style={styles.title}>{item.title}</Text>
                   <Text style={styles.body} numberOfLines={2}>
                     {item.body}
                   </Text>
-                  <Text style={styles.time}>{formatRelativeTime(item.createdAt)}</Text>
+                  <Text style={styles.time}>{formatRelativeTime(item.createdAt, locale)}</Text>
                 </Card>
               </Pressable>
             );

@@ -5,8 +5,10 @@ import { fetchConversations } from '@/lib/conversations';
 import { unreadThreadCount } from '@/lib/message-read';
 import { useMessageReadMap } from '@/hooks/useMessageReadMap';
 import { colors } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 export default function TabsLayout() {
+  const { t } = useI18n();
   // Seeded once here and kept fresh by the root layout's notifications socket
   // (see app/_layout.tsx) — this query only reads the shared cache, it does
   // not poll on its own.
@@ -38,20 +40,20 @@ export default function TabsLayout() {
         tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
       }}
     >
-      <Tabs.Screen name="recherche" options={{ title: 'Recherche' }} />
-      <Tabs.Screen name="annoncer" options={{ title: 'Publier' }} />
-      <Tabs.Screen name="mes-trajets" options={{ title: 'Mes trajets' }} />
-      <Tabs.Screen name="mes-reservations" options={{ title: 'Réservations' }} />
+      <Tabs.Screen name="recherche" options={{ title: t('nav.search') }} />
+      <Tabs.Screen name="annoncer" options={{ title: t('nav.publish') }} />
+      <Tabs.Screen name="mes-trajets" options={{ title: t('nav.myTrips') }} />
+      <Tabs.Screen name="mes-reservations" options={{ title: t('nav.myBookings') }} />
       <Tabs.Screen
         name="messages"
-        options={{ title: 'Messages', tabBarBadge: unreadMessages > 0 ? unreadMessages : undefined }}
+        options={{ title: t('nav.messages'), tabBarBadge: unreadMessages > 0 ? unreadMessages : undefined }}
       />
-      <Tabs.Screen name="documents" options={{ title: 'Documents' }} />
+      <Tabs.Screen name="documents" options={{ title: t('nav.documents') }} />
       <Tabs.Screen
         name="notifications"
-        options={{ title: 'Alertes', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }}
+        options={{ title: t('nav.alerts'), tabBarBadge: unreadCount > 0 ? unreadCount : undefined }}
       />
-      <Tabs.Screen name="compte" options={{ title: 'Compte' }} />
+      <Tabs.Screen name="compte" options={{ title: t('nav.account') }} />
     </Tabs>
   );
 }

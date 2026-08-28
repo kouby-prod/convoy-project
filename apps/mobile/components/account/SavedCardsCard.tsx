@@ -12,6 +12,7 @@ import { env } from '@/lib/env';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 const METHODS_KEY = ['payment-methods'] as const;
 
@@ -22,6 +23,7 @@ const METHODS_KEY = ['payment-methods'] as const;
  * pre-built-UI approach as the booking checkout in app/paiement/[bookingId].
  */
 export function SavedCardsCard() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [adding, setAdding] = useState(false);
@@ -66,7 +68,7 @@ export function SavedCardsCard() {
 
       await queryClient.invalidateQueries({ queryKey: METHODS_KEY });
     } catch (err) {
-      setAddError(err instanceof Error ? err.message : "Échec de l'ajout de la carte.");
+      setAddError(err instanceof Error ? err.message : t('savedCards.addFailed'));
     } finally {
       setAdding(false);
     }
@@ -79,27 +81,27 @@ export function SavedCardsCard() {
 
   return (
     <Card>
-      <Text style={styles.cardTitle}>Cartes enregistrées</Text>
+      <Text style={styles.cardTitle}>{t('savedCards.title')}</Text>
 
-      {query.isLoading ? <Text style={styles.value}>Chargement…</Text> : null}
-      {query.isError ? <Text style={styles.error}>Impossible de charger vos cartes.</Text> : null}
-      {!query.isLoading && !items.length ? <Text style={styles.value}>Aucune carte enregistrée.</Text> : null}
+      {query.isLoading ? <Text style={styles.value}>{t('savedCards.loading')}</Text> : null}
+      {query.isError ? <Text style={styles.error}>{t('savedCards.error')}</Text> : null}
+      {!query.isLoading && !items.length ? <Text style={styles.value}>{t('savedCards.empty')}</Text> : null}
 
       {items.map((card) => (
         <View key={card.id} style={styles.row}>
           <View>
             <Text style={styles.value}>
               {card.brand} ···· {card.last4}
-              {card.isDefault ? <Text style={styles.badge}>  Par défaut</Text> : null}
+              {card.isDefault ? <Text style={styles.badge}>{t('savedCards.defaultBadge')}</Text> : null}
             </Text>
             <Text style={styles.label}>
-              Expire {String(card.expMonth).padStart(2, '0')}/{card.expYear}
+              {t('savedCards.expires', { date: `${String(card.expMonth).padStart(2, '0')}/${card.expYear}` })}
             </Text>
           </View>
           <View style={styles.actions}>
             {!card.isDefault ? (
               <Button
-                label="Définir par défaut"
+                label={t('savedCards.setDefault')}
                 variant="outline"
                 size="sm"
                 disabled={defaultMutation.isPending}
@@ -107,7 +109,7 @@ export function SavedCardsCard() {
               />
             ) : null}
             <Button
-              label="Retirer"
+              label={t('savedCards.remove')}
               variant="destructive"
               size="sm"
               disabled={removeMutation.isPending}
@@ -118,12 +120,12 @@ export function SavedCardsCard() {
       ))}
 
       {removeMutation.isError || defaultMutation.isError ? (
-        <Text style={styles.error}>Une action sur les cartes a échoué.</Text>
+        <Text style={styles.error}>{t('savedCards.actionFailed')}</Text>
       ) : null}
       {addError ? <Text style={styles.error}>{addError}</Text> : null}
 
       <Button
-        label={adding ? 'Ajout…' : 'Ajouter une carte'}
+        label={adding ? t('savedCards.adding') : t('savedCards.addCard')}
         variant="outline"
         disabled={adding}
         onPress={() => void handleAddCard()}

@@ -8,14 +8,15 @@ import { isThreadUnread } from '@/lib/message-read';
 import { Card } from '@/components/ui/Card';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateMessage';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n, type MessageKey } from '@/lib/i18n';
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'En attente',
-  awaiting_payment: 'En attente de paiement',
-  confirmed: 'Confirmée',
-  rejected: 'Refusée',
-  cancelled: 'Annulée',
-  expired: 'Expirée',
+const STATUS_LABEL_KEYS: Record<string, MessageKey> = {
+  pending: 'common.bookingStatus.pending',
+  awaiting_payment: 'common.bookingStatus.awaitingPayment',
+  confirmed: 'common.bookingStatus.confirmed',
+  rejected: 'common.bookingStatus.rejected',
+  cancelled: 'common.bookingStatus.cancelled',
+  expired: 'common.bookingStatus.expired',
 };
 
 function initials(name: string) {
@@ -33,6 +34,7 @@ function shortWhen(iso: string) {
 
 /** Inbox of every booking thread the driver/passenger can access — mobile counterpart of the web's `MessagesInbox`, without the counterpart-grouping trip switcher (kept simple: one row per booking). */
 export default function MessagesScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const { userId, readMap } = useMessageReadMap();
 
@@ -45,10 +47,10 @@ export default function MessagesScreen() {
 
   return (
     <View style={styles.screen}>
-      {isLoading ? <LoadingState label="Chargement…" /> : null}
-      {isError ? <ErrorState label="Impossible de charger les messages." /> : null}
+      {isLoading ? <LoadingState label={t('common.loading')} /> : null}
+      {isError ? <ErrorState label={t('messagesInbox.error')} /> : null}
       {!isLoading && !isError && !conversations.length ? (
-        <EmptyState label="Aucune conversation pour le moment." />
+        <EmptyState label={t('messagesInbox.empty')} />
       ) : null}
 
       {conversations.length ? (
@@ -58,9 +60,10 @@ export default function MessagesScreen() {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => {
             const unread = isThreadUnread(item, userId, readMap);
-            const name = item.counterpart.name || 'Utilisateur inconnu';
-            const statusLabel = STATUS_LABELS[item.bookingStatus] ?? item.bookingStatus;
-            const roleLabel = item.role === 'driver' ? 'Passager' : 'Conducteur';
+            const name = item.counterpart.name || t('common.unknownUser');
+            const statusKey = STATUS_LABEL_KEYS[item.bookingStatus];
+            const statusLabel = statusKey ? t(statusKey) : item.bookingStatus;
+            const roleLabel = item.role === 'driver' ? t('messagesInbox.rolePassenger') : t('messagesInbox.roleDriver');
 
             return (
               <Pressable onPress={() => router.push(`/messages/${item.bookingId}`)}>
@@ -82,7 +85,7 @@ export default function MessagesScreen() {
                         {roleLabel} · {item.trip.departureCity} → {item.trip.arrivalCity} · {statusLabel}
                       </Text>
                       <Text style={[styles.preview, unread && styles.unreadText]} numberOfLines={1}>
-                        {item.lastMessage?.body ?? 'Aucun message pour le moment.'}
+                        {item.lastMessage?.body ?? t('messagesInbox.noMessage')}
                       </Text>
                     </View>
                     {unread ? <View style={styles.dot} /> : null}

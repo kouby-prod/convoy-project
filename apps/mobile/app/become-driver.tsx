@@ -7,11 +7,14 @@ import { fetchMyVehicle } from '@/lib/vehicles';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { LoadingState } from '@/components/ui/StateMessage';
 import { ChecklistStep } from '@/components/onboarding/ChecklistStep';
-import { BECOME_DRIVER } from '@/lib/legal-content';
+import { getBecomeDriverContent } from '@/lib/legal-content';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /** Live driver onboarding checklist — mobile counterpart of the web's `BecomeDriverChecklist`. Every screen here is already auth-gated, so "create an account" always reads as done. */
 export default function BecomeDriverScreen() {
+  const { locale } = useI18n();
+  const BECOME_DRIVER = getBecomeDriverContent(locale);
   const eligibilityQuery = useQuery({ queryKey: ['my-eligibility'], queryFn: fetchMyEligibility });
   const vehicleQuery = useQuery({ queryKey: ['my-vehicle'], queryFn: fetchMyVehicle });
   const trajetsQuery = useQuery({

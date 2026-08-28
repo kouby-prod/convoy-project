@@ -6,6 +6,7 @@ import { authClient } from '@/lib/auth-client';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { colors, radius, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /** Forwards a thread report to support via POST /contact — same as the web's `ReportThreadPanel`. */
 export function ReportThread({
@@ -19,6 +20,7 @@ export function ReportThread({
   route: string;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const { data: session } = authClient.useSession();
   const [reason, setReason] = useState('');
 
@@ -26,7 +28,7 @@ export function ReportThread({
     mutationFn: async () => {
       const name = session?.user?.name?.trim() || session?.user?.email || 'Utilisateur inconnu';
       const email = session?.user?.email;
-      if (!email) throw new Error('Adresse e-mail introuvable.');
+      if (!email) throw new Error(t('reportThread.missingEmail'));
       const res = await api.contact.$post({
         json: {
           name,
@@ -37,20 +39,20 @@ export function ReportThread({
           }`,
         },
       });
-      if (!res.ok) throw new Error("Échec de l'envoi du signalement.");
+      if (!res.ok) throw new Error(t('reportThread.genericError'));
       return res.json();
     },
   });
 
   return (
     <View style={styles.container}>
-      <Text style={styles.hint}>Décrivez le problème rencontré avec cette personne. Notre équipe vous répondra.</Text>
+      <Text style={styles.hint}>{t('reportThread.description')}</Text>
       {mutation.isSuccess ? (
-        <Text style={styles.value}>Signalement envoyé. Merci.</Text>
+        <Text style={styles.value}>{t('reportThread.sent')}</Text>
       ) : (
         <>
           <TextField
-            label="Motif (optionnel)"
+            label={t('reportThread.reasonLabel')}
             value={reason}
             onChangeText={setReason}
             multiline
@@ -59,13 +61,13 @@ export function ReportThread({
           {mutation.isError ? <Text style={styles.error}>{(mutation.error as Error).message}</Text> : null}
           <View style={styles.row}>
             <Button
-              label={mutation.isPending ? 'Envoi…' : 'Envoyer le signalement'}
+              label={mutation.isPending ? t('reportThread.sending') : t('reportThread.send')}
               variant="destructive"
               size="sm"
               disabled={mutation.isPending}
               onPress={() => mutation.mutate()}
             />
-            <Button label="Annuler" variant="outline" size="sm" onPress={onClose} />
+            <Button label={t('reportThread.cancel')} variant="outline" size="sm" onPress={onClose} />
           </View>
         </>
       )}

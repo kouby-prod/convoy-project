@@ -8,6 +8,7 @@ import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { LoadingState, ErrorState } from '@/components/ui/StateMessage';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Vehicle declaration — mobile counterpart of the web's ride-creation "Étape 3"
@@ -17,6 +18,7 @@ import { colors, spacing, fontSize } from '@/lib/theme';
  * then rarely touched.
  */
 export default function VehicleScreen() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['my-vehicle'],
@@ -59,11 +61,11 @@ export default function VehicleScreen() {
   function handleSubmit() {
     setFieldError(null);
     if (!plate.trim()) {
-      setFieldError("La plaque d'immatriculation est obligatoire.");
+      setFieldError(t('vehicle.plateRequired'));
       return;
     }
     if (seats.trim() && (!Number.isFinite(Number(seats)) || Number(seats) < 1 || Number(seats) > 8)) {
-      setFieldError('Le nombre de places doit être entre 1 et 8.');
+      setFieldError(t('vehicle.invalidSeats'));
       return;
     }
     mutation.mutate();
@@ -72,7 +74,7 @@ export default function VehicleScreen() {
   if (isLoading) {
     return (
       <ScreenContainer>
-        <LoadingState label="Chargement…" />
+        <LoadingState label={t('vehicle.loading')} />
       </ScreenContainer>
     );
   }
@@ -80,7 +82,7 @@ export default function VehicleScreen() {
   if (isError) {
     return (
       <ScreenContainer>
-        <ErrorState label="Impossible de charger votre véhicule." />
+        <ErrorState label={t('vehicle.error')} />
       </ScreenContainer>
     );
   }
@@ -89,35 +91,35 @@ export default function VehicleScreen() {
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Card>
-          <Text style={styles.title}>Mon véhicule</Text>
-          <Text style={styles.subtitle}>Ces informations sont affichées aux passagers.</Text>
+          <Text style={styles.title}>{t('vehicle.title')}</Text>
+          <Text style={styles.subtitle}>{t('vehicle.subtitle')}</Text>
 
-          <TextField label="Marque" value={make} onChangeText={setMake} />
-          <TextField label="Modèle" value={model} onChangeText={setModel} />
-          <TextField label="Couleur" value={color} onChangeText={setColor} />
-          <TextField label="Places" value={seats} onChangeText={setSeats} keyboardType="number-pad" />
-          <TextField label="Plaque d'immatriculation" value={plate} onChangeText={setPlate} />
+          <TextField label={t('vehicle.make')} value={make} onChangeText={setMake} />
+          <TextField label={t('vehicle.model')} value={model} onChangeText={setModel} />
+          <TextField label={t('vehicle.color')} value={color} onChangeText={setColor} />
+          <TextField label={t('vehicle.seats')} value={seats} onChangeText={setSeats} keyboardType="number-pad" />
+          <TextField label={t('vehicle.plate')} value={plate} onChangeText={setPlate} />
 
-          <Text style={styles.label}>Assurance valide</Text>
+          <Text style={styles.label}>{t('vehicle.insuranceLabel')}</Text>
           <Button
-            label={hasInsurance === true ? '✓ Oui' : 'Oui'}
+            label={hasInsurance === true ? t('vehicle.yesChecked') : t('vehicle.yes')}
             size="sm"
             variant={hasInsurance === true ? 'primary' : 'outline'}
             onPress={() => setHasInsurance(true)}
           />
           <Button
-            label={hasInsurance === false ? '✓ Non' : 'Non'}
+            label={hasInsurance === false ? t('vehicle.noChecked') : t('vehicle.no')}
             size="sm"
             variant={hasInsurance === false ? 'primary' : 'outline'}
             onPress={() => setHasInsurance(false)}
           />
 
           {fieldError ? <Text style={styles.error}>{fieldError}</Text> : null}
-          {mutation.isError ? <Text style={styles.error}>Échec de l'enregistrement.</Text> : null}
-          {mutation.isSuccess ? <Text style={styles.success}>Véhicule enregistré.</Text> : null}
+          {mutation.isError ? <Text style={styles.error}>{t('vehicle.saveFailed')}</Text> : null}
+          {mutation.isSuccess ? <Text style={styles.success}>{t('vehicle.saved')}</Text> : null}
 
           <Button
-            label={mutation.isPending ? 'Enregistrement…' : 'Enregistrer le véhicule'}
+            label={mutation.isPending ? t('vehicle.saving') : t('vehicle.save')}
             onPress={handleSubmit}
             loading={mutation.isPending}
           />

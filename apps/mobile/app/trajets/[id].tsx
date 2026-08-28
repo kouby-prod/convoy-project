@@ -15,22 +15,28 @@ import { BookingMessages } from '@/components/trajets/BookingMessages';
 import { ReviewForm } from '@/components/trajets/ReviewForm';
 import { LiveLocationShare } from '@/components/trajets/LiveLocationShare';
 import { LiveLocationView } from '@/components/trajets/LiveLocationView';
-import { AMENITY_LABELS } from '@/lib/amenities';
+import { AMENITY_LABEL_KEYS } from '@/lib/amenities';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
+import { useI18n, type MessageKey, type TFunction } from '@/lib/i18n';
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'En attente',
-  awaiting_payment: 'En attente de paiement',
-  confirmed: 'Confirmée',
-  rejected: 'Refusée',
-  cancelled: 'Annulée',
-  expired: 'Expirée',
+const STATUS_LABEL_KEYS: Record<string, MessageKey> = {
+  pending: 'common.bookingStatus.pending',
+  awaiting_payment: 'common.bookingStatus.awaitingPayment',
+  confirmed: 'common.bookingStatus.confirmed',
+  rejected: 'common.bookingStatus.rejected',
+  cancelled: 'common.bookingStatus.cancelled',
+  expired: 'common.bookingStatus.expired',
 };
 
-const PAYMENT_METHOD_LABELS: Record<RidePaymentMethod, string> = {
-  card: 'Carte',
-  interac: 'Interac',
-  cash: 'Comptant',
+function statusLabel(t: TFunction, status: string): string {
+  const key = STATUS_LABEL_KEYS[status];
+  return key ? t(key) : status;
+}
+
+const PAYMENT_METHOD_LABEL_KEYS: Record<RidePaymentMethod, MessageKey> = {
+  card: 'common.paymentMethod.card',
+  interac: 'common.paymentMethod.interac',
+  cash: 'common.paymentMethod.cash',
 };
 
 function formatDateTime(value: string) {
@@ -45,6 +51,7 @@ function formatPrice(value: number) {
 
 /** Driver trust strip — built entirely from the trajet's embedded `driver` profile, no extra fetch. */
 function DriverProfile({ driver }: { driver: Trajet['driver'] }) {
+  const { t } = useI18n();
   const name = [driver.firstName, driver.lastName].filter(Boolean).join(' ') || '—';
   const vehicleLine = [driver.carMake, driver.carModel].filter(Boolean).join(' ');
 
@@ -54,15 +61,22 @@ function DriverProfile({ driver }: { driver: Trajet['driver'] }) {
         <Text style={styles.cardTitle}>{name}</Text>
         <View style={driver.verified ? styles.verifiedBadge : styles.unverifiedBadge}>
           <Text style={driver.verified ? styles.verifiedBadgeText : styles.unverifiedBadgeText}>
-            {driver.verified ? 'Vérifié' : 'Non vérifié'}
+            {driver.verified ? t('trajetDetail.driverProfile.verified') : t('trajetDetail.driverProfile.unverified')}
           </Text>
         </View>
       </View>
       <Text style={styles.value}>
-        {driver.rating !== null ? `★ ${driver.rating.toFixed(1)} (${driver.reviewCount ?? 0} avis)` : 'Aucun avis'}
+        {driver.rating !== null
+          ? t('trajetDetail.driverProfile.ratingWithReviews', {
+              rating: driver.rating.toFixed(1),
+              count: driver.reviewCount ?? 0,
+            })
+          : t('trajetDetail.driverProfile.noReviews')}
       </Text>
       {vehicleLine ? <Text style={styles.value}>{vehicleLine}</Text> : null}
-      {driver.carSeats !== null ? <Text style={styles.value}>{driver.carSeats} places dans le véhicule</Text> : null}
+      {driver.carSeats !== null ? (
+        <Text style={styles.value}>{t('trajetDetail.driverProfile.seatsInVehicle', { count: driver.carSeats })}</Text>
+      ) : null}
     </Card>
   );
 }
@@ -75,6 +89,7 @@ function DriverProfile({ driver }: { driver: Trajet['driver'] }) {
  * active bookings).
  */
 function OwnerActions({ trajetId, cancelled }: { trajetId: string; cancelled: boolean }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
 
@@ -95,25 +110,25 @@ function OwnerActions({ trajetId, cancelled }: { trajetId: string; cancelled: bo
 
   return (
     <Card>
-      <Text style={styles.cardTitle}>Gestion du trajet</Text>
+      <Text style={styles.cardTitle}>{t('trajetDetail.ownerActions.title')}</Text>
       {confirming ? (
         <>
-          <Text style={styles.value}>Confirmer l'annulation de ce trajet ?</Text>
+          <Text style={styles.value}>{t('trajetDetail.ownerActions.confirmCancel')}</Text>
           <View style={styles.row}>
             <Button
-              label={cancelTrajetMutation.isPending ? 'Annulation…' : 'Oui, annuler'}
+              label={cancelTrajetMutation.isPending ? t('trajetDetail.ownerActions.cancelling') : t('trajetDetail.ownerActions.yesCancel')}
               variant="destructive"
               size="sm"
               disabled={cancelTrajetMutation.isPending}
               onPress={() => cancelTrajetMutation.mutate()}
             />
-            <Button label="Retour" variant="outline" size="sm" onPress={() => setConfirming(false)} />
+            <Button label={t('trajetDetail.ownerActions.back')} variant="outline" size="sm" onPress={() => setConfirming(false)} />
           </View>
         </>
       ) : (
-        <Button label="Annuler ce trajet" variant="outline" size="sm" onPress={() => setConfirming(true)} />
+        <Button label={t('trajetDetail.ownerActions.cancelTrip')} variant="outline" size="sm" onPress={() => setConfirming(true)} />
       )}
-      {cancelTrajetMutation.isError ? <Text style={styles.error}>Échec de l'annulation.</Text> : null}
+      {cancelTrajetMutation.isError ? <Text style={styles.error}>{t('trajetDetail.ownerActions.cancelFailed')}</Text> : null}
     </Card>
   );
 }
@@ -123,6 +138,7 @@ function OwnerActions({ trajetId, cancelled }: { trajetId: string; cancelled: bo
  * `apps/web/src/components/trajets/trajet-bookings.tsx`.
  */
 function TrajetBookingsList({ trajetId, departureDateTime }: { trajetId: string; departureDateTime: string }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [openReviewId, setOpenReviewId] = useState<string | null>(null);
@@ -158,30 +174,30 @@ function TrajetBookingsList({ trajetId, departureDateTime }: { trajetId: string;
 
   return (
     <Card>
-      <Text style={styles.cardTitle}>Réservations reçues</Text>
-      {isLoading ? <LoadingState label="Chargement…" /> : null}
-      {isError ? <ErrorState label="Impossible de charger les réservations." /> : null}
+      <Text style={styles.cardTitle}>{t('trajetDetail.bookingsList.title')}</Text>
+      {isLoading ? <LoadingState label={t('common.loading')} /> : null}
+      {isError ? <ErrorState label={t('trajetDetail.bookingsList.error')} /> : null}
       {!isLoading && !isError && !data?.items.length ? (
-        <Text style={styles.value}>Aucune réservation pour ce trajet.</Text>
+        <Text style={styles.value}>{t('trajetDetail.bookingsList.empty')}</Text>
       ) : null}
 
       {data?.items.map((booking) => (
         <View key={booking.id} style={styles.bookingItem}>
           <View style={styles.bookingRow}>
             <View>
-              <Text style={styles.value}>{booking.seats} place(s)</Text>
-              <Text style={styles.label}>{STATUS_LABELS[booking.status] ?? booking.status}</Text>
+              <Text style={styles.value}>{t('common.seatsCount', { count: booking.seats })}</Text>
+              <Text style={styles.label}>{statusLabel(t, booking.status)}</Text>
             </View>
             {booking.status === 'pending' ? (
               <View style={styles.row}>
                 <Button
-                  label="Accepter"
+                  label={t('trajetDetail.bookingsList.accept')}
                   size="sm"
                   disabled={statusMutation.isPending}
                   onPress={() => statusMutation.mutate({ bookingId: booking.id, status: 'confirmed' })}
                 />
                 <Button
-                  label="Refuser"
+                  label={t('trajetDetail.bookingsList.reject')}
                   size="sm"
                   variant="outline"
                   disabled={statusMutation.isPending}
@@ -193,7 +209,7 @@ function TrajetBookingsList({ trajetId, departureDateTime }: { trajetId: string;
           <BookingMessages bookingId={booking.id} />
           {booking.status === 'confirmed' && hasDeparted ? (
             reviewedIds.has(booking.id) ? (
-              <Text style={styles.value}>Avis envoyé pour ce passager.</Text>
+              <Text style={styles.value}>{t('trajetDetail.bookingsList.reviewSent')}</Text>
             ) : openReviewId === booking.id ? (
               <ReviewForm
                 bookingId={booking.id}
@@ -204,7 +220,7 @@ function TrajetBookingsList({ trajetId, departureDateTime }: { trajetId: string;
               />
             ) : (
               <Button
-                label="Noter ce passager"
+                label={t('trajetDetail.bookingsList.ratePassenger')}
                 variant="outline"
                 size="sm"
                 onPress={() => setOpenReviewId(booking.id)}
@@ -214,7 +230,7 @@ function TrajetBookingsList({ trajetId, departureDateTime }: { trajetId: string;
         </View>
       ))}
 
-      {statusMutation.isError ? <Text style={styles.error}>Échec de la mise à jour.</Text> : null}
+      {statusMutation.isError ? <Text style={styles.error}>{t('trajetDetail.bookingsList.updateFailed')}</Text> : null}
 
       {data?.items.length ? (
         <PaginationBar
@@ -246,6 +262,7 @@ function BookingSection({
   departureDateTime: string;
   arrivalDateTime: string | null;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [seats, setSeats] = useState('1');
@@ -311,7 +328,7 @@ function BookingSection({
   if (!session?.user) {
     return (
       <Card>
-        <Text style={styles.value}>Connectez-vous pour réserver ce trajet.</Text>
+        <Text style={styles.value}>{t('trajetDetail.bookingSection.signInToBook')}</Text>
       </Card>
     );
   }
@@ -323,7 +340,7 @@ function BookingSection({
   if (!myBooking && seatsAvailable < 1) {
     return (
       <Card>
-        <Text style={styles.value}>Ce trajet est complet.</Text>
+        <Text style={styles.value}>{t('trajetDetail.bookingSection.full')}</Text>
       </Card>
     );
   }
@@ -331,36 +348,42 @@ function BookingSection({
   return (
     <>
     <Card>
-      <Text style={styles.cardTitle}>Réservation</Text>
+      <Text style={styles.cardTitle}>{t('trajetDetail.bookingSection.title')}</Text>
       {myBooking ? (
         <>
-          <Text style={styles.value}>Statut : {STATUS_LABELS[myBooking.status] ?? myBooking.status}</Text>
+          <Text style={styles.value}>
+            {t('trajetDetail.bookingSection.statusLabel', { status: statusLabel(t, myBooking.status) })}
+          </Text>
           {myBooking.status === 'awaiting_payment' ? (
-            <Button label="Payer maintenant" size="sm" onPress={() => router.push(`/paiement/${myBooking.id}`)} />
+            <Button
+              label={t('trajetDetail.bookingSection.payNow')}
+              size="sm"
+              onPress={() => router.push(`/paiement/${myBooking.id}`)}
+            />
           ) : null}
           {myBooking.status === 'pending' || myBooking.status === 'confirmed' ? (
             <Button
-              label={cancelMutation.isPending ? 'Annulation…' : 'Annuler ma réservation'}
+              label={cancelMutation.isPending ? t('trajetDetail.bookingSection.cancelling') : t('trajetDetail.bookingSection.cancelBooking')}
               variant="outline"
               size="sm"
               disabled={cancelMutation.isPending}
               onPress={() => cancelMutation.mutate()}
             />
           ) : null}
-          {cancelMutation.isError ? <Text style={styles.error}>Échec de l'annulation.</Text> : null}
+          {cancelMutation.isError ? <Text style={styles.error}>{t('trajetDetail.bookingSection.cancelFailed')}</Text> : null}
           <BookingMessages bookingId={myBooking.id} />
         </>
       ) : (
         <>
-          <TextField label="Nombre de places" value={seats} onChangeText={setSeats} keyboardType="number-pad" />
+          <TextField label={t('trajetDetail.bookingSection.seatsLabel')} value={seats} onChangeText={setSeats} keyboardType="number-pad" />
           {paymentMethods.length > 0 ? (
             <View>
-              <Text style={styles.label}>Moyen de paiement</Text>
+              <Text style={styles.label}>{t('trajetDetail.bookingSection.paymentMethodLabel')}</Text>
               <View style={styles.row}>
                 {paymentMethods.map((method) => (
                   <Button
                     key={method}
-                    label={PAYMENT_METHOD_LABELS[method]}
+                    label={t(PAYMENT_METHOD_LABEL_KEYS[method])}
                     size="sm"
                     variant={paymentMethod === method ? 'primary' : 'outline'}
                     onPress={() => setPaymentMethod(method)}
@@ -370,11 +393,11 @@ function BookingSection({
             </View>
           ) : null}
           <Button
-            label={bookMutation.isPending ? 'Réservation…' : 'Réserver'}
+            label={bookMutation.isPending ? t('trajetDetail.bookingSection.booking') : t('trajetDetail.bookingSection.book')}
             disabled={bookMutation.isPending || !paymentMethod}
             onPress={() => bookMutation.mutate()}
           />
-          {bookMutation.isError ? <Text style={styles.error}>Échec de la réservation.</Text> : null}
+          {bookMutation.isError ? <Text style={styles.error}>{t('trajetDetail.bookingSection.bookFailed')}</Text> : null}
         </>
       )}
     </Card>
@@ -386,6 +409,7 @@ function BookingSection({
 }
 
 export default function TrajetDetailScreen() {
+  const { t } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: session } = authClient.useSession();
 
@@ -401,7 +425,7 @@ export default function TrajetDetailScreen() {
   if (isLoading) {
     return (
       <ScreenContainer>
-        <LoadingState label="Chargement du trajet…" />
+        <LoadingState label={t('trajetDetail.loading')} />
       </ScreenContainer>
     );
   }
@@ -409,7 +433,7 @@ export default function TrajetDetailScreen() {
   if (isError || !data) {
     return (
       <ScreenContainer>
-        <ErrorState label="Impossible de charger ce trajet." />
+        <ErrorState label={t('trajetDetail.error')} />
       </ScreenContainer>
     );
   }
@@ -421,7 +445,7 @@ export default function TrajetDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {data.cancelledAt ? (
           <View style={styles.banner}>
-            <Text style={styles.bannerText}>Ce trajet a été annulé par le conducteur.</Text>
+            <Text style={styles.bannerText}>{t('trajetDetail.cancelledBanner')}</Text>
           </View>
         ) : null}
 
@@ -430,48 +454,48 @@ export default function TrajetDetailScreen() {
             {data.departureCity} → {data.destinationCity}
           </Text>
           <View>
-            <Text style={styles.label}>Départ</Text>
+            <Text style={styles.label}>{t('trajetDetail.departure')}</Text>
             <Text style={styles.value}>{formatDateTime(data.departureDateTime)}</Text>
           </View>
           <View>
-            <Text style={styles.label}>Places</Text>
+            <Text style={styles.label}>{t('trajetDetail.seats')}</Text>
             <Text style={styles.value}>
               {data.seatsAvailable}/{data.seatsTotal}
             </Text>
           </View>
           <View>
-            <Text style={styles.label}>Prix</Text>
+            <Text style={styles.label}>{t('trajetDetail.price')}</Text>
             <Text style={styles.value}>{formatPrice(data.pricePerSeat)}</Text>
           </View>
           {data.comfort ? (
             <View>
-              <Text style={styles.label}>Confort</Text>
+              <Text style={styles.label}>{t('trajetDetail.comfort')}</Text>
               <Text style={styles.value}>{data.comfort}</Text>
             </View>
           ) : null}
           {data.baggageAllowance ? (
             <View>
-              <Text style={styles.label}>Bagages</Text>
+              <Text style={styles.label}>{t('trajetDetail.baggage')}</Text>
               <Text style={styles.value}>{data.baggageAllowance}</Text>
             </View>
           ) : null}
           <View>
-            <Text style={styles.label}>Trajet</Text>
+            <Text style={styles.label}>{t('trajetDetail.tripType')}</Text>
             <Text style={styles.value}>
-              {data.hasIntermediateStop ? 'Avec arrêt intermédiaire' : 'Sans arrêt intermédiaire'}
+              {data.hasIntermediateStop ? t('trajetDetail.tripWithStop') : t('trajetDetail.tripDirect')}
             </Text>
           </View>
           {data.amenities.length > 0 ? (
             <View>
-              <Text style={styles.label}>Options</Text>
+              <Text style={styles.label}>{t('trajetDetail.options')}</Text>
               <Text style={styles.value}>
-                {data.amenities.map((amenity) => AMENITY_LABELS[amenity]).join(' · ')}
+                {data.amenities.map((amenity) => t(AMENITY_LABEL_KEYS[amenity])).join(' · ')}
               </Text>
             </View>
           ) : null}
           {data.description ? (
             <View>
-              <Text style={styles.label}>Description</Text>
+              <Text style={styles.label}>{t('trajetDetail.description')}</Text>
               <Text style={styles.value}>{data.description}</Text>
             </View>
           ) : null}

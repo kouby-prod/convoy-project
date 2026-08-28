@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { colors, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(value));
@@ -14,6 +15,7 @@ function formatDate(value: string) {
 
 /** Danger zone: 30-day hold, then a hard wipe. Signing back in during the hold cancels it. */
 export function DeleteAccountCard() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ['account-deletion'],
@@ -43,7 +45,7 @@ export function DeleteAccountCard() {
   if (query.isLoading) {
     return (
       <Card>
-        <Text style={styles.value}>Chargement…</Text>
+        <Text style={styles.value}>{t('deleteAccount.loading')}</Text>
       </Card>
     );
   }
@@ -51,13 +53,11 @@ export function DeleteAccountCard() {
   if (status?.scheduled && status.purgeAt) {
     return (
       <Card style={styles.dangerCard}>
-        <Text style={styles.dangerTitle}>Suppression programmée</Text>
-        <Text style={styles.value}>
-          Votre compte sera définitivement supprimé le {formatDate(status.purgeAt)}. Reconnectez-vous pour annuler.
-        </Text>
-        {cancel.isError ? <Text style={styles.error}>L'annulation a échoué.</Text> : null}
+        <Text style={styles.dangerTitle}>{t('deleteAccount.scheduledTitle')}</Text>
+        <Text style={styles.value}>{t('deleteAccount.scheduledBody', { date: formatDate(status.purgeAt) })}</Text>
+        {cancel.isError ? <Text style={styles.error}>{t('deleteAccount.cancelFailed')}</Text> : null}
         <Button
-          label={cancel.isPending ? 'Annulation…' : 'Annuler la suppression'}
+          label={cancel.isPending ? t('deleteAccount.cancelling') : t('deleteAccount.cancel')}
           variant="outline"
           size="sm"
           disabled={cancel.isPending}
@@ -72,26 +72,24 @@ export function DeleteAccountCard() {
 
   return (
     <Card style={styles.dangerCard}>
-      <Text style={styles.dangerTitle}>Supprimer mon compte</Text>
-      <Text style={styles.value}>
-        Votre compte sera désactivé immédiatement puis définitivement supprimé après 30 jours.
-      </Text>
+      <Text style={styles.dangerTitle}>{t('deleteAccount.dangerTitle')}</Text>
+      <Text style={styles.value}>{t('deleteAccount.dangerBody')}</Text>
       {passwordRequired ? (
-        <TextField label="Mot de passe" value={password} onChangeText={setPassword} secureTextEntry />
+        <TextField label={t('deleteAccount.passwordLabel')} value={password} onChangeText={setPassword} secureTextEntry />
       ) : (
-        <Text style={styles.value}>Compte lié à Google — aucun mot de passe requis.</Text>
+        <Text style={styles.value}>{t('deleteAccount.googleLinked')}</Text>
       )}
       <View style={styles.row}>
         <Button
-          label={confirmed ? '✓ Je confirme' : 'Je confirme la suppression'}
+          label={confirmed ? t('deleteAccount.confirmToggleOn') : t('deleteAccount.confirmToggleOff')}
           size="sm"
           variant={confirmed ? 'primary' : 'outline'}
           onPress={() => setConfirmed((c) => !c)}
         />
       </View>
-      {schedule.isError ? <Text style={styles.error}>La suppression a échoué.</Text> : null}
+      {schedule.isError ? <Text style={styles.error}>{t('deleteAccount.deleteFailed')}</Text> : null}
       <Button
-        label={schedule.isPending ? 'Envoi…' : 'Supprimer mon compte'}
+        label={schedule.isPending ? t('deleteAccount.sending') : t('deleteAccount.deleteAccount')}
         variant="destructive"
         size="sm"
         disabled={!canSubmit}

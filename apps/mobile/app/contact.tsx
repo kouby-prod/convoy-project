@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Public support/contact form — `POST /contact`, mobile counterpart of the
@@ -15,6 +16,7 @@ import { colors, spacing, fontSize } from '@/lib/theme';
  * same as web, though every screen under `(tabs)` is already auth-gated here.
  */
 export default function ContactScreen() {
+  const { t } = useI18n();
   const { data: session } = authClient.useSession();
 
   const [name, setName] = useState(session?.user?.name ?? '');
@@ -25,7 +27,7 @@ export default function ContactScreen() {
   const mutation = useMutation({
     mutationFn: async () => {
       const res = await api.contact.$post({ json: { name, email, subject, message } });
-      if (!res.ok) throw new Error("Échec de l'envoi du message.");
+      if (!res.ok) throw new Error(t('contact.sendFailed'));
       return res.json();
     },
     onSuccess: () => {
@@ -40,16 +42,22 @@ export default function ContactScreen() {
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content}>
         <Card>
-          <Text style={styles.title}>Contact</Text>
-          <Text style={styles.subtitle}>Une question, un problème ? Écrivez-nous.</Text>
-          <TextField label="Nom" value={name} onChangeText={setName} />
-          <TextField label="E-mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-          <TextField label="Sujet" value={subject} onChangeText={setSubject} />
-          <TextField label="Message" value={message} onChangeText={setMessage} multiline numberOfLines={5} />
+          <Text style={styles.title}>{t('contact.title')}</Text>
+          <Text style={styles.subtitle}>{t('contact.subtitle')}</Text>
+          <TextField label={t('contact.name')} value={name} onChangeText={setName} />
+          <TextField
+            label={t('contact.email')}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <TextField label={t('contact.subject')} value={subject} onChangeText={setSubject} />
+          <TextField label={t('contact.message')} value={message} onChangeText={setMessage} multiline numberOfLines={5} />
           {mutation.isError ? <Text style={styles.error}>{(mutation.error as Error).message}</Text> : null}
-          {mutation.isSuccess ? <Text style={styles.success}>Message envoyé.</Text> : null}
+          {mutation.isSuccess ? <Text style={styles.success}>{t('contact.sent')}</Text> : null}
           <Button
-            label={mutation.isPending ? 'Envoi…' : 'Envoyer'}
+            label={mutation.isPending ? t('contact.sending') : t('contact.send')}
             onPress={() => mutation.mutate()}
             disabled={!canSubmit}
           />

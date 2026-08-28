@@ -7,13 +7,14 @@ import { Card } from '@/components/ui/Card';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
+import { useI18n, type MessageKey } from '@/lib/i18n';
 
-const VERIFICATION_LABELS: Record<DriverVerification['status'], string> = {
-  incomplete: 'Il vous manque un document ou une déclaration.',
-  pending: 'Vos documents sont en cours de vérification.',
-  rejected: 'Un document a été refusé — corrigez-le puis renvoyez-le.',
-  expired: 'Votre permis doit être vérifié à nouveau.',
-  approved: 'Votre compte est vérifié.',
+const VERIFICATION_LABEL_KEYS: Record<DriverVerification['status'], MessageKey> = {
+  incomplete: 'eligibility.verification.incomplete',
+  pending: 'eligibility.verification.pending',
+  rejected: 'eligibility.verification.rejected',
+  expired: 'eligibility.verification.expired',
+  approved: 'eligibility.verification.approved',
 };
 
 /**
@@ -28,6 +29,7 @@ export function EligibilityCard({
   verification: DriverVerification;
   eligibility: DriverEligibility;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const [dateOfBirth, setDateOfBirth] = useState(eligibility.dateOfBirth ?? '');
@@ -63,11 +65,11 @@ export function EligibilityCard({
   function handleSaveDob() {
     setDobError(null);
     if (!dateOfBirth) {
-      setDobError('Indiquez votre date de naissance.');
+      setDobError(t('eligibility.dobRequired'));
       return;
     }
     if (ageOn(dateOfBirth) < MIN_DRIVER_AGE) {
-      setDobError(`Vous devez avoir ${MIN_DRIVER_AGE} ans ou plus pour conduire.`);
+      setDobError(t('eligibility.minAge', { age: MIN_DRIVER_AGE }));
       return;
     }
     dobMutation.mutate();
@@ -75,15 +77,15 @@ export function EligibilityCard({
 
   return (
     <Card>
-      <Text style={styles.title}>Vérification du conducteur</Text>
-      <Text style={styles.value}>{VERIFICATION_LABELS[verification.status]}</Text>
+      <Text style={styles.title}>{t('eligibility.title')}</Text>
+      <Text style={styles.value}>{t(VERIFICATION_LABEL_KEYS[verification.status])}</Text>
       <Text style={styles.progress}>
-        {verification.approvedCount}/{verification.requiredCount} approuvé(s)
+        {t('eligibility.progress', { approved: verification.approvedCount, required: verification.requiredCount })}
       </Text>
 
       <View style={styles.field}>
         <TextField
-          label="Date de naissance (AAAA-MM-JJ)"
+          label={t('eligibility.dobLabel')}
           value={dateOfBirth}
           onChangeText={(v) => {
             setDateOfBirth(v);
@@ -92,9 +94,9 @@ export function EligibilityCard({
           placeholder="2000-01-15"
         />
         {dobError ? <Text style={styles.error}>{dobError}</Text> : null}
-        {dobMutation.isError ? <Text style={styles.error}>L'enregistrement a échoué.</Text> : null}
+        {dobMutation.isError ? <Text style={styles.error}>{t('eligibility.saveFailed')}</Text> : null}
         <Button
-          label={dobMutation.isPending ? 'Enregistrement…' : 'Enregistrer'}
+          label={dobMutation.isPending ? t('eligibility.saving') : t('eligibility.save')}
           size="sm"
           onPress={handleSaveDob}
           disabled={dobMutation.isPending}
@@ -102,10 +104,10 @@ export function EligibilityCard({
       </View>
 
       <View style={styles.field}>
-        <TextField label="Numéro de permis" value={licenseNumber} onChangeText={setLicenseNumber} />
-        {licenseMutation.isError ? <Text style={styles.error}>L'enregistrement a échoué.</Text> : null}
+        <TextField label={t('eligibility.licenseLabel')} value={licenseNumber} onChangeText={setLicenseNumber} />
+        {licenseMutation.isError ? <Text style={styles.error}>{t('eligibility.saveFailed')}</Text> : null}
         <Button
-          label={licenseMutation.isPending ? 'Enregistrement…' : 'Enregistrer'}
+          label={licenseMutation.isPending ? t('eligibility.saving') : t('eligibility.save')}
           size="sm"
           onPress={() => licenseMutation.mutate()}
           disabled={licenseMutation.isPending || !licenseNumber.trim()}
@@ -113,11 +115,11 @@ export function EligibilityCard({
       </View>
 
       <View style={styles.field}>
-        <TextField label="Prénom légal" value={firstName} onChangeText={setFirstName} />
-        <TextField label="Nom légal" value={lastName} onChangeText={setLastName} />
-        {nameMutation.isError ? <Text style={styles.error}>L'enregistrement a échoué.</Text> : null}
+        <TextField label={t('eligibility.firstNameLabel')} value={firstName} onChangeText={setFirstName} />
+        <TextField label={t('eligibility.lastNameLabel')} value={lastName} onChangeText={setLastName} />
+        {nameMutation.isError ? <Text style={styles.error}>{t('eligibility.saveFailed')}</Text> : null}
         <Button
-          label={nameMutation.isPending ? 'Enregistrement…' : 'Enregistrer'}
+          label={nameMutation.isPending ? t('eligibility.saving') : t('eligibility.save')}
           size="sm"
           onPress={() => nameMutation.mutate()}
           disabled={nameMutation.isPending || !firstName.trim() || !lastName.trim()}

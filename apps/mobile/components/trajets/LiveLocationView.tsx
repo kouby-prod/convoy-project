@@ -3,25 +3,27 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useTrajetLiveLocation } from '@/hooks/useTrajetLiveLocation';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n, type TFunction } from '@/lib/i18n';
 
-function formatRelativeTime(value: string): string {
+function formatRelativeTime(value: string, t: TFunction): string {
   const diffSec = Math.round((Date.now() - new Date(value).getTime()) / 1000);
-  if (diffSec < 60) return "à l'instant";
+  if (diffSec < 60) return t('liveLocationView.justNow');
   const diffMin = Math.round(diffSec / 60);
-  if (diffMin < 60) return `il y a ${diffMin} min`;
+  if (diffMin < 60) return t('liveLocationView.minutesAgo', { count: diffMin });
   const diffHour = Math.round(diffMin / 60);
-  return `il y a ${diffHour} h`;
+  return t('liveLocationView.hoursAgo', { count: diffHour });
 }
 
 /** Passenger-side view: the driver's last known position for this trajet, kept live via WebSocket. */
 export function LiveLocationView({ trajetId }: { trajetId: string }) {
+  const { t } = useI18n();
   const { location } = useTrajetLiveLocation(trajetId);
 
   if (!location) {
     return (
       <Card>
-        <Text style={styles.cardTitle}>Position en direct</Text>
-        <Text style={styles.value}>Le conducteur ne partage pas sa position pour le moment.</Text>
+        <Text style={styles.cardTitle}>{t('liveLocationView.title')}</Text>
+        <Text style={styles.value}>{t('liveLocationView.notSharing')}</Text>
       </Card>
     );
   }
@@ -31,12 +33,12 @@ export function LiveLocationView({ trajetId }: { trajetId: string }) {
       <View style={styles.row}>
         <View style={styles.liveBadge}>
           <View style={styles.liveDot} />
-          <Text style={styles.liveText}>En direct</Text>
+          <Text style={styles.liveText}>{t('liveLocationView.live')}</Text>
         </View>
-        <Text style={styles.value}>Mis à jour {formatRelativeTime(location.updatedAt)}</Text>
+        <Text style={styles.value}>{t('liveLocationView.updated', { when: formatRelativeTime(location.updatedAt, t) })}</Text>
       </View>
       <Button
-        label="Voir sur la carte"
+        label={t('liveLocationView.viewOnMap')}
         variant="outline"
         size="sm"
         onPress={() =>

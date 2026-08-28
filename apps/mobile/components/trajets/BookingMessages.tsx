@@ -8,6 +8,7 @@ import { useBookingMessagesSocket } from '@/hooks/useBookingMessagesSocket';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { colors, radius, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
@@ -22,6 +23,7 @@ function formatTime(value: string) {
  * this fetches a single generous page (`limit=100`) rather than paginating.
  */
 export function BookingMessages({ bookingId }: { bookingId: string }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
   const [isOpen, setIsOpen] = useState(false);
@@ -76,7 +78,7 @@ export function BookingMessages({ bookingId }: { bookingId: string }) {
   return (
     <View style={styles.container}>
       <Button
-        label={isOpen ? 'Masquer les messages' : 'Voir les messages'}
+        label={isOpen ? t('bookingMessages.hide') : t('bookingMessages.show')}
         variant="outline"
         size="sm"
         onPress={() => setIsOpen((open) => !open)}
@@ -84,10 +86,10 @@ export function BookingMessages({ bookingId }: { bookingId: string }) {
 
       {isOpen ? (
         <View style={styles.thread}>
-          {isLoading ? <Text style={styles.hint}>Chargement…</Text> : null}
-          {isError ? <Text style={styles.error}>Impossible de charger les messages.</Text> : null}
+          {isLoading ? <Text style={styles.hint}>{t('bookingMessages.loading')}</Text> : null}
+          {isError ? <Text style={styles.error}>{t('bookingMessages.error')}</Text> : null}
           {!isLoading && !isError && !data?.items.length ? (
-            <Text style={styles.hint}>Aucun message pour l'instant.</Text>
+            <Text style={styles.hint}>{t('bookingMessages.empty')}</Text>
           ) : null}
 
           {data?.items.map((item) => {
@@ -106,16 +108,22 @@ export function BookingMessages({ bookingId }: { bookingId: string }) {
 
           <View style={styles.composer}>
             <View style={styles.composerInput}>
-              <TextField label="Message" value={body} onChangeText={setBody} placeholder="Écrire un message…" multiline />
+              <TextField
+                label={t('bookingMessages.messageLabel')}
+                value={body}
+                onChangeText={setBody}
+                placeholder={t('bookingMessages.placeholder')}
+                multiline
+              />
             </View>
             <Button
-              label={mutation.isPending ? 'Envoi…' : 'Envoyer'}
+              label={mutation.isPending ? t('bookingMessages.sending') : t('bookingMessages.send')}
               size="sm"
               disabled={mutation.isPending || !body.trim()}
               onPress={() => mutation.mutate()}
             />
           </View>
-          {mutation.isError ? <Text style={styles.error}>Échec de l'envoi.</Text> : null}
+          {mutation.isError ? <Text style={styles.error}>{t('bookingMessages.sendFailed')}</Text> : null}
         </View>
       ) : null}
     </View>

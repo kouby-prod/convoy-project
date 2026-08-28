@@ -8,9 +8,11 @@ import { PaginationBar } from '@/components/ui/PaginationBar';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateMessage';
 import { TrajetCard } from '@/components/trajets/TrajetCard';
 import { spacing } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /** Driver's own trajets (`GET /me/trajets`), read-only this pass — no publish/edit from mobile yet. */
 export default function MesTrajetsScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const [page, setPage] = useState(1);
 
@@ -25,11 +27,9 @@ export default function MesTrajetsScreen() {
 
   return (
     <ScreenContainer>
-      {isLoading ? <LoadingState label="Chargement…" /> : null}
-      {isError ? <ErrorState label="Impossible de charger vos trajets." /> : null}
-      {!isLoading && !isError && !data?.items.length ? (
-        <EmptyState label="Vous n'avez publié aucun trajet." />
-      ) : null}
+      {isLoading ? <LoadingState label={t('common.loading')} /> : null}
+      {isError ? <ErrorState label={t('mesTrajets.error')} /> : null}
+      {!isLoading && !isError && !data?.items.length ? <EmptyState label={t('mesTrajets.empty')} /> : null}
 
       {data?.items.length ? (
         <FlatList

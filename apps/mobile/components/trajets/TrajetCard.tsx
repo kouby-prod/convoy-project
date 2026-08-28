@@ -1,8 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { Trajet, TrajetSearchResult } from '@carpool/schemas';
 import { Card } from '@/components/ui/Card';
-import { AMENITY_LABELS } from '@/lib/amenities';
+import { AMENITY_LABEL_KEYS } from '@/lib/amenities';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
@@ -20,9 +21,10 @@ function formatPrice(value: number) {
  * plain `Trajet` from `/me/trajets` does not).
  */
 export function TrajetCard({ trajet }: { trajet: Trajet | TrajetSearchResult }) {
+  const { t } = useI18n();
   const distanceKm = 'distanceKm' in trajet ? trajet.distanceKm : null;
   const { driver } = trajet;
-  const driverName = [driver.firstName, driver.lastName].filter(Boolean).join(' ') || 'Conducteur';
+  const driverName = [driver.firstName, driver.lastName].filter(Boolean).join(' ') || t('trajetCard.driverFallback');
   const vehicleLine = [driver.carMake, driver.carModel].filter(Boolean).join(' ');
 
   return (
@@ -33,30 +35,33 @@ export function TrajetCard({ trajet }: { trajet: Trajet | TrajetSearchResult }) 
         </Text>
         {trajet.cancelledAt ? (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>Annulé</Text>
+            <Text style={styles.badgeText}>{t('trajetCard.cancelled')}</Text>
           </View>
         ) : null}
       </View>
       <Text style={styles.line}>{formatDateTime(trajet.departureDateTime)}</Text>
       <Text style={styles.line}>
-        {trajet.seatsAvailable}/{trajet.seatsTotal} places · {formatPrice(trajet.pricePerSeat)}
+        {t('trajetCard.seatsRatio', { available: trajet.seatsAvailable, total: trajet.seatsTotal })} ·{' '}
+        {formatPrice(trajet.pricePerSeat)}
       </Text>
       <View style={styles.driverRow}>
         <Text style={styles.line}>
           {driverName}
-          {driver.rating !== null ? ` · ★ ${driver.rating.toFixed(1)} (${driver.reviewCount})` : ' · Sans avis'}
+          {driver.rating !== null
+            ? ` · ★ ${driver.rating.toFixed(1)} (${driver.reviewCount})`
+            : ` · ${t('trajetCard.noReviews')}`}
           {distanceKm !== null ? ` · ${distanceKm.toFixed(1)} km` : ''}
         </Text>
         {driver.verified ? (
           <View style={styles.verifiedBadge}>
-            <Text style={styles.verifiedBadgeText}>Vérifié</Text>
+            <Text style={styles.verifiedBadgeText}>{t('trajetCard.verified')}</Text>
           </View>
         ) : null}
       </View>
       {vehicleLine ? <Text style={styles.line}>{vehicleLine}</Text> : null}
       {trajet.amenities.length > 0 ? (
         <Text style={styles.amenitiesLine} numberOfLines={1}>
-          {trajet.amenities.map((amenity) => AMENITY_LABELS[amenity]).join(' · ')}
+          {trajet.amenities.map((amenity) => t(AMENITY_LABEL_KEYS[amenity])).join(' · ')}
         </Text>
       ) : null}
     </Card>

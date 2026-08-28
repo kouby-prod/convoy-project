@@ -4,6 +4,7 @@ import { authClient } from '@/lib/auth-client';
 import { env } from '@/lib/env';
 import { Button } from '@/components/ui/Button';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Shared "check your inbox" body — mobile counterpart of the web's
@@ -13,6 +14,7 @@ import { colors, spacing, fontSize } from '@/lib/theme';
  * forgot-password flow) — this only needs to offer a resend.
  */
 export function CheckEmailNotice({ email }: { email: string }) {
+  const { t } = useI18n();
   const [resendState, setResendState] = useState<'idle' | 'pending' | 'sent' | 'error'>('idle');
 
   async function handleResend() {
@@ -26,13 +28,11 @@ export function CheckEmailNotice({ email }: { email: string }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.body}>
-        Vérifiez votre boîte mail ({email}) et cliquez sur le lien de confirmation, puis revenez vous connecter ici.
-      </Text>
-      {resendState === 'sent' ? <Text style={styles.success}>E-mail renvoyé.</Text> : null}
-      {resendState === 'error' ? <Text style={styles.error}>Échec de l'envoi. Réessayez.</Text> : null}
+      <Text style={styles.body}>{t('auth.checkEmail.body', { email })}</Text>
+      {resendState === 'sent' ? <Text style={styles.success}>{t('auth.checkEmail.resent')}</Text> : null}
+      {resendState === 'error' ? <Text style={styles.error}>{t('auth.checkEmail.resendFailed')}</Text> : null}
       <Button
-        label={resendState === 'pending' ? 'Envoi…' : "Renvoyer l'e-mail"}
+        label={resendState === 'pending' ? t('auth.checkEmail.resending') : t('auth.checkEmail.resend')}
         variant="outline"
         disabled={resendState === 'pending'}
         onPress={() => void handleResend()}

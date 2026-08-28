@@ -8,8 +8,10 @@ import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { CheckEmailNotice } from '@/components/auth/CheckEmailNotice';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 export default function SignInScreen() {
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export default function SignInScreen() {
   async function handleSubmit() {
     setError(null);
     if (!email.trim() || !password) {
-      setError('Veuillez renseigner votre e-mail et votre mot de passe.');
+      setError(t('auth.signIn.missingFields'));
       return;
     }
 
@@ -38,7 +40,7 @@ export default function SignInScreen() {
         setPendingEmail(email.trim());
         return;
       }
-      setError(signInError.message ?? 'Échec de la connexion. Vérifiez vos identifiants.');
+      setError(signInError.message ?? t('auth.signIn.genericError'));
     }
   }
 
@@ -47,9 +49,9 @@ export default function SignInScreen() {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Carpool</Text>
+        <Text style={styles.title}>{t('auth.signIn.appName')}</Text>
         <Text style={styles.subtitle}>
-          {waitingForInbox ? 'Confirmez votre e-mail' : 'Connectez-vous pour rechercher et réserver un trajet.'}
+          {waitingForInbox ? t('auth.signIn.confirmEmailTitle') : t('auth.signIn.subtitle')}
         </Text>
 
         {waitingForInbox ? (
@@ -57,7 +59,7 @@ export default function SignInScreen() {
         ) : (
           <View style={styles.form}>
             <TextField
-              label="Adresse e-mail"
+              label={t('auth.signIn.emailLabel')}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -65,24 +67,28 @@ export default function SignInScreen() {
               autoComplete="email"
             />
             <TextField
-              label="Mot de passe"
+              label={t('auth.signIn.passwordLabel')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
               autoComplete="password"
             />
             {error ? <Text style={styles.error}>{error}</Text> : null}
-            <Button label={loading ? 'Connexion…' : 'Se connecter'} onPress={handleSubmit} loading={loading} />
+            <Button
+              label={loading ? t('auth.signIn.submitting') : t('auth.signIn.submit')}
+              onPress={handleSubmit}
+              loading={loading}
+            />
             <Link href="/forgot-password" style={styles.forgotLink}>
-              Mot de passe oublié ?
+              {t('auth.signIn.forgotPassword')}
             </Link>
           </View>
         )}
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Pas encore de compte ?</Text>
+          <Text style={styles.footerText}>{t('auth.signIn.noAccount')}</Text>
           <Link href="/sign-up" style={styles.link}>
-            Créer un compte
+            {t('auth.signIn.createAccount')}
           </Link>
         </View>
       </ScrollView>

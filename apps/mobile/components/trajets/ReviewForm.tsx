@@ -5,6 +5,7 @@ import { api } from '@/lib/api-client';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { colors, spacing, fontSize, radius } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 const RATING_VALUES = [5, 4, 3, 2, 1];
 
@@ -18,6 +19,7 @@ const RATING_VALUES = [5, 4, 3, 2, 1];
  * instead of duplicating it.
  */
 export function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSubmitted: () => void }) {
+  const { t } = useI18n();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
 
@@ -28,7 +30,7 @@ export function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSu
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(body?.error ?? "Échec de l'envoi de l'avis.");
+        throw new Error(body?.error ?? t('reviewForm.genericError'));
       }
       return res.json();
     },
@@ -37,7 +39,7 @@ export function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSu
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Note</Text>
+      <Text style={styles.label}>{t('reviewForm.ratingLabel')}</Text>
       <View style={styles.ratingRow}>
         {RATING_VALUES.map((value) => (
           <Button
@@ -50,7 +52,7 @@ export function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSu
         ))}
       </View>
       <TextField
-        label="Commentaire (optionnel)"
+        label={t('reviewForm.commentLabel')}
         value={comment}
         onChangeText={setComment}
         multiline
@@ -58,7 +60,7 @@ export function ReviewForm({ bookingId, onSubmitted }: { bookingId: string; onSu
       />
       {mutation.isError ? <Text style={styles.error}>{(mutation.error as Error).message}</Text> : null}
       <Button
-        label={mutation.isPending ? 'Envoi…' : "Envoyer l'avis"}
+        label={mutation.isPending ? t('reviewForm.sending') : t('reviewForm.send')}
         size="sm"
         disabled={mutation.isPending}
         onPress={() => mutation.mutate()}

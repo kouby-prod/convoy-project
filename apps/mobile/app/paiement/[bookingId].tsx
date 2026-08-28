@@ -18,6 +18,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { LoadingState, ErrorState } from '@/components/ui/StateMessage';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /** Must match the redirect scheme in apps/api/src/modules/payment/paypal.ts's `application_context`. */
 const PAYPAL_REDIRECT_URL = 'carpool://paypal-redirect';
@@ -36,6 +37,7 @@ function formatWhen(value: string) {
  * mobile equivalent of the web JS SDK's popup-and-postMessage flow.
  */
 export default function PaiementScreen() {
+  const { t } = useI18n();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -64,7 +66,7 @@ export default function PaiementScreen() {
     setPaying(true);
     try {
       const checkout = await startCheckout(bookingId, data.invoice.id, 'stripe');
-      if (!checkout.clientSecret) throw new Error('Impossible de préparer le paiement.');
+      if (!checkout.clientSecret) throw new Error(t('paiement.prepareFailed'));
 
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: 'Kouby',
@@ -82,7 +84,7 @@ export default function PaiementScreen() {
 
       await confirmMutation.mutateAsync();
     } catch (err) {
-      setPayError(err instanceof Error ? err.message : "Échec du paiement.");
+      setPayError(err instanceof Error ? err.message : t('paiement.genericError'));
     } finally {
       setPaying(false);
     }
@@ -94,18 +96,18 @@ export default function PaiementScreen() {
     setPayingPaypal(true);
     try {
       const checkout = await startCheckout(bookingId, data.invoice.id, 'paypal');
-      if (!checkout.approvalUrl) throw new Error('PayPal est indisponible pour le moment.');
+      if (!checkout.approvalUrl) throw new Error(t('paiement.paypalUnavailable'));
 
       const result = await WebBrowser.openAuthSessionAsync(checkout.approvalUrl, PAYPAL_REDIRECT_URL);
       if (result.type !== 'success') return; // cancelled or dismissed — not an error
       if (!result.url.includes('result=success')) return; // buyer backed out on PayPal's side
 
-      if (!checkout.orderId) throw new Error('Réponse PayPal invalide.');
+      if (!checkout.orderId) throw new Error(t('paiement.paypalInvalidResponse'));
       await capturePayPalOrder(checkout.orderId);
       await queryClient.invalidateQueries({ queryKey });
       await queryClient.invalidateQueries({ queryKey: ['me', 'bookings'] });
     } catch (err) {
-      setPayError(err instanceof Error ? err.message : 'Échec du paiement PayPal.');
+      setPayError(err instanceof Error ? err.message : t('paiement.paypalFailed'));
     } finally {
       setPayingPaypal(false);
     }
@@ -114,7 +116,7 @@ export default function PaiementScreen() {
   if (isLoading) {
     return (
       <ScreenContainer>
-        <LoadingState label="Chargement…" />
+        <LoadingState label={t('paiement.loading')} />
       </ScreenContainer>
     );
   }
@@ -122,7 +124,7 @@ export default function PaiementScreen() {
   if (isError) {
     return (
       <ScreenContainer>
-        <ErrorState label="Impossible de charger le paiement." />
+        <ErrorState label={t('paiement.error')} />
       </ScreenContainer>
     );
   }
@@ -144,17 +146,15 @@ export default function PaiementScreen() {
               {booking.trajet.departureCity} → {booking.trajet.destinationCity}
             </Text>
             <Text style={styles.value}>{formatWhen(booking.trajet.departureDateTime)}</Text>
-            <Text style={styles.value}>{booking.seats} place(s)</Text>
+            <Text style={styles.value}>{t('common.seatsCount', { count: booking.seats })}</Text>
           </Card>
         ) : null}
 
         {!invoice ? (
           <Card>
-            <Text style={styles.cardTitle}>En attente</Text>
+            <Text style={styles.cardTitle}>{t('paiement.waitingTitle')}</Text>
             <Text style={styles.value}>
-              {booking?.status === 'pending'
-                ? 'En attente de la réponse du conducteur.'
-                : 'Aucune facture à régler pour le moment.'}
+              {booking?.status === 'pending' ? t('paiement.waitingDriver') : t('paiement.waitingNoInvoice')}
             </Text>
             {booking ? (
               <Text style={styles.amount}>
@@ -164,19 +164,19 @@ export default function PaiementScreen() {
           </Card>
         ) : paid ? (
           <Card>
-            <Text style={styles.cardTitle}>Payé</Text>
-            <Text style={styles.value}>Montant réglé : {formatCad(invoice.totalCents)}</Text>
-            <Text style={styles.label}>Facture {invoice.number}</Text>
+            <Text style={styles.cardTitle}>{t('paiement.paidTitle')}</Text>
+            <Text style={styles.value}>{t('paiement.paidAmount', { amount: formatCad(invoice.totalCents) })}</Text>
+            <Text style={styles.label}>{t('paiement.invoiceNumber', { number: invoice.number })}</Text>
             <View style={styles.row}>
               <Button
-                label="Voir les messages"
+                label={t('paiement.viewMessages')}
                 variant="outline"
                 size="sm"
                 onPress={() => router.push(`/messages/${bookingId}`)}
               />
               {booking ? (
                 <Button
-                  label="Voir le trajet"
+                  label={t('paiement.viewTrip')}
                   variant="outline"
                   size="sm"
                   onPress={() => router.push(`/trajets/${booking.trajetId}`)}
@@ -186,17 +186,17 @@ export default function PaiementScreen() {
           </Card>
         ) : windowClosed ? (
           <Card>
-            <Text style={styles.cardTitle}>Fenêtre de paiement expirée</Text>
-            <Text style={styles.value}>Cette réservation n'est plus payable.</Text>
+            <Text style={styles.cardTitle}>{t('paiement.closedTitle')}</Text>
+            <Text style={styles.value}>{t('paiement.closedBody')}</Text>
           </Card>
         ) : (
           <Card>
-            <Text style={styles.cardTitle}>Paiement</Text>
-            {overdueOpen ? <Text style={styles.error}>Le paiement est en retard.</Text> : null}
-            {failed ? <Text style={styles.error}>Le dernier paiement a échoué. Réessayez.</Text> : null}
+            <Text style={styles.cardTitle}>{t('paiement.paymentTitle')}</Text>
+            {overdueOpen ? <Text style={styles.error}>{t('paiement.overdue')}</Text> : null}
+            {failed ? <Text style={styles.error}>{t('paiement.failed')}</Text> : null}
             <Text style={styles.amount}>{formatCad(invoice.totalCents)}</Text>
             <Text style={styles.label}>
-              Commission {formatCad(invoice.commissionCents)}
+              {t('paiement.commission', { amount: formatCad(invoice.commissionCents) })}
               {invoice.taxLines.length
                 ? ' + ' + invoice.taxLines.map((l) => `${l.label} ${formatCad(l.amountCents)}`).join(' + ')
                 : ''}
@@ -206,19 +206,17 @@ export default function PaiementScreen() {
 
             {stripeReady ? (
               <Button
-                label={paying ? 'Traitement…' : `Payer par carte ${formatCad(invoice.totalCents)}`}
+                label={paying ? t('paiement.processing') : t('paiement.payByCard', { amount: formatCad(invoice.totalCents) })}
                 onPress={() => void handlePay()}
                 disabled={paying || payingPaypal}
                 loading={paying}
               />
             ) : (
-              <Text style={styles.error}>
-                Le paiement par carte n'est pas disponible sur cette build.
-              </Text>
+              <Text style={styles.error}>{t('paiement.cardUnavailable')}</Text>
             )}
 
             <Button
-              label={payingPaypal ? 'Redirection…' : 'Payer avec PayPal'}
+              label={payingPaypal ? t('paiement.redirecting') : t('paiement.payWithPaypal')}
               variant="outline"
               onPress={() => void handlePayPal()}
               disabled={paying || payingPaypal}
@@ -226,7 +224,7 @@ export default function PaiementScreen() {
             />
 
             <Button
-              label="Ouvrir le paiement sur le web"
+              label={t('paiement.openOnWeb')}
               variant="outline"
               size="sm"
               onPress={() => Linking.openURL(`${env.EXPO_PUBLIC_WEB_URL}/paiement/${bookingId}`)}

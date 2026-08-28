@@ -3,32 +3,34 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useLiveLocationShare } from '@/hooks/useLiveLocationShare';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n, type MessageKey } from '@/lib/i18n';
 
-const ERROR_LABELS = {
-  unsupported: "La géolocalisation n'est pas disponible sur cet appareil.",
-  'permission-denied': "Autorisez l'accès à votre position pour partager votre trajet.",
-  'send-failed': "Échec de l'envoi de votre position.",
-} as const;
+const ERROR_LABEL_KEYS: Record<'unsupported' | 'permission-denied' | 'send-failed', MessageKey> = {
+  unsupported: 'liveLocationShare.unsupported',
+  'permission-denied': 'liveLocationShare.permissionDenied',
+  'send-failed': 'liveLocationShare.sendFailed',
+};
 
 /** Driver-side control: start/stop live position sharing for this trajet. */
 export function LiveLocationShare({ trajetId, cancelled }: { trajetId: string; cancelled: boolean }) {
+  const { t } = useI18n();
   const { status, error, start, stop, isSharing } = useLiveLocationShare(trajetId);
 
   if (cancelled) return null;
 
   return (
     <Card>
-      <Text style={styles.cardTitle}>Position en direct</Text>
-      <Text style={styles.value}>Partagez votre position pendant le trajet pour rassurer vos passagers.</Text>
+      <Text style={styles.cardTitle}>{t('liveLocationShare.title')}</Text>
+      <Text style={styles.value}>{t('liveLocationShare.description')}</Text>
 
-      {error ? <Text style={styles.error}>{ERROR_LABELS[error]}</Text> : null}
+      {error ? <Text style={styles.error}>{t(ERROR_LABEL_KEYS[error])}</Text> : null}
 
       <View style={styles.row}>
         {isSharing ? (
-          <Button label="Arrêter le partage" variant="outline" size="sm" onPress={stop} />
+          <Button label={t('liveLocationShare.stopSharing')} variant="outline" size="sm" onPress={stop} />
         ) : (
           <Button
-            label={status === 'requesting' ? 'Démarrage…' : 'Partager ma position'}
+            label={status === 'requesting' ? t('liveLocationShare.starting') : t('liveLocationShare.startSharing')}
             variant="primary"
             size="sm"
             disabled={status === 'requesting'}
@@ -38,7 +40,7 @@ export function LiveLocationShare({ trajetId, cancelled }: { trajetId: string; c
         {isSharing ? (
           <View style={styles.liveBadge}>
             <View style={styles.liveDot} />
-            <Text style={styles.liveText}>En direct</Text>
+            <Text style={styles.liveText}>{t('liveLocationShare.live')}</Text>
           </View>
         ) : null}
       </View>

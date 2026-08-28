@@ -10,8 +10,9 @@ import { Button } from '@/components/ui/Button';
 import { PaginationBar } from '@/components/ui/PaginationBar';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateMessage';
 import { TrajetCard } from '@/components/trajets/TrajetCard';
-import { AMENITY_LABELS, AMENITY_ORDER } from '@/lib/amenities';
+import { AMENITY_LABEL_KEYS, AMENITY_ORDER } from '@/lib/amenities';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n, type MessageKey } from '@/lib/i18n';
 
 interface Filters {
   departureCity: string;
@@ -35,10 +36,10 @@ const EMPTY_FILTERS: Filters = {
   stopPolicy: 'any',
 };
 
-const STOP_POLICY_OPTIONS: { value: StopPolicy; label: string }[] = [
-  { value: 'any', label: 'Peu importe' },
-  { value: 'direct', label: 'Sans arrêt' },
-  { value: 'withStops', label: 'Avec arrêt' },
+const STOP_POLICY_OPTIONS: { value: StopPolicy; labelKey: MessageKey }[] = [
+  { value: 'any', labelKey: 'recherche.stopAny' },
+  { value: 'direct', labelKey: 'recherche.stopDirect' },
+  { value: 'withStops', labelKey: 'recherche.stopWithStops' },
 ];
 
 function toQuery(filters: Filters): Record<string, string | string[]> {
@@ -55,6 +56,7 @@ function toQuery(filters: Filters): Record<string, string | string[]> {
 }
 
 export default function RechercheScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [appliedQuery, setAppliedQuery] = useState<Record<string, string | string[]>>({});
@@ -91,17 +93,17 @@ export default function RechercheScreen() {
     <ScreenContainer>
       <View style={styles.form}>
         <TextField
-          label="Ville de départ"
+          label={t('recherche.departureCity')}
           value={filters.departureCity}
           onChangeText={(v) => updateFilter('departureCity', v)}
         />
         <TextField
-          label="Ville d'arrivée"
+          label={t('recherche.destinationCity')}
           value={filters.destinationCity}
           onChangeText={(v) => updateFilter('destinationCity', v)}
         />
         <TextField
-          label="Date (AAAA-MM-JJ)"
+          label={t('recherche.date')}
           value={filters.date}
           onChangeText={(v) => updateFilter('date', v)}
           placeholder="2026-08-15"
@@ -109,7 +111,7 @@ export default function RechercheScreen() {
         <View style={styles.row}>
           <View style={styles.rowItem}>
             <TextField
-              label="Places min."
+              label={t('recherche.minSeats')}
               value={filters.minSeats}
               onChangeText={(v) => updateFilter('minSeats', v)}
               keyboardType="number-pad"
@@ -117,7 +119,7 @@ export default function RechercheScreen() {
           </View>
           <View style={styles.rowItem}>
             <TextField
-              label="Prix max."
+              label={t('recherche.maxPrice')}
               value={filters.maxPrice}
               onChangeText={(v) => updateFilter('maxPrice', v)}
               keyboardType="decimal-pad"
@@ -125,18 +127,18 @@ export default function RechercheScreen() {
           </View>
         </View>
         <TextField
-          label="Note min. du conducteur (1-5)"
+          label={t('recherche.minDriverRating')}
           value={filters.minDriverRating}
           onChangeText={(v) => updateFilter('minDriverRating', v)}
           keyboardType="decimal-pad"
         />
 
-        <Text style={styles.label}>Arrêts</Text>
+        <Text style={styles.label}>{t('recherche.stopsLabel')}</Text>
         <View style={styles.row}>
           {STOP_POLICY_OPTIONS.map((option) => (
             <Button
               key={option.value}
-              label={option.label}
+              label={t(option.labelKey)}
               size="sm"
               variant={filters.stopPolicy === option.value ? 'primary' : 'outline'}
               onPress={() => updateFilter('stopPolicy', option.value)}
@@ -144,12 +146,12 @@ export default function RechercheScreen() {
           ))}
         </View>
 
-        <Text style={styles.label}>Options du trajet</Text>
+        <Text style={styles.label}>{t('recherche.amenitiesLabel')}</Text>
         <View style={styles.amenitiesGrid}>
           {AMENITY_ORDER.map((amenity) => (
             <Button
               key={amenity}
-              label={AMENITY_LABELS[amenity]}
+              label={t(AMENITY_LABEL_KEYS[amenity])}
               size="sm"
               variant={filters.amenities.includes(amenity) ? 'primary' : 'outline'}
               onPress={() => toggleAmenity(amenity)}
@@ -157,14 +159,12 @@ export default function RechercheScreen() {
           ))}
         </View>
 
-        <Button label="Rechercher" onPress={applyFilters} />
+        <Button label={t('recherche.submit')} onPress={applyFilters} />
       </View>
 
-      {isLoading ? <LoadingState label="Chargement des trajets…" /> : null}
-      {isError ? <ErrorState label="Impossible de charger les trajets." /> : null}
-      {!isLoading && !isError && !data?.items.length ? (
-        <EmptyState label="Aucun trajet ne correspond à ces critères." />
-      ) : null}
+      {isLoading ? <LoadingState label={t('recherche.loading')} /> : null}
+      {isError ? <ErrorState label={t('recherche.error')} /> : null}
+      {!isLoading && !isError && !data?.items.length ? <EmptyState label={t('recherche.empty')} /> : null}
 
       {data?.items.length ? (
         <FlatList<TrajetSearchResult | Trajet>

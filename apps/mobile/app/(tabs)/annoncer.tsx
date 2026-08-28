@@ -8,21 +8,22 @@ import { api } from '@/lib/api-client';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
-import { AMENITY_LABELS, AMENITY_ORDER } from '@/lib/amenities';
+import { AMENITY_LABEL_KEYS, AMENITY_ORDER } from '@/lib/amenities';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n, type MessageKey } from '@/lib/i18n';
 
 type Comfort = 'standard' | 'confort' | 'premium';
 
-const COMFORT_OPTIONS: { value: Comfort; label: string }[] = [
-  { value: 'standard', label: 'Standard' },
-  { value: 'confort', label: 'Confort' },
-  { value: 'premium', label: 'Premium' },
+const COMFORT_OPTIONS: { value: Comfort; labelKey: MessageKey }[] = [
+  { value: 'standard', labelKey: 'annoncer.comfortStandard' },
+  { value: 'confort', labelKey: 'annoncer.comfortConfort' },
+  { value: 'premium', labelKey: 'annoncer.comfortPremium' },
 ];
 
-const PAYMENT_METHOD_LABELS: Record<RidePaymentMethod, string> = {
-  card: 'Carte',
-  interac: 'Interac',
-  cash: 'Comptant',
+const PAYMENT_METHOD_LABEL_KEYS: Record<RidePaymentMethod, MessageKey> = {
+  card: 'common.paymentMethod.card',
+  interac: 'common.paymentMethod.interac',
+  cash: 'common.paymentMethod.cash',
 };
 
 interface FormState {
@@ -63,6 +64,7 @@ const EMPTY_FORM: FormState = {
  * mirroring the free-text date filter already used on the search screen.
  */
 export default function AnnoncerScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [fieldError, setFieldError] = useState<string | null>(null);
@@ -107,7 +109,7 @@ export default function AnnoncerScreen() {
           paymentMethods: form.paymentMethods,
         },
       });
-      if (!res.ok) throw new Error('Échec de la publication.');
+      if (!res.ok) throw new Error(t('annoncer.genericError'));
       return res.json();
     },
     onSuccess: (data) => {
@@ -120,28 +122,28 @@ export default function AnnoncerScreen() {
     setFieldError(null);
 
     if (!form.departureCity.trim() || !form.destinationCity.trim() || !form.date || !form.time) {
-      setFieldError('Veuillez remplir tous les champs obligatoires.');
+      setFieldError(t('annoncer.missingFields'));
       return;
     }
     if (form.departureCity.trim().toLowerCase() === form.destinationCity.trim().toLowerCase()) {
-      setFieldError('Les villes de départ et d’arrivée doivent être différentes.');
+      setFieldError(t('annoncer.sameCities'));
       return;
     }
     const departureDate = new Date(`${form.date}T${form.time}`);
     if (Number.isNaN(departureDate.getTime()) || departureDate <= new Date()) {
-      setFieldError('La date et l’heure de départ doivent être dans le futur.');
+      setFieldError(t('annoncer.pastDate'));
       return;
     }
     if (!Number.isFinite(Number(form.seatsTotal)) || Number(form.seatsTotal) < 1) {
-      setFieldError('Le nombre de places doit être au moins 1.');
+      setFieldError(t('annoncer.invalidSeats'));
       return;
     }
     if (!Number.isFinite(Number(form.pricePerSeat)) || Number(form.pricePerSeat) < 0) {
-      setFieldError('Le prix par place doit être positif.');
+      setFieldError(t('annoncer.invalidPrice'));
       return;
     }
     if (form.paymentMethods.length === 0) {
-      setFieldError('Choisissez au moins un moyen de paiement accepté.');
+      setFieldError(t('annoncer.noPaymentMethod'));
       return;
     }
 
@@ -151,22 +153,22 @@ export default function AnnoncerScreen() {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Publier un trajet</Text>
+        <Text style={styles.title}>{t('annoncer.title')}</Text>
 
         <TextField
-          label="Ville de départ"
+          label={t('annoncer.departureCity')}
           value={form.departureCity}
           onChangeText={(v) => updateField('departureCity', v)}
         />
         <TextField
-          label="Ville d'arrivée"
+          label={t('annoncer.destinationCity')}
           value={form.destinationCity}
           onChangeText={(v) => updateField('destinationCity', v)}
         />
         <View style={styles.row}>
           <View style={styles.rowItem}>
             <TextField
-              label="Date (AAAA-MM-JJ)"
+              label={t('annoncer.date')}
               value={form.date}
               onChangeText={(v) => updateField('date', v)}
               placeholder="2026-08-15"
@@ -174,7 +176,7 @@ export default function AnnoncerScreen() {
           </View>
           <View style={styles.rowItem}>
             <TextField
-              label="Heure (HH:MM)"
+              label={t('annoncer.time')}
               value={form.time}
               onChangeText={(v) => updateField('time', v)}
               placeholder="14:30"
@@ -184,7 +186,7 @@ export default function AnnoncerScreen() {
         <View style={styles.row}>
           <View style={styles.rowItem}>
             <TextField
-              label="Places disponibles"
+              label={t('annoncer.seatsAvailable')}
               value={form.seatsTotal}
               onChangeText={(v) => updateField('seatsTotal', v)}
               keyboardType="number-pad"
@@ -192,7 +194,7 @@ export default function AnnoncerScreen() {
           </View>
           <View style={styles.rowItem}>
             <TextField
-              label="Prix par place (CAD)"
+              label={t('annoncer.pricePerSeat')}
               value={form.pricePerSeat}
               onChangeText={(v) => updateField('pricePerSeat', v)}
               keyboardType="decimal-pad"
@@ -201,12 +203,12 @@ export default function AnnoncerScreen() {
         </View>
 
         <View style={styles.comfortGroup}>
-          <Text style={styles.label}>Confort</Text>
+          <Text style={styles.label}>{t('annoncer.comfortLabel')}</Text>
           <View style={styles.row}>
             {COMFORT_OPTIONS.map((option) => (
               <Button
                 key={option.value}
-                label={option.label}
+                label={t(option.labelKey)}
                 size="sm"
                 variant={form.comfort === option.value ? 'primary' : 'outline'}
                 onPress={() => updateField('comfort', option.value)}
@@ -216,18 +218,18 @@ export default function AnnoncerScreen() {
         </View>
 
         <TextField
-          label="Bagages autorisés (optionnel)"
+          label={t('annoncer.baggage')}
           value={form.baggageAllowance}
           onChangeText={(v) => updateField('baggageAllowance', v)}
         />
 
         <View style={styles.comfortGroup}>
-          <Text style={styles.label}>Moyens de paiement acceptés</Text>
+          <Text style={styles.label}>{t('annoncer.paymentMethodsLabel')}</Text>
           <View style={styles.row}>
             {RIDE_PAYMENT_METHODS.map((method) => (
               <Button
                 key={method}
-                label={PAYMENT_METHOD_LABELS[method]}
+                label={t(PAYMENT_METHOD_LABEL_KEYS[method])}
                 size="sm"
                 variant={form.paymentMethods.includes(method) ? 'primary' : 'outline'}
                 onPress={() => togglePaymentMethod(method)}
@@ -237,16 +239,16 @@ export default function AnnoncerScreen() {
         </View>
 
         <View style={styles.comfortGroup}>
-          <Text style={styles.label}>Arrêt intermédiaire</Text>
+          <Text style={styles.label}>{t('annoncer.stopLabel')}</Text>
           <View style={styles.row}>
             <Button
-              label="Sans arrêt"
+              label={t('annoncer.stopNone')}
               size="sm"
               variant={!form.hasIntermediateStop ? 'primary' : 'outline'}
               onPress={() => updateField('hasIntermediateStop', false)}
             />
             <Button
-              label="Avec arrêt"
+              label={t('annoncer.stopWith')}
               size="sm"
               variant={form.hasIntermediateStop ? 'primary' : 'outline'}
               onPress={() => updateField('hasIntermediateStop', true)}
@@ -255,12 +257,12 @@ export default function AnnoncerScreen() {
         </View>
 
         <View style={styles.comfortGroup}>
-          <Text style={styles.label}>Options du trajet</Text>
+          <Text style={styles.label}>{t('annoncer.amenitiesLabel')}</Text>
           <View style={styles.amenitiesGrid}>
             {AMENITY_ORDER.map((amenity) => (
               <Button
                 key={amenity}
-                label={AMENITY_LABELS[amenity]}
+                label={t(AMENITY_LABEL_KEYS[amenity])}
                 size="sm"
                 variant={form.amenities.includes(amenity) ? 'primary' : 'outline'}
                 onPress={() => toggleAmenity(amenity)}
@@ -269,7 +271,7 @@ export default function AnnoncerScreen() {
           </View>
         </View>
         <TextField
-          label="Description (optionnel)"
+          label={t('annoncer.description')}
           value={form.description}
           onChangeText={(v) => updateField('description', v)}
           multiline
@@ -280,7 +282,7 @@ export default function AnnoncerScreen() {
         {mutation.isError ? <Text style={styles.error}>{(mutation.error as Error).message}</Text> : null}
 
         <Button
-          label={mutation.isPending ? 'Publication…' : 'Publier le trajet'}
+          label={mutation.isPending ? t('annoncer.submitting') : t('annoncer.submit')}
           onPress={handleSubmit}
           loading={mutation.isPending}
         />

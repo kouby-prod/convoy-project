@@ -7,6 +7,7 @@ import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { colors, spacing, fontSize } from '@/lib/theme';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Sends the password-reset email — mobile counterpart of the web's
@@ -16,6 +17,7 @@ import { colors, spacing, fontSize } from '@/lib/theme';
  * to sign in here with the new password.
  */
 export default function ForgotPasswordScreen() {
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,7 +26,7 @@ export default function ForgotPasswordScreen() {
   async function handleSubmit() {
     setError(null);
     if (!email.trim()) {
-      setError('Veuillez renseigner votre adresse e-mail.');
+      setError(t('auth.forgotPassword.missingEmail'));
       return;
     }
 
@@ -36,7 +38,7 @@ export default function ForgotPasswordScreen() {
     setLoading(false);
 
     if (resetError) {
-      setError(resetError.message ?? "Échec de l'envoi. Réessayez.");
+      setError(resetError.message ?? t('auth.forgotPassword.genericError'));
       return;
     }
     setSent(true);
@@ -45,19 +47,15 @@ export default function ForgotPasswordScreen() {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Mot de passe oublié</Text>
-        <Text style={styles.subtitle}>
-          Indiquez votre e-mail : nous vous enverrons un lien pour choisir un nouveau mot de passe sur le site web.
-        </Text>
+        <Text style={styles.title}>{t('auth.forgotPassword.title')}</Text>
+        <Text style={styles.subtitle}>{t('auth.forgotPassword.subtitle')}</Text>
 
         {sent ? (
-          <Text style={styles.success}>
-            Un e-mail vous a été envoyé si un compte correspond à cette adresse.
-          </Text>
+          <Text style={styles.success}>{t('auth.forgotPassword.sent')}</Text>
         ) : (
           <View style={styles.form}>
             <TextField
-              label="Adresse e-mail"
+              label={t('auth.forgotPassword.emailLabel')}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -65,12 +63,16 @@ export default function ForgotPasswordScreen() {
               autoComplete="email"
             />
             {error ? <Text style={styles.error}>{error}</Text> : null}
-            <Button label={loading ? 'Envoi…' : 'Envoyer le lien'} onPress={handleSubmit} loading={loading} />
+            <Button
+              label={loading ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.submit')}
+              onPress={handleSubmit}
+              loading={loading}
+            />
           </View>
         )}
 
         <Link href="/" style={styles.link}>
-          Retour à la connexion
+          {t('auth.forgotPassword.backToSignIn')}
         </Link>
       </ScrollView>
     </ScreenContainer>
