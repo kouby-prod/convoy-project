@@ -111,6 +111,19 @@ export const DOCUMENT_MIME_TYPES = [
 export const DocumentMimeTypeSchema = z.enum(DOCUMENT_MIME_TYPES).describe('DocumentMimeType');
 export type DocumentMimeType = z.infer<typeof DocumentMimeTypeSchema>;
 
+/**
+ * Avatars accept the same mime types as a driver document minus PDF (a photo
+ * upload, not a document scan). Shared by web (`lib/avatars.ts`) and mobile
+ * (`lib/avatar.ts`) so the allowlist can't drift between the two client-side
+ * checks — each wraps this in its own error type (`ApiError` on web, plain
+ * `Error` on mobile) rather than throwing here.
+ */
+export function parseAvatarMimeType(mimeType: string): DocumentMimeType | null {
+  const parsed = DocumentMimeTypeSchema.safeParse(mimeType);
+  if (!parsed.success || parsed.data === 'application/pdf') return null;
+  return parsed.data;
+}
+
 /* ─────────────────────────── The persisted record ──────────────────────── */
 
 /**

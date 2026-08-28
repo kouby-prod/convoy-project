@@ -1,4 +1,4 @@
-import { DOCUMENT_MAX_BYTES, DocumentMimeTypeSchema, type DocumentMimeType } from '@carpool/schemas';
+import { DOCUMENT_MAX_BYTES, parseAvatarMimeType, type DocumentMimeType } from '@carpool/schemas';
 import { createApiClient } from '@carpool/api-client';
 import { env } from './env';
 import { ApiError } from './api-error';
@@ -37,9 +37,7 @@ export async function uploadMyAvatar(file: File): Promise<string> {
 }
 
 function toSupportedMimeType(file: File): DocumentMimeType {
-  const parsed = DocumentMimeTypeSchema.safeParse(file.type);
-  if (!parsed.success || parsed.data === 'application/pdf') {
-    throw new ApiError(415, 'Unsupported file type');
-  }
-  return parsed.data;
+  const mimeType = parseAvatarMimeType(file.type);
+  if (!mimeType) throw new ApiError(415, 'Unsupported file type');
+  return mimeType;
 }

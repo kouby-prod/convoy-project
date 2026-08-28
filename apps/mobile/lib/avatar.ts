@@ -1,5 +1,5 @@
 import { File, UploadTask, UploadType } from 'expo-file-system';
-import { DOCUMENT_MAX_BYTES, DocumentMimeTypeSchema, type DocumentMimeType } from '@carpool/schemas';
+import { DOCUMENT_MAX_BYTES, parseAvatarMimeType, type DocumentMimeType } from '@carpool/schemas';
 import { api } from './api-client';
 
 export async function fetchAvatarUrl(userId: string): Promise<string | null> {
@@ -46,9 +46,7 @@ export async function uploadMyAvatar(file: AvatarUpload): Promise<string> {
 }
 
 function toSupportedMimeType(mimeType: string): DocumentMimeType {
-  const parsed = DocumentMimeTypeSchema.safeParse(mimeType);
-  if (!parsed.success || parsed.data === 'application/pdf') {
-    throw new Error('Unsupported file type');
-  }
-  return parsed.data;
+  const parsed = parseAvatarMimeType(mimeType);
+  if (!parsed) throw new Error('Unsupported file type');
+  return parsed;
 }

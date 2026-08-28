@@ -1,5 +1,5 @@
 import { createApiClient } from '@carpool/api-client';
-import type { Conversation } from '@carpool/schemas';
+import { conversationActivityMs, type Conversation } from '@carpool/schemas';
 import { env } from '@/lib/env';
 
 const api = createApiClient(env.NEXT_PUBLIC_API_URL);
@@ -25,12 +25,6 @@ export type ConversationGroup = {
   threads: Conversation[];
 };
 
-function activityMs(item: Conversation): number {
-  const stamp = item.lastMessage?.createdAt ?? item.trip.departureAt;
-  const parsed = Date.parse(stamp);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 /** Group booking threads by counterpart + role, latest activity first. */
 export function groupConversations(items: Conversation[]): ConversationGroup[] {
   const buckets = new Map<string, Conversation[]>();
@@ -43,7 +37,7 @@ export function groupConversations(items: Conversation[]): ConversationGroup[] {
 
   const groups: ConversationGroup[] = [];
   for (const [key, threads] of buckets) {
-    const sorted = [...threads].sort((a, b) => activityMs(b) - activityMs(a));
+    const sorted = [...threads].sort((a, b) => conversationActivityMs(b) - conversationActivityMs(a));
     const latest = sorted[0];
     if (!latest) continue;
     groups.push({
@@ -58,6 +52,6 @@ export function groupConversations(items: Conversation[]): ConversationGroup[] {
     const left = a.threads[0];
     const right = b.threads[0];
     if (!left || !right) return 0;
-    return activityMs(right) - activityMs(left);
+    return conversationActivityMs(right) - conversationActivityMs(left);
   });
 }

@@ -37,7 +37,7 @@ function formatWhen(value: string) {
  * mobile equivalent of the web JS SDK's popup-and-postMessage flow.
  */
 export default function PaiementScreen() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -158,14 +158,14 @@ export default function PaiementScreen() {
             </Text>
             {booking ? (
               <Text style={styles.amount}>
-                {formatCad(payableCents(null, booking.paymentMethod, booking.fareCents))}
+                {formatCad(payableCents(null, booking.paymentMethod, booking.fareCents), locale)}
               </Text>
             ) : null}
           </Card>
         ) : paid ? (
           <Card>
             <Text style={styles.cardTitle}>{t('paiement.paidTitle')}</Text>
-            <Text style={styles.value}>{t('paiement.paidAmount', { amount: formatCad(invoice.totalCents) })}</Text>
+            <Text style={styles.value}>{t('paiement.paidAmount', { amount: formatCad(invoice.totalCents, locale) })}</Text>
             <Text style={styles.label}>{t('paiement.invoiceNumber', { number: invoice.number })}</Text>
             <View style={styles.row}>
               <Button
@@ -194,11 +194,11 @@ export default function PaiementScreen() {
             <Text style={styles.cardTitle}>{t('paiement.paymentTitle')}</Text>
             {overdueOpen ? <Text style={styles.error}>{t('paiement.overdue')}</Text> : null}
             {failed ? <Text style={styles.error}>{t('paiement.failed')}</Text> : null}
-            <Text style={styles.amount}>{formatCad(invoice.totalCents)}</Text>
+            <Text style={styles.amount}>{formatCad(invoice.totalCents, locale)}</Text>
             <Text style={styles.label}>
-              {t('paiement.commission', { amount: formatCad(invoice.commissionCents) })}
+              {t('paiement.commission', { amount: formatCad(invoice.commissionCents, locale) })}
               {invoice.taxLines.length
-                ? ' + ' + invoice.taxLines.map((l) => `${l.label} ${formatCad(l.amountCents)}`).join(' + ')
+                ? ' + ' + invoice.taxLines.map((l) => `${l.label} ${formatCad(l.amountCents, locale)}`).join(' + ')
                 : ''}
             </Text>
 
@@ -206,7 +206,7 @@ export default function PaiementScreen() {
 
             {stripeReady ? (
               <Button
-                label={paying ? t('paiement.processing') : t('paiement.payByCard', { amount: formatCad(invoice.totalCents) })}
+                label={paying ? t('paiement.processing') : t('paiement.payByCard', { amount: formatCad(invoice.totalCents, locale) })}
                 onPress={() => void handlePay()}
                 disabled={paying || payingPaypal}
                 loading={paying}

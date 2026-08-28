@@ -15,3 +15,4 @@ export * from './review';
 export * from './tracking';
 export * from './trajet';
 export * from './account-deletion';
+export * from './booking-money';

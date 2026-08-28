@@ -187,14 +187,18 @@ function PassengerRideView({ id, trajet }: { id: string; trajet: Trajet }) {
     .filter(Boolean)
     .join('')
     .toUpperCase();
-  // Same query key as trajet-booking-form.tsx's `fetchedBookings` — React
-  // Query dedupes it against that component's own fetch, so this doesn't add
-  // a second request. Only a confirmed passenger may subscribe to
-  // /trajets/:id/location (see resolveTrajetLocationAccess server-side);
-  // gating on it here too avoids a doomed poll + WS attempt for every other
-  // viewer of the page (anonymous, unconfirmed, or not-yet-booked).
+  // Deliberately a DIFFERENT query key from trajet-booking-form.tsx's
+  // `fetchedBookings` (['me','bookings','trajet',trajetId]) even though both
+  // fetch the same /me/bookings page: that component's queryFn filters+maps
+  // to a shape without `trajetId`, so sharing one cache entry lets whichever
+  // queryFn runs last silently overwrite the other's expected shape (e.g.
+  // `item.trajetId` reads as undefined here, permanently disabling live
+  // location for every confirmed passenger). Only a confirmed passenger may
+  // subscribe to /trajets/:id/location (see resolveTrajetLocationAccess
+  // server-side); gating on it here too avoids a doomed poll + WS attempt for
+  // every other viewer of the page (anonymous, unconfirmed, or not-yet-booked).
   const { data: myBookings } = useQuery({
-    queryKey: ['me', 'bookings', 'trajet', id],
+    queryKey: ['me', 'bookings', 'trajet', id, 'live-location-gate'],
     enabled: Boolean(session?.user),
     queryFn: async () => {
       const res = await api.me.bookings.$get({ query: { page: '1', limit: '50' } });

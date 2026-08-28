@@ -64,6 +64,18 @@ export type Conversation = z.infer<typeof ConversationSchema>;
 export const ConversationPageSchema = paginatedSchema(ConversationSchema).describe('ConversationPage');
 
 /**
+ * Sort key shared by web (`groupConversations`) and mobile
+ * (`sortConversations`) inbox views — a single source of truth instead of two
+ * copies that could silently diverge on the fallback field or timezone
+ * parsing.
+ */
+export function conversationActivityMs(item: Conversation): number {
+  const stamp = item.lastMessage?.createdAt ?? item.trip.departureAt;
+  const parsed = Date.parse(stamp);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/**
  * Client → server frames on `GET /ws/messages`. Auth is established at
  * upgrade time (Bearer token query/header or session cookie); these frames
  * only manage which booking threads the socket listens to.
