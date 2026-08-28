@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { LoadingState } from '@/components/ui/StateMessage';
 import { AvatarCard } from '@/components/account/AvatarCard';
 import { NotificationPrefsCard } from '@/components/account/NotificationPrefsCard';
+import { SavedCardsCard } from '@/components/account/SavedCardsCard';
 import { DeleteAccountCard } from '@/components/account/DeleteAccountCard';
 import { colors, spacing, fontSize } from '@/lib/theme';
 
@@ -119,6 +120,8 @@ export default function CompteScreen() {
         </Card>
 
         <NotificationPrefsCard />
+
+        <SavedCardsCard />
 
         <Button label="Mon véhicule" variant="outline" onPress={() => router.push('/vehicle')} />
         <Button label="Aide & informations" variant="outline" onPress={() => router.push('/legal')} />
