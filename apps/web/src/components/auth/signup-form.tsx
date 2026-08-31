@@ -172,6 +172,8 @@ export function SignUpForm() {
                 terms: (chunks) => (
                   <Link
                     href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="font-semibold text-primary hover:underline"
                     onClick={(event) => event.stopPropagation()}
                   >
@@ -181,6 +183,8 @@ export function SignUpForm() {
                 privacy: (chunks) => (
                   <Link
                     href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="font-semibold text-primary hover:underline"
                     onClick={(event) => event.stopPropagation()}
                   >
