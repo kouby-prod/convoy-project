@@ -24,6 +24,7 @@ export default async function TermsPage({
       sections={t.raw('sections') as LegalSection[]}
       pdfHref={`/${locale}/terms/pdf`}
       downloadLabel={tLegal('downloadPdf')}
+      backLabel={tLegal('back')}
     />
   );
 }

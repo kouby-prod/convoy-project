@@ -76,7 +76,7 @@
       "hasAccount": "Déjà inscrit ?",
       "signIn": "Se connecter",
       "passwordHint": "Au moins 8 caractères.",
-      "terms": "J’accepte les <terms>conditions d’utilisation</terms> et la <privacy>politique de confidentialité</privacy>."
+      "terms": "J’accepte les <terms>conditions d’utilisation</terms> et la <privacy>politique de confidentialité</privacy>."
     },
     "forgotPassword": {
       "title": "Réinitialiser le mot de passe",
@@ -1878,6 +1878,7 @@
     ]
   },
   "LegalPage": {
-    "downloadPdf": "Télécharger en PDF"
+    "downloadPdf": "Télécharger en PDF",
+    "back": "Retour"
   }
 }

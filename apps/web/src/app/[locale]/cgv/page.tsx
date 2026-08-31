@@ -24,6 +24,7 @@ export default async function CgvPage({
       sections={t.raw('sections') as LegalSection[]}
       pdfHref={`/${locale}/cgv/pdf`}
       downloadLabel={tLegal('downloadPdf')}
+      backLabel={tLegal('back')}
     />
   );
 }

@@ -25,6 +25,7 @@ export default async function ContratConducteurPage({
       sections={t.raw('sections') as LegalSection[]}
       pdfHref={`/${locale}/contrat-conducteur/pdf`}
       downloadLabel={tLegal('downloadPdf')}
+      backLabel={tLegal('back')}
     />
   );
 }

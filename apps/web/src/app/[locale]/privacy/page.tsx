@@ -24,6 +24,7 @@ export default async function PrivacyPage({
       sections={t.raw('sections') as LegalSection[]}
       pdfHref={`/${locale}/privacy/pdf`}
       downloadLabel={tLegal('downloadPdf')}
+      backLabel={tLegal('back')}
     />
   );
 }

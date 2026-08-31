@@ -1,3 +1,5 @@
+import { LegalBackButton } from '@/components/legal/legal-back-button';
+
 export interface LegalSection {
   heading: string;
   body: string;
@@ -16,6 +18,7 @@ export function LegalPage({
   sections,
   pdfHref,
   downloadLabel,
+  backLabel,
 }: {
   title: string;
   disclaimer?: string;
@@ -23,9 +26,12 @@ export function LegalPage({
   sections: LegalSection[];
   pdfHref?: string;
   downloadLabel?: string;
+  backLabel: string;
 }) {
   return (
     <section className="flex flex-col gap-8 py-12">
+      <LegalBackButton label={backLabel} />
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>

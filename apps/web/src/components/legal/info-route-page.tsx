@@ -28,6 +28,7 @@ export async function InfoRoutePage({
       sections={t.raw('sections') as LegalSection[]}
       pdfHref={pdfHref}
       downloadLabel={pdfHref ? tLegal('downloadPdf') : undefined}
+      backLabel={tLegal('back')}
     />
   );
 }

@@ -76,7 +76,7 @@
       "hasAccount": "Already registered?",
       "signIn": "Sign in",
       "passwordHint": "At least 8 characters.",
-      "terms": "I agree to the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>."
+      "terms": "I agree to the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>."
     },
     "forgotPassword": {
       "title": "Reset your password",
@@ -1878,6 +1878,7 @@
     ]
   },
   "LegalPage": {
-    "downloadPdf": "Download as PDF"
+    "downloadPdf": "Download as PDF",
+    "back": "Back"
   }
 }
