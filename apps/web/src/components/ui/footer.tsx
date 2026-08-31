@@ -8,16 +8,14 @@ import { cn } from '@/lib/utils';
 function FooterColumn({
   title,
   links,
-  align = 'start',
 }: {
   title: string;
   links: { label: string; href: string }[];
-  align?: 'start' | 'end';
 }) {
   return (
-    <div className={cn('flex flex-col gap-3', align === 'end' && 'sm:items-end sm:text-right')}>
+    <div className="flex flex-col items-center gap-3 text-center">
       <p className="font-display text-lg font-semibold tracking-tight text-white">{title}</p>
-      <ul className="flex flex-col gap-1">
+      <ul className="flex flex-col items-center gap-1">
         {links.map(({ label, href }) => (
           <li key={href}>
             <Link
@@ -59,8 +57,8 @@ export function Footer({ className }: FooterProps) {
     <footer className={cn('mt-auto w-full bg-brand-green text-white ring-1 ring-black/10', className)}>
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="grid gap-10 sm:grid-cols-2">
-          <FooterColumn title={translateFooter('aboutTitle')} links={aboutLinks} align="start" />
-          <FooterColumn title={translateFooter('infoTitle')} links={infoLinks} align="end" />
+          <FooterColumn title={translateFooter('aboutTitle')} links={aboutLinks} />
+          <FooterColumn title={translateFooter('infoTitle')} links={infoLinks} />
         </div>
 
         <div className="my-8 h-px bg-white/20" />

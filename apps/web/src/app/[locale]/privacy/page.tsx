@@ -14,6 +14,7 @@ export default async function PrivacyPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('Privacy');
+  const tLegal = await getTranslations('LegalPage');
 
   return (
     <LegalPage
@@ -21,6 +22,8 @@ export default async function PrivacyPage({
       disclaimer={t('disclaimer')}
       lastUpdated={t('lastUpdated')}
       sections={t.raw('sections') as LegalSection[]}
+      pdfHref={`/${locale}/privacy/pdf`}
+      downloadLabel={tLegal('downloadPdf')}
     />
   );
 }

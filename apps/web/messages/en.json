@@ -1876,5 +1876,8 @@
         "body": "Cancel from My trips as early as you can. Kouby refunds the passenger according to the terms of sale."
       }
     ]
+  },
+  "LegalPage": {
+    "downloadPdf": "Download as PDF"
   }
 }

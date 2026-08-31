@@ -14,17 +14,32 @@ export function LegalPage({
   disclaimer,
   lastUpdated,
   sections,
+  pdfHref,
+  downloadLabel,
 }: {
   title: string;
   disclaimer?: string;
   lastUpdated: string;
   sections: LegalSection[];
+  pdfHref?: string;
+  downloadLabel?: string;
 }) {
   return (
     <section className="flex flex-col gap-8 py-12">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-        <p className="text-sm text-muted-foreground">{lastUpdated}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
+          <p className="text-sm text-muted-foreground">{lastUpdated}</p>
+        </div>
+
+        {pdfHref ? (
+          <a
+            href={pdfHref}
+            className="inline-flex shrink-0 items-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            {downloadLabel}
+          </a>
+        ) : null}
       </div>
 
       {disclaimer ? (

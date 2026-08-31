@@ -15,6 +15,7 @@ export default async function ContratConducteurPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('ContratConducteur');
+  const tLegal = await getTranslations('LegalPage');
 
   return (
     <LegalPage
@@ -22,6 +23,8 @@ export default async function ContratConducteurPage({
       disclaimer={t('disclaimer')}
       lastUpdated={t('lastUpdated')}
       sections={t.raw('sections') as LegalSection[]}
+      pdfHref={`/${locale}/contrat-conducteur/pdf`}
+      downloadLabel={tLegal('downloadPdf')}
     />
   );
 }

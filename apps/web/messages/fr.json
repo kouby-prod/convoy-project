@@ -1876,5 +1876,8 @@
         "body": "Annulez depuis Mes trajets dès que possible. Kouby rembourse le passager selon les conditions de vente."
       }
     ]
+  },
+  "LegalPage": {
+    "downloadPdf": "Télécharger en PDF"
   }
 }
