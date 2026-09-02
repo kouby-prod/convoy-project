@@ -145,8 +145,8 @@
   },
   "Terms": {
     "title": "Terms of Service",
-    "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Only the last-updated date still needs to be filled in before publishing (see \"[to be completed]\" above).",
+    "lastUpdated": "Last updated: October 12, 2026",
+    "disclaimer": "",
     "sections": [
       {
         "heading": "1. Purpose",
@@ -236,8 +236,8 @@
   },
   "Cgv": {
     "title": "Terms of Sale",
-    "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Kouby charges a 4 CAD booking commission, payable online by card (Stripe) or PayPal when you reserve a seat. If you pay the ride fare by card through Kouby, that fare is collected with the commission and paid out to the driver after the trip. Interac and cash fares are settled directly with the driver.",
+    "lastUpdated": "Last updated: October 12, 2026",
+    "disclaimer": "Kouby charges a 4 CAD (before tax) booking commission. The ride fare is settled directly with the driver.",
     "sections": [
       {
         "heading": "1. Purpose",
@@ -315,8 +315,8 @@
   },
   "ContratConducteur": {
     "title": "Driver Agreement",
-    "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Only the last-updated date still needs to be filled in before publishing. This document is designed to be signed electronically by each driver — the app doesn't yet have a dedicated driver-onboarding flow that captures that acceptance, so this page remains informational for now.",
+    "lastUpdated": "Last updated: October 12, 2026",
+    "disclaimer": "This document is designed to be signed electronically by each driver — the app doesn't yet have a dedicated driver-onboarding flow that captures that acceptance, so this page remains informational for now.",
     "sections": [
       {
         "heading": "1. Purpose",
@@ -386,8 +386,8 @@
   },
   "Privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Some details still need to be filled in before publishing (last-updated date, data protection officer contact information) — see the \"[to be completed]\" notes below.",
+    "lastUpdated": "Last updated: October 12, 2026",
+    "disclaimer": "Some details still need to be filled in before publishing (data protection officer contact information).",
     "sections": [
       {
         "heading": "1. Introduction",
@@ -1537,7 +1537,8 @@
       "step1": {
         "label": "Step 1: Ride and vehicle",
         "next": "Next",
-        "vehicleRequired": "Save your vehicle before continuing."
+        "saving": "Saving…",
+        "vehicleSaveFailed": "Saving the vehicle failed. Please try again."
       },
       "step2": {
         "label": "Step 2: Licence and insurance",
@@ -1547,12 +1548,13 @@
           "loadError": "Failed to load your information."
         },
         "checklist": {
-          "incomplete": "Complete the items above before publishing your ride."
+          "incomplete": "Complete the items above before publishing your ride.",
+          "licenseRequired": "Enter your licence number.",
+          "saveFailed": "Saving failed. Please try again."
         }
       },
       "step3": {
         "label": "Step 3: Vehicle description",
-        "saveHint": "Save your vehicle to continue.",
         "vehicle": {
           "title": "Your vehicle",
           "subtitle": "This information is shown to passengers.",
@@ -1576,12 +1578,14 @@
           "photoFailed": "Uploading the photo failed. Please try again."
         }
       },
-      "step4": {
-        "title": "Insurance",
-        "question": "Do you hold valid insurance?",
-        "blockedBody": "Valid insurance is required to offer a ride as a driver.",
-        "saveFailed": "Saving failed. Please try again.",
-        "missingVehicle": "Go back to the previous step to save your vehicle."
+      "step5": {
+        "title": "Eligibility",
+        "licenseQuestion": "Do you hold a valid driver's licence in Canada?",
+        "insuranceQuestion": "Do you have valid insurance?",
+        "requirementsQuestion": "Do you confirm meeting all requirements to drive in Canada?",
+        "blockedBody": "You must confirm all three conditions above to offer a ride as a driver.",
+        "missingVehicle": "Go back to the previous step to register your vehicle.",
+        "saveFailed": "Saving failed. Please try again."
       }
     }
   },

@@ -7,6 +7,7 @@ import { useRouter, Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { authReturnUrl, safeNextPath, signUpHref } from '@/lib/auth-urls';
 import { isEmailNotVerified } from '@/lib/auth-errors';
+import { maskEmail } from '@/lib/mask-email';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -81,7 +82,7 @@ export function SignInForm() {
         </CardTitle>
         <CardDescription>
           {waitingForInbox
-            ? translateAuth('checkEmail.subtitle', { email: pendingEmail })
+            ? translateAuth('checkEmail.subtitle', { email: maskEmail(pendingEmail) })
             : translateAuth('signIn.subtitle')}
         </CardDescription>
       </CardHeader>
