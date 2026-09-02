@@ -3,20 +3,21 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { Check, CircleCheck, ShieldCheck, X, type LucideIcon } from 'lucide-react';
+import { Check, CircleCheck, IdCard, ShieldCheck, X, type LucideIcon } from 'lucide-react';
 import {
   REQUIRED_DRIVER_DOCUMENT_TYPES,
   deriveDriverVerification,
   type DriverDocument,
+  type DriverEligibility,
+  type EligibilityConfirmation,
   type RequiredDriverDocumentType,
   type Vehicle,
 } from '@carpool/schemas';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DriverIdentityCard } from '@/components/documents/driver-identity-card';
-import { EligibilityPanel } from '@/components/documents/eligibility-panel';
 import { DocumentSlotCard } from '@/components/mes-documents/document-slot-card';
-import { fetchMyDocuments, fetchMyEligibility } from '@/lib/documents';
+import { fetchMyDocuments, fetchMyEligibility, saveMyEligibilityConfirmation } from '@/lib/documents';
 import { fetchMyVehicle, saveMyVehicle } from '@/lib/vehicles';
 import { cn } from '@/lib/utils';
 import { CardSkeleton } from '@/components/ui/list-skeleton';
@@ -47,7 +48,9 @@ export function PublishChecklistStep({ onPublish, onBack, publishing }: PublishC
 
   const licenseDone = !!eligibilityQuery.data?.licenseNumber;
   const insuranceDone = vehicleQuery.data?.hasInsurance === true;
-  const canPublish = licenseDone && insuranceDone;
+  const eligibilityConfirmed =
+    eligibilityQuery.data?.hasValidLicense === true && eligibilityQuery.data?.meetsRequirements === true;
+  const canPublish = licenseDone && insuranceDone && eligibilityConfirmed;
 
   const [error, setError] = useState('');
 
@@ -81,7 +84,10 @@ export function PublishChecklistStep({ onPublish, onBack, publishing }: PublishC
           ) : (
             <>
               <DriverIdentityCard />
-              <EligibilityPanel verification={verification} />
+              <EligibilityConfirmationCard
+                loading={eligibilityQuery.isLoading}
+                eligibility={eligibilityQuery.data ?? null}
+              />
             </>
           )}
         </div>
@@ -236,6 +242,123 @@ function InsuranceChecklistItem({
         ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * The "Conditions d'éligibilité" step, reduced to the two things that
+ * actually gate "Publier": a valid Canadian licence and meeting every other
+ * requirement to drive in Canada, each a self-declared yes/no — same pattern
+ * as `InsuranceChecklistItem` above, saved together through
+ * `saveMyEligibilityConfirmation`.
+ */
+function EligibilityConfirmationCard({
+  loading,
+  eligibility,
+}: {
+  loading: boolean;
+  eligibility: DriverEligibility | null;
+}) {
+  const t = useTranslations('Trajet');
+  const queryClient = useQueryClient();
+  const [error, setError] = useState('');
+
+  const hasValidLicense = eligibility?.hasValidLicense ?? null;
+  const meetsRequirements = eligibility?.meetsRequirements ?? null;
+  const done = hasValidLicense === true && meetsRequirements === true;
+
+  const mutation = useMutation({
+    mutationFn: saveMyEligibilityConfirmation,
+    onSuccess: (saved) => {
+      queryClient.setQueryData(['my-eligibility'], saved);
+      setError('');
+    },
+    onError: () => setError(t('create.step5.saveFailed')),
+  });
+
+  function choose(patch: Partial<EligibilityConfirmation>) {
+    setError('');
+    mutation.mutate({
+      hasValidLicense: patch.hasValidLicense ?? hasValidLicense ?? false,
+      meetsRequirements: patch.meetsRequirements ?? meetsRequirements ?? false,
+    });
+  }
+
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-4 p-5 pt-5">
+        <ChecklistHeader Icon={IdCard} title={t('create.step5.title')} done={done} />
+
+        {loading ? (
+          <Skeleton className="h-11 w-full" />
+        ) : (
+          <>
+            <YesNoQuestion
+              question={t('create.step5.licenseQuestion')}
+              value={hasValidLicense}
+              disabled={mutation.isPending}
+              onChoose={(value) => choose({ hasValidLicense: value })}
+            />
+            <YesNoQuestion
+              question={t('create.step5.requirementsQuestion')}
+              value={meetsRequirements}
+              disabled={mutation.isPending}
+              onChoose={(value) => choose({ meetsRequirements: value })}
+            />
+            {hasValidLicense === false || meetsRequirements === false ? (
+              <p className="text-sm text-destructive">{t('create.step5.blockedBody')}</p>
+            ) : null}
+          </>
+        )}
+
+        {error ? (
+          <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** One self-declared yes/no question — the shared shape behind both eligibility questions. */
+function YesNoQuestion({
+  question,
+  value,
+  disabled,
+  onChoose,
+}: {
+  question: string;
+  value: boolean | null;
+  disabled: boolean;
+  onChoose: (value: boolean) => void;
+}) {
+  const t = useTranslations('Trajet');
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm font-semibold text-foreground">{question}</p>
+      <div className="flex flex-wrap gap-3">
+        <Button
+          type="button"
+          variant={value === true ? 'primary' : 'outline'}
+          disabled={disabled}
+          onClick={() => onChoose(true)}
+        >
+          <Check className="size-4" strokeWidth={2.5} aria-hidden />
+          {t('create.yes')}
+        </Button>
+        <Button
+          type="button"
+          variant={value === false ? 'primary' : 'outline'}
+          disabled={disabled}
+          onClick={() => onChoose(false)}
+        >
+          <X className="size-4" strokeWidth={2.5} aria-hidden />
+          {t('create.no')}
+        </Button>
+      </div>
+    </div>
   );
 }
 

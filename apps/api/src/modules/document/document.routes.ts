@@ -8,6 +8,7 @@ import {
   DriverDocumentSchema,
   DriverEligibilitySchema,
   DriverNameDeclarationSchema,
+  EligibilityConfirmationSchema,
   EligibilityDeclarationSchema,
   LicenseNumberDeclarationSchema,
 } from '@carpool/schemas';
@@ -195,6 +196,34 @@ export const putMyLicenseNumberRoute = createRoute({
   security: bearerAuth,
   request: {
     body: { content: { 'application/json': { schema: LicenseNumberDeclarationSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Declaration saved',
+      content: { 'application/json': { schema: DriverEligibilitySchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+/**
+ * Upsert the two yes/no eligibility declarations behind the ride-creation
+ * "Conditions d'éligibilité" step — a valid Canadian licence and meeting every
+ * other requirement to drive in Canada. Saved together (one route, one
+ * schema) since the UI always shows and answers them as a pair, unlike
+ * `dateOfBirth`/`licenseNumber`/name.
+ */
+export const putMyEligibilityConfirmationRoute = createRoute({
+  method: 'put',
+  path: '/eligibility/confirmation',
+  tags: ['document'],
+  summary: 'Declare having a valid licence and meeting all requirements to drive in Canada',
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: EligibilityConfirmationSchema } } },
   },
   responses: {
     200: {

@@ -1582,6 +1582,13 @@
         "blockedBody": "Valid insurance is required to offer a ride as a driver.",
         "saveFailed": "Saving failed. Please try again.",
         "missingVehicle": "Go back to the previous step to save your vehicle."
+      },
+      "step5": {
+        "title": "Eligibility",
+        "licenseQuestion": "Do you confirm holding a valid driver's licence in Canada?",
+        "requirementsQuestion": "Do you confirm meeting all requirements to drive in Canada?",
+        "blockedBody": "You must confirm both conditions above to offer a ride as a driver.",
+        "saveFailed": "Saving failed. Please try again."
       }
     }
   },

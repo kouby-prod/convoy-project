@@ -1582,6 +1582,13 @@
         "blockedBody": "Une assurance valide est nécessaire pour proposer un trajet en tant que conducteur.",
         "saveFailed": "L'enregistrement a échoué. Réessayez.",
         "missingVehicle": "Retournez à l'étape précédente pour enregistrer votre véhicule."
+      },
+      "step5": {
+        "title": "Éligibilité",
+        "licenseQuestion": "Confirmez-vous détenir un permis de conduire valide au Canada ?",
+        "requirementsQuestion": "Confirmez-vous remplir toutes les conditions requises pour conduire au Canada ?",
+        "blockedBody": "Vous devez confirmer les deux conditions ci-dessus pour proposer un trajet en tant que conducteur.",
+        "saveFailed": "L'enregistrement a échoué. Réessayez."
       }
     }
   },
