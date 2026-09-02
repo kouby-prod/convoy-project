@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { authVerifiedCallbackUrl, safeNextPath, signInHref } from '@/lib/auth-urls';
+import { maskEmail } from '@/lib/mask-email';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -120,7 +121,7 @@ export function SignUpForm() {
         </CardTitle>
         <CardDescription>
           {waitingForInbox
-            ? translateAuth('checkEmail.subtitle', { email: pendingEmail })
+            ? translateAuth('checkEmail.subtitle', { email: maskEmail(pendingEmail) })
             : translateAuth('signUp.subtitle')}
         </CardDescription>
       </CardHeader>
