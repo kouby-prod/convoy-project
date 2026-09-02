@@ -145,8 +145,8 @@
   },
   "Terms": {
     "title": "Conditions Générales d'Utilisation",
-    "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication (voir « [à compléter] » ci-dessus).",
+    "lastUpdated": "Dernière mise à jour : 12/10/2026",
+    "disclaimer": "",
     "sections": [
       {
         "heading": "1. Objet",
@@ -236,8 +236,8 @@
   },
   "Cgv": {
     "title": "Conditions Générales de Vente (CGV)",
-    "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Kouby facture une commission de réservation de 4 CAD, payable en ligne par carte (Stripe) ou PayPal dès la réservation. Si vous payez le trajet par carte via Kouby, ce montant est encaissé avec la commission et reversé au conducteur après le trajet. Interac et espèces se règlent directement avec le conducteur.",
+    "lastUpdated": "Dernière mise à jour : 12/10/2026",
+    "disclaimer": "Kouby facture une commission de réservation de 4 CAD HT. Le prix du trajet se règle directement avec le conducteur.",
     "sections": [
       {
         "heading": "1. Objet",
@@ -315,8 +315,8 @@
   },
   "ContratConducteur": {
     "title": "Contrat Conducteur",
-    "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication. Ce document est conçu pour être signé électroniquement par chaque conducteur : l'application n'a pas encore de parcours d'inscription conducteur dédié qui capture cette acceptation, cette page reste donc informative pour le moment.",
+    "lastUpdated": "Dernière mise à jour : 12/10/2026",
+    "disclaimer": "Ce document est conçu pour être signé électroniquement par chaque conducteur : l'application n'a pas encore de parcours d'inscription conducteur dédié qui capture cette acceptation, cette page reste donc informative pour le moment.",
     "sections": [
       {
         "heading": "1. Objet",
@@ -386,8 +386,8 @@
   },
   "Privacy": {
     "title": "Politique de confidentialité",
-    "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Certaines mentions restent à compléter avant publication (date de mise à jour, coordonnées du responsable de la protection des données) — voir les indications « [à compléter] » ci-dessous.",
+    "lastUpdated": "Dernière mise à jour : 12/10/2026",
+    "disclaimer": "Certaines mentions restent à compléter avant publication (coordonnées du responsable de la protection des données).",
     "sections": [
       {
         "heading": "1. Introduction",

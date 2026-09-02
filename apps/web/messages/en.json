@@ -145,8 +145,8 @@
   },
   "Terms": {
     "title": "Terms of Service",
-    "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Only the last-updated date still needs to be filled in before publishing (see \"[to be completed]\" above).",
+    "lastUpdated": "Last updated: October 12, 2026",
+    "disclaimer": "",
     "sections": [
       {
         "heading": "1. Purpose",
@@ -236,8 +236,8 @@
   },
   "Cgv": {
     "title": "Terms of Sale",
-    "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Kouby charges a 4 CAD booking commission, payable online by card (Stripe) or PayPal when you reserve a seat. If you pay the ride fare by card through Kouby, that fare is collected with the commission and paid out to the driver after the trip. Interac and cash fares are settled directly with the driver.",
+    "lastUpdated": "Last updated: October 12, 2026",
+    "disclaimer": "Kouby charges a 4 CAD (before tax) booking commission. The ride fare is settled directly with the driver.",
     "sections": [
       {
         "heading": "1. Purpose",
@@ -315,8 +315,8 @@
   },
   "ContratConducteur": {
     "title": "Driver Agreement",
-    "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Only the last-updated date still needs to be filled in before publishing. This document is designed to be signed electronically by each driver — the app doesn't yet have a dedicated driver-onboarding flow that captures that acceptance, so this page remains informational for now.",
+    "lastUpdated": "Last updated: October 12, 2026",
+    "disclaimer": "This document is designed to be signed electronically by each driver — the app doesn't yet have a dedicated driver-onboarding flow that captures that acceptance, so this page remains informational for now.",
     "sections": [
       {
         "heading": "1. Purpose",
@@ -386,8 +386,8 @@
   },
   "Privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: [to be completed]",
-    "disclaimer": "Some details still need to be filled in before publishing (last-updated date, data protection officer contact information) — see the \"[to be completed]\" notes below.",
+    "lastUpdated": "Last updated: October 12, 2026",
+    "disclaimer": "Some details still need to be filled in before publishing (data protection officer contact information).",
     "sections": [
       {
         "heading": "1. Introduction",
