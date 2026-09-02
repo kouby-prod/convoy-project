@@ -40,15 +40,15 @@
   },
   "Footer": {
     "aboutTitle": "About us",
-    "terms": "Terms of use",
+    "terms": "Terms of Service",
     "cgv": "Terms of sale",
     "contratConducteur": "Driver agreement",
     "responsibility": "Responsibility charter",
-    "privacy": "Privacy",
+    "privacy": "Privacy Policy",
     "contact": "Contact us",
     "infoTitle": "Information",
-    "becomeDriver": "How to become a driver?",
-    "becomePassenger": "How to become a passenger?",
+    "becomeDriver": "How to post a ride?",
+    "becomePassenger": "How to book a ride?",
     "passengerTips": "Tips for passengers",
     "driverTips": "Tips for drivers",
     "copyright": "© {year} Convoy carpooling — all rights reserved."
@@ -76,7 +76,7 @@
       "hasAccount": "Already registered?",
       "signIn": "Sign in",
       "passwordHint": "At least 8 characters.",
-      "terms": "I agree to the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>."
+      "terms": "I agree to the <terms>terms of service</terms> and the <privacy>privacy policy</privacy>."
     },
     "forgotPassword": {
       "title": "Reset your password",
@@ -135,7 +135,7 @@
       "signInUnavailable": "Unable to sign in. Please try again later.",
       "missingFields": "Please fill in all fields.",
       "passwordMismatch": "Passwords do not match.",
-      "termsRequired": "Please accept the terms of use to create an account.",
+      "termsRequired": "Please accept the terms of service to create an account.",
       "signUpFailed": "Sign-up failed. Please try again.",
       "signUpUnavailable": "Unable to create the account. Please try again later.",
       "googleFailed": "Google sign-in failed. Please try again.",
@@ -1734,12 +1734,12 @@
       },
       {
         "heading": "Related documents",
-        "body": "See also the terms of use, the terms of sale, and the driver agreement."
+        "body": "See also the terms of service, the terms of sale, and the driver agreement."
       }
     ]
   },
   "BecomeDriver": {
-    "title": "How to become a driver",
+    "title": "How to post a ride",
     "lastUpdated": "Publish a trip on Kouby in a few steps.",
     "checklist": {
       "loading": "Loading your driver checklist...",
@@ -1790,7 +1790,7 @@
     ]
   },
   "BecomePassenger": {
-    "title": "How to become a passenger",
+    "title": "How to book a ride",
     "lastUpdated": "Book a seat on Kouby in a few steps.",
     "checklist": {
       "loading": "Loading your passenger checklist...",
@@ -1876,5 +1876,9 @@
         "body": "Cancel from My trips as early as you can. Kouby refunds the passenger according to the terms of sale."
       }
     ]
+  },
+  "LegalPage": {
+    "downloadPdf": "Download as PDF",
+    "back": "Back"
   }
 }

@@ -11,18 +11,24 @@ export type InfoNamespace =
 export async function InfoRoutePage({
   locale,
   namespace,
+  pdfHref,
 }: {
   locale: string;
   namespace: InfoNamespace;
+  pdfHref?: string;
 }) {
   setRequestLocale(locale);
   const t = await getTranslations(namespace);
+  const tLegal = await getTranslations('LegalPage');
 
   return (
     <LegalPage
       title={t('title')}
       lastUpdated={t('lastUpdated')}
       sections={t.raw('sections') as LegalSection[]}
+      pdfHref={pdfHref}
+      downloadLabel={pdfHref ? tLegal('downloadPdf') : undefined}
+      backLabel={tLegal('back')}
     />
   );
 }
