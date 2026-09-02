@@ -1576,18 +1576,13 @@
           "photoFailed": "L'envoi de la photo a échoué. Réessayez."
         }
       },
-      "step4": {
-        "title": "Assurance",
-        "question": "Disposez-vous d'une assurance valide ?",
-        "blockedBody": "Une assurance valide est nécessaire pour proposer un trajet en tant que conducteur.",
-        "saveFailed": "L'enregistrement a échoué. Réessayez.",
-        "missingVehicle": "Retournez à l'étape précédente pour enregistrer votre véhicule."
-      },
       "step5": {
         "title": "Éligibilité",
-        "licenseQuestion": "Confirmez-vous détenir un permis de conduire valide au Canada ?",
+        "licenseQuestion": "Détenez-vous un permis de conduire valide au Canada ?",
+        "insuranceQuestion": "Disposez-vous d'une assurance valide ?",
         "requirementsQuestion": "Confirmez-vous remplir toutes les conditions requises pour conduire au Canada ?",
-        "blockedBody": "Vous devez confirmer les deux conditions ci-dessus pour proposer un trajet en tant que conducteur.",
+        "blockedBody": "Vous devez confirmer les trois conditions ci-dessus pour proposer un trajet en tant que conducteur.",
+        "missingVehicle": "Retournez à l'étape précédente pour enregistrer votre véhicule.",
         "saveFailed": "L'enregistrement a échoué. Réessayez."
       }
     }

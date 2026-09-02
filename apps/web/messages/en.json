@@ -1576,18 +1576,13 @@
           "photoFailed": "Uploading the photo failed. Please try again."
         }
       },
-      "step4": {
-        "title": "Insurance",
-        "question": "Do you hold valid insurance?",
-        "blockedBody": "Valid insurance is required to offer a ride as a driver.",
-        "saveFailed": "Saving failed. Please try again.",
-        "missingVehicle": "Go back to the previous step to save your vehicle."
-      },
       "step5": {
         "title": "Eligibility",
-        "licenseQuestion": "Do you confirm holding a valid driver's licence in Canada?",
+        "licenseQuestion": "Do you hold a valid driver's licence in Canada?",
+        "insuranceQuestion": "Do you have valid insurance?",
         "requirementsQuestion": "Do you confirm meeting all requirements to drive in Canada?",
-        "blockedBody": "You must confirm both conditions above to offer a ride as a driver.",
+        "blockedBody": "You must confirm all three conditions above to offer a ride as a driver.",
+        "missingVehicle": "Go back to the previous step to register your vehicle.",
         "saveFailed": "Saving failed. Please try again."
       }
     }
