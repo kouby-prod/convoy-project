@@ -40,15 +40,15 @@
   },
   "Footer": {
     "aboutTitle": "À Propos de nous",
-    "terms": "Conditions d'utilisation",
+    "terms": "Conditions générales d'utilisation",
     "cgv": "Conditions de vente",
     "contratConducteur": "Contrat conducteur",
     "responsibility": "Charte de responsabilité",
-    "privacy": "Vie privée",
+    "privacy": "Politique de confidentialité",
     "contact": "Contactez-nous",
     "infoTitle": "Informations",
-    "becomeDriver": "Comment devenir chauffeur ?",
-    "becomePassenger": "Comment devenir passager ?",
+    "becomeDriver": "Comment publier un trajet ?",
+    "becomePassenger": "Comment réserver un trajet ?",
     "passengerTips": "Conseils passagers",
     "driverTips": "Conseils conducteurs",
     "copyright": "© {year} Convoy — covoiturage. Tous droits réservés."
@@ -76,7 +76,7 @@
       "hasAccount": "Déjà inscrit ?",
       "signIn": "Se connecter",
       "passwordHint": "Au moins 8 caractères.",
-      "terms": "J’accepte les <terms>conditions d’utilisation</terms> et la <privacy>politique de confidentialité</privacy>."
+      "terms": "J’accepte les <terms>conditions générales d’utilisation</terms> et la <privacy>politique de confidentialité</privacy>."
     },
     "forgotPassword": {
       "title": "Réinitialiser le mot de passe",
@@ -135,7 +135,7 @@
       "signInUnavailable": "Impossible de se connecter. Réessayez ultérieurement.",
       "missingFields": "Veuillez remplir tous les champs.",
       "passwordMismatch": "Les mots de passe ne correspondent pas.",
-      "termsRequired": "Veuillez accepter les conditions d’utilisation pour créer un compte.",
+      "termsRequired": "Veuillez accepter les conditions générales d’utilisation pour créer un compte.",
       "signUpFailed": "Échec de l'inscription. Réessayez.",
       "signUpUnavailable": "Impossible de créer le compte. Réessayez plus tard.",
       "googleFailed": "La connexion Google a échoué. Veuillez réessayer.",
@@ -1734,12 +1734,12 @@
       },
       {
         "heading": "Documents connexes",
-        "body": "Voir aussi les conditions d'utilisation, les conditions de vente et le contrat conducteur."
+        "body": "Voir aussi les conditions générales d'utilisation, les conditions de vente et le contrat conducteur."
       }
     ]
   },
   "BecomeDriver": {
-    "title": "Comment devenir chauffeur",
+    "title": "Comment publier un trajet",
     "lastUpdated": "Publier un trajet sur Kouby en quelques étapes.",
     "checklist": {
       "loading": "Chargement de votre liste de tâches chauffeur...",
@@ -1790,7 +1790,7 @@
     ]
   },
   "BecomePassenger": {
-    "title": "Comment devenir passager",
+    "title": "Comment réserver un trajet",
     "lastUpdated": "Réserver une place sur Kouby en quelques étapes.",
     "checklist": {
       "loading": "Chargement de votre liste de tâches passager...",

@@ -20,7 +20,6 @@ import { LanguageForm } from '@/components/parametres/language-form';
 import { NotificationPrefsForm } from '@/components/parametres/notification-prefs-form';
 import { ProfilePhotoForm } from '@/components/parametres/profile-photo-form';
 import { SavedCardsForm } from '@/components/parametres/saved-cards-form';
-import { DeleteAccountForm } from '@/components/parametres/delete-account-form';
 import { SettingsSection } from '@/components/parametres/settings-section';
 import { SettingsNav } from '@/components/parametres/settings-nav';
 
@@ -28,7 +27,6 @@ const SECTIONS = [
   { id: 'settings-account', key: 'account' },
   { id: 'settings-preferences', key: 'preferences' },
   { id: 'settings-payments', key: 'payments' },
-  { id: 'settings-danger', key: 'danger' },
 ] as const;
 
 /**
@@ -49,7 +47,6 @@ export function ParametresForm() {
     account: t('sections.account'),
     preferences: t('sections.preferences'),
     payments: t('sections.payments'),
-    danger: t('sections.danger'),
   } as const;
   const navItems = SECTIONS.filter((section) => section.id !== 'settings-payments' || showPayments).map(
     (section) => ({ id: section.id, title: sectionTitles[section.key] }),
@@ -235,10 +232,6 @@ export function ParametresForm() {
             <SavedCardsForm />
           </SettingsSection>
         ) : null}
-
-        <SettingsSection id="settings-danger" title={t('sections.danger')}>
-          <DeleteAccountForm />
-        </SettingsSection>
       </div>
     </div>
   );
