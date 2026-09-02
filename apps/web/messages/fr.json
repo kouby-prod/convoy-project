@@ -1537,7 +1537,8 @@
       "step1": {
         "label": "Étape 1 : Trajet et véhicule",
         "next": "Suivant",
-        "vehicleRequired": "Enregistrez votre véhicule avant de continuer."
+        "saving": "Enregistrement…",
+        "vehicleSaveFailed": "L'enregistrement du véhicule a échoué. Réessayez."
       },
       "step2": {
         "label": "Étape 2 : Permis et assurance",
@@ -1547,12 +1548,13 @@
           "loadError": "Impossible de charger vos informations."
         },
         "checklist": {
-          "incomplete": "Complétez les éléments ci-dessus avant de publier votre trajet."
+          "incomplete": "Complétez les éléments ci-dessus avant de publier votre trajet.",
+          "licenseRequired": "Indiquez votre numéro de permis.",
+          "saveFailed": "L'enregistrement a échoué. Réessayez."
         }
       },
       "step3": {
         "label": "Étape 3 : Description du véhicule",
-        "saveHint": "Enregistrez votre véhicule pour continuer.",
         "vehicle": {
           "title": "Votre véhicule",
           "subtitle": "Ces informations sont affichées aux passagers.",
