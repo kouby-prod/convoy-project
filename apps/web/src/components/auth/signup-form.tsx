@@ -15,6 +15,31 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { CheckEmailPanel } from '@/components/auth/check-email-panel';
+import { useSessionDraft, clearSessionDraft } from '@/hooks/use-session-draft';
+
+/**
+ * Name/email/consent, not the passwords — see `useSessionDraft`. Clicking
+ * "conditions générales d'utilisation" or "politique de confidentialité"
+ * navigates away to /terms or /privacy and back, unmounting this form; the
+ * draft is what survives that round trip (same fix as the locale switch).
+ * Passwords are deliberately left out of the persisted draft — they're
+ * short to retype and shouldn't sit in sessionStorage as plain text.
+ */
+interface SignUpDraft {
+  firstName: string;
+  lastName: string;
+  email: string;
+  acceptTerms: boolean;
+}
+
+const EMPTY_SIGNUP_DRAFT: SignUpDraft = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  acceptTerms: false,
+};
+
+const SIGNUP_DRAFT_KEY = 'signup-draft';
 
 export function SignUpForm() {
   const translateAuth = useTranslations('Auth');
@@ -23,9 +48,14 @@ export function SignUpForm() {
   const locale = useLocale();
   const searchParams = useSearchParams();
   const nextPath = safeNextPath(searchParams.get('next'));
+  const [draft, setDraft] = useSessionDraft<SignUpDraft>(SIGNUP_DRAFT_KEY, EMPTY_SIGNUP_DRAFT);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
+
+  function updateDraft(patch: Partial<SignUpDraft>) {
+    setDraft((current) => ({ ...current, ...patch }));
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,12 +64,12 @@ export function SignUpForm() {
     setIsLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    const firstName = formData.get('firstname')?.toString().trim() ?? '';
-    const lastName = formData.get('lastname')?.toString().trim() ?? '';
-    const email = formData.get('email')?.toString().trim() ?? '';
+    const firstName = draft.firstName.trim();
+    const lastName = draft.lastName.trim();
+    const email = draft.email.trim();
     const password = formData.get('password')?.toString() ?? '';
     const confirmPassword = formData.get('confirmPassword')?.toString() ?? '';
-    const acceptedTerms = formData.get('acceptTerms') === 'on';
+    const acceptedTerms = draft.acceptTerms;
 
     try {
       if (!firstName || !lastName || !email || !password || !confirmPassword) {
@@ -69,6 +99,7 @@ export function SignUpForm() {
         return;
       }
 
+      clearSessionDraft(SIGNUP_DRAFT_KEY);
       setPendingEmail(email);
     } catch (err) {
       console.error(err);
@@ -107,6 +138,8 @@ export function SignUpForm() {
                   name="firstname"
                   autoComplete="given-name"
                   placeholder={translateAuth('fields.firstNamePlaceholder')}
+                  value={draft.firstName}
+                  onChange={(event) => updateDraft({ firstName: event.target.value })}
                   required
                 />
               </div>
@@ -118,6 +151,8 @@ export function SignUpForm() {
                   name="lastname"
                   autoComplete="family-name"
                   placeholder={translateAuth('fields.lastNamePlaceholder')}
+                  value={draft.lastName}
+                  onChange={(event) => updateDraft({ lastName: event.target.value })}
                   required
                 />
               </div>
@@ -131,6 +166,8 @@ export function SignUpForm() {
                 name="email"
                 autoComplete="email"
                 placeholder={translateAuth('fields.emailPlaceholder')}
+                value={draft.email}
+                onChange={(event) => updateDraft({ email: event.target.value })}
                 required
               />
             </div>
@@ -166,6 +203,8 @@ export function SignUpForm() {
 
             <Checkbox
               name="acceptTerms"
+              checked={draft.acceptTerms}
+              onChange={(event) => updateDraft({ acceptTerms: event.target.checked })}
               required
               className="items-start"
               label={translateAuth.rich('signUp.terms', {
