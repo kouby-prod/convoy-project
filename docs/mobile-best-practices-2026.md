@@ -8,11 +8,9 @@
 
 ---
 
-## 1. Fix now — dependency mismatch
+## 1. Dependency mismatch — ✅ fixed
 
-`react-native-reanimated@4.3.1` declares a peer of `react-native-worklets: 0.8.x`, but `0.9.2` is what actually resolves in the lockfile (pulled in transitively, since `react-native-worklets` isn't a direct dependency of `apps/mobile`). `pnpm install` prints this as an unmet-peer warning today; left alone it becomes a runtime crash risk once any code path exercises a worklet API 0.8.x doesn't have.
-
-**Fix**: add `react-native-worklets` as an explicit direct dependency and align versions — either pin it to `0.8.x` to match `reanimated@4.3.1`, or bump `reanimated` to `4.4.1` (which targets `worklets@0.9.x`, matching what's already resolving). Check `docs.swmansion.com/react-native-reanimated/docs/guides/compatibility/` for the exact pairing before choosing.
+`react-native-reanimated@4.3.1` declared a peer of `react-native-worklets: 0.8.x`, but `0.9.2` was what actually resolved in the lockfile (pulled in transitively — `react-native-worklets` wasn't a direct dependency of `apps/mobile`). Bumped `react-native-reanimated` to `4.4.1` (targets `worklets@0.9.x`) and added `react-native-worklets@0.9.2` as an explicit direct dependency, then reinstalled and re-ran `typecheck` (passes). One residual warning remains from `expo-modules-core` itself wanting `worklets@^0.7.4 || ^0.8.0` — that's an upstream Expo SDK 56 peer range lagging the ecosystem, not a conflict in our own dependency graph; see §2 (SDK 57 upgrade) for the likely fix.
 
 ## 2. Consider the Expo SDK 57 upgrade
 
@@ -24,16 +22,17 @@ The app is on Expo SDK 56 / React Native 0.85, where the New Architecture is man
 
 **To close this**: add `expo-notifications` + `expo-device`, register the Expo push token on sign-in (store it server-side against the user), and send through Expo's push API from the API when a notification is created. This is a real feature gap, not a style nit — flagging it because it's an explicit spec requirement.
 
-## 4. No EAS Build/Submit pipeline yet
+## 4. EAS Build/Submit pipeline — ✅ scaffolded, needs your credentials
 
-There is no `eas.json` in `apps/mobile`. §9 of the cahier des charges requires publishing to Google Play and the Apple App Store, and §11 budgets 2 weeks for deployment — that window assumes the build/submit pipeline exists ahead of time, not that it gets improvised during it.
+`apps/mobile/eas.json` now exists with `development` / `preview` / `production` build profiles, plus a `submit.production` profile for both stores. `eas-cli@23.2.0` is pinned as a devDependency (so the whole team/CI uses the same version via `pnpm exec eas ...` instead of a global install), and `app.json` got a `runtimeVersion: { policy: "appVersion" }` so builds and future OTA updates stay compatible. New scripts: `pnpm --filter @carpool/mobile build:dev|build:preview|build:production` and `submit:production`.
 
-**Recommended setup**:
-- `eas build --platform all` with `development` / `preview` / `production` profiles in `eas.json`.
-- `eas submit` for both stores — needs a Google Play service-account key (one-time Play Developer $25 fee) and an active Apple Developer Program membership.
-- Android: production builds must ship as `.aab`, not `.apk` (Play Console requirement).
-- iOS: `eas submit` uploads to TestFlight; going from TestFlight to live release is still a manual step in App Store Connect (metadata, screenshots, submit for review).
-- **`EAS Update`** (OTA JS-bundle updates) is worth wiring in from the start — it covers most of §10's "maintenance corrective" without a full store re-submission for JS-only fixes. Native-module changes (new packages, permission changes) still require a full build + store review.
+**Still needs a human with account access — I did not run any of this, since it creates cloud resources under your identity**:
+1. `pnpm exec eas login` (your Expo account) then `pnpm exec eas init` from `apps/mobile` — this creates the EAS project and writes `extra.eas.projectId` into `app.json` for you.
+2. `pnpm exec eas update:configure` once `eas init` is done, to wire up `updates.url` for OTA updates.
+3. Android: create a Google Play Console app entry + a service-account key, referenced from `eas.json`'s `submit.production.android` (currently ships as `track: "internal"` / `releaseStatus: "draft"` — deliberately conservative first submission, promote to `production` once you're ready). Requires the one-time $25 Play Developer fee if not already registered.
+4. iOS: fill in `submit.production.ios.appleTeamId` in `eas.json` (currently empty) — requires an active Apple Developer Program membership. `eas submit` lands the build in TestFlight; promoting to a public release is still a manual step in App Store Connect (metadata, screenshots, submit for review).
+5. Android production builds must ship as `.aab` (Play Console requirement) — the `production` profile already defaults to that; only `preview` is forced to `.apk` for easier internal sideloading.
+6. Once step 1–2 are done, **`EAS Update`** is worth turning on for JS-only fixes — it covers most of §10's "maintenance corrective" without a full store re-submission. Native-module changes (new packages, permission changes) still require a full build + store review.
 
 ## 5. Store privacy compliance — ties directly to §7 (PIPEDA / Loi 25)
 
@@ -57,14 +56,14 @@ Nothing under `apps/mobile` currently runs E2E tests against the New Architectur
 
 ## Priority summary
 
-| Item | Effort | Why it matters |
+| Item | Effort | Status |
 |---|---|---|
-| Pin `react-native-worklets` version | Small | Silences an unmet-peer warning that is a live crash risk |
-| Add `expo-notifications` (push) | Medium | Explicit cahier des charges requirement, currently missing |
-| Add `eas.json` + EAS Submit setup | Medium | Blocks §9 store deployment entirely until it exists |
-| Align store privacy labels with in-app disclosures | Small–Medium | Store review blocker, and closes part of the PIPEDA/Loi 25 gap |
-| Maestro E2E on core flows (booking, payment, live tracking) | Medium | No mobile test coverage today |
-| SDK 57 upgrade | Small, not urgent | Fixes a known Hermes memory regression |
+| Pin `react-native-worklets` version | Small | ✅ Done |
+| `eas.json` + EAS Submit scaffolding | Medium | ✅ Config done — needs your `eas login` / `eas init` / store credentials |
+| Add `expo-notifications` (push) | Medium | Open — explicit cahier des charges requirement, currently missing |
+| Align store privacy labels with in-app disclosures | Small–Medium | Open — store review blocker, closes part of the PIPEDA/Loi 25 gap |
+| Maestro E2E on core flows (booking, payment, live tracking) | Medium | Open — no mobile test coverage today |
+| SDK 57 upgrade | Small, not urgent | Open |
 
 ---
 
