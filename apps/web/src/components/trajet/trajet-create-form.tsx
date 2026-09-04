@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { ArrowRight, Car, Clock, MapPin, Sparkles, Wallet } from 'lucide-react';
@@ -34,9 +34,8 @@ import { DropdownDatePicker, dateToParam, paramToDate } from '@/components/ui/dr
 import { DropdownTimePicker } from '@/components/ui/dropdown-time-picker';
 import { formatTime, parseTime } from '@/components/ui/time-picker';
 import { PublishChecklistStep } from '@/components/trajet/publish-checklist';
-import { VehicleForm } from '@/components/trajet/vehicle-form';
 import { createTrajet } from '@/lib/trajets';
-import { fetchMyVehicle } from '@/lib/vehicles';
+import { fetchMyVehicle, saveMyVehicle } from '@/lib/vehicles';
 import { useSessionDraft, clearSessionDraft } from '@/hooks/use-session-draft';
 import { cn } from '@/lib/utils';
 import { CardSkeleton } from '@/components/ui/list-skeleton';
@@ -80,6 +79,15 @@ interface RideDraft {
   pricePerSeat: string;
   baggageAllowance: string;
   description: string;
+  /** The vehicle description, folded in here so "Suivant" saves it together
+   *  with the ride fields in one action — see `handleStep1Submit`. */
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleColor: string;
+  vehicleSeats: string;
+  vehiclePlate: string;
+  /** Seeded once from an existing vehicle, same reasoning as `VehicleForm`'s own `seeded`. */
+  vehicleSeeded: boolean;
 }
 
 const EMPTY_RIDE_DRAFT: RideDraft = {
@@ -104,6 +112,12 @@ const EMPTY_RIDE_DRAFT: RideDraft = {
   pricePerSeat: '',
   baggageAllowance: '',
   description: '',
+  vehicleMake: '',
+  vehicleModel: '',
+  vehicleColor: '',
+  vehicleSeats: '',
+  vehiclePlate: '',
+  vehicleSeeded: false,
 };
 
 const RIDE_DRAFT_KEY = 'trajet-create-draft';
@@ -164,13 +178,12 @@ function revealInvalid(control: HTMLElement) {
  * is backed by `RideDraft` (`useSessionDraft`) so it also survives a locale
  * switch, which remounts this whole component (see that hook's doc comment).
  *
- * Page 1 is a single native `<form>` for the ride fields. After Next, empty
- * required fields show an inline “this field is required” message and the
- * page jumps to the first one. `VehicleForm` is its own `<form>`, hence a
- * sibling rather than nested — its submit stays independent; the outer
- * “Suivant” is linked to `ride-details-form` via `form=` rather than sitting
- * inside it, and it also requires the vehicle to already be saved before
- * advancing.
+ * Page 1 is a single native `<form>` for the ride fields, plus the vehicle
+ * description folded into the same `RideDraft` (not `VehicleForm`, which has
+ * its own always-visible save button — this page saves both the ride and
+ * the vehicle together when "Suivant" is clicked, no separate action). After
+ * Next, empty required fields show an inline “this field is required”
+ * message and the page jumps to the first one.
  *
  * Page 2 is `PublishChecklistStep` — a two-item checklist (licence number
  * on file, insurance declared "oui") rather than a re-run of `/mes-documents`'
@@ -212,9 +225,29 @@ export function TrajetCreateForm() {
     };
   }, [draft.step]);
 
-  // Shares the `['my-vehicle']` cache with `VehicleForm`/`PublishChecklistStep`
-  // — read here only to gate Page 1's "Suivant" on a vehicle actually existing.
+  // Shares the `['my-vehicle']` cache with `VehicleForm` (on /mes-documents)
+  // and `PublishChecklistStep` — seeds the vehicle fields below and lets
+  // `handleStep1Submit` know whether a vehicle already exists.
   const vehicleQuery = useQuery({ queryKey: ['my-vehicle'], queryFn: fetchMyVehicle });
+
+  // Seed the vehicle fields once the driver's existing vehicle (if any) has
+  // loaded — same one-time pattern `VehicleForm` uses for its own draft.
+  useEffect(() => {
+    if (draft.vehicleSeeded || !vehicleQuery.data) return;
+    updateDraft({
+      vehicleMake: vehicleQuery.data.make ?? '',
+      vehicleModel: vehicleQuery.data.model ?? '',
+      vehicleColor: vehicleQuery.data.color ?? '',
+      vehicleSeats: vehicleQuery.data.seats !== null ? String(vehicleQuery.data.seats) : '',
+      vehiclePlate: vehicleQuery.data.plate,
+      vehicleSeeded: true,
+    });
+  }, [draft.vehicleSeeded, vehicleQuery.data]);
+
+  const vehicleMutation = useMutation({
+    mutationFn: saveMyVehicle,
+    onSuccess: (saved) => queryClient.setQueryData(['my-vehicle'], saved),
+  });
 
   const mutation = useMutation({
     mutationFn: createTrajet,
@@ -246,12 +279,13 @@ export function TrajetCreateForm() {
   }
 
   /**
-   * Page 1's submit: validates the ride fields, then requires the vehicle to
-   * already be saved (via `VehicleForm`'s own button, above) before moving on
-   * to Page 2. Nothing is posted yet — the ride itself is only created from
-   * Page 2's "Publier".
+   * Page 1's submit: validates the ride fields, then saves the vehicle
+   * description in the same action (no separate "Enregistrer" button — see
+   * `RideDraft`'s `vehicle*` fields) before moving on to Page 2. Nothing is
+   * posted to `/trajets` yet — the ride itself is only created from Page 2's
+   * "Publier".
    */
-  function handleStep1Submit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleStep1Submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
     setShowFieldErrors(true);
@@ -311,14 +345,34 @@ export function TrajetCreateForm() {
       return;
     }
 
-    if (!vehicleQuery.data) {
-      setError(t('create.step1.vehicleRequired'));
+    const trimmedPlate = draft.vehiclePlate.trim().toUpperCase();
+    if (!trimmedPlate) {
+      setError(t('create.step3.vehicle.required'));
+      const el = document.getElementById('create-vehicle-plate');
+      if (el) revealInvalid(el);
+      else scrollToSection('create-vehicle');
+      return;
+    }
+
+    try {
+      await vehicleMutation.mutateAsync({
+        make: draft.vehicleMake.trim() || null,
+        model: draft.vehicleModel.trim() || null,
+        color: draft.vehicleColor.trim() || null,
+        seats: draft.vehicleSeats.trim() ? Number(draft.vehicleSeats) : null,
+        plate: trimmedPlate,
+        // Insurance is declared on Page 2, not here — preserve whatever is
+        // already on file (or `null`, "not yet declared", for a new vehicle).
+        hasInsurance: vehicleQuery.data?.hasInsurance ?? null,
+      });
+    } catch {
+      setError(t('create.step1.vehicleSaveFailed'));
       scrollToSection('create-vehicle');
       return;
     }
 
     queueScroll(PUBLISH_SECTION_ID);
-    updateDraft({ ridePayload: parsed.data, step: 'license-insurance' });
+    updateDraft({ ridePayload: parsed.data, step: 'license-insurance', vehiclePlate: trimmedPlate });
   }
 
   /**
@@ -690,19 +744,73 @@ export function TrajetCreateForm() {
             </SettingsSection>
           </form>
 
-          {/* Sibling, not nested — `VehicleForm` is its own `<form>`, and forms
-              cannot nest. Its submit button stays independent; the outer
-              "Suivant" below is linked to `ride-details-form` via `form=`
-              rather than being inside it. */}
+          {/* Plain fields bound to `draft.vehicle*` — no form/button of its
+              own, unlike `VehicleForm` (used as-is on /mes-documents). Saved
+              together with the ride fields by `handleStep1Submit` above. A
+              vehicle photo can still be added afterwards from /mes-documents. */}
           <SettingsSection id="create-vehicle" title={t('create.sections.vehicle')}>
             <Card>
-              <CardContent className="pt-0">
-                <VehicleForm embedded />
+              <CardContent className="flex flex-col gap-4 pt-0">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <Car className="size-5" strokeWidth={2.25} aria-hidden />
+                  </span>
+                  <div className="space-y-0.5">
+                    <h3 className="text-sm font-semibold text-foreground">{t('create.step3.vehicle.title')}</h3>
+                    <p className="text-xs text-muted-foreground">{t('create.step3.vehicle.subtitle')}</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <LabelledField label={t('create.step3.vehicle.make')} htmlFor="create-vehicle-make">
+                    <Input
+                      id="create-vehicle-make"
+                      value={draft.vehicleMake}
+                      onChange={(event) => updateDraft({ vehicleMake: event.target.value })}
+                      maxLength={100}
+                    />
+                  </LabelledField>
+                  <LabelledField label={t('create.step3.vehicle.model')} htmlFor="create-vehicle-model">
+                    <Input
+                      id="create-vehicle-model"
+                      value={draft.vehicleModel}
+                      onChange={(event) => updateDraft({ vehicleModel: event.target.value })}
+                      maxLength={100}
+                    />
+                  </LabelledField>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <LabelledField label={t('create.step3.vehicle.color')} htmlFor="create-vehicle-color">
+                    <Input
+                      id="create-vehicle-color"
+                      value={draft.vehicleColor}
+                      onChange={(event) => updateDraft({ vehicleColor: event.target.value })}
+                      maxLength={50}
+                    />
+                  </LabelledField>
+                  <LabelledField label={t('create.step3.vehicle.seats')} htmlFor="create-vehicle-seats">
+                    <Input
+                      id="create-vehicle-seats"
+                      type="number"
+                      min={1}
+                      max={8}
+                      value={draft.vehicleSeats}
+                      onChange={(event) => updateDraft({ vehicleSeats: event.target.value })}
+                    />
+                  </LabelledField>
+                  <LabelledField label={t('create.step3.vehicle.plate')} htmlFor="create-vehicle-plate">
+                    <Input
+                      id="create-vehicle-plate"
+                      value={draft.vehiclePlate}
+                      onChange={(event) => updateDraft({ vehiclePlate: event.target.value })}
+                      maxLength={20}
+                      required
+                      aria-invalid={showFieldErrors && isBlank(draft.vehiclePlate) ? true : undefined}
+                    />
+                  </LabelledField>
+                </div>
               </CardContent>
             </Card>
-            {!vehicleQuery.data ? (
-              <p className="text-xs text-muted-foreground">{t('create.step3.saveHint')}</p>
-            ) : null}
           </SettingsSection>
 
           {draft.step === 'ride-vehicle' && error ? (
@@ -712,8 +820,15 @@ export function TrajetCreateForm() {
           ) : null}
 
           <div className="flex sm:justify-end">
-            <Button type="submit" form="ride-details-form" variant="primary" size="lg" className="w-full px-10 sm:w-auto">
-              {t('create.step1.next')}
+            <Button
+              type="submit"
+              form="ride-details-form"
+              variant="primary"
+              size="lg"
+              className="w-full px-10 sm:w-auto"
+              disabled={vehicleMutation.isPending}
+            >
+              {vehicleMutation.isPending ? t('create.step1.saving') : t('create.step1.next')}
               <ArrowRight className="size-5" strokeWidth={2.25} />
             </Button>
           </div>

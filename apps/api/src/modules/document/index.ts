@@ -15,6 +15,7 @@ import {
   getDocumentFileRoute,
   getMyEligibilityRoute,
   putMyEligibilityRoute,
+  putMyEligibilityConfirmationRoute,
   putMyLicenseNumberRoute,
   putMyNameRoute,
 } from './document.routes';
@@ -37,6 +38,7 @@ app.use('/documents/me', requireAuth);
 app.use('/documents/:id/file', requireAuth);
 app.use('/eligibility', requireAuth);
 app.use('/eligibility/license-number', requireAuth);
+app.use('/eligibility/confirmation', requireAuth);
 app.use('/eligibility/name', requireAuth);
 
 export const documentModule = app
@@ -175,6 +177,24 @@ export const documentModule = app
 
     return c.json(toEligibility(row), 200);
   })
+  .openapi(putMyEligibilityConfirmationRoute, async (c) => {
+    const { user: authUser } = getAuth(c);
+    const { hasValidLicense, meetsRequirements } = c.req.valid('json');
+
+    // Same upsert shape as the other eligibility routes: only these two
+    // fields plus `updatedAt` are in `set`, so an existing `dateOfBirth`/
+    // `licenseNumber`/name survives untouched.
+    const [row] = await db
+      .insert(driverEligibility)
+      .values({ userId: authUser.id, hasValidLicense, meetsRequirements })
+      .onConflictDoUpdate({
+        target: driverEligibility.userId,
+        set: { hasValidLicense, meetsRequirements, updatedAt: new Date() },
+      })
+      .returning();
+
+    return c.json(toEligibility(row), 200);
+  })
   .openapi(putMyNameRoute, async (c) => {
     const { user: authUser } = getAuth(c);
     const { firstName, lastName } = c.req.valid('json');
@@ -201,6 +221,8 @@ function toEligibility(
         licenseNumber: string | null;
         firstName: string | null;
         lastName: string | null;
+        hasValidLicense: boolean | null;
+        meetsRequirements: boolean | null;
       }
     | undefined,
 ): DriverEligibility {
@@ -212,5 +234,7 @@ function toEligibility(
     licenseNumber: row?.licenseNumber ?? null,
     firstName: row?.firstName ?? null,
     lastName: row?.lastName ?? null,
+    hasValidLicense: row?.hasValidLicense ?? null,
+    meetsRequirements: row?.meetsRequirements ?? null,
   };
 }

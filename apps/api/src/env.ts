@@ -121,6 +121,33 @@ const EnvSchema = z.object({
   PAYPAL_WEBHOOK_ID: optionalString,
   PAYPAL_MODE: z.enum(['sandbox', 'live']).default('sandbox'),
 
+  // Currencies we ever charge in. Used to fail fast, before calling Stripe/PayPal,
+  // when an invoice somehow carries a currency nobody configured for this account.
+  STRIPE_ALLOWED_CURRENCIES: z
+    .string()
+    .default('cad')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((entry) => entry.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  // Explicit override for PaymentIntent `payment_method_types`, comma-separated
+  // (e.g. "card,acss_debit"). Leave unset to let Stripe pick methods dynamically
+  // via `automatic_payment_methods` from the Dashboard config — see the TODO next
+  // to PAYMENT_METHOD_TYPES_FALLBACK in stripe.ts for when this is used as a fallback.
+  STRIPE_PAYMENT_METHOD_TYPES: z
+    .string()
+    .optional()
+    .transform((value) =>
+      value
+        ? value
+            .split(',')
+            .map((entry) => entry.trim().toLowerCase())
+            .filter(Boolean)
+        : [],
+    ),
+
   // Seller identity printed on invoices. Tax numbers are omitted from the PDF
   // until set — never invent a GST/QST number.
   INVOICE_LEGAL_NAME: z.string().min(1).default('Kouby'),

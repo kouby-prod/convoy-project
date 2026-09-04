@@ -6,6 +6,7 @@ import {
   type DriverDocumentType,
   type DriverEligibility,
   type DriverNameDeclaration,
+  type EligibilityConfirmation,
 } from '@carpool/schemas';
 import { createApiClient } from '@carpool/api-client';
 import { env } from './env';
@@ -55,6 +56,20 @@ export async function saveMyEligibility(dateOfBirth: string): Promise<DriverElig
 export async function saveMyLicenseNumber(licenseNumber: string): Promise<DriverEligibility> {
   const res = await api.eligibility['license-number'].$put({ json: { licenseNumber } });
   if (!res.ok) throw new ApiError(res.status, 'Failed to save your licence number');
+  return res.json();
+}
+
+/**
+ * PUT /eligibility/confirmation — declare having a valid Canadian licence and
+ * meeting every other requirement to drive in Canada. Saved together (one
+ * route, one call), since the ride-creation step always shows and answers
+ * both as a pair.
+ */
+export async function saveMyEligibilityConfirmation(
+  confirmation: EligibilityConfirmation,
+): Promise<DriverEligibility> {
+  const res = await api.eligibility.confirmation.$put({ json: confirmation });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to save your eligibility confirmation');
   return res.json();
 }
 

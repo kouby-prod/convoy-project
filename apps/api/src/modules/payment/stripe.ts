@@ -21,7 +21,7 @@ export function stripeIdempotencyKey(invoiceId: string, kind: 'intent' | 'refund
   return extra ? `invoice:${invoiceId}:stripe:${kind}:${extra}` : `invoice:${invoiceId}:stripe:${kind}`;
 }
 
-export async function createStripePaymentIntent(input: {
+type PaymentIntentInput = {
   invoiceId: string;
   bookingId: string;
   invoiceNumber: string;
@@ -29,24 +29,103 @@ export async function createStripePaymentIntent(input: {
   currency: string;
   attemptKey?: string;
   customerId?: string;
-}): Promise<{ id: string; clientSecret: string | null }> {
-  const intent = await stripe().paymentIntents.create(
-    {
-      amount: input.amountCents,
-      currency: input.currency,
-      metadata: {
-        invoiceId: input.invoiceId,
-        bookingId: input.bookingId,
-        invoiceNumber: input.invoiceNumber,
-      },
-      automatic_payment_methods: { enabled: true },
-      ...(input.customerId
-        ? { customer: input.customerId, setup_future_usage: 'off_session' as const }
-        : {}),
+};
+
+/**
+ * PAYMENT_METHOD_TYPES_FALLBACK: explicit methods used in place of
+ * `automatic_payment_methods` when a PaymentIntent sets `setup_future_usage`
+ * (i.e. whenever we attach a customer to save their card for later charges).
+ *
+ * Root cause of "No valid payment method types for this Payment Intent":
+ * `setup_future_usage: 'off_session'` restricts automatic resolution to
+ * methods that support being reused off-session. If the Dashboard's enabled
+ * methods for this mode/currency don't include one that supports off-session
+ * reuse (most non-card methods don't), Stripe intersects down to an empty
+ * set and rejects the PaymentIntent outright — automatic_payment_methods
+ * gives no visibility into *why* the list is empty, it just fails.
+ *
+ * TODO(dashboard, both TEST and LIVE mode): confirm "Cards" is enabled under
+ * Settings > Payment methods for the CAD account, then this fallback can be
+ * removed (set STRIPE_PAYMENT_METHOD_TYPES="" and delete this constant) so
+ * automatic_payment_methods can resolve the full dashboard-configured list
+ * again for repeat/off-session charges.
+ */
+const PAYMENT_METHOD_TYPES_FALLBACK = ['card'];
+
+function assertValidPaymentIntentAmount(amountCents: number, currency: string): void {
+  if (!Number.isInteger(amountCents) || amountCents <= 0) {
+    throw new Error(
+      `Invalid Stripe amount: ${amountCents} (must be a positive integer number of minor currency units)`,
+    );
+  }
+  const normalizedCurrency = currency.toLowerCase();
+  if (!env.STRIPE_ALLOWED_CURRENCIES.includes(normalizedCurrency)) {
+    throw new Error(
+      `Invalid Stripe currency "${currency}": not in the allowed list [${env.STRIPE_ALLOWED_CURRENCIES.join(', ')}]. ` +
+        'Set STRIPE_ALLOWED_CURRENCIES to include it once the account is configured to accept it.',
+    );
+  }
+}
+
+function buildPaymentIntentParams(input: PaymentIntentInput): Stripe.PaymentIntentCreateParams {
+  const willSaveForFutureUse = Boolean(input.customerId);
+  // Stripe does not use `payment_method_types` at face value: with
+  // `automatic_payment_methods` enabled it resolves the *actual* offered
+  // methods by intersecting the methods enabled in Dashboard Settings >
+  // Payment methods (per mode: test vs. live) with this PaymentIntent's
+  // currency, amount, capture_method, and setup_future_usage. Any one of
+  // those can filter a method out silently; if the intersection is empty,
+  // creation fails with "No valid payment method types for this Payment
+  // Intent" instead of a per-method reason.
+  const paymentMethodTypes =
+    env.STRIPE_PAYMENT_METHOD_TYPES.length > 0
+      ? env.STRIPE_PAYMENT_METHOD_TYPES
+      : willSaveForFutureUse
+        ? PAYMENT_METHOD_TYPES_FALLBACK
+        : undefined;
+
+  return {
+    amount: input.amountCents,
+    currency: input.currency,
+    metadata: {
+      invoiceId: input.invoiceId,
+      bookingId: input.bookingId,
+      invoiceNumber: input.invoiceNumber,
     },
-    { idempotencyKey: stripeIdempotencyKey(input.invoiceId, 'intent', input.attemptKey) },
-  );
-  return { id: intent.id, clientSecret: intent.client_secret };
+    ...(paymentMethodTypes
+      ? { payment_method_types: paymentMethodTypes }
+      : { automatic_payment_methods: { enabled: true } }),
+    ...(willSaveForFutureUse
+      ? { customer: input.customerId, setup_future_usage: 'off_session' as const }
+      : {}),
+  };
+}
+
+export async function createStripePaymentIntent(
+  input: PaymentIntentInput,
+): Promise<{ id: string; clientSecret: string | null }> {
+  assertValidPaymentIntentAmount(input.amountCents, input.currency);
+  const params = buildPaymentIntentParams(input);
+  try {
+    const intent = await stripe().paymentIntents.create(params, {
+      idempotencyKey: stripeIdempotencyKey(input.invoiceId, 'intent', input.attemptKey),
+    });
+    return { id: intent.id, clientSecret: intent.client_secret };
+  } catch (err) {
+    if (err instanceof Stripe.errors.StripeInvalidRequestError) {
+      // No API keys or customer PII here: metadata is our own internal IDs
+      // and `customer` is a Stripe customer ID, not the underlying email/name.
+      console.error('[stripe] PaymentIntent creation rejected', {
+        stripeCode: err.code,
+        stripeMessage: err.message,
+        currency: params.currency,
+        amount: params.amount,
+        capture_method: params.capture_method ?? 'automatic',
+        params,
+      });
+    }
+    throw err;
+  }
 }
 
 export async function retrieveStripePaymentIntent(id: string): Promise<{

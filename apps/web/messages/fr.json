@@ -40,16 +40,16 @@
   },
   "Footer": {
     "aboutTitle": "À Propos de nous",
-    "terms": "Conditions d'utilisation",
+    "terms": "Conditions générales d'utilisation",
     "cgv": "Conditions de vente",
     "contratConducteur": "Contrat conducteur",
     "responsibility": "Charte de responsabilité",
-    "privacy": "Vie privée",
+    "privacy": "Politique de confidentialité",
     "mentionsLegales": "Mentions légales",
     "contact": "Contactez-nous",
     "infoTitle": "Informations",
-    "becomeDriver": "Comment devenir chauffeur ?",
-    "becomePassenger": "Comment devenir passager ?",
+    "becomeDriver": "Comment publier un trajet ?",
+    "becomePassenger": "Comment réserver un trajet ?",
     "passengerTips": "Conseils passagers",
     "driverTips": "Conseils conducteurs",
     "copyright": "© {year} Convoy — covoiturage. Tous droits réservés."
@@ -77,7 +77,7 @@
       "hasAccount": "Déjà inscrit ?",
       "signIn": "Se connecter",
       "passwordHint": "Au moins 8 caractères.",
-      "terms": "J’accepte les <terms>conditions d’utilisation</terms> et la <privacy>politique de confidentialité</privacy>."
+      "terms": "J’accepte les <terms>conditions générales d’utilisation</terms> et la <privacy>politique de confidentialité</privacy>."
     },
     "forgotPassword": {
       "title": "Réinitialiser le mot de passe",
@@ -136,7 +136,7 @@
       "signInUnavailable": "Impossible de se connecter. Réessayez ultérieurement.",
       "missingFields": "Veuillez remplir tous les champs.",
       "passwordMismatch": "Les mots de passe ne correspondent pas.",
-      "termsRequired": "Veuillez accepter les conditions d’utilisation pour créer un compte.",
+      "termsRequired": "Veuillez accepter les conditions générales d’utilisation pour créer un compte.",
       "signUpFailed": "Échec de l'inscription. Réessayez.",
       "signUpUnavailable": "Impossible de créer le compte. Réessayez plus tard.",
       "googleFailed": "La connexion Google a échoué. Veuillez réessayer.",
@@ -146,8 +146,8 @@
   },
   "Terms": {
     "title": "Conditions Générales d'Utilisation",
-    "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication (voir « [à compléter] » ci-dessus).",
+    "lastUpdated": "Dernière mise à jour : 12/10/2026",
+    "disclaimer": "",
     "sections": [
       {
         "heading": "1. Objet",
@@ -237,8 +237,8 @@
   },
   "Cgv": {
     "title": "Conditions Générales de Vente (CGV)",
-    "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Kouby facture une commission de réservation de 4 CAD, payable en ligne par carte (Stripe) ou PayPal dès la réservation. Si vous payez le trajet par carte via Kouby, ce montant est encaissé avec la commission et reversé au conducteur après le trajet. Interac et espèces se règlent directement avec le conducteur.",
+    "lastUpdated": "Dernière mise à jour : 12/10/2026",
+    "disclaimer": "Kouby facture une commission de réservation de 4 CAD HT. Le prix du trajet se règle directement avec le conducteur.",
     "sections": [
       {
         "heading": "1. Objet",
@@ -316,8 +316,8 @@
   },
   "ContratConducteur": {
     "title": "Contrat Conducteur",
-    "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Il ne reste que la date de mise à jour à compléter avant publication. Ce document est conçu pour être signé électroniquement par chaque conducteur : l'application n'a pas encore de parcours d'inscription conducteur dédié qui capture cette acceptation, cette page reste donc informative pour le moment.",
+    "lastUpdated": "Dernière mise à jour : 12/10/2026",
+    "disclaimer": "Ce document est conçu pour être signé électroniquement par chaque conducteur : l'application n'a pas encore de parcours d'inscription conducteur dédié qui capture cette acceptation, cette page reste donc informative pour le moment.",
     "sections": [
       {
         "heading": "1. Objet",
@@ -387,8 +387,8 @@
   },
   "Privacy": {
     "title": "Politique de confidentialité",
-    "lastUpdated": "Dernière mise à jour : [à compléter]",
-    "disclaimer": "Certaines mentions restent à compléter avant publication (date de mise à jour, coordonnées du responsable de la protection des données) — voir les indications « [à compléter] » ci-dessous.",
+    "lastUpdated": "Dernière mise à jour : 12/10/2026",
+    "disclaimer": "Certaines mentions restent à compléter avant publication (coordonnées du responsable de la protection des données).",
     "sections": [
       {
         "heading": "1. Introduction",
@@ -1591,7 +1591,8 @@
       "step1": {
         "label": "Étape 1 : Trajet et véhicule",
         "next": "Suivant",
-        "vehicleRequired": "Enregistrez votre véhicule avant de continuer."
+        "saving": "Enregistrement…",
+        "vehicleSaveFailed": "L'enregistrement du véhicule a échoué. Réessayez."
       },
       "step2": {
         "label": "Étape 2 : Permis et assurance",
@@ -1601,12 +1602,13 @@
           "loadError": "Impossible de charger vos informations."
         },
         "checklist": {
-          "incomplete": "Complétez les éléments ci-dessus avant de publier votre trajet."
+          "incomplete": "Complétez les éléments ci-dessus avant de publier votre trajet.",
+          "licenseRequired": "Indiquez votre numéro de permis.",
+          "saveFailed": "L'enregistrement a échoué. Réessayez."
         }
       },
       "step3": {
         "label": "Étape 3 : Description du véhicule",
-        "saveHint": "Enregistrez votre véhicule pour continuer.",
         "vehicle": {
           "title": "Votre véhicule",
           "subtitle": "Ces informations sont affichées aux passagers.",
@@ -1630,12 +1632,14 @@
           "photoFailed": "L'envoi de la photo a échoué. Réessayez."
         }
       },
-      "step4": {
-        "title": "Assurance",
-        "question": "Disposez-vous d'une assurance valide ?",
-        "blockedBody": "Une assurance valide est nécessaire pour proposer un trajet en tant que conducteur.",
-        "saveFailed": "L'enregistrement a échoué. Réessayez.",
-        "missingVehicle": "Retournez à l'étape précédente pour enregistrer votre véhicule."
+      "step5": {
+        "title": "Éligibilité",
+        "licenseQuestion": "Détenez-vous un permis de conduire valide au Canada ?",
+        "insuranceQuestion": "Disposez-vous d'une assurance valide ?",
+        "requirementsQuestion": "Confirmez-vous remplir toutes les conditions requises pour conduire au Canada ?",
+        "blockedBody": "Vous devez confirmer les trois conditions ci-dessus pour proposer un trajet en tant que conducteur.",
+        "missingVehicle": "Retournez à l'étape précédente pour enregistrer votre véhicule.",
+        "saveFailed": "L'enregistrement a échoué. Réessayez."
       }
     }
   },
@@ -1788,12 +1792,12 @@
       },
       {
         "heading": "Documents connexes",
-        "body": "Voir aussi les conditions d'utilisation, les conditions de vente et le contrat conducteur."
+        "body": "Voir aussi les conditions générales d'utilisation, les conditions de vente et le contrat conducteur."
       }
     ]
   },
   "BecomeDriver": {
-    "title": "Comment devenir chauffeur",
+    "title": "Comment publier un trajet",
     "lastUpdated": "Publier un trajet sur Kouby en quelques étapes.",
     "checklist": {
       "loading": "Chargement de votre liste de tâches chauffeur...",
@@ -1844,7 +1848,7 @@
     ]
   },
   "BecomePassenger": {
-    "title": "Comment devenir passager",
+    "title": "Comment réserver un trajet",
     "lastUpdated": "Réserver une place sur Kouby en quelques étapes.",
     "checklist": {
       "loading": "Chargement de votre liste de tâches passager...",
@@ -1930,5 +1934,9 @@
         "body": "Annulez depuis Mes trajets dès que possible. Kouby rembourse le passager selon les conditions de vente."
       }
     ]
+  },
+  "LegalPage": {
+    "downloadPdf": "Télécharger en PDF",
+    "back": "Retour"
   }
 }

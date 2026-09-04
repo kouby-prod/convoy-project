@@ -204,6 +204,18 @@ export const DriverNameDeclarationSchema = z
   .describe('DriverNameDeclaration');
 export type DriverNameDeclaration = z.infer<typeof DriverNameDeclarationSchema>;
 
+/**
+ * The two yes/no self-declarations behind the ride-creation "Conditions
+ * d'éligibilité" step — a valid Canadian licence and meeting every other
+ * requirement to drive in Canada. Grouped in one schema (and one PUT route)
+ * because the UI always shows and saves them together, unlike `dateOfBirth`/
+ * `licenseNumber`/name, which can each be set independently.
+ */
+export const EligibilityConfirmationSchema = z
+  .object({ hasValidLicense: z.boolean(), meetsRequirements: z.boolean() })
+  .describe('EligibilityConfirmation');
+export type EligibilityConfirmation = z.infer<typeof EligibilityConfirmationSchema>;
+
 /** The stored declaration as the API serves it back. Null until the driver gives one. */
 export const DriverEligibilitySchema = z
   .object({
@@ -214,6 +226,9 @@ export const DriverEligibilitySchema = z
     licenseNumber: z.string().nullable(),
     firstName: z.string().nullable(),
     lastName: z.string().nullable(),
+    /** The driver's own "yes/no" declarations — null until they answer them. */
+    hasValidLicense: z.boolean().nullable(),
+    meetsRequirements: z.boolean().nullable(),
   })
   .describe('DriverEligibility');
 export type DriverEligibility = z.infer<typeof DriverEligibilitySchema>;

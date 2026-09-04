@@ -26,7 +26,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
         className="size-4 shrink-0 accent-primary outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
         {...inputProps}
       />
-      {label}
+      <span>{label}</span>
     </label>
   );
 });

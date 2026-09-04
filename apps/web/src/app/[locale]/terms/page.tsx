@@ -14,6 +14,7 @@ export default async function TermsPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('Terms');
+  const tLegal = await getTranslations('LegalPage');
 
   return (
     <LegalPage
@@ -21,6 +22,9 @@ export default async function TermsPage({
       disclaimer={t('disclaimer')}
       lastUpdated={t('lastUpdated')}
       sections={t.raw('sections') as LegalSection[]}
+      pdfHref={`/${locale}/terms/pdf`}
+      downloadLabel={tLegal('downloadPdf')}
+      backLabel={tLegal('back')}
     />
   );
 }
