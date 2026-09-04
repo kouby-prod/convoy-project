@@ -49,3 +49,29 @@ export const notificationPreferenceRelations = relations(notificationPreference,
     references: [user.id],
   }),
 }));
+
+/**
+ * Mobile push tokens (Expo push tokens today). Keyed by the token itself, not
+ * `(userId, token)` — a physical device can be re-associated with a different
+ * account (sign out, another driver signs in), and the token must follow the
+ * device to whoever is currently signed in on it, not accumulate stale rows
+ * under the previous account.
+ */
+export const pushToken = pgTable(
+  'push_token',
+  {
+    token: text('token').primaryKey(),
+    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    platform: text('platform').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()).notNull(),
+  },
+  (table) => [index('push_token_user_idx').on(table.userId)],
+);
+
+export const pushTokenRelations = relations(pushToken, ({ one }) => ({
+  user: one(user, {
+    fields: [pushToken.userId],
+    references: [user.id],
+  }),
+}));

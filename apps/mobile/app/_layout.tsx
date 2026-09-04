@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
@@ -8,6 +8,7 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import type { UnreadCount } from '@carpool/schemas';
 import { authClient } from '@/lib/auth-client';
 import { useNotificationsSocket } from '@/hooks/useNotificationsSocket';
+import { registerForPushNotificationsAsync } from '@/lib/push-notifications';
 import { env } from '@/lib/env';
 import { colors, isDarkMode } from '@/lib/theme';
 import { I18nProvider, useI18n } from '@/lib/i18n';
@@ -37,6 +38,19 @@ function NotificationsSync() {
 }
 
 /**
+ * Registers this device's Expo push token once per signed-in session — a
+ * no-op until `eas init` has set `extra.eas.projectId` (see
+ * lib/push-notifications.ts) and on a simulator/emulator either way.
+ */
+function PushNotificationsSync() {
+  useEffect(() => {
+    void registerForPushNotificationsAsync();
+  }, []);
+
+  return null;
+}
+
+/**
  * Auth-gates the whole app in one place via `Stack.Protected`: the guard is
  * driven by the same `useSession()` store `expoClient` updates on sign-in/out,
  * so screens under `(tabs)` never need their own redirect-if-logged-out
@@ -56,7 +70,12 @@ function RootNavigator() {
 
   return (
     <>
-      {session?.user ? <NotificationsSync /> : null}
+      {session?.user ? (
+        <>
+          <NotificationsSync />
+          <PushNotificationsSync />
+        </>
+      ) : null}
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Protected guard={!!session?.user}>
           <Stack.Screen name="(tabs)" />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { authClient } from '@/lib/auth-client';
+import { unregisterCurrentPushToken } from '@/lib/push-notifications';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { Card } from '@/components/ui/Card';
 import { TextField } from '@/components/ui/TextField';
@@ -136,7 +137,14 @@ export default function CompteScreen() {
         <Button label={t('compte.myVehicle')} variant="outline" onPress={() => router.push('/vehicle')} />
         <Button label={t('compte.helpInfo')} variant="outline" onPress={() => router.push('/legal')} />
         <Button label={t('compte.contactHelp')} variant="outline" onPress={() => router.push('/contact')} />
-        <Button label={t('compte.signOut')} variant="outline" onPress={() => authClient.signOut()} />
+        <Button
+          label={t('compte.signOut')}
+          variant="outline"
+          onPress={() => {
+            void unregisterCurrentPushToken();
+            void authClient.signOut();
+          }}
+        />
 
         <DeleteAccountCard />
       </ScrollView>

@@ -16,11 +16,17 @@
 
 The app is on Expo SDK 56 / React Native 0.85, where the New Architecture is mandatory (no legacy-bridge fallback since SDK 56). That's already the correct posture. However, Hermes v1 (shipped with RN 0.85) has a known memory-usage regression when `react-native-worklets` / `react-native-reanimated` are imported — SDK 57 is the fix. Worth scheduling once the app has broader real-device testing, not urgent before that.
 
-## 3. Push notifications — gap vs. the cahier des charges
+## 3. Push notifications — ✅ implemented
 
-§4.3 explicitly requires "Notifications (email, push mobile)". `apps/mobile/lib/notifications.ts` only talks to the backend's in-app/email notification endpoints (`/notifications/*`) — there is no `expo-notifications` dependency, no push-token registration, and no Expo push service wiring. Email + in-app notifications exist; **mobile push does not yet**.
+§4.3 explicitly requires "Notifications (email, push mobile)". Email and in-app (WebSocket) notifications already existed; mobile push did not. Closed end-to-end:
 
-**To close this**: add `expo-notifications` + `expo-device`, register the Expo push token on sign-in (store it server-side against the user), and send through Expo's push API from the API when a notification is created. This is a real feature gap, not a style nit — flagging it because it's an explicit spec requirement.
+- **API**: new `push_token` table (`apps/api/src/db/notification.ts`), keyed by the token itself (not `(userId, token)`) so re-associating a shared/reused device to a different account replaces the old owner instead of accumulating stale rows. `POST /notifications/push-token` (register/upsert) and `POST /notifications/push-token/unregister` (called on sign-out), both auth-gated. `sendPushToUser` (`apps/api/src/modules/notification/push.ts`) posts to Expo's push API (`https://exp.host/--/api/v2/push/send`) — no new secret/env var needed, Expo's push service doesn't require server credentials for the default flow. Wired into the single `notifyUser` choke point (`apps/api/src/modules/trajet/notifications.ts`), so every existing notification call site (booking requests, messages, trip cancellations, etc.) now also pushes, for free. Migration: `apps/api/drizzle/0023_loud_ender_wiggin.sql`.
+- **Mobile**: `expo-notifications` + `expo-device` added via `expo install` (so the versions match the installed SDK exactly — `~56.0.25` / `~56.0.4`). `lib/push-notifications.ts` requests permission, sets the Android notification channel, and registers the Expo push token; wired into `app/_layout.tsx` via a `PushNotificationsSync` component that runs once per signed-in session (same pattern as the existing `NotificationsSync`). `compte.tsx`'s sign-out button now also unregisters the token first.
+- **Preference model**: push rides on the existing `inAppEnabled` toggle — there's no separate "push" switch in `notification_preference` yet, and adding one would touch the settings UI on both web and mobile for a distinction most users won't care to make separately from "in-app". Revisit only if real usage shows people want push off but in-app-list on (or vice versa).
+
+**One thing this doesn't do yet**: prune tokens that Expo reports as `DeviceNotRegistered` (uninstalled app, etc.) — `push.ts` logs those tickets but leaves the row, so an uninstalled app's token just fails silently forever. Fine for now; worth a cleanup job once push volume is real.
+
+**Blocked on the same manual step as §4**: registration is a no-op (with a console warning) until `extra.eas.projectId` exists in `app.json`, i.e. until you run `eas init` — `Notifications.getExpoPushTokenAsync` needs it to know which EAS project to mint a token against.
 
 ## 4. EAS Build/Submit pipeline — ✅ scaffolded, needs your credentials
 
@@ -60,7 +66,7 @@ Nothing under `apps/mobile` currently runs E2E tests against the New Architectur
 |---|---|---|
 | Pin `react-native-worklets` version | Small | ✅ Done |
 | `eas.json` + EAS Submit scaffolding | Medium | ✅ Config done — needs your `eas login` / `eas init` / store credentials |
-| Add `expo-notifications` (push) | Medium | Open — explicit cahier des charges requirement, currently missing |
+| Push notifications (`expo-notifications`) | Medium | ✅ Implemented end-to-end — needs `eas init` (same step as above) before tokens can register |
 | Align store privacy labels with in-app disclosures | Small–Medium | Open — store review blocker, closes part of the PIPEDA/Loi 25 gap |
 | Maestro E2E on core flows (booking, payment, live tracking) | Medium | Open — no mobile test coverage today |
 | SDK 57 upgrade | Small, not urgent | Open |

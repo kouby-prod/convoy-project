@@ -36,7 +36,8 @@
           "merchantIdentifier": "",
           "enableGooglePay": false
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

@@ -6,6 +6,8 @@ import {
   MarkAllReadResponseSchema,
   NotificationPreferenceSchema,
   UpdateNotificationPreferenceSchema,
+  RegisterPushTokenSchema,
+  UnregisterPushTokenSchema,
 } from '@carpool/schemas';
 
 const bearerAuth = [{ Bearer: [] }];
@@ -126,6 +128,50 @@ export const putNotificationPreferenceRoute = createRoute({
     200: {
       description: 'Saved preferences',
       content: { 'application/json': { schema: NotificationPreferenceSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+const okSchema = z.object({ ok: z.literal(true) });
+
+export const registerPushTokenRoute = createRoute({
+  method: 'post',
+  path: '/notifications/push-token',
+  tags: ['notification'],
+  summary: "Register (or re-associate) an Expo push token for the authenticated user's device",
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: RegisterPushTokenSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Token registered',
+      content: { 'application/json': { schema: okSchema } },
+    },
+    401: {
+      description: 'Not authenticated',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+});
+
+export const unregisterPushTokenRoute = createRoute({
+  method: 'post',
+  path: '/notifications/push-token/unregister',
+  tags: ['notification'],
+  summary: 'Remove a push token (e.g. on sign-out) so this device stops receiving push notifications',
+  security: bearerAuth,
+  request: {
+    body: { content: { 'application/json': { schema: UnregisterPushTokenSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Token removed (or was already absent)',
+      content: { 'application/json': { schema: okSchema } },
     },
     401: {
       description: 'Not authenticated',

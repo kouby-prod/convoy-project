@@ -38,6 +38,21 @@ export const MarkAllReadResponseSchema = z.object({
   updated: z.number().int().min(0),
 });
 
+/** Mobile push token registration — one row per physical device, keyed by the Expo push token itself. */
+export const PushPlatformSchema = z.enum(['ios', 'android']);
+export type PushPlatform = z.infer<typeof PushPlatformSchema>;
+
+export const RegisterPushTokenSchema = z.object({
+  token: z.string().min(1),
+  platform: PushPlatformSchema,
+});
+export type RegisterPushToken = z.infer<typeof RegisterPushTokenSchema>;
+
+export const UnregisterPushTokenSchema = z.object({
+  token: z.string().min(1),
+});
+export type UnregisterPushToken = z.infer<typeof UnregisterPushTokenSchema>;
+
 /** Missing row means both channels on — same as a fresh account. */
 export const NotificationPreferenceSchema = z.object({
   emailEnabled: z.boolean(),

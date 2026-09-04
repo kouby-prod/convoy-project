@@ -162,6 +162,13 @@
       "when": 1788353921155,
       "tag": "0022_colossal_toad",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1788524763610,
+      "tag": "0023_loud_ender_wiggin",
+      "breakpoints": true
     }
   ]
 }

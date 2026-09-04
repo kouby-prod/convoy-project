@@ -7,6 +7,7 @@ import { sendEmail, type EmailAttachment } from '../../auth/email';
 import { env } from '../../env';
 import { serializeNotification } from '../notification/serialize';
 import { publishNotificationCreated } from '../notification/events';
+import { sendPushToUser } from '../notification/push';
 
 /** The web app's own origin — first of TRUSTED_ORIGINS, which is where it runs. */
 function webOrigin(): string {
@@ -86,11 +87,14 @@ export type NotifyUserOptions = {
 
 /**
  * Looks up `userId`'s email, stores an in-app notification, publishes it for
- * live WebSocket fan-out, and sends a plain-text email. Channel switches in
- * `notification_preference` skip insert/WS and/or email (missing row = both
- * on). Storage/publish/email failures are all logged, not thrown — there's no
- * retry queue in this codebase, so a dead SMTP server (or Redis) must never
- * fail the booking action that triggered the notification.
+ * live WebSocket fan-out, pushes it to any registered mobile device, and
+ * sends a plain-text email. Channel switches in `notification_preference`
+ * skip insert/WS/push and/or email (missing row = both on) — push rides on
+ * the in-app toggle, since there's no separate preference for it yet.
+ * Storage/publish/push/email failures are all logged, not thrown — there's no
+ * retry queue in this codebase, so a dead SMTP server (or Redis, or Expo's
+ * push service) must never fail the booking action that triggered the
+ * notification.
  *
  * `text` is the email body — it can be as detailed as it needs to be, since
  * the recipient reads it standalone outside the app. `inAppBody` is what's
@@ -141,6 +145,12 @@ export async function notifyUser(
         await publishNotificationCreated(serializeNotification(row));
       } catch (err) {
         console.error(`Failed to publish notification event for ${recipient.email}`, err);
+      }
+
+      try {
+        await sendPushToUser(userId, subject, options.inAppBody ?? text, options.link ? { link: options.link } : undefined);
+      } catch (err) {
+        console.error(`Failed to send push notification to ${recipient.email}`, err);
       }
     }
   }

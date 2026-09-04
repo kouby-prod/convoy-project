@@ -3,7 +3,7 @@ import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { DEFAULT_NOTIFICATION_PREFERENCE } from '@carpool/schemas';
 import { requireAuth, getAuth, type AuthEnv } from '../../auth';
 import { db } from '../../db/client';
-import { notification, notificationPreference } from '../../db/notification';
+import { notification, notificationPreference, pushToken } from '../../db/notification';
 import { serializeNotification, serializeNotificationPreference } from './serialize';
 import {
   listNotificationsRoute,
@@ -12,6 +12,8 @@ import {
   unreadNotificationCountRoute,
   getNotificationPreferenceRoute,
   putNotificationPreferenceRoute,
+  registerPushTokenRoute,
+  unregisterPushTokenRoute,
 } from './notification.routes';
 
 const app = new OpenAPIHono<AuthEnv>();
@@ -20,6 +22,8 @@ app.use('/notifications/unread-count', requireAuth);
 app.use('/notifications/read-all', requireAuth);
 app.use('/notifications/:id/read', requireAuth);
 app.use('/notifications/preferences', requireAuth);
+app.use('/notifications/push-token', requireAuth);
+app.use('/notifications/push-token/unregister', requireAuth);
 
 async function unreadCountFor(userId: string): Promise<number> {
   const [row] = await db
@@ -99,4 +103,22 @@ export const notificationModule = app
       .returning();
     if (!row) throw new Error('Upsert returned no row');
     return c.json(serializeNotificationPreference(row), 200);
+  })
+  .openapi(registerPushTokenRoute, async (c) => {
+    const { user } = getAuth(c);
+    const { token, platform } = c.req.valid('json');
+    await db
+      .insert(pushToken)
+      .values({ token, userId: user.id, platform })
+      .onConflictDoUpdate({
+        target: pushToken.token,
+        set: { userId: user.id, platform, updatedAt: new Date() },
+      });
+    return c.json({ ok: true as const }, 200);
+  })
+  .openapi(unregisterPushTokenRoute, async (c) => {
+    const { user } = getAuth(c);
+    const { token } = c.req.valid('json');
+    await db.delete(pushToken).where(and(eq(pushToken.token, token), eq(pushToken.userId, user.id)));
+    return c.json({ ok: true as const }, 200);
   });
